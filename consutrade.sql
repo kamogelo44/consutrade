@@ -1,0 +1,10 @@
+-- ConsuTrade Database Schema
+-- Author: Kamogelo Phale
+-- 
+-- Tables to be designed in Week 3 (EERD phase):
+-- - users         (id, name, email, password, role, verified, created_at)
+-- - products      (id, seller_id, title, description, price, image, category, created_at)
+-- - orders        (id, buyer_id, seller_id, product_id, status, created_at)
+-- - transactions  (id, order_id, amount, payment_ref, status, created_at)
+--
+-- Full schema will be written after EERD is finalised
