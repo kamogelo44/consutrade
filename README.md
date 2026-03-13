@@ -42,7 +42,18 @@ ConsuTrade is an attempt to change that. It is a locally built platform that giv
 consutrade/
 │
 ├── index.html              # Homepage
-├── README.md               # Project documentation
+├── README.md              # Project documentation
+├── design/
+│   ├── wireframes/
+│      ├── homepage-desktop.png
+│      ├── homepage-tablet.png
+│      ├── homepage-phone.png
+│      ├── register-desktop.png
+│      ├── register-tablet.png
+│      ├── register-phone.png
+│      ├── login-desktop.png
+│      ├── login-tablet.png
+│      └── login-phone.png
 │
 ├── css/
 │   └── style.css           # Global styles
