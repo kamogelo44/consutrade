@@ -39,43 +39,55 @@ ConsuTrade is an attempt to change that. It is a locally built platform that giv
 ## Project Structure
 
 ```
-consutrade/
-│
-├── index.html              # Homepage
-├── README.md              # Project documentation
-├── design/
-│   ├── wireframes/
-│      ├── homepage-desktop.png
-│      ├── homepage-tablet.png
-│      ├── homepage-phone.png
-│      ├── register-desktop.png
-│      ├── register-tablet.png
-│      ├── register-phone.png
-│      ├── login-desktop.png
-│      ├── login-tablet.png
-│      └── login-phone.png
-│
-├── css/
-│   └── style.css           # Global styles
-│
-├── js/
-│   └── main.js             # Client-side JavaScript
-│
-├── php/
-│   ├── config.php          # Database connection
-│   ├── register.php        # User registration logic
-│   └── login.php           # User login logic
-│
-├── images/                 # Uploaded product images
-│
-├── admin/
-│   ├── index.html          # Admin dashboard
-│   ├── manage-users.php    # User management (RBAC)
-│   ├── manage-listings.php # Product listing management
-│   └── manage-orders.php   # Order management
-│
-└── database/
-    └── consutrade.sql      # Database schema
+└───consutrade
+    │   index.html
+    │   README.md
+    │
+    ├───css
+    │       style.css
+    │
+    ├───database
+    │       consutrade.sql
+    │
+    ├───design
+    │   └───wireframes
+    │       ├───admin-website
+    │       │       AdminDashboard - Desktop.png
+    │       │       AdminDashboard - Phone.png
+    │       │       AdminDashboard - Tablet.png
+    │       │
+    │       └───main-website
+    │               Homepage_Prototype - Desktop.png
+    │               HomePage_Prototype - Tablet.png
+    │               Homepage_Prototype- Phone.png
+    │               LoginModal - Desktop.png
+    │               LoginModal - Phone.png
+    │               LoginModal - Tablet.png
+    │               Product Detail - Desktop.png
+    │               Product Detail - Phone.png
+    │               Product Detail - Tablet.png
+    │               Product Listing - Desktop.png
+    │               Product Listing - Phone.png
+    │               Product Listing - Tablet.png
+    │               Register Modal - Desktop.png
+    │               Register Modal - Phone.png
+    │               Register Modal - Tablet.png
+    │               Sellerdashboard - Desktop.png
+    │               Sellerdashboard - Phone.png
+    │               Sellerdashboard - Tablet.png
+    │
+    ├───images
+    │   └───icons
+    │           search-svgrepo-com.svg
+    │           shopping-cart-01-svgrepo-com.svg
+    │
+    ├───js
+    │       main.js
+    │
+    └───php
+            config.php
+            login.php
+            register.php
 ```
 
 ## Development Timeline
