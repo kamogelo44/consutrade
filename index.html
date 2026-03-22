@@ -16,7 +16,7 @@
                 id="search" 
                 name="q" 
                 placeholder="Search for products...">
-            <button type="submit"><img src="../consutrade/images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search Button"></button>
+            <button class="search" type="submit"><img src="../consutrade/images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search Button"></button>
         </form>
 
         <!--Navigation-->
@@ -44,34 +44,133 @@
     <main class="content">
         <!--Hero section-->
         <section class="hero">
-
-        </section>
-        <!--How it works section-->
-        <section class="how">
-            <div class="container">
-
+            <div class="hero-container">
+                <div class="txt-container">
+                    <h1>Buy and Sell at comfort of your home in South Africa.</h1>
+                    <p>ConsuTrade connects informal traders with buyers accross the country.</p>
+                </div>
+                <div class="btn-container">
+                    <button class="sell-button" id="primary-btn">Start Selling</button>
+                    <button class="browse-btn" id="secondary-btn">Browse Products</button>
+                </div>
             </div>
         </section>
+
+        <!--How it works section-->
+        <section class="how">
+            <div class="how-container">
+                <div class="card">
+                    <img src="" alt=""id="icon">
+                    <h2>Register</h2>
+                    <p>Create free seller account</p>
+                </div>
+                <div class="card" id="icon">
+                    <img src="" alt="" id="icon">
+                    <h2>Get Paid</h2>
+                    <p>Recieve payments securely with <a href="">PayFast</a></p>
+                </div>
+                <div class="card">
+                    <img src="" alt="" id="icon">
+                    <h2>List</h2>
+                    <p>Upload products in minutes</p>
+                </div>
+            </div>
+        </section>
+
         <!--Featured products section-->
         <section class="featured">
             <div class="prod-container">
-
+                <!--JS should list recenly 
+                listed products here I 
+                still have to 
+                figure it out 
+                and style this
+                 section accordinly-->
+                <div class="prod-container">
+                    <div class="img-container">
+                        <img src="" alt="">
+                    </div>
+                    <p></p>
+                    <p></p>
+                    <div class="seller-info">
+                        <img src="" alt="">
+                        <p class="seller-name">Seller: Gethro molungsi</p>
+                    </div>
+                </div>
+                <div class="prod-container">
+                    <div class="img-container">
+                        <img src="" alt="">
+                    </div>
+                    <p></p>
+                    <p></p>
+                    <div class="seller-info">
+                        <img src="" alt="">
+                        <p class="seller-name">Seller: Gethro molungsi</p>
+                    </div>
+                </div>
+                <div class="prod-container">
+                    <div class="img-container">
+                        <img src="" alt="">
+                    </div>
+                    <p></p>
+                    <p></p>
+                    <div class="seller-info">
+                        <img src="" alt="">
+                        <p class="seller-name">Seller: Gethro molungsi</p>
+                    </div>
+                </div>
             </div>
         </section>
         <!--Trust banner-->
         <section class="trust">
-            <div class="trust-container"></div>
+            <div class="trust-container">
+                <div class="card">
+                    <img src="" alt=""id="icon">
+                    <h2>Secure Payment</h2>
+                    <p>Payment protected</p>
+                </div>
+                <div class="card">
+                    <img src="" alt=""id="icon">
+                    <h2>Verified Sellers</h2>
+                    <p>All sellers are checked</p>
+                </div>
+                <div class="card">
+                    <img src="" alt=""id="icon">
+                    <h2>Register</h2>
+                    <p>We deliver across SA</p>
+                </div>             
+            </div>
         </section>
 
     </main>
     <!--Footer-->
     <footer>
-
+        <div class="logo">ConsuTrade</div>
+        <p>Built for South Africa's informal economy</p>
+        <div class="links">
+            <a href="">
+                Home
+            </a>
+            <a href="">
+                Browse
+            </a>
+            <a href="">
+                Sell
+            </a>
+            <a href="">
+                About
+            </a>
+            <a href="">
+                Terms
+            </a>
+            <a href="">
+                Privacy
+            </a>
+            <a href="">
+                Contact
+            </a>
+        </div>
     </footer>
-    
-    <!-- Homepage content will be built in Week 5 -->
-    <!-- Sections planned: Navbar, Hero, How It Works, Featured Products, Trust Banner, Footer -->
-
     <script src="js/main.js"></script>
 </body>
 </html>
