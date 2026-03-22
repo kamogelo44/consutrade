@@ -7,50 +7,50 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!--Header content-->
+
+    <!--Header-->
     <header>
         <div class="logo">ConsuTrade</div>
+
         <!--Search form-->
         <form action="" method="get">
-            <input type="search" 
-                id="search" 
-                name="q" 
+            <input type="search"
+                id="search"
+                name="q"
                 placeholder="Search for products...">
-            <button class="search" type="submit"><img src="../consutrade/images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search Button"></button>
+            <button class="search-btn" type="submit">
+                <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search Button">
+            </button>
         </form>
 
         <!--Navigation-->
         <nav class="nav-links-container">
             <ul class="nav-links">
-                <li>
-                    <a href="index.html">Home</a>
-                </li>
-                <li>
-                    <a href="">Sell</a>
-                </li>
-                <li>
-                    <a href="">Login</a>
-                </li>
-                <li >
-                    <a href="">Register</a>
-                </li>
+                <li><a href="index.html">Home</a></li>
                 <li><a href="">Shop</a></li>
+                <li><a href="">Sell</a></li>
+                <li><a href="">Login</a></li>
+                <li><a href="">Register</a></li>
                 <li>
-                    <a href=""><img src="../consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Shopping Cart"></a>
+                    <a href="">
+                        <img src="images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Shopping Cart">
+                    </a>
                 </li>
             </ul>
         </nav>
     </header>
+
     <main class="content">
+
         <!--Hero section-->
         <section class="hero">
             <div class="hero-container">
                 <div class="txt-container">
-                    <h1>Buy and Sell at comfort of your home in South Africa.</h1>
-                    <p>ConsuTrade connects informal traders with buyers accross the country.</p>
+                    <h1>Buy and Sell at the comfort of your home in South Africa.</h1>
+                    <p>ConsuTrade connects informal traders with buyers across the country.</p>
                 </div>
                 <div class="btn-container">
-                    <button class="sell-button" id="primary-btn">Start Selling</button>
+                    <button class="sell-btn" id="primary-btn">Start Selling</button>
                     <button class="browse-btn" id="secondary-btn">Browse Products</button>
                 </div>
             </div>
@@ -60,117 +60,121 @@
         <section class="how">
             <div class="how-container">
                 <div class="card">
-                    <img src="" alt=""id="icon">
+                    <img src="" alt="" class="icon">
                     <h2>Register</h2>
-                    <p>Create free seller account</p>
-                </div>
-                <div class="card" id="icon">
-                    <img src="" alt="" id="icon">
-                    <h2>Get Paid</h2>
-                    <p>Recieve payments securely with <a href="">PayFast</a></p>
+                    <p>Create your free seller account</p>
                 </div>
                 <div class="card">
-                    <img src="" alt="" id="icon">
+                    <img src="" alt="" class="icon">
                     <h2>List</h2>
-                    <p>Upload products in minutes</p>
+                    <p>Upload your products in minutes</p>
+                </div>
+                <div class="card">
+                    <img src="" alt="" class="icon">
+                    <h2>Get Paid</h2>
+                    <p>Receive payments securely with <a href="https://www.payfast.co.za" target="_blank">PayFast</a></p>
                 </div>
             </div>
         </section>
 
         <!--Featured products section-->
         <section class="featured">
-            <div class="prod-container">
-                <!--JS should list recenly 
-                listed products here I 
-                still have to 
-                figure it out 
-                and style this
-                 section accordinly-->
-                <div class="prod-container">
+            <h2 class="section-title">Recently Listed</h2>
+            <!--Product data will be populated dynamically via PHP
+            once the database is set up, for now using
+            placeholder cards to build the layout-->
+            <div class="prod-grid">
+
+                <div class="prod-card">
                     <div class="img-container">
-                        <img src="" alt="">
+                        <img src="" alt="Product Image">
                     </div>
-                    <p></p>
-                    <p></p>
+                    <p class="prod-name">Product Name</p>
+                    <p class="prod-price">R 0.00</p>
                     <div class="seller-info">
-                        <img src="" alt="">
-                        <p class="seller-name">Seller: Gethro molungsi</p>
+                        <img src="" alt="Seller Profile Picture">
+                        <p class="seller-name">Seller: Gethro Molungsi</p>
                     </div>
                 </div>
-                <div class="prod-container">
+
+                <div class="prod-card">
                     <div class="img-container">
-                        <img src="" alt="">
+                        <img src="" alt="Product Image">
                     </div>
-                    <p></p>
-                    <p></p>
+                    <p class="prod-name">Product Name</p>
+                    <p class="prod-price">R 0.00</p>
                     <div class="seller-info">
-                        <img src="" alt="">
-                        <p class="seller-name">Seller: Gethro molungsi</p>
+                        <img src="" alt="Seller Profile Picture">
+                        <p class="seller-name">Seller: Gethro Molungsi</p>
                     </div>
                 </div>
-                <div class="prod-container">
+
+                <div class="prod-card">
                     <div class="img-container">
-                        <img src="" alt="">
+                        <img src="" alt="Product Image">
                     </div>
-                    <p></p>
-                    <p></p>
+                    <p class="prod-name">Product Name</p>
+                    <p class="prod-price">R 0.00</p>
                     <div class="seller-info">
-                        <img src="" alt="">
-                        <p class="seller-name">Seller: Gethro molungsi</p>
+                        <img src="" alt="Seller Profile Picture">
+                        <p class="seller-name">Seller: Gethro Molungsi</p>
                     </div>
                 </div>
+
+                <div class="prod-card">
+                    <div class="img-container">
+                        <img src="" alt="Product Image">
+                    </div>
+                    <p class="prod-name">Product Name</p>
+                    <p class="prod-price">R 0.00</p>
+                    <div class="seller-info">
+                        <img src="" alt="Seller Profile Picture">
+                        <p class="seller-name">Seller: Gethro Molungsi</p>
+                    </div>
+                </div>
+
             </div>
         </section>
+
         <!--Trust banner-->
         <section class="trust">
             <div class="trust-container">
                 <div class="card">
-                    <img src="" alt=""id="icon">
-                    <h2>Secure Payment</h2>
-                    <p>Payment protected</p>
+                    <img src="" alt="" class="icon">
+                    <h2>Secure Payments</h2>
+                    <p>PayFast protected</p>
                 </div>
                 <div class="card">
-                    <img src="" alt=""id="icon">
+                    <img src="" alt="" class="icon">
                     <h2>Verified Sellers</h2>
                     <p>All sellers are checked</p>
                 </div>
                 <div class="card">
-                    <img src="" alt=""id="icon">
-                    <h2>Register</h2>
+                    <img src="" alt="" class="icon">
+                    <h2>Nationwide Delivery</h2>
                     <p>We deliver across SA</p>
-                </div>             
+                </div>
             </div>
         </section>
 
     </main>
+
     <!--Footer-->
     <footer>
         <div class="logo">ConsuTrade</div>
-        <p>Built for South Africa's informal economy</p>
-        <div class="links">
-            <a href="">
-                Home
-            </a>
-            <a href="">
-                Browse
-            </a>
-            <a href="">
-                Sell
-            </a>
-            <a href="">
-                About
-            </a>
-            <a href="">
-                Terms
-            </a>
-            <a href="">
-                Privacy
-            </a>
-            <a href="">
-                Contact
-            </a>
+        <p class="footer-tagline">Built for South Africa's informal economy</p>
+        <div class="footer-links">
+            <a href="">Home</a>
+            <a href="">Browse</a>
+            <a href="">Sell</a>
+            <a href="">About</a>
+            <a href="">Terms</a>
+            <a href="">Privacy</a>
+            <a href="">Contact</a>
         </div>
+        <p class="copyright">© 2026 ConsuTrade. All rights reserved.</p>
     </footer>
+
     <script src="js/main.js"></script>
 </body>
 </html>
