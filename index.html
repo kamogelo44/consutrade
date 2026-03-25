@@ -8,31 +8,33 @@
 </head>
 <body>
 
-    <!--Header-->
-    <header>
-        <div class="logo">ConsuTrade</div>
+     <!--Header-->
+     <header>
+        <div class="logo">Consu<span>Trade</span></div>
 
         <!--Search form-->
         <form action="" method="get">
-            <input type="search"
-                id="search"
-                name="q"
-                placeholder="Search for products...">
-            <button class="search-btn" type="submit">
-                <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search Button">
-            </button>
+            <div class="search-wrapper">
+                <input type="search"
+                    id="search"
+                    name="q"
+                    placeholder="Search for products...">
+                <button class="search-btn" type="submit">
+                    <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search">
+                </button>
+            </div>
         </form>
 
         <!--Navigation-->
         <nav class="nav-links-container">
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="">Shop</a></li>
-                <li><a href="">Sell</a></li>
-                <li><a href="">Login</a></li>
-                <li><a href="">Register</a></li>
+                <li><a href="shop.html">Shop</a></li>
+                <li><a href="sell.html">Sell</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
                 <li>
-                    <a href="">
+                    <a href="cart.html">
                         <img src="images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Shopping Cart">
                     </a>
                 </li>
@@ -55,36 +57,44 @@
                 </div>
             </div>
         </section>
-
+    
         <!--How it works section-->
         <section class="how">
+            <h1 class="section-heading">How it works</h1>
             <div class="how-container">
                 <div class="card">
-                    <img src="" alt="" class="icon">
+                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
                     <h2>Register</h2>
                     <p>Create your free seller account</p>
                 </div>
+
+                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow">
+
                 <div class="card">
-                    <img src="" alt="" class="icon">
+                    <img src="images/icons/product-catalog-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
                     <h2>List</h2>
                     <p>Upload your products in minutes</p>
                 </div>
+
+                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow">
+
                 <div class="card">
-                    <img src="" alt="" class="icon">
+
+                    <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
                     <h2>Get Paid</h2>
                     <p>Receive payments securely with <a href="https://www.payfast.co.za" target="_blank">PayFast</a></p>
                 </div>
             </div>
         </section>
-
+    
         <!--Featured products section-->
         <section class="featured">
-            <h2 class="section-title">Recently Listed</h2>
+            <h1 class="section-heading">Recently Listed</h1>
             <!--Product data will be populated dynamically via PHP
             once the database is set up, for now using
             placeholder cards to build the layout-->
             <div class="prod-grid">
-
+                <!-- Card 1 -->
                 <div class="prod-card">
                     <div class="img-container">
                         <img src="" alt="Product Image">
@@ -94,9 +104,13 @@
                     <div class="seller-info">
                         <img src="" alt="Seller Profile Picture">
                         <p class="seller-name">Seller: Gethro Molungsi</p>
+                        <p class="location">Polokwane</p>
+                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
                 </div>
 
+                <!-- Card 2 -->
                 <div class="prod-card">
                     <div class="img-container">
                         <img src="" alt="Product Image">
@@ -106,9 +120,13 @@
                     <div class="seller-info">
                         <img src="" alt="Seller Profile Picture">
                         <p class="seller-name">Seller: Gethro Molungsi</p>
+                        <p class="location">Polokwane</p>
+                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
                 </div>
 
+                <!-- Card 3 -->
                 <div class="prod-card">
                     <div class="img-container">
                         <img src="" alt="Product Image">
@@ -118,9 +136,13 @@
                     <div class="seller-info">
                         <img src="" alt="Seller Profile Picture">
                         <p class="seller-name">Seller: Gethro Molungsi</p>
+                        <p class="location">Polokwane</p>
+                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
                 </div>
 
+                <!-- Card 4 -->
                 <div class="prod-card">
                     <div class="img-container">
                         <img src="" alt="Product Image">
@@ -130,30 +152,29 @@
                     <div class="seller-info">
                         <img src="" alt="Seller Profile Picture">
                         <p class="seller-name">Seller: Gethro Molungsi</p>
+                        <p class="location">Polokwane</p>
+                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
                 </div>
-
-            </div>
         </section>
-
+    
         <!--Trust banner-->
         <section class="trust">
-            <div class="trust-container">
-                <div class="card">
-                    <img src="" alt="" class="icon">
-                    <h2>Secure Payments</h2>
-                    <p>PayFast protected</p>
-                </div>
-                <div class="card">
-                    <img src="" alt="" class="icon">
-                    <h2>Verified Sellers</h2>
-                    <p>All sellers are checked</p>
-                </div>
-                <div class="card">
-                    <img src="" alt="" class="icon">
-                    <h2>Nationwide Delivery</h2>
-                    <p>We deliver across SA</p>
-                </div>
+            <div class="card">
+                <img src="images/icons/secure-card-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="secure payments" class="icon">
+                <h2>Secure Payments</h2>
+                <p>PayFast protected</p>
+            </div>
+            <div class="card">
+                <img src="images/icons/verified-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="verfied" class="icon">
+                <h2>Verified Sellers</h2>
+                <p>All sellers are checked</p>
+            </div>
+            <div class="card">
+                <img src="images/icons/delivery-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="delivery" class="icon">
+                <h2>Nationwide Delivery</h2>
+                <p>We deliver across SA</p>
             </div>
         </section>
 
