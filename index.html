@@ -8,12 +8,30 @@
 </head>
 <body>
 
-     <!--Header-->
-     <header>
+    <!--Header-->
+    <header>
+        <!-- Left: Hamburger -->
+        <button class="hamburger" id="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- Center: Logo -->
         <div class="logo">Consu<span>Trade</span></div>
 
-        <!--Search form-->
-        <form action="" method="get">
+        <!-- Right: Icons -->
+        <div class="header-icons">
+            <button class="mobile-search-icon" id="mobileSearchIcon">
+                <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
+            </button>
+            <a href="cart.html" class="cart-icon">
+                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Shopping Cart">
+            </a>
+        </div>
+
+        <!-- Desktop Search Form -->
+        <form action="" method="get" class="desktop-search">
             <div class="search-wrapper">
                 <input type="search"
                     id="search"
@@ -25,22 +43,36 @@
             </div>
         </form>
 
-        <!--Navigation-->
-        <nav class="nav-links-container">
+        <!-- Navigation Menu -->
+        <nav class="nav-links-container" id="nav-menu">
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="shop.html">Shop</a></li>
                 <li><a href="sell.html">Sell</a></li>
                 <li><a href="login.html">Login</a></li>
                 <li><a href="register.html">Register</a></li>
-                <li>
-                    <a href="cart.html">
-                        <img src="images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Shopping Cart">
-                    </a>
-                </li>
             </ul>
+            <a href="cart.html" class="mobile-cart-icon">
+                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+            </a>
         </nav>
+
+        <!-- Mobile Expandable Search -->
+        <div class="mobile-search-container" id="mobileSearchContainer">
+            <form action="" method="get" class="mobile-search-form">
+                <div class="search-wrapper">
+                    <input type="search"
+                        id="mobile-search"
+                        name="q"
+                        placeholder="Search for products...">
+                    <button class="search-btn" type="submit">
+                        <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
+                    </button>
+                </div>
+            </form>
+        </div>
     </header>
+
 
     <main class="content">
 
@@ -157,6 +189,7 @@
                         <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
                 </div>
+            </div>
         </section>
     
         <!--Trust banner-->
