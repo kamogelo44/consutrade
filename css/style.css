@@ -220,7 +220,8 @@ header {
 .how {
     padding: 60px 20px;
     text-align: center;
-    background-color: #ffffff;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .section-heading {
@@ -284,6 +285,7 @@ header {
 /*Featured section*/
 .featured {
     height:600px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 /*Featured Products*/
@@ -379,6 +381,7 @@ header {
     align-items: center;
     gap: 24px;
     margin: 0 auto;
+    border-bottom: 1px solid #e0e0e0;
 
  }
 
@@ -389,4 +392,53 @@ header {
     text-align: center;
  }
 
- 
+/* Footer */
+footer {
+    background-color: #1A1A1A;
+    padding: 40px 20px 20px 20px;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: 30px;
+}
+
+.footer-tagline {
+    color: #999999;
+    margin: 5px 0 0 0;
+    font-size: 14px;
+}
+
+/* Links section */
+.footer-links {
+    display: flex;
+    gap: 20px;
+}
+
+.footer-links a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+/* Horizontal rule */
+footer hr {
+    border: none;
+    border-top: 1px solid #333;
+    max-width: 1200px;
+    margin: 0 auto 20px auto;
+}
+
+/* Copyright */
+.copyright {
+    color: #999999;
+    text-align: center;
+    font-size: 12px;
+    margin: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
