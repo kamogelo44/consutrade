@@ -59,7 +59,7 @@ table {
 
 /* ========== BASE STYLES ========== */
 * {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Poppins', sans-serif;
     box-sizing: border-box;
 }
 
@@ -379,12 +379,19 @@ header {
 }
 
 /*Hero styles*/
+.hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+}
+
 .hero {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 500px;
-    background-image: none;
     background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
                       url(../images/hero-img-desktops.png);
     background-repeat: no-repeat;
@@ -416,7 +423,7 @@ header {
 .btn-container {
     display:flex;
     gap: 16px;
-    justify-self: center;
+    justify-content: center;
     margin-top: 16px;
 }
 
@@ -445,6 +452,7 @@ header {
 .section-heading {
     display:flex;
     font-size:28px;
+    font-weight: bold;
     justify-content: center;
     margin-top: 50px;
     margin-bottom:50px;
@@ -668,7 +676,7 @@ header {
 .prod-price {
     font-size: 18px;
     font-weight: bold;
-    color: #333;
+    color: var(--primary-color);
     margin: 5px 0;
 }
 
