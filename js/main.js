@@ -9,3 +9,4 @@
  * - Form validation (register, login, listing)
  * - Lazy loading for product images (low-data optimisation)
  */
+

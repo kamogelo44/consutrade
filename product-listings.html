@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, intitial-scale=1.0">
+        <title> ConsuTrade Product Listings</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../consutrade/css/style.css">
+        <link rel="stylesheet" href="../consutrade/css/product-listings.css"> 
+    </head>
+    <body>
+        <!--Header-->
+        <header>
+            <!-- Left: Hamburger -->
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <!-- Center: Logo -->
+            <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
+
+            <!-- Right: Icons -->
+            <div class="header-icons">
+                <button class="mobile-search-icon" id="mobileSearchIcon">
+                    <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
+                </button>
+                <a href="cart.html" class="cart-icon">
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Shopping Cart">
+                </a>
+            </div>
+
+            <!-- Desktop Search Form -->
+            <form action="" method="get" class="desktop-search">
+                <div class="search-wrapper">
+                    <input type="search"
+                        id="search"
+                        name="q"
+                        placeholder="Search for products...">
+                    <button class="search-btn" type="submit">
+                        <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search">
+                    </button>
+                </div>
+            </form>
+
+            <!-- Navigation Menu -->
+            <nav class="nav-links-container" id="nav-menu">
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="shop.html">Shop</a></li>
+                    <li><a href="sell.html">Sell</a></li>
+                    <li><a href="login.html">Login</a></li>
+                    <li><a href="register.html">Register</a></li>
+                </ul>
+                <a href="cart.html" class="mobile-cart-icon">
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                </a>
+            </nav>
+
+            <!-- Mobile Expandable Search -->
+            <div class="mobile-search-container" id="mobileSearchContainer">
+                <form action="" method="get" class="mobile-search-form">
+                    <div class="search-wrapper">
+                        <input type="search"
+                            id="mobile-search"
+                            name="q"
+                            placeholder="Search for products...">
+                        <button class="search-btn" type="submit">
+                            <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </header>
+        <div class="page-heading">
+            <p>Show Products</p>
+            <p>Showing <span class="showing">0</span> of <span class="total">0</span></p>
+        </div>
+
+        <main>
+            <!--Featured products section-->
+            <div class="body">
+                <!--Filter buttons-->
+                <button class="filter-btn"><img src="images/icons/filter-svgrepo-com.svg" alt="filter">Filter</button>
+                <!--Filter results-->
+                <div class="side-bar">
+                    <form action="">
+                        <fieldset class="fields">
+                            <legend class="filters">Filter Results</legend>
+                            <br>
+                            <fieldset class="cat">
+                                <legend class="filter-headings">Category</legend>
+                                <input type="checkbox"id="chk" name="check">
+                                <label for="check">Clothing</label>
+                                <br>
+                                <input type="checkbox"id="elect" name="electro">
+                                <label for="electro">Electronics</label>
+                                <br>
+                                <input type="checkbox"id="fd" name="food-drink">
+                                <label for="check">Food and Drinks</label>
+                                <br>
+                                <input type="checkbox"id="furn" name="furniture">
+                                <label for="check">Furniture</label>
+                                <br>
+                                <input type="checkbox"id="oth" name="other">
+                                <label for="check">Other</label>
+                            </fieldset>
+                            <br>
+                            <fieldset class="price">
+                                <legend class="filter-headings">Price Range</legend>
+                                <input type="checkbox"id="un" name="under">
+                                <label for="check">Under 100</label>
+                                <br>
+                                <input type="checkbox"id="bet1" name="between1">
+                                <label for="check">R100 - R500</label>
+                                <br>
+                                <input type="checkbox"id="bet2" name="between2">
+                                <label for="check">R500 - R1000</label>
+                                <br>
+                                <input type="checkbox"id="ov" name="over">
+                                <label for="check">Over R1000</label>
+                            </fieldset>
+                            <br>
+                            <fieldset class="loc">
+                                <legend class="filter-headings">Location</legend>
+                                <div class="search-loc-wrapper">
+                                    <input type="search"
+                                        id="search-location"
+                                        name="lq"
+                                        placeholder="Enter city or province...">
+                                </div>
+                                <br>
+                            </fieldset>
+                                <button class="input-filter-btn" type="submit">
+                                    Apply Filters
+                                </button>
+                        </fieldset> 
+                    </form>
+                </div>
+                <section class="featured">
+                    <!--Product data will be populated dynamically via PHP
+                    once the database is set up, for now using
+                    placeholder cards to build the layout-->
+                    <div class="prod-grid">
+                        <!-- Card 1 -->
+                        <div class="prod-card">
+                            <div class="img-container">
+                                <img src="" alt="Product Image">
+                            </div>
+                            <p class="prod-name">Product Name</p>
+                            <p class="prod-price">R 0.00</p>
+                            <div class="seller-info">
+                                <img src="" alt="Seller Profile Picture">
+                                <p class="seller-name">Seller: Gethro Molungsi</p>
+                                <p class="location">Polokwane</p>
+                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="prod-card">
+                            <div class="img-container">
+                                <img src="" alt="Product Image">
+                            </div>
+                            <p class="prod-name">Product Name</p>
+                            <p class="prod-price">R 0.00</p>
+                            <div class="seller-info">
+                                <img src="" alt="Seller Profile Picture">
+                                <p class="seller-name">Seller: Gethro Molungsi</p>
+                                <p class="location">Polokwane</p>
+                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="prod-card">
+                            <div class="img-container">
+                                <img src="" alt="Product Image">
+                            </div>
+                            <p class="prod-name">Product Name</p>
+                            <p class="prod-price">R 0.00</p>
+                            <div class="seller-info">
+                                <img src="" alt="Seller Profile Picture">
+                                <p class="seller-name">Seller: Gethro Molungsi</p>
+                                <p class="location">Polokwane</p>
+                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
+                            </div>
+                        </div>
+
+                        <!-- Card 4 -->
+                        <div class="prod-card">
+                            <div class="img-container">
+                                <img src="" alt="Product Image">
+                            </div>
+                            <p class="prod-name">Product Name</p>
+                            <p class="prod-price">R 0.00</p>
+                            <div class="seller-info">
+                                <img src="" alt="Seller Profile Picture">
+                                <p class="seller-name">Seller: Gethro Molungsi</p>
+                                <p class="location">Polokwane</p>
+                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
+                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+        <!--Footer-->
+        <footer>
+            <div class="footer-container">
+                <div>
+                    <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
+                    <p class="footer-tagline">Built for South Africa's informal economy</p>
+                </div>
+                
+                <div class="footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="product-listings.html">Shop</a>
+                    <a href="">Sell</a>
+                    <a href="">About</a>
+                    <a href="">Terms</a>
+                    <a href="">Privacy</a>
+                    <a href="">Contact</a>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <p class="copyright">© 2026 ConsuTrade. All rights reserved.</p>
+        </footer>
+    <script src="js/product-listing.js"></script>
+    </body>
+</html>

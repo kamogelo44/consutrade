@@ -81,6 +81,10 @@ header {
     color: #ffffff;
     flex-shrink: 0;
 }
+.logo a {
+    text-decoration: none;
+    color: #ffffff;
+}
 
 .logo span {
     color: #FF6B00;
@@ -429,8 +433,8 @@ header {
 
 .sell-btn, .browse-btn{
     font-size: 0.9rem;
-    width: 160px;
-    height: 45px;
+    width: 200px;
+    height: 50px;
     border-radius: 16px;
 }
 
@@ -456,6 +460,16 @@ header {
     justify-content: center;
     margin-top: 50px;
     margin-bottom:50px;
+}
+/* Tablet Potrait (768px - 1023px) */
+@media (max-width: 768px) {
+    .btn-container{
+        flex-direction: column;
+    }
+    .sell-btn, .browse-btn{
+        width: 400px;
+        height: 45px;
+    }
 }
 
 /*How it works*/
@@ -938,6 +952,13 @@ header {
     text-align: center;
  }
 
+ /* Tablet Potrait (768px - 1023px) */
+@media (max-width: 768px) {
+    .trust {
+        flex-direction: column;
+    }
+}
+
 /* Footer */
 footer {
     background-color: #1A1A1A;
@@ -948,9 +969,13 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
     margin: 0 auto;
     margin-bottom: 30px;
+    padding: 0 30px;
+}
+footer .logo a {
+    color:#ffffff;
+    text-decoration: none;
 }
 
 .footer-tagline {
@@ -968,14 +993,13 @@ footer {
 .footer-links a {
     color: #fff;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 /* Horizontal rule */
 footer hr {
     border: none;
     border-top: 1px solid #333;
-    max-width: 1200px;
     margin: 0 auto 20px auto;
 }
 
@@ -985,6 +1009,34 @@ footer hr {
     text-align: center;
     font-size: 12px;
     margin: 0;
-    max-width: 1200px;
     margin: 0 auto;
+}
+/* Tablet Landscape (768px - 1023px) */
+@media (max-width: 1023px) {
+    footer {
+
+    }
+
+    .footer-links {
+
+    }
+}
+/* Tablet Potrait (768px - 1023px) */
+@media (max-width: 768px) {
+    .footer-container {
+        justify-content: space-around;
+        gap: 30px;
+        flex-direction: column;
+        width: 300px;
+    }
+    .footer-tagline {
+        margin-top: 30px;
+    }
+
+    .logo-tag {
+        flex-direction: column;
+    }
+    .footer-links {
+        flex-direction: column;
+    }
 }
