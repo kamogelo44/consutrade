@@ -197,3 +197,175 @@ body {
         gap: 15px;
     }
 }
+
+/*Product Details styles*/
+.website-gps {
+    margin: 30px 0 0 30px;
+}
+/*Top items*/
+
+.top-items {
+    display: flex;
+    justify-content: space-between;
+    margin: 30px;
+}
+
+/*Product images*/
+.product-imgs {
+    display: inline-block;
+    text-align: justify;
+    font-size: 0;
+}
+.main-img {
+    background-color: #cccccc;
+    width: 600px;
+    height: 450px;
+    margin-bottom: 16px;
+}
+
+.img {
+    display: inline-block;
+    vertical-align: top;
+    font-size: 16px; 
+    background-color: #cccccc;
+    width: 120px;
+    height: 120px;
+}
+
+.img:not(:last-child) {
+    margin-right: 40px;
+}
+
+/*Product information styles*/
+.product-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: #cccccc;
+    padding: 30px;
+    width: 600px;
+    height: 560px;
+}
+
+.prod-name{
+    font-size: 28px;
+}
+
+.price {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.cat-badge {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: #fff3e0;
+    border: 1px solid var(--primary-color);
+    width: 190px;
+    height: 28px;
+}
+
+.cat-badge .cat-name {
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.description .sub-head {
+    font-size: 20px;
+}
+
+.sub-head {
+    font-weight: bold;
+}
+
+.condition, .city, .province{
+    font-weight: normal;
+    color: #555555;
+}
+
+/*Review styles*/
+.review {
+    display: flex;
+    justify-self: center;
+    justify-content: center; 
+    background-color: #cccccc;
+    width: 1200px;
+    height: 250px;
+}
+.rev-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    
+}
+/*Verfication*/
+.verification{
+    display: flex;
+    justify-content: center;
+}
+
+.seller-profile {
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 200px;
+    gap: 16px;
+}
+
+.profile-pic {
+    margin-top: 16px;
+    width: 60px;
+    height: 60px;
+    background-color: white;
+    border: none;
+    border-radius: 16px;
+}
+
+.seller-name {
+    text-align: center;
+    font-size: 16px;
+    color: #1a1a1a;
+    font-weight: bold;
+}
+
+#verified {
+    display: flex;
+    background-color: #E8f5e9;
+    justify-content: center;
+    align-items: center;
+    width: 150px;
+    height: 30px;
+    border: 1px solid #4caf50;
+}
+
+#verified p {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4caf50;
+}
+
+#not-verified p {
+    font-size: 14px;
+    font-weight: bold;
+    color: red;
+}
+
+#not-verified{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    background-color: #f8e5f9;
+    width: 150px;
+    height: 30px;
+    border: 1px solid red;
+}
+.view-profile {
+    color: #555555; 
+    width: 160px;
+    height: 36px;
+    border-radius: 999px;
+    border:none;
+}
