@@ -117,8 +117,8 @@ body {
 
 .prod-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
 }
 
 @media (max-width: 1024px) {
@@ -176,7 +176,7 @@ body {
     }
     
     .prod-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
         gap: 15px;
     }
 }
@@ -199,41 +199,75 @@ body {
 }
 
 /*Product Details styles*/
-.website-gps {
-    margin: 30px 0 0 30px;
+.products-details {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
 }
-/*Top items*/
 
+.breadcrumb {
+    margin: 30px 0 0 30px;
+    padding: 0 15px;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+    color: var(--primary-color);
+}
+
+.breadcrumb span {
+    color: #555555;
+}
+
+/*Top items*/
 .top-items {
     display: flex;
     justify-content: space-between;
+    gap: 40px;
     margin: 30px;
 }
 
 /*Product images*/
 .product-imgs {
-    display: inline-block;
-    text-align: justify;
-    font-size: 0;
+    flex: 1;
+    max-width: 600px;
 }
+
 .main-img {
     background-color: #cccccc;
-    width: 600px;
-    height: 450px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4/3;
     margin-bottom: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.main-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.smaller-imgs {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
 .img {
-    display: inline-block;
-    vertical-align: top;
-    font-size: 16px; 
     background-color: #cccccc;
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
 }
 
-.img:not(:last-child) {
-    margin-right: 40px;
+.img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /*Product information styles*/
@@ -241,14 +275,18 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    background-color: #cccccc;
+    background-color: #ffffff;
     padding: 30px;
-    width: 600px;
-    height: 560px;
+    flex: 1;
+    max-width: 500px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
 }
 
-.prod-name{
+.prod-name {
     font-size: 28px;
+    font-weight: bold;
+    color: #1a1a1a;
 }
 
 .price {
@@ -265,63 +303,128 @@ body {
     border: 1px solid var(--primary-color);
     width: 190px;
     height: 28px;
+    border-radius: 4px;
 }
 
 .cat-badge .cat-name {
     font-size: 11px;
     font-weight: bold;
-    margin-left: 5px;
+    margin-left: 8px;
+    color: var(--primary-color);
+}
+
+.description {
+    margin-top: 8px;
 }
 
 .description .sub-head {
-    font-size: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+}
+
+.description .des {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #555555;
 }
 
 .sub-head {
     font-weight: bold;
+    color: #1a1a1a;
 }
 
-.condition, .city, .province{
+.condition, .city, .province {
     font-weight: normal;
     color: #555555;
+}
+
+.con-loc {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /*Review styles*/
 .review {
     display: flex;
-    justify-self: center;
-    justify-content: center; 
-    background-color: #cccccc;
-    width: 1200px;
-    height: 250px;
+    justify-content: center;
+    background-color: #f9f9f9;
+    max-width: 1000px;
+    width: 90%;
+    margin: 40px auto;
+    padding: 30px;
+    border-radius: 12px;
 }
+
 .rev-container {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 16px;
-    
+    width: 100%;
 }
-/*Verfication*/
-.verification{
+
+/*Verification*/
+.verification {
     display: flex;
     justify-content: center;
 }
 
-.seller-profile {
-    display:flex;
-    flex-wrap: wrap;
+#verified {
+    display: flex;
+    background-color: #E8f5e9;
     justify-content: center;
-    width: 200px;
-    gap: 16px;
+    align-items: center;
+    gap: 8px;
+    width: 150px;
+    height: 30px;
+    border: 1px solid #4caf50;
+    border-radius: 4px;
+}
+
+#not-verified {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    background-color: #f8e5f9;
+    width: 150px;
+    height: 30px;
+    border: 1px solid red;
+    border-radius: 4px;
+}
+
+#verified p, #not-verified p {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#verified p {
+    color: #4caf50;
+}
+
+#not-verified p {
+    color: red;
+}
+
+.seller-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
 .profile-pic {
-    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 60px;
     height: 60px;
     background-color: white;
-    border: none;
     border-radius: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .seller-name {
@@ -331,41 +434,309 @@ body {
     font-weight: bold;
 }
 
-#verified {
-    display: flex;
-    background-color: #E8f5e9;
-    justify-content: center;
-    align-items: center;
-    width: 150px;
-    height: 30px;
-    border: 1px solid #4caf50;
+/*Star reviews*/
+.star-reviews {
+    text-align: center;
 }
 
-#verified p {
-    font-size: 14px;
+.star-reviews h1 {
+    font-size: 18px;
     font-weight: bold;
-    color: #4caf50;
+    margin-bottom: 8px;
+    color: #1a1a1a;
 }
 
-#not-verified p {
+.star {
+    font-size: 30px;
+    color: #ffc107;
+}
+
+.star.empty {
+    color: #e0e0e0;
+}
+
+#output {
     font-size: 14px;
-    font-weight: bold;
-    color: red;
+    color: #555555;
+    margin-top: 8px;
 }
 
-#not-verified{
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-    background-color: #f8e5f9;
-    width: 150px;
-    height: 30px;
-    border: 1px solid red;
-}
 .view-profile {
-    color: #555555; 
+    color: #555555;
     width: 160px;
     height: 36px;
     border-radius: 999px;
-    border:none;
+    border: 1px solid #cccccc;
+    background-color: #ffffff;
+    font-weight: 500;
+}
+
+/*Actions styles*/
+.actions {
+    display: flex;
+    justify-content: center;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.actions-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 600px;
+    width: 100%;
+    min-height: 310px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    gap: 16px;
+    padding: 30px;
+    background-color: #ffffff;
+}
+
+/*Availability*/
+.avail {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+.num-avail {
+    font-weight: bold;
+    font-size: 24px;
+    color: var(--primary-color);
+}
+
+.action-btns {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.action-btns button {
+    max-width: 400px;
+    width: 100%;
+    height: 52px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.action-btns .cart {
+    color: var(--primary-color);
+    background-color: #ffffff;
+    border: 2px solid var(--primary-color);
+}
+
+.action-btns .buy {
+    color: #ffffff;
+    background-color: var(--primary-color);
+    border: none;
+}
+
+.action-btns .wish {
+    color: #555555;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+}
+
+/* ========== RESPONSIVE STYLES FOR PRODUCT DETAILS PAGE ========== */
+
+@media (max-width: 1024px) {
+    .top-items {
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+        margin: 30px 20px;
+    }
+    
+    .product-imgs {
+        max-width: 500px;
+        width: 100%;
+    }
+    
+    .product-info {
+        max-width: 500px;
+        width: 100%;
+    }
+    
+    .main-img {
+        width: 100%;
+    }
+    
+    .smaller-imgs {
+        justify-content: center;
+    }
+    
+    .img {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+@media (max-width: 768px) {
+    .breadcrumb {
+        margin: 20px 0 0 15px;
+        font-size: 12px;
+    }
+    
+    .top-items {
+        margin: 20px 15px;
+        gap: 20px;
+    }
+    
+    .product-imgs {
+        max-width: 100%;
+    }
+    
+    .product-info {
+        padding: 20px;
+    }
+    
+    .prod-name {
+        font-size: 24px;
+    }
+    
+    .price {
+        font-size: 28px;
+    }
+    
+    .smaller-imgs {
+        gap: 12px;
+    }
+    
+    .img {
+        width: 75px;
+        height: 75px;
+    }
+    
+    .review {
+        width: 95%;
+        padding: 20px;
+        margin: 30px auto;
+    }
+    
+    .star {
+        font-size: 24px;
+    }
+    
+    .actions-card {
+        padding: 20px;
+    }
+    
+    .action-btns button {
+        max-width: 100%;
+        height: 48px;
+        font-size: 14px;
+    }
+    
+    .num-avail {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .breadcrumb {
+        margin: 15px 0 0 12px;
+        font-size: 10px;
+    }
+    
+    .top-items {
+        margin: 15px 12px;
+        gap: 15px;
+    }
+    
+    .prod-name {
+        font-size: 20px;
+    }
+    
+    .price {
+        font-size: 24px;
+    }
+    
+    .product-info {
+        padding: 15px;
+        gap: 12px;
+    }
+    
+    .description .sub-head {
+        font-size: 16px;
+    }
+    
+    .description .des {
+        font-size: 13px;
+    }
+    
+    .cat-badge {
+        width: 160px;
+        height: 24px;
+    }
+    
+    .cat-badge .cat-name {
+        font-size: 10px;
+    }
+    
+    .smaller-imgs {
+        gap: 10px;
+    }
+    
+    .img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .seller-name {
+        font-size: 14px;
+    }
+    
+    #verified, #not-verified {
+        width: 130px;
+        height: 26px;
+    }
+    
+    #verified p, #not-verified p {
+        font-size: 11px;
+    }
+    
+    .star {
+        font-size: 20px;
+    }
+    
+    .star-reviews h1 {
+        font-size: 16px;
+    }
+    
+    #output {
+        font-size: 12px;
+    }
+    
+    .view-profile {
+        width: 140px;
+        height: 32px;
+        font-size: 12px;
+    }
+    
+    .actions-card {
+        padding: 15px;
+        min-height: 260px;
+    }
+    
+    .action-btns {
+        gap: 12px;
+    }
+    
+    .action-btns button {
+        height: 44px;
+        font-size: 13px;
+    }
+    
+    .num-avail {
+        font-size: 18px;
+    }
 }

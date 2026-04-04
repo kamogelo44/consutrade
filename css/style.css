@@ -653,6 +653,12 @@ header {
     max-width: 1200px;
     margin: 0 auto;
 }
+.prod-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 320px));
+    gap: 15px;
+    justify-content: center;
+}
 
 /* Card styling */
 .prod-card {
