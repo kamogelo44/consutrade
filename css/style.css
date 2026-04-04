@@ -178,6 +178,7 @@ header {
 .mobile-cart-icon {
     display: none;
 }
+/* ========== RESPONSIVE STYLES FOR HEADER SECTION ========== */
 
 /* ========== MOBILE STYLES ========== */
 @media (max-width: 768px) {
@@ -461,6 +462,8 @@ header {
     margin-top: 50px;
     margin-bottom:50px;
 }
+/* ========== RESPONSIVE STYLES FOR HERO SECTION ========== */
+
 /* Tablet Potrait (768px - 1023px) */
 @media (max-width: 768px) {
     .btn-container{
@@ -958,6 +961,8 @@ header {
     text-align: center;
  }
 
+ /* ========== RESPONSIVE STYLES FOR TRUST SECTION ========== */
+
  /* Tablet Potrait (768px - 1023px) */
 @media (max-width: 768px) {
     .trust {
@@ -1017,6 +1022,8 @@ footer hr {
     margin: 0;
     margin: 0 auto;
 }
+
+/* ========== RESPONSIVE STYLES FOR FOOTER SECTION ========== */
 
 /* Tablet Potrait (768px - 1023px) */
 @media (max-width: 768px) {
