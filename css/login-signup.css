@@ -1,0 +1,291 @@
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #ffffff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Close Button */
+.btn-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.btn-close img {
+    width: 20px;
+    height: 20px;
+    filter: brightness(0) invert(0.5);
+}
+
+.btn-close:hover img {
+    filter: brightness(0) invert(0.3);
+}
+
+/* Modal Header */
+.modal-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.modal-header h1 {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+}
+
+.modal-header h1 span {
+    color: #FF6B00;
+}
+
+.modal-header p {
+    font-size: 14px;
+    color: #666666;
+}
+
+/* Form Styles */
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Fieldset Styles */
+.form-fields,
+.user-type {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 0;
+}
+
+.form-fields legend,
+.user-type legend {
+    font-weight: bold;
+    color: #333333;
+    padding: 0 10px;
+    font-size: 16px;
+}
+
+/* Input Groups */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group:last-child {
+    margin-bottom: 0;
+}
+
+.input-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333333;
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #FF6B00;
+}
+
+/* Custom Radio Buttons */
+.radio-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+}
+
+/* Hide the default radio buttons */
+.radio-buttons input[type="radio"] {
+    opacity: 0;
+    position: fixed;
+    width: 0;
+    height: 0;
+}
+
+/* Style the label as a button */
+.radio-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: #f8f9fa;
+    padding: 12px 24px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    flex: 1;
+}
+
+/* Button style (Buy & Sell Products) */
+.radio {
+    background-color: #ffffff;
+    border-color: #cccccc;
+    color: #555555;
+}
+
+/* Icon styling inside buttons */
+.radio img {
+    width: 20px;
+    height: 20px;
+    transition: all 0.2s ease;
+    filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%);
+}
+
+/* Hover effect */
+.radio-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Radio button hover state */
+.radio:hover {
+    background-color: #FFF4E8;
+    border-color: #FF6B00;
+    color: #FF6B00;
+}
+
+/* Icon color on hover */
+.radio:hover img {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+}
+
+/* Checked state */
+.radio-buttons input[type="radio"]:checked + .radio {
+    background-color: #FFF4E8;
+    color: #FF6B00;
+    border-color: #FF6B00;
+}
+
+/* Icon color when checked */
+.radio-buttons input[type="radio"]:checked + .radio img {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+}
+
+/* Focus styles for accessibility */
+.radio-buttons input[type="radio"]:focus + .radio-btn {
+    outline: 2px solid #FF6B00;
+    outline-offset: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .radio-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .radio-btn {
+        justify-content: center;
+    }
+}
+
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #FF6B00;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.submit-btn:hover {
+    background-color: #e05f00;
+}
+
+/* Login Link */
+.login-link {
+    text-align: center;
+    font-size: 14px;
+    color: #666666;
+    margin: 10px 0 0 0;
+}
+
+.login-link a {
+    color: #FF6B00;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .modal-header h1 {
+        font-size: 24px;
+    }
+    
+    .form-fields,
+    .user-type {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        padding: 20px 15px;
+    }
+    
+    .radio-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

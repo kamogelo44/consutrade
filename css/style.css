@@ -58,6 +58,10 @@ table {
 }
 
 /* ========== BASE STYLES ========== */
+html {
+  scroll-behavior: smooth;
+}
+
 @font-face {
     font-family: 'Roboto';
     src: url('../fonts/Poppins-Regular.ttf') format('truetype');
@@ -187,6 +191,30 @@ header {
     white-space: nowrap;
 }
 
+/* Desktop navigation active link */
+.nav-links li a.active {
+    color: var(--primary-color);
+    font-weight: bold;
+    position: relative;
+}
+
+/* Underline indicator */
+.nav-links li a.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+/* Mobile menu active link */
+.mobile-nav-links li a.active {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
 /* Desktop Cart Icon - inside nav-container, will appear on the right */
 .desktop-cart {
     display: block;
@@ -274,14 +302,14 @@ header {
         display: block;
     }
     
-    /* Hide header icons when menu is open */
+    /* Hide header icons and logo when menu is open */
     body.menu-open .header-icons,
     body.menu-open .logo {
         opacity: 0;
         visibility: hidden;
     }
     
-    /* Mobile Side Menu */
+    /* ===== MOBILE SIDE MENU ===== */
     .mobile-side-menu {
         position: fixed;
         top: 0;
@@ -303,6 +331,57 @@ header {
         left: 0;
     }
     
+    /* Hamburger button inside side menu (acts as close button) */
+    .side-menu-hamburger {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 24px;
+        height: 20px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        
+        /* Hide by default with smooth transition */
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s 0.3s, opacity 0.3s ease;
+    }
+
+    .side-menu-hamburger span {
+        display: block;
+        width: 100%;
+        height: 2px;
+        background-color: #ffffff;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    /* When menu is open, show side menu hamburger with fade in */
+    body.menu-open .side-menu-hamburger {
+        visibility: visible;
+        opacity: 1;
+        transition: visibility 0s 0s, opacity 0.3s ease;
+    }
+
+    /* Transform to X when active (menu is open) */
+    .side-menu-hamburger.active span:nth-child(1) {
+        transform: translateY(9px) rotate(45deg);
+    }
+
+    .side-menu-hamburger.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .side-menu-hamburger.active span:nth-child(3) {
+        transform: translateY(-9px) rotate(-45deg);
+    }
     /* Mobile menu header */
     .mobile-menu-header {
         display: block;
@@ -405,7 +484,6 @@ header {
         display: block;
     }
 }
-
 /* Hamburger animation */
 .hamburger.active span:nth-child(1) {
     transform: rotate(45deg) translate(5px, 5px);
@@ -515,12 +593,20 @@ body.menu-open footer {
 /* ========== RESPONSIVE STYLES FOR HERO SECTION ========== */
 
 @media (max-width: 768px) {
+    .text-container{
+        padding: 0 15px;
+    }
     .btn-container{
         flex-direction: column;
     }
     .sell-btn, .browse-btn{
         width: 400px;
         height: 45px;
+    }
+}
+@media (max-width: 480px) {
+    .txt-container h1 {
+        font-size: 2rem;
     }
 }
 

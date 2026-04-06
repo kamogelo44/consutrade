@@ -3,10 +3,9 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ConsuTrade Product Listings</title>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="../consutrade/css/style.css">
-        <link rel="stylesheet" href="../consutrade/css/products.css"> 
+        <title>ConsuTrade - Buy and Sell Across South Africa</title>
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/products.css">
     </head>
     <body>
         <!--Header-->
@@ -21,12 +20,12 @@
             <!-- Center: Logo -->
             <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
 
-            <!-- Right: Icons -->
+            <!-- Mobile Header Icons (visible when menu closed) -->
             <div class="header-icons">
                 <button class="mobile-search-icon" id="mobileSearchIcon">
                     <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
                 </button>
-                <a href="cart.html" class="cart-icon">
+                <a href="cart.html" class="mobile-header-cart">
                     <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Shopping Cart">
                 </a>
             </div>
@@ -44,7 +43,7 @@
                 </div>
             </form>
 
-            <!-- Navigation Menu (used for both desktop and mobile) -->
+            <!-- Desktop Navigation (Logo is already separate, so nav starts after search) -->
             <nav class="nav-container" id="nav-menu">
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
@@ -52,34 +51,56 @@
                     <li><a href="sell.html">Sell</a></li>
                     <li><a href="login.html">Login</a></li>
                     <li><a href="register.html">Register</a></li>
-                    <li>
-                        <a href="cart.html" class="cart-icon">
-                            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                        </a>
-                        <span class="cart-text">Cart</span>
-                    </li>
                 </ul>
+                <!-- Desktop Cart Icon - INSIDE nav-container, at the END of the row -->
+                <a href="cart.html" class="desktop-cart">
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                </a>
             </nav>
 
-            <!-- Mobile Expandable Search -->
-            <div class="mobile-search-container" id="mobileSearchContainer">
-                <form action="" method="get" class="mobile-search-form">
+            <!-- Mobile Side Menu Content -->
+            <div class="mobile-side-menu" id="mobile-side-menu">
+            <!-- Hamburger button inside side menu (visible when menu opens) -->
+            <button class="side-menu-hamburger" id="sideMenuHamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+                <div class="mobile-menu-header">
+                    <div class="mobile-menu-logo">Consu<span>Trade</span></div>
+                </div>
+                
+                <ul class="mobile-nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="product-listings.html">Shop</a></li>
+                    <li><a href="sell.html">Sell</a></li>
+                    <li><a href="login.html">Login</a></li>
+                    <li><a href="register.html">Register</a></li>
+                </ul>
+                
+                <!-- Search inside mobile menu -->
+                <div class="mobile-menu-search">
                     <div class="search-wrapper">
                         <input type="search"
-                            id="mobile-search"
+                            id="mobile-menu-search"
                             name="q"
                             placeholder="Search for products...">
                         <button class="search-btn" type="submit">
                             <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
                         </button>
                     </div>
-                </form>
+                </div>
+                
+                <!-- Cart inside mobile menu - text on LEFT, icon on RIGHT -->
+                <a href="cart.html" class="mobile-menu-cart">
+                    <span class="cart-text">Cart</span>
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                </a>
             </div>
+
+            <!-- Overlay -->
+            <div class="menu-overlay" id="menu-overlay"></div>
         </header>
-        <div class="page-heading">
-            <p>Show Products</p>
-            <p>Showing <span class="showing">0</span> of <span class="total">0</span></p>
-        </div>
 
         <main>
             <div class="listings-body">

@@ -1,137 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/cart.css">
-    <link rel="stylesheet" href="css/style.css">
-    <title>Cart Page</title>
-</head>
-<body>
-    <!--Header-->
-    <header>
-        <!-- Left: Hamburger -->
-        <button class="hamburger" id="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-
-        <!-- Center: Logo -->
-        <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
-
-        <!-- Right: Icons -->
-        <div class="header-icons">
-            <button class="mobile-search-icon" id="mobileSearchIcon">
-                <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/cart.css">
+        <title>Cart Page</title>
+    </head>
+    <body>
+        <!--Header-->
+        <header>
+            <!-- Left: Hamburger -->
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
             </button>
-            <a href="cart.html" class="cart-icon">
-                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Shopping Cart">
-            </a>
-        </div>
 
-        <!-- Desktop Search Form -->
-        <form action="" method="get" class="desktop-search">
-            <div class="search-wrapper">
-                <input type="search"
-                    id="search"
-                    name="q"
-                    placeholder="Search for products...">
-                <button class="search-btn" type="submit">
-                    <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search">
+            <!-- Center: Logo -->
+            <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
+
+            <!-- Mobile Header Icons (visible when menu closed) -->
+            <div class="header-icons">
+                <button class="mobile-search-icon" id="mobileSearchIcon">
+                    <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
                 </button>
+                <a href="cart.html" class="mobile-header-cart">
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Shopping Cart">
+                </a>
             </div>
-        </form>
 
-        <!-- Navigation Menu -->
-        <nav class="nav-links-container" id="nav-menu">
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="product-listings.html">Shop</a></li>
-                <li><a href="sell.html">Sell</a></li>
-                <li><a href="login.html">Login</a></li>
-                <li><a href="register.html">Register</a></li>
-                <li>
-            <a href="cart.html" class="cart-icon">
-                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-            </a>
-                </li>
-            </ul>
-            <a href="cart.html" class="mobile-cart-icon">
-                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-            </a>
-        </nav>
-
-        <!-- Mobile Expandable Search -->
-        <div class="mobile-search-container" id="mobileSearchContainer">
-            <form action="" method="get" class="mobile-search-form">
+            <!-- Desktop Search Form -->
+            <form action="" method="get" class="desktop-search">
                 <div class="search-wrapper">
                     <input type="search"
-                        id="mobile-search"
+                        id="search"
                         name="q"
                         placeholder="Search for products...">
                     <button class="search-btn" type="submit">
-                        <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
+                        <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search">
                     </button>
                 </div>
             </form>
-        </div>
-    </header>
-    <div class="cart-container">
-        <div class="heading-container">
-            <h1 class="cart-heading">My Cart (<span class="item-num">0</span>) items</h1>
-        </div>
-        <div class="left-column">
-            <table class="product-table">
-                <tr>
-                    <th>Product</th>
-                    <th>Sellers</th>
-                    <th>Prices</th>
-                    <th>Actions</th>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="prod-container">
-                            <div class="img-container">
-                                <img src="" alt="Product Image">
-                            </div>
-                            <div class="prod-info-container">
-                                <p class="prod-name">Purse</p>                            
-                                <p class="prod-info">Color: blue</p>
-                                <p>
-                                    <span class="num-avail"> 0 </span>
-                                    Available
+
+            <!-- Desktop Navigation -->
+            <nav class="nav-container" id="nav-menu">
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="product-listings.html">Shop</a></li>
+                    <li><a href="sell.html">Sell</a></li>
+                    <li><a href="login.html">Login</a></li>
+                    <li><a href="register.html">Register</a></li>
+                </ul>
+                <a href="cart.html" class="desktop-cart">
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                </a>
+            </nav>
+
+            <!-- Mobile Side Menu Content -->
+            <div class="mobile-side-menu" id="mobile-side-menu">
+                <button class="side-menu-hamburger" id="sideMenuHamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="mobile-menu-header">
+                    <div class="mobile-menu-logo">Consu<span>Trade</span></div>
+                </div>
+                
+                <ul class="mobile-nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="product-listings.html">Shop</a></li>
+                    <li><a href="sell.html">Sell</a></li>
+                    <li><a href="login.html">Login</a></li>
+                    <li><a href="register.html">Register</a></li>
+                </ul>
+                
+                <div class="mobile-menu-search">
+                    <div class="search-wrapper">
+                        <input type="search"
+                            id="mobile-menu-search"
+                            name="q"
+                            placeholder="Search for products...">
+                        <button class="search-btn" type="submit">
+                            <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
+                        </button>
+                    </div>
+                </div>
+                
+                <a href="cart.html" class="mobile-menu-cart">
+                    <span class="cart-text">Cart</span>
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                </a>
+            </div>
+
+            <!-- Overlay -->
+            <div class="menu-overlay" id="menu-overlay"></div>
+        </header>
+
+        <main>
+            <div class="cart-container">
+                <!-- Heading at the top -->
+                <div class="heading-container">
+                    <h1 class="cart-heading">My Cart (<span class="item-num">0</span>) items</h1>
+                </div>
+                
+                <!-- Two columns wrapper -->
+                <div class="cart-layout">
+                    <div class="left-column">
+                        <table class="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Seller</th>
+                                    <th>Price</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="product-cell">
+                                        <div class="cart-product-wrapper">
+                                            <div class="cart-img-container">
+                                                <img src="" alt="Product Image">
+                                            </div>
+                                            <div class="cart-prod-info">
+                                                <p class="prod-name">Purse</p>
+                                                <p class="prod-info">Color: blue</p>
+                                                <p><span class="num-avail">0</span> Available</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="seller-cell">
+                                        <div class="seller-cart-info">
+                                            <p class="seller-name">Seller name</p>
+                                            <div class="verification">
+                                                <div id="verified">
+                                                    <img src="images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification">
+                                                    <p>Verified Seller</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="price-cell">R 0.00</td>
+                                    
+                                    <td class="actions-cell">
+                                        <button class="remove-btn">Remove</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="right-column">
+                        <div class="order-sum-container">
+                            <h2>Order Summary</h2>
+                            <div class="calculations">
+                                <p class="sub-total">Subtotal: 
+                                    R<span class="sub-total-val">0</span>
                                 </p>
+                                <p class="deliv-fee">Delivery Fee: 
+                                    R<span class="deliv-fee-val">0</span>
+                                </p>
+                                <div class="result">
+                                    <p class="total">Total: R<span class="total-val">0</span></p>
+                                </div>
+                                <button class="cont-shopp-btn">
+                                    <img src="images/icons/continue-svgrepo-com.svg" width="24px" height="24px" alt="">
+                                    Continue Shopping
+                                </button>
+                                <div class="security-badge">
+                                    Secured with <a href="">PayFast</a>
+                                </div>
                             </div>
-                            
                         </div>
-                    </td>
-                    <td>
-                        <div class="seller-cart-info">
-                            <p class="seller-name"> Seller name</p>
-                            <div class="verification">
-                                    <div id="verified">
-                                        <img src="images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification">
-                                        <p>
-                                            Verified Seller
-                                        </p> 
-                                    </div>
-                                    <div id="not-verified">
-                                        <img src="images/icons/not-verified-svgrepo-com.svg" width="20px" height="20px" alt="not-verified">
-                                        <p>
-                                            Not Verified Seller
-                                        </p>
-                                    </div>                    
-                            </div>
-                        </div>                       
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div class="right-column">
+                    </div>
+                </div>
+            </div>
+        </main>
 
-        </div>
-    </div>
-
-</body>
+        <!--Footer-->
+        <footer>
+            <div class="footer-container">
+                <div class="logo-tag">
+                    <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
+                    <p class="footer-tagline">Built for South Africa's informal economy</p>
+                </div>
+                
+                <div class="footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="product-listings.html">Shop</a>
+                    <a href="">Sell</a>
+                    <a href="">About</a>
+                    <a href="">Terms</a>
+                    <a href="">Privacy</a>
+                    <a href="">Contact</a>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <p class="copyright">© 2026 ConsuTrade. All rights reserved.</p>
+        </footer>
+        
+        <script src="js/main.js"></script>
+    </body>
 </html>
