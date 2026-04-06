@@ -303,6 +303,45 @@
         </div>
     </div>
 
+        <!-- Registration Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="btn-close">
+                <img src="images/icons/form-close-svgrepo-com.svg" width="24px" height="24px" alt="Close form">
+            </button>
+            
+            <div class="modal-header">
+                <h1>Consu<span>Trade</span></h1>
+                <p>Join thousands of South African traders</p>
+            </div>
+            
+            <form action="" method="post" class="login-form">
+                <fieldset class="form-fields">
+                    <legend>Create Account</legend>
+                    
+                    <div class="input-group">
+                        <label for="fullname">Full Name</label>
+                        <input type="text" id="fullname" name="fullname" placeholder="Enter your full name..." required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email address" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Create password" required>
+                    </div>
+                </fieldset>
+                <p class="reset-pass"><a href="">Forgot your password?</a></p>
+                <button type="submit" class="submit-btn">Login Account</button>
+                
+                <p class="login-link">Don't have an account? <a href="#">Register</a></p>
+            </form>
+        </div>
+    </div>
+
     <!-- Temporary button to test modal -->
     <button id="test-modal-btn" style="position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background-color: #FF6B00; color: white; border: none; border-radius: 8px; cursor: pointer; z-index: 999; font-size: 16px; font-weight: bold;">
         Open Registration Form

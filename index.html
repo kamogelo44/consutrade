@@ -4,8 +4,8 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>ConsuTrade - Buy and Sell Across South Africa</title>
-        <link rel="stylesheet" href="css/login-signup.css">
         <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/login-signup.css">
     </head>
     <body>
         <!--Header-->
@@ -74,7 +74,7 @@
                     <li><a href="index.html">Home</a></li>
                     <li><a href="product-listings.html">Shop</a></li>
                     <li><a href="sell.html">Sell</a></li>
-                    <li><a href="login.html" id="login">Login</a></li>
+                    <li><a href="#login-modal" id="login">Login</a></li>
                     <li><a href="#register-modal" id="register">Register</a></li>
                 </ul>
                 
@@ -105,9 +105,7 @@
         <!-- Registration Modal -->
         <div id="register-modal" class="modal">
             <div class="modal-content">
-                <button type="button" class="btn-close">
-                    <img src="images/icons/form-close-svgrepo-com.svg" width="24px" height="24px" alt="Close form">
-                </button>
+                <button type="button" class="btn-close"></button>
                 
                 <div class="modal-header">
                     <h1>Consu<span>Trade</span></h1>
@@ -158,7 +156,37 @@
                     
                     <button type="submit" class="submit-btn">Create Account</button>
                     
-                    <p class="login-link">Already have an account? <a href="#">Login</a></p>
+                    <p class="login-link">Already have an account? <a href="#login-modal">Login</a></p>
+                </form>
+            </div>
+        </div>
+        <!-- Login Modal -->
+        <div id="login-modal" class="modal">
+            <div class="modal-content">
+                <button type="button" class="btn-close"></button>
+                
+                <div class="modal-header">
+                    <h1>Consu<span>Trade</span></h1>
+                    <p>Welcome back to ConsuTrade</p>
+                </div>
+                
+                <form action="" method="post" class="login-form">
+                    <fieldset class="form-fields">
+                        <legend>Login Account</legend>                        
+                        <div class="input-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="login-email" name="email" placeholder="Enter your email address" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="login-password">Password</label>
+                            <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
+                        </div>
+                    </fieldset>
+                    <p class="reset-pass"><a href="">Forgot your password?</a></p>
+                    <button type="submit" class="submit-btn">Login Account</button>
+                    
+                    <p class="register-link">Don't have an account? <a href="#register-modal">Register</a></p>
                 </form>
             </div>
         </div> 
