@@ -1,0 +1,36 @@
+
+.cart-heading {
+    font-weight: bold;
+    font-size: 28px;
+    margin: 30px 16px 30px 16px;
+}
+
+.product-table {
+    width: 800px;
+}
+
+.prod-container {
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.seller-cart-info {
+    display:flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.seller-cart-info .seller-name {
+    font-size: 14px!important;
+}
+.seller-cart-info .verification {
+    display: flex;
+}
+.img-container {
+    background-color: grey;
+    width: 90px!important;
+    height: 90px!important;
+}

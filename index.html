@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -21,12 +20,12 @@
         <!-- Center: Logo -->
         <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
 
-        <!-- Right: Icons -->
+        <!-- Mobile Header Icons (visible when menu closed) -->
         <div class="header-icons">
             <button class="mobile-search-icon" id="mobileSearchIcon">
                 <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
             </button>
-            <a href="cart.html" class="cart-icon">
+            <a href="cart.html" class="mobile-header-cart">
                 <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Shopping Cart">
             </a>
         </div>
@@ -44,8 +43,8 @@
             </div>
         </form>
 
-        <!-- Navigation Menu -->
-        <nav class="nav-links-container" id="nav-menu">
+        <!-- Desktop Navigation (Logo is already separate, so nav starts after search) -->
+        <nav class="nav-container" id="nav-menu">
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="product-listings.html">Shop</a></li>
@@ -53,30 +52,51 @@
                 <li><a href="login.html">Login</a></li>
                 <li><a href="register.html">Register</a></li>
             </ul>
-            <a href="cart.html" class="mobile-cart-icon">
+            <!-- Desktop Cart Icon - INSIDE nav-container, at the END of the row -->
+            <a href="cart.html" class="desktop-cart">
                 <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
             </a>
         </nav>
 
-        <!-- Mobile Expandable Search -->
-        <div class="mobile-search-container" id="mobileSearchContainer">
-            <form action="" method="get" class="mobile-search-form">
+        <!-- Mobile Side Menu Content -->
+        <div class="mobile-side-menu" id="mobile-side-menu">
+            <div class="mobile-menu-header">
+                <div class="mobile-menu-logo">Consu<span>Trade</span></div>
+            </div>
+            
+            <ul class="mobile-nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="product-listings.html">Shop</a></li>
+                <li><a href="sell.html">Sell</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="register.html">Register</a></li>
+            </ul>
+            
+            <!-- Search inside mobile menu -->
+            <div class="mobile-menu-search">
                 <div class="search-wrapper">
                     <input type="search"
-                        id="mobile-search"
+                        id="mobile-menu-search"
                         name="q"
                         placeholder="Search for products...">
                     <button class="search-btn" type="submit">
                         <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
                     </button>
                 </div>
-            </form>
+            </div>
+            
+            <!-- Cart inside mobile menu - text on LEFT, icon on RIGHT -->
+            <a href="cart.html" class="mobile-menu-cart">
+                <span class="cart-text">Cart</span>
+                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+            </a>
         </div>
+
+        <!-- Overlay -->
+        <div class="menu-overlay" id="menu-overlay"></div>
     </header>
 
-
     <main class="content">
-
         <!--Hero section-->
         <section class="hero">
             <div class="hero-container">
@@ -112,7 +132,6 @@
                 <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow">
 
                 <div class="card">
-
                     <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
                     <h2>Get Paid</h2>
                     <p>Receive payments securely with <a href="https://www.payfast.co.za" target="_blank">PayFast</a></p>
@@ -123,9 +142,6 @@
         <!--Featured products section-->
         <section class="featured">
             <h1 class="section-heading">Recently Listed</h1>
-            <!--Product data will be populated dynamically via PHP
-            once the database is set up, for now using
-            placeholder cards to build the layout-->
             <div class="prod-grid">
                 <!-- Card 1 -->
                 <div class="prod-card">
@@ -211,7 +227,6 @@
                 <p>We deliver across SA</p>
             </div>
         </section>
-
     </main>
 
     <!--Footer-->

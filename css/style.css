@@ -58,8 +58,24 @@ table {
 }
 
 /* ========== BASE STYLES ========== */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Poppins-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/Poppins-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 * {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Roboto', sans-serif;
     box-sizing: border-box;
 }
 
@@ -93,7 +109,12 @@ header {
 /* Hide mobile elements on desktop */
 .hamburger,
 .header-icons,
-.mobile-search-container {
+.mobile-side-menu,
+.mobile-menu-header,
+.mobile-nav-links,
+.mobile-menu-search,
+.mobile-menu-cart,
+.menu-overlay {
     display: none;
 }
 
@@ -146,8 +167,8 @@ header {
     display: block;
 }
 
-/* Navigation */
-.nav-links-container {
+/* Desktop Navigation */
+.nav-container {
     display: flex;
     align-items: center;
     gap: 30px;
@@ -166,19 +187,17 @@ header {
     white-space: nowrap;
 }
 
-.cart-icon {
+/* Desktop Cart Icon - inside nav-container, will appear on the right */
+.desktop-cart {
     display: block;
+    flex-shrink: 0;
 }
 
-.cart-icon img {
+.desktop-cart img {
     display: block;
+    width: 24px;
+    height: 24px;
 }
-
-/* Hide mobile cart icon in desktop nav */
-.mobile-cart-icon {
-    display: none;
-}
-/* ========== RESPONSIVE STYLES FOR HEADER SECTION ========== */
 
 /* ========== MOBILE STYLES ========== */
 @media (max-width: 768px) {
@@ -190,16 +209,33 @@ header {
         align-items: center;
     }
     
-    /* Show mobile elements */
-    .hamburger,
-    .header-icons {
-        display: flex;
-    }
-    
     /* Hide desktop elements */
     .desktop-search,
-    .nav-links-container .cart-icon {
+    .nav-container {
         display: none;
+    }
+    
+    /* Show hamburger */
+    .hamburger {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 24px;
+        height: 18px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 1001;
+        position: relative;
+    }
+    
+    .hamburger span {
+        width: 100%;
+        height: 2px;
+        background-color: #ffffff;
+        border-radius: 2px;
+        transition: all 0.3s ease;
     }
     
     /* Logo centered */
@@ -209,36 +245,19 @@ header {
         left: 50%;
         transform: translateX(-50%);
         white-space: nowrap;
+        transition: opacity 0.3s ease;
     }
     
-    /* Hamburger styling */
-    .hamburger {
-        flex-direction: column;
-        justify-content: space-between;
-        width: 24px;
-        height: 18px;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        padding: 0;
-        z-index: 100;
-    }
-    
-    .hamburger span {
-        width: 100%;
-        height: 2px;
-        background-color: #ffffff;
-        border-radius: 2px;
-    }
-    
-    /* Right icons container */
+    /* Header icons - visible when menu closed */
     .header-icons {
+        display: flex;
         gap: 20px;
         align-items: center;
-        z-index: 100;
+        z-index: 1001;
+        transition: opacity 0.3s ease;
+        position: relative;
     }
     
-    /* Search icon button */
     .mobile-search-icon {
         background: transparent;
         border: none;
@@ -248,101 +267,129 @@ header {
         align-items: center;
     }
     
-    /* Icon sizes for mobile */
     .mobile-search-icon img,
-    .header-icons .cart-icon img {
+    .mobile-header-cart img {
         width: 22px;
         height: 22px;
         display: block;
     }
     
-    /* Make sure cart icon is visible */
-    .header-icons .cart-icon {
-        display: flex !important;
-        align-items: center;
+    /* Hide header icons when menu is open */
+    body.menu-open .header-icons,
+    body.menu-open .logo {
+        opacity: 0;
+        visibility: hidden;
     }
     
-    /* Mobile expandable search container - hidden by default */
-    .mobile-search-container {
-        position: absolute;
-        top: 60px;
-        left: 0;
-        right: 0;
-        background-color: #1A1A1A;
-        padding: 12px 15px;
-        border-top: 1px solid #333;
-        display: none;
-        z-index: 99;
-    }
-    
-    .mobile-search-container.active {
-        display: block;
-    }
-    
-    .mobile-search-form {
-        width: 100%;
-    }
-    
-    .mobile-search-form .search-wrapper {
-        max-width: 100%;
-    }
-    
-    .mobile-search-form .search-wrapper input[type="search"] {
-        height: 40px;
-        font-size: 14px;
-    }
-    
-    .mobile-search-form .search-btn img {
-        width: 18px;
-        height: 18px;
-    }
-    
-    /* Mobile navigation menu - slide out from left */
-    .nav-links-container {
+    /* Mobile Side Menu */
+    .mobile-side-menu {
         position: fixed;
         top: 0;
         left: -280px;
         width: 280px;
         height: 100vh;
         background-color: #1A1A1A;
+        display: flex;
         flex-direction: column;
+        justify-content: flex-start;
         align-items: flex-start;
-        padding: 80px 20px 20px;
-        gap: 25px;
+        padding: 0;
         transition: left 0.3s ease;
-        z-index: 1000;
+        z-index: 1002;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
     }
     
-    .nav-links-container.active {
+    .mobile-side-menu.active {
         left: 0;
     }
     
-    .nav-links {
+    /* Mobile menu header */
+    .mobile-menu-header {
+        display: block;
+        width: 100%;
+        padding: 30px 20px 20px;
+        border-bottom: 1px solid #333;
+        margin-bottom: 10px;
+    }
+    
+    .mobile-menu-logo {
+        font-size: 28px;
+        font-weight: bold;
+        color: #ffffff;
+    }
+    
+    .mobile-menu-logo span {
+        color: #FF6B00;
+    }
+    
+    /* Mobile navigation links */
+    .mobile-nav-links {
+        display: flex;
         flex-direction: column;
-        gap: 20px;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    
+    .mobile-nav-links li {
         width: 100%;
     }
     
-    .nav-links li a {
+    .mobile-nav-links li a {
         font-size: 18px;
         display: block;
-        padding: 5px 0;
-        white-space: nowrap;
+        padding: 12px 20px;
+        color: #ffffff;
+        text-decoration: none;
     }
     
-    /* Show mobile cart icon in menu */
-    .mobile-cart-icon {
+    /* Search inside side menu */
+    .mobile-menu-search {
         display: block;
-        margin-top: 10px;
+        width: 100%;
+        padding: 20px;
+        border-top: 1px solid #333;
+        border-bottom: 1px solid #333;
+        margin: 10px 0;
     }
     
-    .mobile-cart-icon img {
+    .mobile-menu-search .search-wrapper {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .mobile-menu-search .search-wrapper input[type="search"] {
+        height: 40px;
+        font-size: 14px;
+        width: 100%;
+    }
+    
+    /* Cart inside side menu - text on LEFT, icon on RIGHT */
+    .mobile-menu-cart {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 12px 20px;
+        margin-top: 0;
+        border-top: 1px solid #333;
+        border-bottom: 1px solid #333;
+        text-decoration: none;
+    }
+    
+    .cart-text {
+        font-size: 18px;
+        color: #ffffff;
+        font-weight: normal;
+    }
+    
+    .mobile-menu-cart img {
         width: 24px;
         height: 24px;
     }
     
-    /* Overlay when menu is open */
+    /* Overlay */
     .menu-overlay {
         position: fixed;
         top: 0;
@@ -350,7 +397,7 @@ header {
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
-        z-index: 999;
+        z-index: 1000;
         display: none;
     }
     
@@ -359,28 +406,28 @@ header {
     }
 }
 
-/* ========== TABLET STYLES ========== */
-@media (min-width: 769px) and (max-width: 1024px) {
-    header {
-        padding: 0 20px;
-        gap: 15px;
-    }
+/* Hamburger animation */
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
 
-    .search-wrapper {
-        max-width: 300px;
-    }
-    
-    .nav-links-container {
-        gap: 20px;
-    }
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
 
-    .nav-links {
-        gap: 12px;
-    }
-    
-    .nav-links li a {
-        font-size: 14px;
-    }
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Body class when menu is open */
+body.menu-open {
+    overflow: hidden;
+}
+
+body.menu-open .content,
+body.menu-open footer {
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
 }
 
 /*Hero styles*/
@@ -444,6 +491,7 @@ header {
     font-weight: bold;
     background-color: var(--primary-color); 
     border-style: none;
+    cursor: pointer;
 }
 
 .browse-btn {
@@ -452,6 +500,7 @@ header {
     background-color: #ffffff;
     border-color: var(--primary-color);
     border-width: 2px;
+    cursor: pointer;
 }
 
 .section-heading {
@@ -462,9 +511,9 @@ header {
     margin-top: 50px;
     margin-bottom:50px;
 }
+
 /* ========== RESPONSIVE STYLES FOR HERO SECTION ========== */
 
-/* Tablet Potrait (768px - 1023px) */
 @media (max-width: 768px) {
     .btn-container{
         flex-direction: column;
@@ -544,7 +593,6 @@ header {
 
 /* ========== RESPONSIVE STYLES FOR HOW IT WORKS ========== */
 
-/* Tablet (768px - 1024px) */
 @media (max-width: 1024px) {
     .how-container {
         gap: 20px;
@@ -570,7 +618,6 @@ header {
     }
 }
 
-/* Mobile (below 768px) */
 @media (max-width: 768px) {
     .how {
         padding: 40px 20px;
@@ -602,13 +649,11 @@ header {
         font-size: 0.95rem;
     }
     
-    /* Hide arrows on mobile */
     .arrow {
         display: none;
     }
 }
 
-/* Small Mobile (below 480px) */
 @media (max-width: 480px) {
     .how {
         padding: 30px 15px;
@@ -655,12 +700,6 @@ header {
     gap: 20px;
     max-width: 1200px;
     margin: 0 auto;
-}
-.prod-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(280px, 320px));
-    gap: 15px;
-    justify-content: center;
 }
 
 /* Card styling */
@@ -744,7 +783,6 @@ header {
 
 /* ========== RESPONSIVE STYLES FOR FEATURED PRODUCTS ========== */
 
-/* Desktop Large (1200px and above) */
 @media (min-width: 1200px) {
     .prod-grid {
         max-width: 1200px;
@@ -752,7 +790,6 @@ header {
     }
 }
 
-/* Desktop Medium (1024px - 1199px) */
 @media (max-width: 1199px) {
     .prod-grid {
         grid-template-columns: repeat(4, 1fr);
@@ -761,7 +798,6 @@ header {
     }
 }
 
-/* Tablet Landscape (768px - 1023px) */
 @media (max-width: 1023px) {
     .featured {
         padding: 50px 20px;
@@ -803,7 +839,6 @@ header {
     }
 }
 
-/* Tablet Portrait (600px - 767px) */
 @media (max-width: 767px) {
     .featured {
         padding: 40px 15px;
@@ -858,7 +893,6 @@ header {
     }
 }
 
-/* Mobile (below 599px) */
 @media (max-width: 599px) {
     .featured {
         padding: 30px 15px;
@@ -906,7 +940,6 @@ header {
     }
 }
 
-/* Small Mobile (below 400px) */
 @media (max-width: 400px) {
     .featured {
         padding: 25px 12px;
@@ -943,7 +976,7 @@ header {
 }
 
 /*Trust section*/
- .trust {
+.trust {
     background-color: var(--primary-color);
     display: flex;
     justify-content: center;
@@ -951,19 +984,15 @@ header {
     gap: 24px;
     margin: 0 auto;
     border-bottom: 1px solid #e0e0e0;
+}
 
- }
-
- .trust .card {
+.trust .card {
     background-color: var(--primary-color);
     border: none;
     box-shadow: none;
     text-align: center;
- }
+}
 
- /* ========== RESPONSIVE STYLES FOR TRUST SECTION ========== */
-
- /* Tablet Potrait (768px - 1023px) */
 @media (max-width: 768px) {
     .trust {
         flex-direction: column;
@@ -984,8 +1013,9 @@ footer {
     margin-bottom: 30px;
     padding: 0 30px;
 }
+
 footer .logo a {
-    color:#ffffff;
+    color: #ffffff;
     text-decoration: none;
 }
 
@@ -995,7 +1025,6 @@ footer .logo a {
     font-size: 14px;
 }
 
-/* Links section */
 .footer-links {
     display: flex;
     gap: 20px;
@@ -1007,25 +1036,19 @@ footer .logo a {
     font-size: 15px;
 }
 
-/* Horizontal rule */
 footer hr {
     border: none;
     border-top: 1px solid #333;
     margin: 0 auto 20px auto;
 }
 
-/* Copyright */
 .copyright {
     color: #999999;
     text-align: center;
     font-size: 12px;
-    margin: 0;
     margin: 0 auto;
 }
 
-/* ========== RESPONSIVE STYLES FOR FOOTER SECTION ========== */
-
-/* Tablet Potrait (768px - 1023px) */
 @media (max-width: 768px) {
     .footer-container {
         justify-content: space-around;
@@ -1036,7 +1059,6 @@ footer hr {
     .footer-tagline {
         margin-top: 30px;
     }
-
     .logo-tag {
         flex-direction: column;
     }
