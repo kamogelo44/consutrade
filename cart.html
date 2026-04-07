@@ -108,50 +108,52 @@
                 <!-- Two columns wrapper -->
                 <div class="cart-layout">
                     <div class="left-column">
-                        <table class="product-table">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Seller</th>
-                                    <th>Price</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="product-cell">
-                                        <div class="cart-product-wrapper">
-                                            <div class="cart-img-container">
-                                                <img src="" alt="Product Image">
-                                            </div>
-                                            <div class="cart-prod-info">
-                                                <p class="prod-name">Purse</p>
-                                                <p class="prod-info">Color: blue</p>
-                                                <p><span class="num-avail">0</span> Available</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    
-                                    <td class="seller-cell">
-                                        <div class="seller-cart-info">
-                                            <p class="seller-name">Seller name</p>
-                                            <div class="verification">
-                                                <div id="verified">
-                                                    <img src="images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification">
-                                                    <p>Verified Seller</p>
+                        <div class="product-table-wrapper">
+                            <table class="product-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Seller</th>
+                                        <th>Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="product-cell" data-label="Product">
+                                            <div class="cart-product-wrapper">
+                                                <div class="cart-img-container">
+                                                    <img src="" alt="Product Image">
+                                                </div>
+                                                <div class="cart-prod-info">
+                                                    <p class="prod-name">Purse</p>
+                                                    <p class="prod-info">Color: blue</p>
+                                                    <p><span class="num-avail">0</span> Available</p>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    
-                                    <td class="price-cell">R 0.00</td>
-                                    
-                                    <td class="actions-cell">
-                                        <button class="remove-btn">Remove</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                        </td>
+                                        
+                                        <td class="seller-cell" data-label="Seller">
+                                            <div class="seller-cart-info">
+                                                <p class="seller-name">Seller name</p>
+                                                <div class="verification">
+                                                    <div class="verified-badge-cart">
+                                                        <img src="images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification">
+                                                        <p>Verified Seller</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                        <td class="price-cell" data-label="Price">R 0.00</td>
+                                        
+                                        <td class="actions-cell" data-label="Actions">
+                                            <button class="remove-btn">Remove</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     
                     <div class="right-column">
