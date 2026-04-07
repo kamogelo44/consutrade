@@ -104,28 +104,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== MOBILE SEARCH TOGGLE ==========
     // This makes the search bar expand when clicking the search icon on mobile
-    
+
     const mobileSearchIcon = document.getElementById('mobileSearchIcon');
     const mobileSearchContainer = document.getElementById('mobileSearchContainer');
-    
+
     if (mobileSearchIcon && mobileSearchContainer) {
-        mobileSearchIcon.addEventListener('click', function() {
-            // Show or hide the search input
+        mobileSearchIcon.addEventListener('click', function(e) {
+            e.stopPropagation();  // Stops the click from reaching the document listener
             mobileSearchContainer.classList.toggle('active');
             
             // If search bar opened, automatically focus on the input field
             if (mobileSearchContainer.classList.contains('active')) {
                 const searchInput = document.getElementById('mobile-search');
                 if (searchInput) {
-                    searchInput.focus();  // Brings up keyboard on phones
+                    setTimeout(function() {
+                        searchInput.focus();  // Small delay helps mobile browsers
+                    }, 50);
                 }
             }
         });
     }
-    
+
     // ========== CLOSE SEARCH WHEN CLICKING OUTSIDE ==========
     // This closes the search bar if user clicks anywhere else on the page
-    
+
     document.addEventListener('click', function(event) {
         if (mobileSearchContainer && mobileSearchIcon) {
             // Check if click was outside search container AND outside search icon
@@ -142,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // This controls the popup registration form
     
     const registerModal = document.getElementById('register-modal');
-    const registerBtns = document.querySelectorAll('#register');  // All Register buttons on page
+    const registerBtns = document.querySelectorAll('#register, .register-link-mobile');  // All Register buttons on page
     const loginLink = document.querySelector('#login');
     const registerCloseBtn = document.querySelector('#register-modal .btn-close');
     
@@ -153,32 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         if (loginLink) {
             loginLink.classList.remove('active');
-        }
-    }
-    
-    // Switches from Register modal to Login modal with smooth transition
-    function switchToLoginModal() {
-        if (registerModal && registerModal.classList.contains('active')) {
-            // Start closing register modal (it will slide out to the right)
-            registerModal.classList.remove('active');
-            
-            // Wait for register modal to finish closing animation (400ms)
-            setTimeout(function() {
-                // Now open login modal (it will slide in from left)
-                loginModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                
-                // Update active link states
-                if (registerLink) registerLink.classList.remove('active');
-                if (loginBtns.length > 0) {
-                    loginBtns.forEach(function(btn) {
-                        btn.classList.add('active');
-                    });
-                }
-            }, 400);
-        } else {
-            loginModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
         }
     }
     
@@ -246,7 +222,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (loginLinkInRegister) {
             loginLinkInRegister.addEventListener('click', function(e) {
                 e.preventDefault();
-                switchToLoginModal();
+                
+                // Close register modal and open login modal
+                if (registerModal && registerModal.classList.contains('active')) {
+                    registerModal.classList.remove('active');
+                    
+                    setTimeout(function() {
+                        loginModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                        
+                        if (registerLink) registerLink.classList.remove('active');
+                        if (loginBtns.length > 0) {
+                            loginBtns.forEach(function(btn) {
+                                btn.classList.add('active');
+                            });
+                        }
+                    }, 400);
+                } else {
+                    loginModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
             });
         }
     }
@@ -255,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // This controls the popup login form
     
     const loginModal = document.getElementById('login-modal');
-    const loginBtns = document.querySelectorAll('#login');  // All Login buttons on page
+    const loginBtns = document.querySelectorAll('#login, .login-link-mobile');  // All Login buttons on page
     const registerLink = document.querySelector('#register');
     const loginCloseBtn = document.querySelector('#login-modal .btn-close');
     
@@ -266,32 +261,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         if (registerLink) {
             registerLink.classList.remove('active');
-        }
-    }
-    
-    // Switches from Login modal to Register modal with smooth transition
-    function switchToRegisterModal() {
-        if (loginModal && loginModal.classList.contains('active')) {
-            // Start closing login modal (it will slide out to the left)
-            loginModal.classList.remove('active');
-            
-            // Wait for login modal to finish closing animation (400ms)
-            setTimeout(function() {
-                // Now open register modal (it will slide in from right)
-                registerModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                
-                // Update active link states
-                if (loginLink) loginLink.classList.remove('active');
-                if (registerBtns.length > 0) {
-                    registerBtns.forEach(function(btn) {
-                        btn.classList.add('active');
-                    });
-                }
-            }, 400);
-        } else {
-            registerModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
         }
     }
     
@@ -359,11 +328,31 @@ document.addEventListener('DOMContentLoaded', function() {
         if (registerLinkInLogin) {
             registerLinkInLogin.addEventListener('click', function(e) {
                 e.preventDefault();
-                switchToRegisterModal();
+                
+                // Close login modal and open register modal
+                if (loginModal && loginModal.classList.contains('active')) {
+                    loginModal.classList.remove('active');
+                    
+                    setTimeout(function() {
+                        registerModal.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                        
+                        if (loginLink) loginLink.classList.remove('active');
+                        if (registerBtns.length > 0) {
+                            registerBtns.forEach(function(btn) {
+                                btn.classList.add('active');
+                            });
+                        }
+                    }, 400);
+                } else {
+                    registerModal.classList.add('active');
+                    document.body.style.visibility = 'hidden';
+                }
             });
         }
     }
 });
+
 
 // ========== FEATURES TO BE IMPLEMENTED LATER ==========
 // These features will be added as the project progresses:
