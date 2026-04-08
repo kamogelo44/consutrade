@@ -350,6 +350,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+        // ========== SELLER PAGE BUTTONS ==========
+        // This handles the Register and Login buttons on the seller page
+
+        const sellerRegisterBtn = document.getElementById('seller-register-btn');
+        const sellerLoginBtn = document.getElementById('seller-login-btn');
+        const createSellerBtn = document.getElementById('create-seller-btn');
+
+        if (sellerRegisterBtn) {
+            sellerRegisterBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const registerModal = document.getElementById('register-modal');
+                if (registerModal) {
+                    registerModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        }
+
+        if (sellerLoginBtn) {
+            sellerLoginBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const loginModal = document.getElementById('login-modal');
+                if (loginModal) {
+                    loginModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        }
+
+        if (createSellerBtn) {
+            createSellerBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const registerModal = document.getElementById('register-modal');
+                if (registerModal) {
+                    registerModal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        }
+
     }
 });
 
