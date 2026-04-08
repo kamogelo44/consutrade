@@ -725,9 +725,9 @@ body.menu-open footer {
 }
 
 .browse-btn {
-    color: var(--primary-color);
+    color: var(--white);
     font-weight: var(--font-bold);
-    background-color: var(--white);
+    background-color: transparent;
     border: 2px solid var(--primary-color);
     cursor: pointer;
     transition: all var(--transition-normal);
@@ -806,28 +806,37 @@ body.menu-open footer {
     border-radius: var(--radius-md);
     text-align: center;
     box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
 }
 
 .card .icon {
     margin-bottom: var(--spacing-md);
+    transition: transform var(--transition-normal);
+}
+
+.card:hover .icon {
+    transform: scale(1.05);
 }
 
 .card h2 {
     font-size: 1.5rem;
     margin-bottom: 10px;
     color: #222222;
+    transition: color var(--transition-fast);
+}
+
+.card:hover h2 {
+    color: var(--primary-color);
 }
 
 .card p {
-    font-size: 1rem;
-    line-height: 1.4;
     color: var(--gray-medium);
-    margin: 0;
-}
-
-.card p a {
-    color: #0056b3;
-    text-decoration: underline;
 }
 
 .arrow {
@@ -894,7 +903,11 @@ body.menu-open footer {
     }
     
     .arrow {
-        display: none;
+        opacity: 0;
+        visibility: hidden;
+        width: 0;
+        margin: 0;
+        transition: all var(--transition-fast);
     }
 }
 
