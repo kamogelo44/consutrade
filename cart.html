@@ -27,7 +27,7 @@
                 </button>
                 <a href="cart.html" class="mobile-header-cart">
                     <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                    <span class="cart-count" id="cart-count">0</span>
+                    <span class="cart-count">0</span>
                 </a>
             </div>
 
@@ -44,7 +44,7 @@
                 </div>
             </form>
 
-            <!-- Desktop Navigation (Logo is already separate, so nav starts after search) -->
+            <!-- Desktop Navigation -->
             <nav class="nav-container" id="nav-menu">
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
@@ -53,21 +53,21 @@
                     <li><a href="" id="login">Login</a></li>
                     <li><a href="#register-modal" id="register">Register</a></li>
                 </ul>
-                <!-- Desktop Cart Icon - INSIDE nav-container, at the END of the row -->
+                <!-- Desktop Cart Icon -->
                 <a href="cart.html" class="desktop-cart">
                     <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                    <span class="cart-count" id="cart-count">0</span>
-                </a>                
+                    <span class="cart-count">0</span>
+                </a>
             </nav>
 
             <!-- Mobile Side Menu Content -->
             <div class="mobile-side-menu" id="mobile-side-menu">
-            <!-- Hamburger button inside side menu (visible when menu opens) -->
-            <button class="side-menu-hamburger" id="sideMenuHamburger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
+                <!-- Hamburger button inside side menu (acts as close button) -->
+                <button class="side-menu-hamburger" id="sideMenuHamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <div class="mobile-menu-header">
                     <div class="mobile-menu-logo">
                         <a href="index.html">Consu<span>Trade</span></a>
@@ -98,9 +98,14 @@
                 <!-- Cart inside mobile menu - text on LEFT, icon on RIGHT -->
                 <a href="cart.html" class="mobile-menu-cart">
                     <span class="cart-text">Cart</span>
-                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                    <div class="cart-icon-wrapper">
+                        <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                        <span class="cart-count">0</span>
+                    </div>
                 </a>
             </div>
+
+            <!-- Mobile Expandable Search -->
             <div class="mobile-search-container" id="mobileSearchContainer">
                 <form action="" method="get" class="mobile-search-form">
                     <div class="search-wrapper">
@@ -114,6 +119,7 @@
                     </div>
                 </form>
             </div>
+
             <!-- Overlay -->
             <div class="menu-overlay" id="menu-overlay"></div>
         </header>
@@ -228,7 +234,7 @@
                                 <button class="checkout-btn">
                                     Proceed to Checkout
                                 </button>
-                                <button class="cont-shopp-btn">
+                                <button class="cont-shopp-btn" onclick="window.location.href='product-listings.html'">
                                     <img src="images/icons/continue-svgrepo-com.svg" width="24px" height="24px" alt="">
                                     Continue Shopping
                                 </button>

@@ -201,7 +201,7 @@ header {
 .mobile-menu-header,
 .mobile-nav-links,
 .mobile-menu-search,
-.mobile-menu-cart,
+.mobile-menu-cart .cart-count,
 .menu-overlay {
     display: none;
 }
@@ -299,10 +299,13 @@ header {
     font-weight: var(--font-bold);
 }
 
-/* Desktop Cart Icon */
+/* ========== CART COUNT BADGE STYLES ========== */
+
+/* Desktop cart */
 .desktop-cart {
-    display: block;
-    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .desktop-cart img {
@@ -310,6 +313,90 @@ header {
     width: var(--spacing-lg);
     height: var(--spacing-lg);
 }
+
+.desktop-cart .cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: var(--font-bold);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Mobile header cart */
+.mobile-header-cart {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mobile-header-cart .cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: var(--font-bold);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Mobile menu cart */
+.mobile-menu-cart {
+    position: relative;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-xl);
+    margin-top: 0;
+    border-top: 1px solid var(--gray-dark);
+    border-bottom: 1px solid var(--gray-dark);
+    text-decoration: none;
+}
+
+.cart-icon-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.mobile-menu-cart .cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: var(--font-bold);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.cart-text {
+    font-size: var(--font-lg);
+    color: var(--white);
+    font-weight: var(--font-normal);
+}
+
 
 /*Mobile search icon*/
 .mobile-search-container {
@@ -601,6 +688,7 @@ header {
         border-bottom: 1px solid var(--gray-dark);
         text-decoration: none;
     }
+ 
     
     .cart-text {
         font-size: var(--font-lg);
