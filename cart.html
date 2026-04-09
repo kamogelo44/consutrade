@@ -26,7 +26,8 @@
                     <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
                 </button>
                 <a href="cart.html" class="mobile-header-cart">
-                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Shopping Cart">
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                    <span class="cart-count" id="cart-count">0</span>
                 </a>
             </div>
 
@@ -43,27 +44,30 @@
                 </div>
             </form>
 
-            <!-- Desktop Navigation -->
+            <!-- Desktop Navigation (Logo is already separate, so nav starts after search) -->
             <nav class="nav-container" id="nav-menu">
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="product-listings.html">Shop</a></li>
                     <li><a href="sell.html">Sell</a></li>
-                    <li><a href="login.html">Login</a></li>
-                    <li><a href="register.html">Register</a></li>
+                    <li><a href="" id="login">Login</a></li>
+                    <li><a href="#register-modal" id="register">Register</a></li>
                 </ul>
+                <!-- Desktop Cart Icon - INSIDE nav-container, at the END of the row -->
                 <a href="cart.html" class="desktop-cart">
                     <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                </a>
+                    <span class="cart-count" id="cart-count">0</span>
+                </a>                
             </nav>
 
             <!-- Mobile Side Menu Content -->
             <div class="mobile-side-menu" id="mobile-side-menu">
-                <button class="side-menu-hamburger" id="sideMenuHamburger">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+            <!-- Hamburger button inside side menu (visible when menu opens) -->
+            <button class="side-menu-hamburger" id="sideMenuHamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
                 <div class="mobile-menu-header">
                     <div class="mobile-menu-logo">
                         <a href="index.html">Consu<span>Trade</span></a>
@@ -74,10 +78,11 @@
                     <li><a href="index.html">Home</a></li>
                     <li><a href="product-listings.html">Shop</a></li>
                     <li><a href="sell.html">Sell</a></li>
-                    <li><a href="login.html">Login</a></li>
-                    <li><a href="register.html">Register</a></li>
+                    <li><a href="#login-modal" class="login-link-mobile">Login</a></li>
+                    <li><a href="#register-modal" class="register-link-mobile">Register</a></li>
                 </ul>
                 
+                <!-- Search inside mobile menu -->
                 <div class="mobile-menu-search">
                     <div class="search-wrapper">
                         <input type="search"
@@ -90,12 +95,25 @@
                     </div>
                 </div>
                 
+                <!-- Cart inside mobile menu - text on LEFT, icon on RIGHT -->
                 <a href="cart.html" class="mobile-menu-cart">
                     <span class="cart-text">Cart</span>
                     <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
                 </a>
             </div>
-
+            <div class="mobile-search-container" id="mobileSearchContainer">
+                <form action="" method="get" class="mobile-search-form">
+                    <div class="search-wrapper">
+                        <input type="search"
+                            id="mobile-search"
+                            name="q"
+                            placeholder="Search for products...">
+                        <button class="search-btn" type="submit">
+                            <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
+                        </button>
+                    </div>
+                </form>
+            </div>
             <!-- Overlay -->
             <div class="menu-overlay" id="menu-overlay"></div>
         </header>
@@ -106,7 +124,15 @@
                 <div class="heading-container">
                     <h1 class="cart-heading">My Cart (<span class="item-num">0</span>) items</h1>
                 </div>
-                
+                <!-- Empty cart state - shown when no items -->
+                <div class="empty-cart" id="empty-cart" style="display:none;">
+                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" width="64px" height="64px" alt="Empty cart" class="icon-white" style="filter: invert(60%);">
+                    <h2>Your cart is empty</h2>
+                    <p>Looks like you have not added anything yet</p>
+                    <a href="product-listings.html">
+                        <button class="browse-products-btn">Browse Products</button>
+                    </a>
+                </div>
                 <!-- Two columns wrapper -->
                 <div class="cart-layout">
                     <div class="left-column">
