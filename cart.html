@@ -65,7 +65,9 @@
                     <span></span>
                 </button>
                 <div class="mobile-menu-header">
-                    <div class="mobile-menu-logo">Consu<span>Trade</span></div>
+                    <div class="mobile-menu-logo">
+                        <a href="index.html">Consu<span>Trade</span></a>
+                    </div>
                 </div>
                 
                 <ul class="mobile-nav-links">
@@ -108,7 +110,8 @@
                 <!-- Two columns wrapper -->
                 <div class="cart-layout">
                     <div class="left-column">
-                        <div class="product-table-wrapper">
+                        <!-- Desktop Table (visible on desktop, hidden on mobile) -->
+                        <div class="product-table-wrapper desktop-table">
                             <table class="product-table">
                                 <thead>
                                     <tr>
@@ -154,6 +157,33 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Mobile Card Layout (hidden on desktop, visible on mobile) -->
+                        <div class="mobile-cart-items">
+                            <div class="mobile-cart-card">
+                                <div class="mobile-cart-img">
+                                    <img src="" alt="Product Image">
+                                </div>
+                                <div class="mobile-cart-details">
+                                    <h3 class="mobile-prod-name">Purse</h3>
+                                    <p class="mobile-prod-info">Color: blue</p>
+                                    <p class="mobile-availability"><span class="num-avail">0</span> Available</p>
+                                </div>
+                                <div class="mobile-cart-seller">
+                                    <p class="seller-name">Seller name</p>
+                                    <div class="verified-badge-cart">
+                                        <img src="images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="verified">
+                                        <p>Verified Seller</p>
+                                    </div>
+                                </div>
+                                <div class="mobile-cart-price">
+                                    <p class="price">R 0.00</p>
+                                </div>
+                                <div class="mobile-cart-actions">
+                                    <button class="remove-btn">Remove</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="right-column">
@@ -169,6 +199,9 @@
                                 <div class="result">
                                     <p class="total">Total: R<span class="total-val">0</span></p>
                                 </div>
+                                <button class="checkout-btn">
+                                    Proceed to Checkout
+                                </button>
                                 <button class="cont-shopp-btn">
                                     <img src="images/icons/continue-svgrepo-com.svg" width="24px" height="24px" alt="">
                                     Continue Shopping

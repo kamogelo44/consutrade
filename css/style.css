@@ -535,7 +535,8 @@ header {
         margin-bottom: 10px;
     }
     
-    .mobile-menu-logo {
+    .mobile-menu-logo a {
+        text-decoration: none;
         font-size: var(--font-3xl);
         font-weight: var(--font-bold);
         color: var(--white);
@@ -1247,6 +1248,21 @@ body.menu-open footer {
     border: none;
     box-shadow: none;
     text-align: center;
+}
+
+/* Trust section cards - no hover effects */
+.trust .card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: none;
+}
+
+.trust .card:hover .icon {
+    transform: none;
+}
+
+.trust .card:hover h2 {
+    color: inherit;
 }
 
 @media (max-width: 768px) {
