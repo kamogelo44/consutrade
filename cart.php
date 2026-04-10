@@ -5,124 +5,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/cart.css">
+        <link rel="stylesheet" href="css/login-signup.css">
         <title>Cart Page</title>
     </head>
     <body>
         <!--Header-->
-        <header>
-            <!-- Left: Hamburger -->
-            <button class="hamburger" id="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-
-            <!-- Center: Logo -->
-            <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
-
-            <!-- Mobile Header Icons (visible when menu closed) -->
-            <div class="header-icons">
-                <button class="mobile-search-icon" id="mobileSearchIcon">
-                    <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
-                </button>
-                <a href="cart.html" class="mobile-header-cart">
-                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                    <span class="cart-count">0</span>
-                </a>
-            </div>
-
-            <!-- Desktop Search Form -->
-            <form action="" method="get" class="desktop-search">
-                <div class="search-wrapper">
-                    <input type="search"
-                        id="search"
-                        name="q"
-                        placeholder="Search for products...">
-                    <button class="search-btn" type="submit">
-                        <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search">
-                    </button>
-                </div>
-            </form>
-
-            <!-- Desktop Navigation -->
-            <nav class="nav-container" id="nav-menu">
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="product-listings.html">Shop</a></li>
-                    <li><a href="sell.html">Sell</a></li>
-                    <li><a href="" id="login">Login</a></li>
-                    <li><a href="#register-modal" id="register">Register</a></li>
-                </ul>
-                <!-- Desktop Cart Icon -->
-                <a href="cart.html" class="desktop-cart">
-                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                    <span class="cart-count">0</span>
-                </a>
-            </nav>
-
-            <!-- Mobile Side Menu Content -->
-            <div class="mobile-side-menu" id="mobile-side-menu">
-                <!-- Hamburger button inside side menu (acts as close button) -->
-                <button class="side-menu-hamburger" id="sideMenuHamburger">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="mobile-menu-header">
-                    <div class="mobile-menu-logo">
-                        <a href="index.html">Consu<span>Trade</span></a>
-                    </div>
-                </div>
-                
-                <ul class="mobile-nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="product-listings.html">Shop</a></li>
-                    <li><a href="sell.html">Sell</a></li>
-                    <li><a href="#login-modal" class="login-link-mobile">Login</a></li>
-                    <li><a href="#register-modal" class="register-link-mobile">Register</a></li>
-                </ul>
-                
-                <!-- Search inside mobile menu -->
-                <div class="mobile-menu-search">
-                    <div class="search-wrapper">
-                        <input type="search"
-                            id="mobile-menu-search"
-                            name="q"
-                            placeholder="Search for products...">
-                        <button class="search-btn" type="submit">
-                            <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Cart inside mobile menu - text on LEFT, icon on RIGHT -->
-                <a href="cart.html" class="mobile-menu-cart">
-                    <span class="cart-text">Cart</span>
-                    <div class="cart-icon-wrapper">
-                        <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                        <span class="cart-count">0</span>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Mobile Expandable Search -->
-            <div class="mobile-search-container" id="mobileSearchContainer">
-                <form action="" method="get" class="mobile-search-form">
-                    <div class="search-wrapper">
-                        <input type="search"
-                            id="mobile-search"
-                            name="q"
-                            placeholder="Search for products...">
-                        <button class="search-btn" type="submit">
-                            <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Overlay -->
-            <div class="menu-overlay" id="menu-overlay"></div>
-        </header>
+        <?php include 'header.php'?>
 
         <main>
             <div class="cart-container">
@@ -135,7 +23,7 @@
                     <img src="images/icons/shopping-cart-01-svgrepo-com.svg" width="64px" height="64px" alt="Empty cart" class="icon-white" style="filter: invert(60%);">
                     <h2>Your cart is empty</h2>
                     <p>Looks like you have not added anything yet</p>
-                    <a href="product-listings.html">
+                    <a href="product-listings.php">
                         <button class="browse-products-btn">Browse Products</button>
                     </a>
                 </div>
@@ -234,7 +122,7 @@
                                 <button class="checkout-btn">
                                     Proceed to Checkout
                                 </button>
-                                <button class="cont-shopp-btn" onclick="window.location.href='product-listings.html'">
+                                <button class="cont-shopp-btn" onclick="window.location.href='product-listings.php'">
                                     <img src="images/icons/continue-svgrepo-com.svg" width="24px" height="24px" alt="">
                                     Continue Shopping
                                 </button>
@@ -249,28 +137,7 @@
         </main>
 
         <!--Footer-->
-        <footer>
-            <div class="footer-container">
-                <div class="logo-tag">
-                    <div class="logo"><a href="index.html">Consu<span>Trade</span></a></div>
-                    <p class="footer-tagline">Built for South Africa's informal economy</p>
-                </div>
-                
-                <div class="footer-links">
-                    <a href="index.html">Home</a>
-                    <a href="product-listings.html">Shop</a>
-                    <a href="">Sell</a>
-                    <a href="">About</a>
-                    <a href="">Terms</a>
-                    <a href="">Privacy</a>
-                    <a href="">Contact</a>
-                </div>
-            </div>
-            
-            <hr>
-            
-            <p class="copyright">© 2026 ConsuTrade. All rights reserved.</p>
-        </footer>
+        <?php include 'footer.php'?>
         
         <script src="js/main.js"></script>
     </body>
