@@ -53,7 +53,7 @@
                         
                         <div class="description">
                             <p class="sub-head">Description</p>
-                            <p class="des">blahblahblahblahblahblahblahblah text text write lurem ipsom lurem ipsome yesy yesy</p>
+                            <p class="des">Handcrafted genuine leather bag made by a local artisan in Soweto. Available in brown and black. Suitable for everyday use. Contact seller for more details.</p>
                         </div>
                         
                         <div class="con-loc">

@@ -1,23 +1,43 @@
 <!-- header.php - Just the header and modals -->
 <header>
+    <!-- Left: Hamburger -->
     <button class="hamburger" id="hamburger">
         <span></span>
         <span></span>
         <span></span>
     </button>
 
+    <!-- Center: Logo -->
     <div class="logo"><a href="index.php">Consu<span>Trade</span></a></div>
 
+    <!-- Mobile Header Icons -->
     <div class="header-icons">
         <button class="mobile-search-icon" id="mobileSearchIcon">
             <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
         </button>
-        <a href="cart.php" class="mobile-header-cart">
-            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-            <span class="cart-count">0</span>
-        </a>
+        
+        <!-- Show different mobile icons based on login status -->
+        <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+            <!-- Logged IN - mobile icons -->
+            <div class="mobile-user-info">
+                <span class="mobile-welcome">Hi, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+                <div class="mobile-profile-dropdown">
+                    <img src="images/icons/profile-placeholder.svg" class="mobile-profile-icon" width="28px" height="28px" alt="Profile">
+                    <button class="mobile-dropdown-toggle" id="mobileDropdownToggle">
+                        <img src="images/icons/chevron-down.svg" width="16px" height="16px" alt="Menu">
+                    </button>
+                </div>
+            </div>
+        <?php else: ?>
+            <!-- Logged OUT - mobile icons -->
+            <a href="cart.php" class="mobile-header-cart">
+                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                <span class="cart-count">0</span>
+            </a>
+        <?php endif; ?>
     </div>
 
+    <!-- Desktop Search Form -->
     <form action="" method="get" class="desktop-search">
         <div class="search-wrapper">
             <input type="search" id="search" name="q" placeholder="Search for products...">
@@ -27,20 +47,48 @@
         </div>
     </form>
 
+    <!-- Desktop Navigation -->
     <nav class="nav-container" id="nav-menu">
         <ul class="nav-links">
             <li><a href="index.php">Home</a></li>
             <li><a href="product-listings.php">Shop</a></li>
             <li><a href="sell.php">Sell</a></li>
-            <li><a href="" id="login">Login</a></li>
-            <li><a href="#register-modal" id="register">Register</a></li>
+            
+            <!-- Show different links based on login status -->
+            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+                <!-- Logged IN - desktop user menu -->
+                <li class="user-dropdown">
+                    <div class="user-info">
+                        <span class="welcome-text">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+                        <img src="images/icons/profile-placeholder.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
+                        <button class="dropdown-toggle" id="desktopDropdownToggle">
+                            <img src="images/icons/chevron-down.svg" width="16px" height="16px" alt="Menu">
+                        </button>
+                    </div>
+                    <ul class="dropdown-menu" id="desktopDropdownMenu">
+                        <li><a href="profile.php">My Profile</a></li>
+                        <li><a href="my-orders.php">My Orders</a></li>
+                        <?php if ($_SESSION['role'] === 'seller'): ?>
+                            <li><a href="seller-dashboard.php">Seller Dashboard</a></li>
+                            <li><a href="my-products.php">My Products</a></li>
+                        <?php endif; ?>
+                        <li><a href="php/logout.php">Logout</a></li>
+                    </ul>
+                </li>
+            <?php else: ?>
+                <!-- Logged OUT - desktop links -->
+                <li><a href="" id="login">Login</a></li>
+                <li><a href="#register-modal" id="register">Register</a></li>
+            <?php endif; ?>
         </ul>
+        
         <a href="cart.php" class="desktop-cart">
             <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
             <span class="cart-count">0</span>
         </a>
     </nav>
 
+    <!-- Mobile Side Menu Content -->
     <div class="mobile-side-menu" id="mobile-side-menu">
         <button class="side-menu-hamburger" id="sideMenuHamburger">
             <span></span>
@@ -57,8 +105,21 @@
             <li><a href="index.php">Home</a></li>
             <li><a href="product-listings.php">Shop</a></li>
             <li><a href="sell.php">Sell</a></li>
-            <li><a href="#login-modal" class="login-link-mobile">Login</a></li>
-            <li><a href="#register-modal" class="register-link-mobile">Register</a></li>
+            
+            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+                <!-- Logged IN - mobile menu links -->
+                <li><a href="profile.php">My Profile</a></li>
+                <li><a href="my-orders.php">My Orders</a></li>
+                <?php if ($_SESSION['role'] === 'seller'): ?>
+                    <li><a href="seller-dashboard.php">Seller Dashboard</a></li>
+                    <li><a href="my-products.php">My Products</a></li>
+                <?php endif; ?>
+                <li><a href="php/logout.php">Logout</a></li>
+            <?php else: ?>
+                <!-- Logged OUT - mobile menu links -->
+                <li><a href="#login-modal" class="login-link-mobile">Login</a></li>
+                <li><a href="#register-modal" class="register-link-mobile">Register</a></li>
+            <?php endif; ?>
         </ul>
         
         <div class="mobile-menu-search">
@@ -79,6 +140,7 @@
         </a>
     </div>
 
+    <!-- Mobile Expandable Search -->
     <div class="mobile-search-container" id="mobileSearchContainer">
         <form action="" method="get" class="mobile-search-form">
             <div class="search-wrapper">
@@ -90,6 +152,20 @@
         </form>
     </div>
 
+    <!-- Mobile Dropdown Menu (for logged-in users) -->
+    <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+    <div class="mobile-dropdown-menu" id="mobileDropdownMenu">
+        <a href="profile.php">My Profile</a>
+        <a href="my-orders.php">My Orders</a>
+        <?php if ($_SESSION['role'] === 'seller'): ?>
+            <a href="seller-dashboard.php">Seller Dashboard</a>
+            <a href="my-products.php">My Products</a>
+        <?php endif; ?>
+        <a href="php/logout.php">Logout</a>
+    </div>
+    <?php endif; ?>
+
+    <!-- Overlay -->
     <div class="menu-overlay" id="menu-overlay"></div>
 </header>
 

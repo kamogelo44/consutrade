@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,82 +12,6 @@
 <body>
     <!--Header-->
     <?php include 'header.php'?>
-
-    <!-- Registration Modal -->
-    <div id="register-modal" class="modal">
-        <div class="modal-content">
-            <button type="button" class="btn-close"></button>
-            <div class="modal-header">
-                <h1>Consu<span>Trade</span></h1>
-                <p>Join thousands of South African traders</p>
-            </div>
-            <form action="" method="post" class="register-form">
-                <fieldset class="form-fields">
-                    <legend>Create Account</legend>
-                    <div class="input-group">
-                        <label for="fullname">Full Name</label>
-                        <input type="text" id="fullname" name="fullname" placeholder="Enter your full name..." required>
-                    </div>
-                    <div class="input-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="Enter your email address" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Create password" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="confirm-password">Confirm Password</label>
-                        <input type="password" id="confirm-password" name="confirm_password" placeholder="Repeat your password" required>
-                    </div>
-                </fieldset>
-                <fieldset class="user-type">
-                    <legend>I want to:</legend>
-                    <div class="radio-buttons">
-                        <input type="radio" id="buy" name="user_type" value="buyer" checked>
-                        <label for="buy" class="radio-btn radio">
-                            <img src="images/icons/buy-cash-finance-svgrepo-com.svg" width="20px" height="20px" alt="Buy icon">
-                            Buy Products
-                        </label>
-                        <input type="radio" id="sell" name="user_type" value="seller">
-                        <label for="sell" class="radio-btn radio">
-                            <img src="images/icons/sell-svgrepo-com.svg" width="20px" height="20px" alt="Sell icon">
-                            Sell Products
-                        </label>
-                    </div>
-                </fieldset>
-                <button type="submit" class="submit-btn">Create Account</button>
-                <p class="login-link">Already have an account? <a href="#login-modal">Login</a></p>
-            </form>
-        </div>
-    </div>
-
-    <!-- Login Modal -->
-    <div id="login-modal" class="modal">
-        <div class="modal-content">
-            <button type="button" class="btn-close"></button>
-            <div class="modal-header">
-                <h1>Consu<span>Trade</span></h1>
-                <p>Welcome back to ConsuTrade</p>
-            </div>
-            <form action="" method="post" class="login-form">
-                <fieldset class="form-fields">
-                    <legend>Login Account</legend>
-                    <div class="input-group">
-                        <label for="login-email">Email Address</label>
-                        <input type="email" id="login-email" name="email" placeholder="Enter your email address" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
-                    </div>
-                </fieldset>
-                <p class="reset-pass"><a href="#">Forgot your password?</a></p>
-                <button type="submit" class="submit-btn">Login Account</button>
-                <p class="register-link">Don't have an account? <a href="#register-modal">Register</a></p>
-            </form>
-        </div>
-    </div>
 
     <main>
         <!-- Hero Section -->

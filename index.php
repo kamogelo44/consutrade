@@ -245,7 +245,7 @@ unset($_SESSION['flash']);
                 </div>
                 <div class="btn-container">
                     <button class="sell-btn" id="primary-btn">Start Selling</button>
-                    <button class="browse-btn" id="secondary-btn" onclick="window.location.href='product-listings.html'">Shop Products</button>
+                    <button class="browse-btn" id="secondary-btn" onclick="window.location.href='product-listings.php'">Shop Products</button>
                 </div>
             </div>
         </section>

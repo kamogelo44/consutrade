@@ -291,7 +291,49 @@ document.addEventListener('DOMContentLoaded', function() {
             itemNum.textContent = cartCount;
         }
     }
+
+    // ========== USER DROPDOWN TOGGLE (DESKTOP) ==========
+    // Took me a while to figure out how to close dropdown when clicking outside
+    // Had to use event listeners properly
+
+    var desktopDropdownToggle = document.getElementById('desktopDropdownToggle');
+    var desktopDropdownMenu = document.getElementById('desktopDropdownMenu');
+
+    if (desktopDropdownToggle && desktopDropdownMenu) {
+        desktopDropdownToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            desktopDropdownMenu.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!desktopDropdownToggle.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
+                desktopDropdownMenu.classList.remove('show');
+            }
+        });
+    }
+
+    // ========== MOBILE DROPDOWN TOGGLE ==========
+    var mobileDropdownToggle = document.getElementById('mobileDropdownToggle');
+    var mobileDropdownMenu = document.getElementById('mobileDropdownMenu');
+
+    if (mobileDropdownToggle && mobileDropdownMenu) {
+        mobileDropdownToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            mobileDropdownMenu.classList.toggle('show');
+        });
+        
+        // Close mobile dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (mobileDropdownToggle && mobileDropdownMenu) {
+                if (!mobileDropdownToggle.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
+                    mobileDropdownMenu.classList.remove('show');
+                }
+            }
+        });
+    }
     
+
     // Run this when page loads
     updateCartCount();
     
