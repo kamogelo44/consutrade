@@ -8,7 +8,7 @@
  * - Password show/hide (took me a while to figure this out)
  * - Login/register modal popups
  * - Cart count updates
- * 
+ * - User dropdown menus (desktop + mobile)
  */
 
 // Wait for the page to finish loading - learned this the hard way when my JS ran before elements existed
@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== PASSWORD TOGGLE ==========
     // This was tricky - I had to figure out how to toggle input type between 'password' and 'text'
     // My first version didn't work because I used getElementById wrong
+    // FIXED: Removed duplicate code that was setting the icon twice
     
     document.querySelectorAll('.toggle-password').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -105,22 +106,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 var newType = currentType === 'password' ? 'text' : 'password';
                 input.setAttribute('type', newType);
                 
-                // Change the eye icon to show whether password is visible or not
-                // I need both eye-open and eye-closed icons in my images folder
+                // Change the eye icon - only do this ONCE
                 var img = this.querySelector('img');
                 if (img) {
                     var iconPath = newType === 'password' ? 
                         'images/icons/eye-open-svgrepo-com.svg' : 
                         'images/icons/eye-close-svgrepo-com.svg';
                     img.setAttribute('src', iconPath);
-                }
-                
-                if (newType === 'password') {
-                    // Password is hidden, show OPEN eye
-                    img.setAttribute('src', 'images/icons/eye-open-svgrepo-com.svg');
-                } else {
-                    // Password is visible, show CLOSED eye  
-                    img.setAttribute('src', 'images/icons/eye-close-svgrepo-com.svg');
                 }
             }
         });
@@ -307,8 +299,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
-            if (!desktopDropdownToggle.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
-                desktopDropdownMenu.classList.remove('show');
+            if (desktopDropdownToggle && desktopDropdownMenu) {
+                if (!desktopDropdownToggle.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
+                    desktopDropdownMenu.classList.remove('show');
+                }
             }
         });
     }
@@ -333,7 +327,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-
     // Run this when page loads
     updateCartCount();
     
@@ -343,6 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 3. Form validation before submitting (right now it relies on PHP only)
     // 4. Lazy loading for product images to make page faster
     
-    //I keep updating the code for the javascript along with the comments. 
+    // I keep updating the code for the javascript along with the comments. 
     // This is cause i want to make this site to the best of my abilities without overcomplicated.
 });
