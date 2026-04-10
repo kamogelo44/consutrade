@@ -1,402 +1,306 @@
 /*
  * ConsuTrade - Main JavaScript File
  * Author: Kamogelo Phale
- * Student Project - All functionality for the ConsuTrade website
+ * 
+ * This file handles:
+ * - Mobile menu toggle (hamburger)
+ * - Mobile search bar
+ * - Password show/hide (took me a while to figure this out)
+ * - Login/register modal popups
+ * - Cart count updates
+ * 
  */
 
-// Wait for the HTML document to fully load before running any JavaScript
-// This ensures all elements exist before we try to interact with them
+// Wait for the page to finish loading - learned this the hard way when my JS ran before elements existed
 document.addEventListener('DOMContentLoaded', function() {
     
-    // ========== HAMBURGER MENU TOGGLE ==========
-    // This makes the mobile side menu slide in and out when clicking the hamburger icon
+    // ========== HAMBURGER MENU ==========
+    // Got this from a YouTube tutorial but modified it to work with my layout
+    // The side menu slides in from the left when you click the three lines
     
-    // Get all the elements needed for the mobile menu
-    const hamburger = document.getElementById('hamburger');           // The three lines button (☰)
-    const sideMenuHamburger = document.getElementById('sideMenuHamburger'); // Copy of hamburger inside the menu
-    const sideMenu = document.getElementById('mobile-side-menu');     // The panel that slides in
-    const overlay = document.getElementById('menu-overlay');         // Dark background behind menu
+    var hamburger = document.getElementById('hamburger');
+    var sideMenuHamburger = document.getElementById('sideMenuHamburger');
+    var sideMenu = document.getElementById('mobile-side-menu');
+    var overlay = document.getElementById('menu-overlay');
     
-    // Only run this code if all the elements exist on the page
+    function toggleMenu() {
+        // Toggle means switch between open and closed states
+        hamburger.classList.toggle('active');
+        if (sideMenuHamburger) sideMenuHamburger.classList.toggle('active');
+        sideMenu.classList.toggle('active');
+        overlay.classList.toggle('active');
+        
+        // Stop scrolling when menu is open - otherwise the background scrolls behind the menu
+        if (sideMenu.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+    
+    // Only run this if the menu elements actually exist on this page
     if (hamburger && sideMenu && overlay) {
-        
-        // This function opens or closes the side menu
-        function toggleMenu() {
-            // Toggle means switch between two states (open ↔ closed)
-            
-            // Change the hamburger icon to an X when menu opens
-            hamburger.classList.toggle('active');
-            
-            // Keep both hamburgers in sync (the one in header and the one in menu)
-            if (sideMenuHamburger) {
-                sideMenuHamburger.classList.toggle('active');
-            }
-            
-            // Slide the menu in or out
-            sideMenu.classList.toggle('active');
-            
-            // Show or hide the dark overlay
-            overlay.classList.toggle('active');
-            
-            // If menu is now open, prevent scrolling and dim the background
-            if (sideMenu.classList.contains('active')) {
-                document.body.classList.add('menu-open');      // Adds class to dim content
-                document.body.style.overflow = 'hidden';       // Stops page from scrolling
-            } else {
-                // Menu is closed, restore normal scrolling
-                document.body.classList.remove('menu-open');
-                document.body.style.overflow = '';
-            }
-        }
-
-        // This function highlights the current page in the navigation menu
-        function setActiveLink() {
-            // Get the current page filename (like "index.html" or "shop.html")
-            const currentPage = window.location.pathname.split('/').pop();
-            
-            // If the URL ends with just "/", treat it as index.html
-            const pageName = currentPage === '' ? 'index.html' : currentPage;
-            
-            // Get all navigation links (both desktop and mobile)
-            const allLinks = document.querySelectorAll('.nav-links a, .mobile-nav-links a');
-            
-            // Loop through each link and check if it matches the current page
-            allLinks.forEach(function(link) {
-                const linkHref = link.getAttribute('href');
-                
-                if (linkHref === pageName) {
-                    link.classList.add('active');   // Add orange color to current page link
-                } else {
-                    link.classList.remove('active'); // Remove orange from other links
-                }
-            });
-        }
-        
-        // Run the function to highlight the active link when page loads
-        setActiveLink();
-        
-        // When user clicks the hamburger icon, open or close the menu
         hamburger.addEventListener('click', toggleMenu);
-        
-        // When user clicks the hamburger inside the side menu, close the menu
-        if (sideMenuHamburger) {
-            sideMenuHamburger.addEventListener('click', toggleMenu);
-        }
-        
-        // When user clicks the dark overlay, close the menu
+        if (sideMenuHamburger) sideMenuHamburger.addEventListener('click', toggleMenu);
         overlay.addEventListener('click', toggleMenu);
         
-        // Close menu when user clicks any link inside the side menu
-        const menuLinks = document.querySelectorAll('.mobile-nav-links a, .mobile-menu-cart');
-        menuLinks.forEach(function(link) {
+        // Close menu when you click any link inside it - makes sense for user experience
+        document.querySelectorAll('.mobile-nav-links a, .mobile-menu-cart').forEach(function(link) {
             link.addEventListener('click', toggleMenu);
         });
         
-        // If the user resizes the window to desktop size, close the mobile menu
+        // If user resizes window to desktop size, close the mobile menu automatically
         window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                if (sideMenu.classList.contains('active')) {
-                    toggleMenu();  // Close the menu
+            if (window.innerWidth > 768 && sideMenu.classList.contains('active')) {
+                toggleMenu();
+            }
+        });
+    }
+    
+    // ========== MOBILE SEARCH ==========
+    // Clicking the search icon makes the search bar expand
+    // Had to use stopPropagation() because clicks were closing it immediately
+    
+    var mobileSearchIcon = document.getElementById('mobileSearchIcon');
+    var mobileSearchContainer = document.getElementById('mobileSearchContainer');
+    
+    if (mobileSearchIcon && mobileSearchContainer) {
+        mobileSearchIcon.addEventListener('click', function(e) {
+            e.stopPropagation(); // Without this, the document click listener would close it right away
+            mobileSearchContainer.classList.toggle('active');
+            
+            // Automatically focus the search input when it opens - small detail but users like it
+            if (mobileSearchContainer.classList.contains('active')) {
+                var searchInput = document.getElementById('mobile-search');
+                if (searchInput) {
+                    setTimeout(function() { searchInput.focus(); }, 50);
                 }
             }
         });
     }
     
-    // ========== MOBILE SEARCH TOGGLE ==========
-    // This makes the search bar expand when clicking the search icon on mobile
-
-    const mobileSearchIcon = document.getElementById('mobileSearchIcon');
-    const mobileSearchContainer = document.getElementById('mobileSearchContainer');
-
-    if (mobileSearchIcon && mobileSearchContainer) {
-        mobileSearchIcon.addEventListener('click', function(e) {
-            e.stopPropagation();  // Stops the click from reaching the document listener
-            mobileSearchContainer.classList.toggle('active');
-            
-            // If search bar opened, automatically focus on the input field
-            if (mobileSearchContainer.classList.contains('active')) {
-                const searchInput = document.getElementById('mobile-search');
-                if (searchInput) {
-                    setTimeout(function() {
-                        searchInput.focus();  // Small delay helps mobile browsers
-                    }, 50);
-                }
-            }
-        });
-    }
-
-    // ========== CLOSE SEARCH WHEN CLICKING OUTSIDE ==========
-    // This closes the search bar if user clicks anywhere else on the page
-
+    // Close search bar when clicking anywhere outside of it
     document.addEventListener('click', function(event) {
         if (mobileSearchContainer && mobileSearchIcon) {
-            // Check if click was outside search container AND outside search icon
             if (!mobileSearchContainer.contains(event.target) && 
                 !mobileSearchIcon.contains(event.target) && 
                 mobileSearchContainer.classList.contains('active')) {
-                
-                mobileSearchContainer.classList.remove('active'); // Close search bar
+                mobileSearchContainer.classList.remove('active');
             }
         }
     });
     
-    // ========== REGISTRATION MODAL TOGGLE ==========
-    // This controls the popup registration form
+    // ========== PASSWORD TOGGLE ==========
+    // This was tricky - I had to figure out how to toggle input type between 'password' and 'text'
+    // My first version didn't work because I used getElementById wrong
     
-    const registerModal = document.getElementById('register-modal');
-    const registerBtns = document.querySelectorAll('#register, .register-link-mobile');  // All Register buttons on page
-    const loginLink = document.querySelector('#login');
-    const registerCloseBtn = document.querySelector('#register-modal .btn-close');
-    
-    // Removes the orange highlight from Register buttons when modal closes
-    function removeRegisterModalActiveClasses() {
-        registerBtns.forEach(function(btn) {
-            btn.classList.remove('active');
+    document.querySelectorAll('.toggle-password').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var targetId = this.getAttribute('data-target');
+            var input = document.getElementById(targetId);
+            
+            if (input) {
+                // Check current type and switch it
+                var currentType = input.getAttribute('type');
+                var newType = currentType === 'password' ? 'text' : 'password';
+                input.setAttribute('type', newType);
+                
+                // Change the eye icon to show whether password is visible or not
+                // I need both eye-open and eye-closed icons in my images folder
+                var img = this.querySelector('img');
+                if (img) {
+                    var iconPath = newType === 'password' ? 
+                        'images/icons/eye-open-svgrepo-com.svg' : 
+                        'images/icons/eye-close-svgrepo-com.svg';
+                    img.setAttribute('src', iconPath);
+                }
+                
+                if (newType === 'password') {
+                    // Password is hidden, show OPEN eye
+                    img.setAttribute('src', 'images/icons/eye-open-svgrepo-com.svg');
+                } else {
+                    // Password is visible, show CLOSED eye  
+                    img.setAttribute('src', 'images/icons/eye-close-svgrepo-com.svg');
+                }
+            }
         });
-        if (loginLink) {
-            loginLink.classList.remove('active');
+    });
+    
+    // ========== MODAL CONTROLS ==========
+    // Popup windows for login and registration
+    // Had to make sure only one modal opens at a time
+    
+    var registerModal = document.getElementById('register-modal');
+    var loginModal = document.getElementById('login-modal');
+    var registerBtns = document.querySelectorAll('#register, .register-link-mobile');
+    var loginBtns = document.querySelectorAll('#login, .login-link-mobile');
+    var registerClose = document.querySelector('#register-modal .btn-close');
+    var loginClose = document.querySelector('#login-modal .btn-close');
+    
+    function openModal(modal) {
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
         }
     }
     
-    // Only run if the registration modal exists on this page
-    if (registerModal) {
-        // Open modal when any Register button is clicked
-        if (registerBtns.length > 0) {
-            registerBtns.forEach(function(registerBtn) {
-                registerBtn.addEventListener('click', function(e) {
-                    e.preventDefault();  // Prevent link from jumping to #
-                    
-                    // Close login modal if it's open with smooth transition
-                    if (loginModal && loginModal.classList.contains('active')) {
-                        loginModal.classList.remove('active');
-                        
-                        // Wait for login modal to close before opening register
-                        setTimeout(function() {
-                            registerBtn.classList.add('active');
-                            registerModal.classList.add('active');
-                            document.body.style.overflow = 'hidden';
-                            removeLoginModalActiveClasses();
-                        }, 400);
-                    } else {
-                        registerBtn.classList.add('active');
-                        registerModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                    
-                    if (loginLink) {
-                        loginLink.classList.remove('active');
-                    }
-                });
+    function closeModal(modal) {
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+    
+    // REGISTER MODAL
+    if (registerModal && registerBtns.length) {
+        registerBtns.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Close login modal first if it's open - can't have both open at once
+                if (loginModal && loginModal.classList.contains('active')) {
+                    closeModal(loginModal);
+                }
+                openModal(registerModal);
+            });
+        });
+        
+        // Close button (X)
+        if (registerClose) {
+            registerClose.addEventListener('click', function() { 
+                closeModal(registerModal); 
             });
         }
         
-        // Close modal when clicking the X button
-        if (registerCloseBtn) {
-            registerCloseBtn.addEventListener('click', function() {
-                registerModal.classList.remove('active');
-                document.body.style.overflow = '';
-                removeRegisterModalActiveClasses();
-            });
-        }
-        
-        // Close modal when clicking outside the white modal content
+        // Click outside the white box closes the modal
         registerModal.addEventListener('click', function(e) {
             if (e.target === registerModal) {
-                registerModal.classList.remove('active');
-                document.body.style.overflow = '';
-                removeRegisterModalActiveClasses();
+                closeModal(registerModal);
             }
         });
         
-        // Handle form submission (testing only - actual backend not implemented yet)
-        const registerForm = document.querySelector('.register-form');
-        if (registerForm) {
-            registerForm.addEventListener('submit', function(e) {
-                e.preventDefault();  // Prevent page refresh
-                alert('Registration form submitted! (This is just a test)');
-            });
-        }
-        
-        // Switch to Login modal when user clicks "Already have an account? Login"
-        const loginLinkInRegister = document.querySelector('#register-modal .login-link a');
+        // Switch to login modal when user clicks "Already have an account?"
+        var loginLinkInRegister = document.querySelector('#register-modal .login-link a');
         if (loginLinkInRegister) {
             loginLinkInRegister.addEventListener('click', function(e) {
                 e.preventDefault();
-                
-                // Close register modal and open login modal
-                if (registerModal && registerModal.classList.contains('active')) {
-                    registerModal.classList.remove('active');
-                    
-                    setTimeout(function() {
-                        loginModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                        
-                        if (registerLink) registerLink.classList.remove('active');
-                        if (loginBtns.length > 0) {
-                            loginBtns.forEach(function(btn) {
-                                btn.classList.add('active');
-                            });
-                        }
-                    }, 400);
-                } else {
-                    loginModal.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
+                closeModal(registerModal);
+                // Small delay makes the transition smoother
+                setTimeout(function() { 
+                    openModal(loginModal); 
+                }, 400);
             });
         }
     }
     
-    // ========== LOGIN MODAL TOGGLE ==========
-    // This controls the popup login form
-    
-    const loginModal = document.getElementById('login-modal');
-    const loginBtns = document.querySelectorAll('#login, .login-link-mobile');  // All Login buttons on page
-    const registerLink = document.querySelector('#register');
-    const loginCloseBtn = document.querySelector('#login-modal .btn-close');
-    
-    // Removes the orange highlight from Login buttons when modal closes
-    function removeLoginModalActiveClasses() {
+    // LOGIN MODAL - same pattern as register modal
+    if (loginModal && loginBtns.length) {
         loginBtns.forEach(function(btn) {
-            btn.classList.remove('active');
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (registerModal && registerModal.classList.contains('active')) {
+                    closeModal(registerModal);
+                }
+                openModal(loginModal);
+            });
         });
-        if (registerLink) {
-            registerLink.classList.remove('active');
-        }
-    }
-    
-    // Only run if the login modal exists on this page
-    if (loginModal) {
-        // Open modal when any Login button is clicked
-        if (loginBtns.length > 0) {
-            loginBtns.forEach(function(loginBtn) {
-                loginBtn.addEventListener('click', function(e) {
-                    e.preventDefault();  // Prevent link from jumping to #
-                    
-                    // Close register modal if it's open with smooth transition
-                    if (registerModal && registerModal.classList.contains('active')) {
-                        registerModal.classList.remove('active');
-                        
-                        // Wait for register modal to close before opening login
-                        setTimeout(function() {
-                            loginBtn.classList.add('active');
-                            loginModal.classList.add('active');
-                            document.body.style.overflow = 'hidden';
-                            removeRegisterModalActiveClasses();
-                        }, 400);
-                    } else {
-                        loginBtn.classList.add('active');
-                        loginModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                    
-                    if (registerLink) {
-                        registerLink.classList.remove('active');
-                    }
-                });
+        
+        if (loginClose) {
+            loginClose.addEventListener('click', function() { 
+                closeModal(loginModal); 
             });
         }
         
-        // Close modal when clicking the X button
-        if (loginCloseBtn) {
-            loginCloseBtn.addEventListener('click', function() {
-                loginModal.classList.remove('active');
-                document.body.style.overflow = '';
-                removeLoginModalActiveClasses();
-            });
-        }
-        
-        // Close modal when clicking outside the white modal content
         loginModal.addEventListener('click', function(e) {
             if (e.target === loginModal) {
-                loginModal.classList.remove('active');
-                document.body.style.overflow = '';
-                removeLoginModalActiveClasses();
+                closeModal(loginModal);
             }
         });
         
-        // Handle form submission (testing only - actual backend not implemented yet)
-        const loginForm = document.querySelector('.login-form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();  // Prevent page refresh
-                alert('Login form submitted! (This is just a test)');
-            });
-        }
-        
-        // Switch to Register modal when user clicks "Don't have an account? Register"
-        const registerLinkInLogin = document.querySelector('#login-modal .register-link a');
+        // Switch to register modal
+        var registerLinkInLogin = document.querySelector('#login-modal .register-link a');
         if (registerLinkInLogin) {
             registerLinkInLogin.addEventListener('click', function(e) {
                 e.preventDefault();
-                
-                // Close login modal and open register modal
-                if (loginModal && loginModal.classList.contains('active')) {
-                    loginModal.classList.remove('active');
-                    
-                    setTimeout(function() {
-                        registerModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                        
-                        if (loginLink) loginLink.classList.remove('active');
-                        if (registerBtns.length > 0) {
-                            registerBtns.forEach(function(btn) {
-                                btn.classList.add('active');
-                            });
-                        }
-                    }, 400);
-                } else {
-                    registerModal.classList.add('active');
-                    document.body.style.visibility = 'hidden';
-                }
+                closeModal(loginModal);
+                setTimeout(function() { 
+                    openModal(registerModal); 
+                }, 400);
             });
         }
-        // ========== SELLER PAGE BUTTONS ==========
-        // This handles the Register and Login buttons on the seller page
-
-        const sellerRegisterBtn = document.getElementById('seller-register-btn');
-        const sellerLoginBtn = document.getElementById('seller-login-btn');
-        const createSellerBtn = document.getElementById('create-seller-btn');
-
-        if (sellerRegisterBtn) {
-            sellerRegisterBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const registerModal = document.getElementById('register-modal');
-                if (registerModal) {
-                    registerModal.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
-            });
-        }
-
-        if (sellerLoginBtn) {
-            sellerLoginBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const loginModal = document.getElementById('login-modal');
-                if (loginModal) {
-                    loginModal.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
-            });
-        }
-
-        if (createSellerBtn) {
-            createSellerBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const registerModal = document.getElementById('register-modal');
-                if (registerModal) {
-                    registerModal.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
-            });
-        }
-
     }
+    
+    // ========== SELLER PAGE BUTTONS ==========
+    // These buttons are on the seller dashboard page
+    // They trigger the same modals from the seller area
+    
+    var sellerRegisterBtn = document.getElementById('seller-register-btn');
+    var sellerLoginBtn = document.getElementById('seller-login-btn');
+    var createSellerBtn = document.getElementById('create-seller-btn');
+    
+    if (sellerRegisterBtn) {
+        sellerRegisterBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal(registerModal);
+        });
+    }
+    
+    if (sellerLoginBtn) {
+        sellerLoginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal(loginModal);
+        });
+    }
+    
+    if (createSellerBtn) {
+        createSellerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal(registerModal);
+        });
+    }
+    
+    // ========== CART COUNT ==========
+    // Reads from localStorage and updates all cart badges on the page
+    // I need to call this whenever items are added/removed from cart
+    
+    function updateCartCount() {
+        var cartCount = 0;
+        var savedCart = localStorage.getItem('consutrade_cart');
+        
+        if (savedCart) {
+            try {
+                var cart = JSON.parse(savedCart);
+                // Loop through each item and add up quantities
+                for (var i = 0; i < cart.length; i++) {
+                    cartCount += cart[i].quantity || 1;
+                }
+            } catch(e) {
+                // If JSON is corrupted, just ignore it
+                console.log('Error reading cart:', e);
+            }
+        }
+        
+        // Update all cart count badges (there are multiple on desktop and mobile)
+        var cartBadges = document.querySelectorAll('.cart-count');
+        for (var i = 0; i < cartBadges.length; i++) {
+            cartBadges[i].textContent = cartCount;
+        }
+        
+        // Update the cart page item count if we're on that page
+        var itemNum = document.querySelector('.item-num');
+        if (itemNum) {
+            itemNum.textContent = cartCount;
+        }
+    }
+    
+    // Run this when page loads
+    updateCartCount();
+    
+    // TODO: Features I want to add later when I have time:
+    // 1. Product image preview when uploading (like Facebook does)
+    // 2. Better cart add/remove animations
+    // 3. Form validation before submitting (right now it relies on PHP only)
+    // 4. Lazy loading for product images to make page faster
+    
+    //I keep updating the code for the javascript along with the comments. 
+    // This is cause i want to make this site to the best of my abilities without overcomplicated.
 });
-
-
-// ========== FEATURES TO BE IMPLEMENTED LATER ==========
-// These features will be added as the project progresses:
-// 1. Product image preview when sellers upload products
-// 2. Shopping cart add/remove functionality with price calculations
-// 3. Form validation for registration, login, and product listing forms
-// 4. Lazy loading for product images (improves performance on slow connections)
