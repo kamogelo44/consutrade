@@ -1,11 +1,16 @@
 <?php
 session_start();
 
-// Read errors
+// Read register errors
 $registerErrors = $_SESSION['register_errors'] ?? [];
 $registerFormData = $_SESSION['register_form_data'] ?? [];
 unset($_SESSION['register_errors']);
 unset($_SESSION['register_form_data']);
+// Read login errors
+$loginErrors = $_SESSION['login_errors'] ?? [];
+$loginEmail = $_SESSION['login_email'] ?? '';
+unset($_SESSION['login_errors']);
+unset($_SESSION['login_email']);
 
 // Read flash message
 $flash = $_SESSION['flash'] ?? null;
@@ -62,6 +67,41 @@ unset($_SESSION['flash']);
         if (errorContainer) {
             errorContainer.style.display = 'block';
         }
+    });
+    </script>
+    <?php endif; ?>
+
+    <?php if (!empty($loginErrors)): ?>
+    <script>
+    // Open login modal if there are login errors
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('login-modal');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Pre-fill email
+        var emailInput = document.getElementById('login-email');
+        if (emailInput) {
+            emailInput.value = '<?php echo addslashes($loginEmail); ?>';
+        }
+        
+        // Show error messages
+        <?php foreach ($loginErrors as $field => $message): ?>
+        var errorEl = document.createElement('small');
+        errorEl.className = 'error-text';
+        errorEl.style.color = '#f44336';
+        errorEl.style.display = 'block';
+        errorEl.style.marginTop = '6px';
+        errorEl.textContent = '<?php echo addslashes($message); ?>';
+        
+        var inputGroup = document.querySelector('#login-modal .input-group:has(#login-<?php echo $field; ?>)');
+        if (inputGroup) {
+            inputGroup.classList.add('error');
+            inputGroup.appendChild(errorEl);
+        }
+        <?php endforeach; ?>
     });
     </script>
     <?php endif; ?>
@@ -267,6 +307,11 @@ unset($_SESSION['flash']);
             <div class="modal-header">
                 <h1>Consu<span>Trade</span></h1>
                 <p>Welcome back to ConsuTrade</p>
+            </div>
+
+            <!-- Error container for login -->
+            <div id="login-error-container" class="error-container" style="display: none;">
+                <div class="error-message">Please fix the errors below</div>
             </div>
             
             <form action="php/login.php" method="post" class="login-form">
