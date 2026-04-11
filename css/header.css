@@ -2,6 +2,8 @@
 /* Author: Kamogelo Phale */
 /* This file contains all styles for the website header, navigation, and user dropdown */
 
+/* ========== DESKTOP STYLES (768px and above) ========== */
+
 /* ========== HEADER STYLES ========== */
 header {
     height: 70px;
@@ -37,7 +39,6 @@ header {
 .mobile-menu-header,
 .mobile-nav-links,
 .mobile-menu-search,
-.mobile-menu-cart .cart-count,
 .menu-overlay {
     display: none;
 }
@@ -202,10 +203,10 @@ header {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    background: var(--white, #ffffff);
+    background-color: var(--white, #ffffff);
     border-radius: var(--radius-md, 8px);
     box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
-    min-width: 180px;
+    min-width: 200px;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
@@ -225,7 +226,7 @@ header {
 .dropdown-menu li {
     margin: 0;
     padding: 0;
-    height: auto;
+    list-style: none;
 }
 
 .dropdown-menu a {
@@ -233,24 +234,24 @@ header {
     padding: 10px 20px;
     font-size: var(--font-md, 14px);
     text-decoration: none;
-    color: var(--gray-dark, #333);
+    color: var(--gray-dark, #333333) !important;
+    background-color: transparent;
     transition: background-color var(--transition-fast, 0.2s ease);
-    height: auto;
+    white-space: nowrap;
 }
 
 .dropdown-menu a:hover {
     background-color: var(--gray-bg, #f5f5f5);
-    color: var(--primary-color, #FF6B00);
+    color: var(--primary-color, #FF6B00) !important;
 }
 
-/* ========== CART COUNT BADGE STYLES ========== */
-
-/* Desktop cart */
+/* ========== CART COUNT BADGE STYLES (DESKTOP) ========== */
 .desktop-cart {
     position: relative;
     display: flex;
     align-items: center;
     text-decoration: none;
+    height: 100%;
 }
 
 .desktop-cart img {
@@ -261,7 +262,7 @@ header {
 
 .desktop-cart .cart-count {
     position: absolute;
-    top: -10px;
+    top: 15px;
     right: -12px;
     background-color: var(--primary-color);
     color: var(--white);
@@ -276,74 +277,7 @@ header {
     line-height: 1;
 }
 
-/* Mobile header cart */
-.mobile-header-cart {
-    position: relative;
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-}
-
-.mobile-header-cart .cart-count {
-    position: absolute;
-    top: -10px;
-    right: -12px;
-    background-color: var(--primary-color);
-    color: var(--white);
-    font-size: 10px;
-    font-weight: var(--font-bold);
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
-
-/* Mobile menu cart */
-.mobile-menu-cart {
-    position: relative;
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: var(--spacing-sm) var(--spacing-xl);
-    margin-top: 0;
-    border-top: 1px solid var(--gray-dark);
-    border-bottom: 1px solid var(--gray-dark);
-    text-decoration: none;
-}
-
-.cart-icon-wrapper {
-    position: relative;
-    display: inline-block;
-}
-
-.mobile-menu-cart .cart-count {
-    position: absolute;
-    top: -10px;
-    right: -12px;
-    background-color: var(--primary-color);
-    color: var(--white);
-    font-size: 10px;
-    font-weight: var(--font-bold);
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
-
-.cart-text {
-    font-size: var(--font-lg);
-    color: var(--white);
-    font-weight: var(--font-normal);
-}
-
-/* ========== MOBILE SEARCH ========== */
+/* ========== MOBILE SEARCH (visible on both, but absolute positioned) ========== */
 .mobile-search-container {
     position: absolute;
     top: 100%;
@@ -391,92 +325,13 @@ header {
     height: 18px;
 }
 
-/* ========== MOBILE USER SECTION ========== */
-.mobile-user-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: rgba(255, 255, 255, 0.15);
-    padding: 6px 12px;
-    border-radius: var(--radius-round, 30px);
-}
+/* ========================================================================== */
+/* ========== MOBILE STYLES (768px and below) ========== */
+/* ========================================================================== */
 
-.mobile-welcome {
-    font-size: var(--font-sm, 12px);
-    color: var(--white, #ffffff);
-    white-space: nowrap;
-}
-
-.mobile-profile-dropdown {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.mobile-profile-icon {
-    border-radius: 50%;
-    background-color: var(--primary-color, #FF6B00);
-    padding: 2px;
-}
-
-.mobile-dropdown-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    padding: 0;
-}
-
-/* Mobile dropdown menu (appears below header) */
-.mobile-dropdown-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--white, #ffffff);
-    box-shadow: var(--shadow-sm, 0 4px 12px rgba(0, 0, 0, 0.1));
-    display: none;
-    flex-direction: column;
-    z-index: calc(var(--z-dropdown, 100) - 1);
-}
-
-.mobile-dropdown-menu.show {
-    display: flex;
-}
-
-.mobile-dropdown-menu a {
-    padding: 14px 20px;
-    color: var(--gray-dark, #333);
-    text-decoration: none;
-    border-bottom: 1px solid var(--border-light, #e0e0e0);
-    font-size: var(--font-md, 14px);
-}
-
-.mobile-dropdown-menu a:hover {
-    background-color: var(--gray-bg, #f5f5f5);
-    color: var(--primary-color, #FF6B00);
-}
-
-/* Desktop dropdown shows on desktop */
-@media (min-width: 769px) {
-    .user-dropdown {
-        display: block;
-    }
-}
-
-/* Hide mobile user info on desktop */
-@media (min-width: 769px) {
-    .mobile-user-info {
-        display: none;
-    }
-    .mobile-dropdown-menu {
-        display: none !important;
-    }
-}
-
-/* ========== MOBILE STYLES ========== */
 @media (max-width: 768px) {
+    
+    /* ----- HEADER ----- */
     header {
         height: 60px;
         padding: 0 15px;
@@ -491,7 +346,7 @@ header {
         display: none;
     }
     
-    /* Show hamburger */
+    /* ----- HAMBURGER MENU BUTTON ----- */
     .hamburger {
         display: flex;
         flex-direction: column;
@@ -514,7 +369,7 @@ header {
         transition: all var(--transition-normal);
     }
     
-    /* Logo centered */
+    /* ----- LOGO CENTERED ----- */
     .logo {
         font-size: var(--font-2xl);
         position: absolute;
@@ -524,7 +379,7 @@ header {
         transition: opacity var(--transition-normal);
     }
     
-    /* Header icons - visible when menu closed */
+    /* ----- HEADER ICONS (Search + Cart) ----- */
     .header-icons {
         display: flex;
         gap: var(--spacing-xl);
@@ -550,6 +405,31 @@ header {
         display: block;
     }
     
+    /* ----- MOBILE HEADER CART BADGE ----- */
+    .mobile-header-cart {
+        position: relative;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+    
+    .mobile-header-cart .cart-count {
+        position: absolute;
+        top: -10px;
+        right: -12px;
+        background-color: var(--primary-color);
+        color: var(--white);
+        font-size: 10px;
+        font-weight: var(--font-bold);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+    
     /* Hide header icons and logo when menu is open */
     body.menu-open .header-icons,
     body.menu-open .logo {
@@ -557,7 +437,7 @@ header {
         visibility: hidden;
     }
     
-    /* ===== MOBILE SIDE MENU ===== */
+    /* ----- MOBILE SIDE MENU (sliding panel) ----- */
     .mobile-side-menu {
         position: fixed;
         top: 0;
@@ -579,7 +459,7 @@ header {
         left: 0;
     }
     
-    /* Hamburger button inside side menu (acts as close button) */
+    /* ----- CLOSE BUTTON INSIDE SIDE MENU ----- */
     .side-menu-hamburger {
         position: absolute;
         top: 20px;
@@ -595,6 +475,8 @@ header {
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        /* Hidden by default (menu closed) */
+        display: none;
     }
 
     .side-menu-hamburger span {
@@ -642,7 +524,7 @@ header {
         display: flex;
     }
     
-    /* Mobile menu header */
+    /* ----- MOBILE MENU HEADER (Logo inside menu) ----- */
     .mobile-menu-header {
         display: block;
         width: 100%;
@@ -662,7 +544,45 @@ header {
         color: var(--primary-color);
     }
     
-    /* Mobile navigation links */
+    /* ----- MOBILE PROFILE SECTION (inside side menu) ----- */
+    .mobile-profile-section {
+        padding: 20px;
+        border-bottom: 1px solid var(--gray-dark);
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    
+    .mobile-profile-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .mobile-profile-avatar {
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        padding: 3px;
+    }
+    
+    .mobile-profile-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .mobile-profile-name {
+        font-size: var(--font-base);
+        font-weight: var(--font-bold);
+        color: var(--white);
+    }
+    
+    .mobile-profile-role {
+        font-size: var(--font-xs);
+        color: var(--gray-light);
+        text-transform: capitalize;
+    }
+    
+    /* ----- MOBILE NAVIGATION LINKS ----- */
     .mobile-nav-links {
         display: flex;
         flex-direction: column;
@@ -684,7 +604,23 @@ header {
         text-decoration: none;
     }
     
-    /* Search inside side menu */
+    /* Menu divider line */
+    .mobile-menu-divider {
+        height: 1px;
+        background-color: var(--gray-dark);
+        margin: 10px 20px;
+    }
+    
+    /* Logout link special styling */
+    .mobile-logout-link {
+        color: #ff6b6b !important;
+    }
+    
+    .mobile-logout-link:hover {
+        background-color: rgba(255, 107, 107, 0.1) !important;
+    }
+    
+    /* ----- SEARCH INSIDE SIDE MENU ----- */
     .mobile-menu-search {
         display: block;
         width: 100%;
@@ -705,8 +641,9 @@ header {
         width: 100%;
     }
     
-    /* Cart inside side menu */
+    /* ----- CART INSIDE SIDE MENU ----- */
     .mobile-menu-cart {
+        position: relative;
         display: flex !important;
         align-items: center;
         justify-content: space-between;
@@ -717,7 +654,6 @@ header {
         border-bottom: 1px solid var(--gray-dark);
         text-decoration: none;
     }
- 
     
     .cart-text {
         font-size: var(--font-lg);
@@ -730,7 +666,29 @@ header {
         height: var(--spacing-lg);
     }
     
-    /* Overlay */
+    .cart-icon-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .mobile-menu-cart .cart-count {
+        position: absolute;
+        top: -10px;
+        right: -12px;
+        background-color: var(--primary-color);
+        color: var(--white);
+        font-size: 10px;
+        font-weight: var(--font-bold);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+    
+    /* ----- OVERLAY (dark background when menu is open) ----- */
     .menu-overlay {
         position: fixed;
         top: 0;
@@ -747,7 +705,11 @@ header {
     }
 }
 
-/* Hamburger animation */
+/* ========================================================================== */
+/* ========== GLOBAL HEADER ANIMATIONS & BODY STATES ========== */
+/* ========================================================================== */
+
+/* Hamburger animation (turns into X when active) */
 .hamburger.active span:nth-child(1) {
     transform: rotate(45deg) translate(5px, 5px);
 }
@@ -760,7 +722,7 @@ header {
     transform: rotate(-45deg) translate(5px, -5px);
 }
 
-/* Body class when menu is open */
+/* Body class when menu is open - dims the background content */
 body.menu-open {
     overflow: hidden;
 }

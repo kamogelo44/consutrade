@@ -9,6 +9,7 @@
  * - Login/register modal popups
  * - Cart count updates
  * - User dropdown menus (desktop + mobile)
+ * - Sell link behavior for logged-in buyers
  */
 
 // Wait for the page to finish loading - learned this the hard way when my JS ran before elements existed
@@ -93,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== PASSWORD TOGGLE ==========
     // This was tricky - I had to figure out how to toggle input type between 'password' and 'text'
     // My first version didn't work because I used getElementById wrong
-    // FIXED: Removed duplicate code that was setting the icon twice
     
     document.querySelectorAll('.toggle-password').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -247,6 +247,45 @@ document.addEventListener('DOMContentLoaded', function() {
         createSellerBtn.addEventListener('click', function(e) {
             e.preventDefault();
             openModal(registerModal);
+        });
+    }
+    
+    // ========== SELL LINK HANDLING FOR LOGGED-IN BUYERS ==========
+    // When a logged-in buyer clicks "Sell", show confirmation before proceeding
+    
+    var sellLink = document.getElementById('sell-link');
+    var sellLinkMobile = document.querySelector('.sell-link-mobile');
+    
+    function handleSellLink(e) {
+        e.preventDefault();
+        // Show confirmation dialog for buyers
+        var userConfirmed = confirm('You are currently registered as a buyer.\n\nWould you like to upgrade to a seller account? This will allow you to list and sell products on ConsuTrade.');
+        
+        if (userConfirmed) {
+            window.location.href = 'php/upgrade-to-seller.php';
+        }
+    }
+    
+    if (sellLink) {
+        sellLink.addEventListener('click', handleSellLink);
+    }
+    
+    if (sellLinkMobile) {
+        sellLinkMobile.addEventListener('click', handleSellLink);
+    }
+    
+    // ========== UPGRADE BANNER BUTTON ==========
+    // Handle the upgrade button on the sell.php page for logged-in buyers
+    
+    var upgradeBtn = document.getElementById('upgrade-to-seller-btn');
+    if (upgradeBtn) {
+        upgradeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var userConfirmed = confirm('Are you sure you want to upgrade to a seller account?\n\nYou will be able to list and sell your products on ConsuTrade.');
+            
+            if (userConfirmed) {
+                window.location.href = 'php/upgrade-to-seller.php';
+            }
         });
     }
     

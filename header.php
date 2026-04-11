@@ -10,43 +10,15 @@
     <!-- Center: Logo -->
     <div class="logo"><a href="index.php">Consu<span>Trade</span></a></div>
 
-    <!-- Mobile Header Icons -->
+    <!-- Mobile Header Icons - SIMPLIFIED (no profile dropdown) -->
     <div class="header-icons">
         <button class="mobile-search-icon" id="mobileSearchIcon">
             <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
         </button>
-        
-        <!-- Show different mobile icons based on login status -->
-        <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-            <!-- Logged IN - mobile icons -->
-            <div class="mobile-user-info">
-                <span class="mobile-welcome">Hi, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                <div class="mobile-profile-dropdown" style="position: relative;">
-                    <div class="mobile-dropdown-trigger">
-                        <img src="images/icons/profile-round-1342-svgrepo-com.svg" class="mobile-profile-icon" width="28px" height="28px" alt="Profile">
-                        <button class="mobile-dropdown-toggle" id="mobileDropdownToggle">
-                            <img src="images/icons/chevron-down-svgrepo-com.svg" width="16px" height="16px" alt="Menu">
-                        </button>
-                    </div>
-                    <!-- DROPDOWN MENU -->
-                    <div class="mobile-dropdown-menu" id="mobileDropdownMenu">
-                        <a href="profile.php">My Profile</a>
-                        <a href="my-orders.php">My Orders</a>
-                        <?php if ($_SESSION['role'] === 'seller'): ?>
-                            <a href="seller-dashboard.php">Seller Dashboard</a>
-                            <a href="my-products.php">My Products</a>
-                        <?php endif; ?>
-                        <a href="php/logout.php">Logout</a>
-                    </div>
-                </div>
-            </div>
-        <?php else: ?>
-            <!-- Logged OUT - mobile icons -->
-            <a href="cart.php" class="mobile-header-cart">
-                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                <span class="cart-count">0</span>
-            </a>
-        <?php endif; ?>
+        <a href="cart.php" class="mobile-header-cart">
+            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+            <span class="cart-count">0</span>
+        </a>
     </div>
 
     <!-- Desktop Search Form -->
@@ -65,18 +37,21 @@
             <li><a href="index.php">Home</a></li>
             <li><a href="product-listings.php">Shop</a></li>
             
-            <!-- Only show Sell link if NOT logged in -->
-            <?php if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+                <?php if ($_SESSION['role'] === 'seller'): ?>
+                    <li><a href="seller-dashboard.php">Sell</a></li>
+                <?php else: ?>
+                    <li><a href="sell.php" id="sell-link">Sell</a></li>
+                <?php endif; ?>
+            <?php else: ?>
                 <li><a href="sell.php">Sell</a></li>
             <?php endif; ?>
             
-            <!-- Show different links based on login status -->
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-                <!-- Logged IN - desktop user menu -->
                 <li class="user-dropdown">
                     <div class="user-info">
                         <span class="welcome-text">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                        <img src="images/icons/profile-round-1342-svgrepo-com.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
+                        <img src="images/icons/profile-svgrepo-com.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
                         <button class="dropdown-toggle" id="desktopDropdownToggle">
                             <img src="images/icons/chevron-down-svgrepo-com.svg" class="icon-white" width="16px" height="16px" alt="Menu">
                         </button>
@@ -92,13 +67,11 @@
                     </ul>
                 </li>
             <?php else: ?>
-                <!-- Logged OUT - desktop links -->
                 <li><a href="" id="login">Login</a></li>
                 <li><a href="#register-modal" id="register">Register</a></li>
             <?php endif; ?>
         </ul>
         
-        <!-- Desktop Cart Icon -->
         <a href="cart.php" class="desktop-cart">
             <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
             <span class="cart-count">0</span>
@@ -118,26 +91,45 @@
             </div>
         </div>
         
+        <!-- PROFILE SECTION INSIDE SIDE MENU-->
+        <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+            <div class="mobile-profile-section">
+                <div class="mobile-profile-info">
+                    <img src="images/icons/profile-svgrepo-com.svg" class="mobile-profile-avatar" width="40px" height="40px" alt="Profile">
+                    <div class="mobile-profile-text">
+                        <span class="mobile-profile-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+                        <span class="mobile-profile-role"><?php echo ucfirst($_SESSION['role']); ?></span>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+        
         <ul class="mobile-nav-links">
             <li><a href="index.php">Home</a></li>
             <li><a href="product-listings.php">Shop</a></li>
             
-            <!-- Only show Sell link if NOT logged in -->
-            <?php if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+                <?php if ($_SESSION['role'] === 'seller'): ?>
+                    <li><a href="seller-dashboard.php">Sell</a></li>
+                <?php else: ?>
+                    <li><a href="sell.php" class="sell-link-mobile">Sell</a></li>
+                <?php endif; ?>
+            <?php else: ?>
                 <li><a href="sell.php">Sell</a></li>
             <?php endif; ?>
             
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-                <!-- Logged IN - mobile menu links -->
+                <li class="mobile-menu-divider"></li>
                 <li><a href="profile.php">My Profile</a></li>
                 <li><a href="my-orders.php">My Orders</a></li>
                 <?php if ($_SESSION['role'] === 'seller'): ?>
                     <li><a href="seller-dashboard.php">Seller Dashboard</a></li>
                     <li><a href="my-products.php">My Products</a></li>
                 <?php endif; ?>
-                <li><a href="php/logout.php">Logout</a></li>
+                <li class="mobile-menu-divider"></li>
+                <li><a href="php/logout.php" class="mobile-logout-link">Logout</a></li>
             <?php else: ?>
-                <!-- Logged OUT - mobile menu links -->
+                <li class="mobile-menu-divider"></li>
                 <li><a href="#login-modal" class="login-link-mobile">Login</a></li>
                 <li><a href="#register-modal" class="register-link-mobile">Register</a></li>
             <?php endif; ?>
@@ -265,7 +257,6 @@
             <p>Welcome back to ConsuTrade</p>
         </div>
 
-        <!-- Error container for login -->
         <div id="login-error-container" class="error-container" style="display: none;">
             <div class="error-message">Please fix the errors below</div>
         </div>
