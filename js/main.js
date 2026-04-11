@@ -284,6 +284,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ========== AUTO-CLOSE MODAL ON SUCCESS ==========
+    // If there's a flash message and no errors, close any open modals
+    // This prevents the modal from staying open after successful registration/login
+    
+    var flashMessage = document.querySelector('.flash');
+    if (flashMessage) {
+        // Flash message exists = successful registration/login
+        // Close any open modals
+        if (registerModal && registerModal.classList.contains('active')) {
+            closeModal(registerModal);
+        }
+        if (loginModal && loginModal.classList.contains('active')) {
+            closeModal(loginModal);
+        }
+        
+        // Auto-hide flash message after 5 seconds
+        setTimeout(function() {
+            flashMessage.style.opacity = '0';
+            flashMessage.style.transition = 'opacity 0.5s ease';
+            setTimeout(function() {
+                if (flashMessage) flashMessage.remove();
+            }, 500);
+        }, 5000);
+    }
+
     // ========== USER DROPDOWN TOGGLE (DESKTOP) ==========
     // Took me a while to figure out how to close dropdown when clicking outside
     // Had to use event listeners properly

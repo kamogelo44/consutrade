@@ -5,6 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/products.css">
+        <link rel="stylesheet" href="css/login-signup.css">
+        <link rel="stylesheet" href="css/header.css">
         <title>Product Details</title>
     </head>
     <body>
@@ -66,7 +68,7 @@
                     <div class="rev-container">
                         <div class="seller-profile">
                             <div class="profile-pic">
-                                <img src="images/icons/profile-round-1342-svgrepo-com.svg" width="24px" height="24px" alt="Seller Profile Picture">
+                                <img src="images/icons/profile-round-1342-svgrepo-com.svg" class=profile-color width="24px" height="24px" alt="Seller Profile Picture">
                             </div>
                             <p class="seller-name">Jacobeth Thobakgale</p>
                         </div>

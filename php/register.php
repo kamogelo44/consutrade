@@ -14,6 +14,7 @@
  * Problems I ran into:
  * - Forgot to start session at the top, took 30 mins to figure out why variables weren't saving
  * - The prepared statement bind_param had wrong number of parameters (had 4, needed 5)
+ * - FIXED: Flash message was showing on error instead of success
  * 
  */
 // Start session to store error messages and form data
@@ -105,11 +106,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['role'] = $role;
             $_SESSION['logged_in'] = true;
 
+            // FIXED: Set flash message for success
+            $_SESSION['flash'] = 'Registration successful. Welcome to ConsuTrade.';
+            
             // Redirect based on user role
             if ($role === 'seller') {
                 header('Location: ../seller-dashboard.php');
             } else {
-                header('Location: ../index.php?registered=success');
+                header('Location: ../index.php');
             }
             exit;
         } else {
@@ -133,8 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'role' => $role
         ];
         
-        // Redirect back to index page with parameter to open register modal
-        $_SESSION['flash'] = 'Registration successful. Welcome to ConsuTrade.';
+        // FIXED: No flash message on error - only errors
+        // Redirect back to index page
         header('Location: ../index.php');
         exit;
     }

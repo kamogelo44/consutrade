@@ -58,11 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['logged_in'] = true;
                 
+                // FIXED: Set flash message for success
+                $_SESSION['flash'] = 'Welcome back, ' . $user['full_name'] . '!';
+                
                 // Redirect based on role
                 if ($user['role'] === 'seller') {
                     header('Location: ../seller-dashboard.php');
                 } else {
-                    $_SESSION['flash'] = 'Welcome back, ' . $user['full_name'] . '!';
                     header('Location: ../index.php');
                 }
                 exit;

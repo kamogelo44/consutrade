@@ -25,6 +25,7 @@ unset($_SESSION['flash']);
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/login-signup.css">
+    <link rel="stylesheet" href="css/header.css">
     
     <?php if (!empty($registerErrors)): ?>
     <script>

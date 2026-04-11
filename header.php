@@ -21,11 +21,23 @@
             <!-- Logged IN - mobile icons -->
             <div class="mobile-user-info">
                 <span class="mobile-welcome">Hi, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                <div class="mobile-profile-dropdown">
-                    <img src="images/icons/profile-placeholder.svg" class="mobile-profile-icon" width="28px" height="28px" alt="Profile">
-                    <button class="mobile-dropdown-toggle" id="mobileDropdownToggle">
-                        <img src="images/icons/chevron-down.svg" width="16px" height="16px" alt="Menu">
-                    </button>
+                <div class="mobile-profile-dropdown" style="position: relative;">
+                    <div class="mobile-dropdown-trigger">
+                        <img src="images/icons/profile-round-1342-svgrepo-com.svg" class="mobile-profile-icon" width="28px" height="28px" alt="Profile">
+                        <button class="mobile-dropdown-toggle" id="mobileDropdownToggle">
+                            <img src="images/icons/chevron-down-svgrepo-com.svg" width="16px" height="16px" alt="Menu">
+                        </button>
+                    </div>
+                    <!-- DROPDOWN MENU -->
+                    <div class="mobile-dropdown-menu" id="mobileDropdownMenu">
+                        <a href="profile.php">My Profile</a>
+                        <a href="my-orders.php">My Orders</a>
+                        <?php if ($_SESSION['role'] === 'seller'): ?>
+                            <a href="seller-dashboard.php">Seller Dashboard</a>
+                            <a href="my-products.php">My Products</a>
+                        <?php endif; ?>
+                        <a href="php/logout.php">Logout</a>
+                    </div>
                 </div>
             </div>
         <?php else: ?>
@@ -52,7 +64,11 @@
         <ul class="nav-links">
             <li><a href="index.php">Home</a></li>
             <li><a href="product-listings.php">Shop</a></li>
-            <li><a href="sell.php">Sell</a></li>
+            
+            <!-- Only show Sell link if NOT logged in -->
+            <?php if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+                <li><a href="sell.php">Sell</a></li>
+            <?php endif; ?>
             
             <!-- Show different links based on login status -->
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
@@ -60,9 +76,9 @@
                 <li class="user-dropdown">
                     <div class="user-info">
                         <span class="welcome-text">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                        <img src="images/icons/profile-placeholder.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
+                        <img src="images/icons/profile-round-1342-svgrepo-com.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
                         <button class="dropdown-toggle" id="desktopDropdownToggle">
-                            <img src="images/icons/chevron-down.svg" width="16px" height="16px" alt="Menu">
+                            <img src="images/icons/chevron-down-svgrepo-com.svg" class="icon-white" width="16px" height="16px" alt="Menu">
                         </button>
                     </div>
                     <ul class="dropdown-menu" id="desktopDropdownMenu">
@@ -82,6 +98,7 @@
             <?php endif; ?>
         </ul>
         
+        <!-- Desktop Cart Icon -->
         <a href="cart.php" class="desktop-cart">
             <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
             <span class="cart-count">0</span>
@@ -104,7 +121,11 @@
         <ul class="mobile-nav-links">
             <li><a href="index.php">Home</a></li>
             <li><a href="product-listings.php">Shop</a></li>
-            <li><a href="sell.php">Sell</a></li>
+            
+            <!-- Only show Sell link if NOT logged in -->
+            <?php if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true): ?>
+                <li><a href="sell.php">Sell</a></li>
+            <?php endif; ?>
             
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
                 <!-- Logged IN - mobile menu links -->
@@ -151,19 +172,6 @@
             </div>
         </form>
     </div>
-
-    <!-- Mobile Dropdown Menu (for logged-in users) -->
-    <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-    <div class="mobile-dropdown-menu" id="mobileDropdownMenu">
-        <a href="profile.php">My Profile</a>
-        <a href="my-orders.php">My Orders</a>
-        <?php if ($_SESSION['role'] === 'seller'): ?>
-            <a href="seller-dashboard.php">Seller Dashboard</a>
-            <a href="my-products.php">My Products</a>
-        <?php endif; ?>
-        <a href="php/logout.php">Logout</a>
-    </div>
-    <?php endif; ?>
 
     <!-- Overlay -->
     <div class="menu-overlay" id="menu-overlay"></div>
@@ -256,7 +264,8 @@
             <h1>Consu<span>Trade</span></h1>
             <p>Welcome back to ConsuTrade</p>
         </div>
-        
+
+        <!-- Error container for login -->
         <div id="login-error-container" class="error-container" style="display: none;">
             <div class="error-message">Please fix the errors below</div>
         </div>

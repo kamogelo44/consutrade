@@ -7,6 +7,8 @@
         <title>ConsuTrade - Buy and Sell Across South Africa</title>
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/products.css">
+        <link rel="stylesheet" href="css/login-signup.css">
+        <link rel="stylesheet" href="css/header.css">
     </head>
     <body>
         <!--Header-->

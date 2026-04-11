@@ -6,6 +6,7 @@
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/cart.css">
         <link rel="stylesheet" href="css/login-signup.css">
+        <link rel="stylesheet" href="css/header.css">
         <title>Cart Page</title>
     </head>
     <body>
