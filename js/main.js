@@ -10,10 +10,45 @@
  * - Cart count updates
  * - User dropdown menus (desktop + mobile)
  * - Sell link behavior for logged-in buyers
+ * - Active navigation link highlighting
  */
 
 // Wait for the page to finish loading - learned this the hard way when my JS ran before elements existed
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // ========== ACTIVE NAVIGATION LINK ==========
+    // Highlights the current page in the navigation menu
+    
+    function setActiveLink() {
+        // Get current page filename
+        var path = window.location.pathname;
+        var currentPage = path.substring(path.lastIndexOf('/') + 1);
+        
+        // Default to index.php if no page specified
+        if (currentPage === '') {
+            currentPage = 'index.php';
+        }
+        
+        // Get all navigation links (desktop and mobile)
+        var navLinks = document.querySelectorAll('.nav-links a, .mobile-nav-links a');
+        
+        // Loop through and add active class to matching link
+        for (var i = 0; i < navLinks.length; i++) {
+            var link = navLinks[i];
+            var href = link.getAttribute('href');
+            
+            // Remove active class from all links first
+            link.classList.remove('active');
+            
+            // Add active class if href matches current page
+            if (href === currentPage) {
+                link.classList.add('active');
+            }
+        }
+    }
+    
+    // Run the active link function
+    setActiveLink();
     
     // ========== HAMBURGER MENU ==========
     // Got this from a YouTube tutorial but modified it to work with my layout

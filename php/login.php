@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Password is correct - start session
                 // Regenerate session ID to prevent fixation attacks (learned this from a security article)
                 session_regenerate_id(true);
+                $_SESSION['user_id'] = $new_user_id;
                 
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['full_name'] = $user['full_name'];
@@ -83,8 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // If we got here, something went wrong - store errors and redirect back
     if (!empty($errors)) {
-        $_SESSION['login_errors'] = $errors;
-        $_SESSION['login_email'] = $email; // Pre-fill email field
+        $errors['general'] = 'Incorrect email or password';
         header('Location: ../index.php');
         exit;
     }

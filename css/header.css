@@ -225,7 +225,7 @@ header {
 
 .dropdown-menu li {
     margin: 0;
-    padding: 0;
+    padding: 16px;
     list-style: none;
 }
 
@@ -241,7 +241,6 @@ header {
 }
 
 .dropdown-menu a:hover {
-    background-color: var(--gray-bg, #f5f5f5);
     color: var(--primary-color, #FF6B00) !important;
 }
 
@@ -459,7 +458,7 @@ header {
         left: 0;
     }
     
-    /* ----- CLOSE BUTTON INSIDE SIDE MENU ----- */
+    /* ----- CLOSE BUTTON INSIDE SIDE MENU (X button) ----- */
     .side-menu-hamburger {
         position: absolute;
         top: 20px;
@@ -471,39 +470,41 @@ header {
         cursor: pointer;
         padding: 0;
         z-index: 10;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
         /* Hidden by default (menu closed) */
         display: none;
     }
 
     .side-menu-hamburger span {
+        display: block;
         position: absolute;
-        width: 24px;
+        left: 0;
+        width: 100%;
         height: 2px;
         background-color: var(--white);
         border-radius: 2px;
         transition: all var(--transition-normal);
     }
 
-    /* Three lines stacked vertically */
+    /* Three lines stacked vertically (hamburger icon) */
     .side-menu-hamburger span:nth-child(1) {
-        transform: translateY(-8px);
+        top: 0;
+        transform: translateY(0);
     }
 
     .side-menu-hamburger span:nth-child(2) {
-        opacity: 1;
+        top: 50%;
+        transform: translateY(-50%);
     }
 
     .side-menu-hamburger span:nth-child(3) {
-        transform: translateY(8px);
+        bottom: 0;
+        transform: translateY(0);
     }
 
     /* When active (menu open), transform to X */
     .side-menu-hamburger.active span:nth-child(1) {
-        transform: rotate(45deg);
+        top: 50%;
+        transform: translateY(-50%) rotate(45deg);
     }
 
     .side-menu-hamburger.active span:nth-child(2) {
@@ -511,12 +512,8 @@ header {
     }
 
     .side-menu-hamburger.active span:nth-child(3) {
-        transform: rotate(-45deg);
-    }
-
-    /* Hide side menu hamburger by default (menu closed) */
-    .side-menu-hamburger {
-        display: none;
+        bottom: 50%;
+        transform: translateY(50%) rotate(-45deg);
     }
 
     /* When menu is open, show side menu hamburger */
@@ -602,6 +599,13 @@ header {
         padding: var(--spacing-sm) var(--spacing-xl);
         color: var(--white);
         text-decoration: none;
+    }
+
+    /* Active link styling for mobile */
+    .mobile-nav-links li a.active {
+        color: var(--primary-color);
+        font-weight: var(--font-bold);
+        position: relative;
     }
     
     /* Menu divider line */

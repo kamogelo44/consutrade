@@ -6,6 +6,6 @@
         <title>Seller Dashboard</title>
     </head>
     <body>
-        
+    <?php include 'header.php'?>     
     </body>
 </html>
