@@ -4,14 +4,41 @@
  * Author: Kamogelo Phale
  * 
  * This file contains the header HTML and navigation for all pages
- * I include this at the top of every page using <?php include 'header.php'; ?>
  */
 
-// Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start(); 
 }
 $baseUrl = "/www/consutrade/";
+
+// Determine if we're in the admin/dashboard area
+$is_admin_area = strpos($_SERVER['REQUEST_URI'], '/admin/') !== false;
+
+// Determine current page for active links
+$current_page = basename($_SERVER['REQUEST_URI']);
+$current_page = strtok($current_page, '?');
+$current_dashboard_page = '';
+
+if ($is_admin_area) {
+    if ($current_page === 'seller-dashboard.php') {
+        $current_dashboard_page = 'Dashboard';
+    } elseif ($current_page === 'my-orders.php') {
+        $current_dashboard_page = 'Orders';
+    } elseif ($current_page === 'promotions.php') {
+        $current_dashboard_page = 'Promotion';
+    } elseif ($current_page === 'inbox.php') {
+        $current_dashboard_page = 'Inbox';
+    } elseif ($current_page === 'admin-dashboard.php') {
+        $current_dashboard_page = 'Admin Dashboard';
+    }
+}
+
+// Determine user role
+$user_role = isset($_SESSION['role']) ? $_SESSION['role'] : '';
+$is_admin = ($user_role === 'admin');
+$is_seller = ($user_role === 'seller');
+$is_buyer = ($user_role === 'buyer');
+$is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
 ?>
 <!-- header.php - Just the header and modals -->
 <header>
@@ -30,10 +57,13 @@ $baseUrl = "/www/consutrade/";
         <button class="mobile-search-icon" id="mobileSearchIcon">
             <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
         </button>
-        <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-header-cart">
-            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-            <span class="cart-count">0</span>
-        </a>
+        <!-- Cart only shows on main website, not in admin area -->
+        <?php if (!$is_admin_area): ?>
+            <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-header-cart">
+                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                <span class="cart-count">0</span>
+            </a>
+        <?php endif; ?>
     </div>
 
     <!-- Desktop Search Form -->
@@ -49,29 +79,41 @@ $baseUrl = "/www/consutrade/";
     <!-- Desktop Navigation -->
     <nav class="nav-container" id="nav-menu">
         <ul class="nav-links">
-            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && $_SESSION['role'] === 'seller'): ?>
-                <!-- Seller Dashboard Navigation -->
-                <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
-                <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
-                <li><a href="<?php echo $baseUrl; ?>admin/promotions.php">Promotion</a></li>
-                <li><a href="<?php echo $baseUrl; ?>admin/inbox.php">Inbox</a></li>
+            <!-- DIFFERENT NAVIGATION BASED ON LOCATION (admin area vs main site) -->
+            <?php if ($is_admin_area): ?>
+                <!-- ===== ADMIN AREA NAVIGATION (Dashboard links) ===== -->
+                <?php if ($is_logged_in && $is_admin): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php" class="<?php echo ($current_dashboard_page === 'Admin Dashboard') ? 'active' : ''; ?>">Admin Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/users.php">Manage Users</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/all-products.php">All Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a></li>
+                <?php elseif ($is_logged_in && $is_seller): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo ($current_dashboard_page === 'Dashboard') ? 'active' : ''; ?>">Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="<?php echo ($current_dashboard_page === 'Orders') ? 'active' : ''; ?>">Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/promotions.php" class="<?php echo ($current_dashboard_page === 'Promotion') ? 'active' : ''; ?>">Promotion</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/inbox.php" class="<?php echo ($current_dashboard_page === 'Inbox') ? 'active' : ''; ?>">Inbox</a></li>
+                <?php else: ?>
+                    <!-- If someone tries to access admin area without login, show minimal nav -->
+                    <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
+                <?php endif; ?>
             <?php else: ?>
-                <!-- Regular Navigation for non-sellers -->
+                <!-- ===== MAIN WEBSITE NAVIGATION (Regular links for everyone) ===== -->
                 <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
                 <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
                 
-                <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-                    <?php if ($_SESSION['role'] === 'seller'): ?>
-                        <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Sell</a></li>
-                    <?php else: ?>
+                <!-- Sell link - visible to guests and buyers (not shown to sellers on main site) -->
+                <?php if (!$is_seller): ?>
+                    <?php if ($is_logged_in && $is_buyer): ?>
                         <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link">Sell</a></li>
+                    <?php elseif (!$is_logged_in): ?>
+                        <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
                     <?php endif; ?>
-                <?php else: ?>
-                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
                 <?php endif; ?>
             <?php endif; ?>
             
-            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+            <!-- ===== USER DROPDOWN (visible when logged in) ===== -->
+            <?php if ($is_logged_in): ?>
                 <li class="user-dropdown">
                     <div class="user-info">
                         <span class="welcome-text">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
@@ -81,12 +123,22 @@ $baseUrl = "/www/consutrade/";
                         </button>
                     </div>
                     <ul class="dropdown-menu" id="desktopDropdownMenu">
+                        <!-- Common for all logged-in users -->
                         <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                        <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
-                        <?php if ($_SESSION['role'] === 'seller'): ?>
+                        
+                        <!-- Role-specific links (these work regardless of location) -->
+                        <?php if ($is_admin): ?>
+                            <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
+                        <?php elseif ($is_seller): ?>
                             <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
                             <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
+                            <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">My Orders</a></li>
+                        <?php elseif ($is_buyer): ?>
+                            <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                            <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
                         <?php endif; ?>
+                        
+                        <li class="dropdown-divider"></li>
                         <li><a href="<?php echo $baseUrl; ?>php/logout.php">Logout</a></li>
                     </ul>
                 </li>
@@ -96,10 +148,13 @@ $baseUrl = "/www/consutrade/";
             <?php endif; ?>
         </ul>
         
-        <a href="<?php echo $baseUrl; ?>cart.php" class="desktop-cart">
-            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-            <span class="cart-count">0</span>
-        </a>
+        <!-- Cart Icon - Only shows on main website, not in admin area -->
+        <?php if (!$is_admin_area): ?>
+            <a href="<?php echo $baseUrl; ?>cart.php" class="desktop-cart">
+                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                <span class="cart-count">0</span>
+            </a>
+        <?php endif; ?>
     </nav>
 
     <!-- Mobile Side Menu Content -->
@@ -115,49 +170,65 @@ $baseUrl = "/www/consutrade/";
             </div>
         </div>
         
-        <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+        <?php if ($is_logged_in): ?>
             <div class="mobile-profile-section">
                 <div class="mobile-profile-info">
                     <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" class="mobile-profile-avatar" width="40px" height="40px" alt="Profile">
                     <div class="mobile-profile-text">
                         <span class="mobile-profile-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                        <span class="mobile-profile-role"><?php echo ucfirst($_SESSION['role']); ?></span>
+                        <span class="mobile-profile-role"><?php echo ucfirst($user_role); ?></span>
                     </div>
                 </div>
             </div>
         <?php endif; ?>
         
         <ul class="mobile-nav-links">
-            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && $_SESSION['role'] === 'seller'): ?>
-                <!-- Seller Dashboard Mobile Navigation -->
-                <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
-                <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
-                <li><a href="<?php echo $baseUrl; ?>admin/promotions.php">Promotion</a></li>
-                <li><a href="<?php echo $baseUrl; ?>admin/inbox.php">Inbox</a></li>
+            <!-- Mobile navigation based on LOCATION (admin area vs main site) -->
+            <?php if ($is_admin_area): ?>
+                <!-- Admin Area Mobile Navigation -->
+                <?php if ($is_logged_in && $is_admin): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/users.php">Manage Users</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/all-products.php">All Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a></li>
+                <?php elseif ($is_logged_in && $is_seller): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/promotions.php">Promotion</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/inbox.php">Inbox</a></li>
+                <?php else: ?>
+                    <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
+                <?php endif; ?>
             <?php else: ?>
-                <!-- Regular Navigation -->
+                <!-- Main Website Mobile Navigation -->
                 <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
                 <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
                 
-                <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-                    <?php if ($_SESSION['role'] === 'seller'): ?>
-                        <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Sell</a></li>
-                    <?php else: ?>
+                <?php if (!$is_seller): ?>
+                    <?php if ($is_logged_in && $is_buyer): ?>
                         <li><a href="<?php echo $baseUrl; ?>sell.php" class="sell-link-mobile">Sell</a></li>
+                    <?php elseif (!$is_logged_in): ?>
+                        <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
                     <?php endif; ?>
-                <?php else: ?>
-                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
                 <?php endif; ?>
             <?php endif; ?>
             
-            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+            <?php if ($is_logged_in): ?>
                 <li class="mobile-menu-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
-                <?php if ($_SESSION['role'] === 'seller'): ?>
+                
+                <?php if ($is_admin): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
+                <?php elseif ($is_seller): ?>
                     <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
                     <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">My Orders</a></li>
+                <?php elseif ($is_buyer): ?>
+                    <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
                 <?php endif; ?>
+                
                 <li class="mobile-menu-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>php/logout.php" class="mobile-logout-link">Logout</a></li>
             <?php else: ?>
@@ -176,13 +247,16 @@ $baseUrl = "/www/consutrade/";
             </div>
         </div>
         
-        <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
-            <span class="cart-text">Cart</span>
-            <div class="cart-icon-wrapper">
-                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                <span class="cart-count">0</span>
-            </div>
-        </a>
+        <!-- Cart - Only shows on main website -->
+        <?php if (!$is_admin_area): ?>
+            <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
+                <span class="cart-text">Cart</span>
+                <div class="cart-icon-wrapper">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                    <span class="cart-count">0</span>
+                </div>
+            </a>
+        <?php endif; ?>
     </div>
 
     <!-- Mobile Expandable Search -->

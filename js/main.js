@@ -18,36 +18,102 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== ACTIVE NAVIGATION LINK ==========
     // Highlights the current page in the navigation menu
-    
+
     function setActiveLink() {
-        // Get current page filename
+        // Get current path
         var path = window.location.pathname;
         var currentPage = path.substring(path.lastIndexOf('/') + 1);
         
-        // Default to index.php if no page specified
+        // If currentPage is empty (URL ends with /), treat as index.php
         if (currentPage === '') {
             currentPage = 'index.php';
         }
         
-        // Get all navigation links (desktop and mobile)
+        // Get the full current URL for matching absolute paths
+        var currentUrl = window.location.href;
+        var baseUrl = '/www/consutrade/';
+        
+        // Check if we're in admin area
+        var isAdminArea = path.includes('/admin/');
+        var dashboardPage = '';
+        
+        if (isAdminArea) {
+            if (currentPage === 'seller-dashboard.php') {
+                dashboardPage = 'Dashboard';
+            } else if (currentPage === 'my-orders.php') {
+                dashboardPage = 'Orders';
+            } else if (currentPage === 'promotions.php') {
+                dashboardPage = 'Promotion';
+            } else if (currentPage === 'inbox.php') {
+                dashboardPage = 'Inbox';
+            } else if (currentPage === 'admin-dashboard.php') {
+                dashboardPage = 'Admin Dashboard';
+            } else if (currentPage === 'users.php') {
+                dashboardPage = 'Manage Users';
+            } else if (currentPage === 'all-products.php') {
+                dashboardPage = 'All Products';
+            } else if (currentPage === 'all-orders.php') {
+                dashboardPage = 'All Orders';
+            } else if (currentPage === 'my-products.php') {
+                dashboardPage = 'My Products';
+            }
+        }
+        
+        // Get all navigation links
         var navLinks = document.querySelectorAll('.nav-links a, .mobile-nav-links a, .mobile-menu-cart');
         
-        // Loop through and add active class to matching link
         for (var i = 0; i < navLinks.length; i++) {
             var link = navLinks[i];
             var href = link.getAttribute('href');
+            var linkText = link.textContent.trim();
             
             // Remove active class from all links first
             link.classList.remove('active');
             
-            // Add active class if href matches current page
-            if (href === currentPage) {
+            // For admin area pages, match by dashboard page name
+            if (isAdminArea && dashboardPage === linkText) {
                 link.classList.add('active');
+            }
+            // For regular pages, check if the link href matches the current page
+            else if (href) {
+                // Extract just the filename from href (handles absolute paths like /www/consutrade/index.php)
+                var hrefPage = href.substring(href.lastIndexOf('/') + 1);
+                
+                // Remove query parameters if any
+                if (hrefPage.indexOf('?') !== -1) {
+                    hrefPage = hrefPage.substring(0, hrefPage.indexOf('?'));
+                }
+                
+                // Handle homepage
+                if ((currentPage === 'index.php' || currentPage === 'index.html' || currentPage === '') && 
+                    (hrefPage === 'index.php' || hrefPage === 'index.html' || hrefPage === '')) {
+                    link.classList.add('active');
+                }
+                // Handle exact page match
+                else if (hrefPage === currentPage) {
+                    link.classList.add('active');
+                }
+                // Handle shop/product-listings page
+                else if (currentPage === 'product-listings.php' && hrefPage === 'product-listings.php') {
+                    link.classList.add('active');
+                }
+                // Handle cart page
+                else if (currentPage === 'cart.php' && hrefPage === 'cart.php') {
+                    link.classList.add('active');
+                }
+                // Handle sell page
+                else if (currentPage === 'sell.php' && hrefPage === 'sell.php') {
+                    link.classList.add('active');
+                }
+                // Handle profile page
+                else if (currentPage === 'profile.php' && hrefPage === 'profile.php') {
+                    link.classList.add('active');
+                }
             }
         }
     }
-    
-    // Run the active link function
+
+    // Run the active link function when page loads
     setActiveLink();
     
     // ========== HAMBURGER MENU ==========
@@ -349,29 +415,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
-    // ========== USER DROPDOWN TOGGLE (DESKTOP) ==========
+      // ========== USER DROPDOWN TOGGLE (DESKTOP) ==========
     // Took me a while to figure out how to close dropdown when clicking outside
     // Had to use event listeners properly
 
-    var userDropdown = document.querySelector('.user-dropdown'); 
+    var userInfo = document.querySelector('.user-info');
     var desktopDropdownMenu = document.getElementById('desktopDropdownMenu');
 
-    if (userDropdown && desktopDropdownMenu) {
-        userDropdown.addEventListener('click', function(e) {
+    if (userInfo && desktopDropdownMenu) {
+        userInfo.addEventListener('click', function(e) {
             e.stopPropagation();
             desktopDropdownMenu.classList.toggle('show');
         });        
         
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
-            if (desktopDropdownToggle && desktopDropdownMenu) {
-                if (!desktopDropdownToggle.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
+            if (userInfo && desktopDropdownMenu) {
+                if (!userInfo.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
                     desktopDropdownMenu.classList.remove('show');
                 }
             }
         });
     }
-
     // ========== MOBILE DROPDOWN TOGGLE ==========
     var mobileDropdownToggle = document.getElementById('mobileDropdownToggle');
     var mobileDropdownMenu = document.getElementById('mobileDropdownMenu');

@@ -8,7 +8,6 @@
 
 session_start();
 
-// Set base URL for correct path resolution
 $baseUrl = "/www/consutrade/";
 
 // Check if user is logged in
@@ -51,7 +50,7 @@ $order_stmt->execute();
 $order_result = $order_stmt->get_result();
 if ($order_row = $order_result->fetch_assoc()) {
     $total_orders = $order_row['count'];
-    $pending_orders = $order_row['pending'];
+    $pending_orders = $order_row['pending'] ?? 0;
 }
 $order_stmt->close();
 
@@ -67,6 +66,21 @@ if ($earnings_row = $earnings_result->fetch_assoc()) {
 $earnings_stmt->close();
 
 $conn->close();
+
+// Determine current dashboard page for active links
+$current_dashboard_page = '';
+$current_page = basename($_SERVER['REQUEST_URI']);
+$current_page = strtok($current_page, '?');
+
+if ($current_page === 'seller-dashboard.php') {
+    $current_dashboard_page = 'Dashboard';
+} elseif ($current_page === 'my-orders.php') {
+    $current_dashboard_page = 'Orders';
+} elseif ($current_page === 'promotions.php') {
+    $current_dashboard_page = 'Promotion';
+} elseif ($current_page === 'inbox.php') {
+    $current_dashboard_page = 'Inbox';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -79,11 +93,16 @@ $conn->close();
     <link rel="stylesheet" href="css/seller-dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
 </head>
-<body>
+<body class="dashboard-page">
     <!-- Header -->
     <?php include dirname(__DIR__) . '/header.php'; ?>
 
     <main>
+        <!-- Flash Message -->
+        <?php if (isset($_SESSION['flash'])): ?>
+            <div class="flash-message"><?php echo $_SESSION['flash']; unset($_SESSION['flash']); ?></div>
+        <?php endif; ?>
+
         <!-- Stats Section -->
         <section class="stats-sect">
             <div class="stats">
@@ -188,7 +207,6 @@ $conn->close();
             document.getElementById('add-listing-modal').classList.remove('active');
         }
         
-        // Close modal when clicking outside
         var modal = document.getElementById('add-listing-modal');
         if (modal) {
             modal.addEventListener('click', function(e) {

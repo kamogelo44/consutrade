@@ -51,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Password is correct - start session
                 // Regenerate session ID to prevent fixation attacks (learned this from a security article)
                 session_regenerate_id(true);
-                $_SESSION['user_id'] = $new_user_id;
                 
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['full_name'] = $user['full_name'];
@@ -59,14 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['logged_in'] = true;
                 
-                // FIXED: Set flash message for success
+                // Set flash message for success
                 $_SESSION['flash'] = 'Welcome back, ' . $user['full_name'] . '!';
                 
                 // Redirect based on role
-                if ($user['role'] === 'seller') {
-                    header('Location: ../seller-dashboard.php');
+                if ($user['role'] === 'admin') {
+                    header('Location: /www/consutrade/admin/admin-dashboard.php');
+                } elseif ($user['role'] === 'seller') {
+                    header('Location: /www/consutrade/admin/seller-dashboard.php');
                 } else {
-                    header('Location: ../index.php');
+                    header('Location: /www/consutrade/index.php');
                 }
                 exit;
                 
@@ -84,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // If we got here, something went wrong - store errors and redirect back
     if (!empty($errors)) {
-        $errors['general'] = 'Incorrect email or password';
-        header('Location: ../index.php');
+        $_SESSION['login_errors'] = $errors;
+        header('Location: /www/consutrade/index.php');
         exit;
     }
     

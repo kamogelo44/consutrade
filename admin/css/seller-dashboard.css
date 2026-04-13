@@ -441,6 +441,25 @@
     background-color: var(--primary-dark);
 }
 
+/* Flash Message */
+.flash-message {
+    background-color: var(--success-light);
+    color: var(--success);
+    padding: 12px 20px;
+    margin: 20px auto;
+    max-width: 1200px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-weight: var(--font-medium);
+    animation: fadeOut 3s ease forwards;
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+}
+
 /* ========== RESPONSIVE STYLES ========== */
 @media (max-width: 1024px) {
     .listings-sect {

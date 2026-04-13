@@ -203,6 +203,12 @@ header {
 .dropdown-toggle img {
     filter: brightness(0) invert(1);
 }
+/*Dropdown divider*/
+.dropdown-divider {
+    height: 1px;
+    background-color: var(--border-light);
+    margin: 8px 0;
+}
 
 .dropdown-menu {
     position: absolute;
