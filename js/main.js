@@ -353,14 +353,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Took me a while to figure out how to close dropdown when clicking outside
     // Had to use event listeners properly
 
-    var desktopDropdownToggle = document.getElementById('desktopDropdownToggle');
+    var userDropdown = document.querySelector('.user-dropdown'); 
     var desktopDropdownMenu = document.getElementById('desktopDropdownMenu');
 
-    if (desktopDropdownToggle && desktopDropdownMenu) {
-        desktopDropdownToggle.addEventListener('click', function(e) {
+    if (userDropdown && desktopDropdownMenu) {
+        userDropdown.addEventListener('click', function(e) {
             e.stopPropagation();
             desktopDropdownMenu.classList.toggle('show');
-        });
+        });        
         
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {

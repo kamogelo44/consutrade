@@ -9,8 +9,9 @@
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    session_start(); 
 }
+$baseUrl = "/www/consutrade/";
 ?>
 <!-- header.php - Just the header and modals -->
 <header>
@@ -22,15 +23,15 @@ if (session_status() === PHP_SESSION_NONE) {
     </button>
 
     <!-- Center: Logo -->
-    <div class="logo"><a href="index.php">Consu<span>Trade</span></a></div>
+    <div class="logo"><a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a></div>
 
-    <!-- Mobile Header Icons - SIMPLIFIED (no profile dropdown) -->
+    <!-- Mobile Header Icons -->
     <div class="header-icons">
         <button class="mobile-search-icon" id="mobileSearchIcon">
-            <img src="images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
+            <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
         </button>
-        <a href="cart.php" class="mobile-header-cart">
-            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+        <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-header-cart">
+            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
             <span class="cart-count">0</span>
         </a>
     </div>
@@ -40,7 +41,7 @@ if (session_status() === PHP_SESSION_NONE) {
         <div class="search-wrapper">
             <input type="search" id="search" name="q" placeholder="Search for products...">
             <button class="search-btn" type="submit">
-                <img src="images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search">
+                <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="24px" height="24px" alt="Search">
             </button>
         </div>
     </form>
@@ -48,36 +49,45 @@ if (session_status() === PHP_SESSION_NONE) {
     <!-- Desktop Navigation -->
     <nav class="nav-container" id="nav-menu">
         <ul class="nav-links">
-            <li><a href="index.php">Home</a></li>
-            <li><a href="product-listings.php">Shop</a></li>
-            
-            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-                <?php if ($_SESSION['role'] === 'seller'): ?>
-                    <li><a href="admin/seller-dashboard.php">Sell</a></li>
-                <?php else: ?>
-                    <li><a href="sell.php" id="sell-link">Sell</a></li>
-                <?php endif; ?>
+            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && $_SESSION['role'] === 'seller'): ?>
+                <!-- Seller Dashboard Navigation -->
+                <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/promotions.php">Promotion</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/inbox.php">Inbox</a></li>
             <?php else: ?>
-                <li><a href="sell.php">Sell</a></li>
+                <!-- Regular Navigation for non-sellers -->
+                <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
+                <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
+                
+                <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+                    <?php if ($_SESSION['role'] === 'seller'): ?>
+                        <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Sell</a></li>
+                    <?php else: ?>
+                        <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link">Sell</a></li>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
+                <?php endif; ?>
             <?php endif; ?>
             
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
                 <li class="user-dropdown">
                     <div class="user-info">
                         <span class="welcome-text">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                        <img src="images/icons/profile-svgrepo-com.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
+                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
                         <button class="dropdown-toggle" id="desktopDropdownToggle">
-                            <img src="images/icons/chevron-down-svgrepo-com.svg" class="icon-white" width="16px" height="16px" alt="Menu">
+                            <img src="<?php echo $baseUrl; ?>images/icons/chevron-down-svgrepo-com.svg" class="icon-white" width="16px" height="16px" alt="Menu">
                         </button>
                     </div>
                     <ul class="dropdown-menu" id="desktopDropdownMenu">
-                        <li><a href="profile.php">My Profile</a></li>
-                        <li><a href="my-orders.php">My Orders</a></li>
+                        <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
+                        <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
                         <?php if ($_SESSION['role'] === 'seller'): ?>
-                            <li><a href="admin/seller-dashboard.php">Seller Dashboard</a></li>
-                            <li><a href="my-products.php">My Products</a></li>
+                            <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
+                            <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
                         <?php endif; ?>
-                        <li><a href="php/logout.php">Logout</a></li>
+                        <li><a href="<?php echo $baseUrl; ?>php/logout.php">Logout</a></li>
                     </ul>
                 </li>
             <?php else: ?>
@@ -86,8 +96,8 @@ if (session_status() === PHP_SESSION_NONE) {
             <?php endif; ?>
         </ul>
         
-        <a href="cart.php" class="desktop-cart">
-            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+        <a href="<?php echo $baseUrl; ?>cart.php" class="desktop-cart">
+            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
             <span class="cart-count">0</span>
         </a>
     </nav>
@@ -101,15 +111,14 @@ if (session_status() === PHP_SESSION_NONE) {
         </button>
         <div class="mobile-menu-header">
             <div class="mobile-menu-logo">
-                <a href="index.php">Consu<span>Trade</span></a>
+                <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
             </div>
         </div>
         
-        <!-- PROFILE SECTION INSIDE SIDE MENU-->
         <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
             <div class="mobile-profile-section">
                 <div class="mobile-profile-info">
-                    <img src="images/icons/profile-svgrepo-com.svg" class="mobile-profile-avatar" width="40px" height="40px" alt="Profile">
+                    <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" class="mobile-profile-avatar" width="40px" height="40px" alt="Profile">
                     <div class="mobile-profile-text">
                         <span class="mobile-profile-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
                         <span class="mobile-profile-role"><?php echo ucfirst($_SESSION['role']); ?></span>
@@ -119,29 +128,38 @@ if (session_status() === PHP_SESSION_NONE) {
         <?php endif; ?>
         
         <ul class="mobile-nav-links">
-            <li><a href="index.php">Home</a></li>
-            <li><a href="product-listings.php">Shop</a></li>
-            
-            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-                <?php if ($_SESSION['role'] === 'seller'): ?>
-                    <li><a href="admin/seller-dashboard.php">Sell</a></li>
-                <?php else: ?>
-                    <li><a href="sell.php" class="sell-link-mobile">Sell</a></li>
-                <?php endif; ?>
+            <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && $_SESSION['role'] === 'seller'): ?>
+                <!-- Seller Dashboard Mobile Navigation -->
+                <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/promotions.php">Promotion</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/inbox.php">Inbox</a></li>
             <?php else: ?>
-                <li><a href="sell.php">Sell</a></li>
+                <!-- Regular Navigation -->
+                <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
+                <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
+                
+                <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
+                    <?php if ($_SESSION['role'] === 'seller'): ?>
+                        <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Sell</a></li>
+                    <?php else: ?>
+                        <li><a href="<?php echo $baseUrl; ?>sell.php" class="sell-link-mobile">Sell</a></li>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
+                <?php endif; ?>
             <?php endif; ?>
             
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
                 <li class="mobile-menu-divider"></li>
-                <li><a href="profile.php">My Profile</a></li>
-                <li><a href="my-orders.php">My Orders</a></li>
+                <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
+                <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
                 <?php if ($_SESSION['role'] === 'seller'): ?>
-                    <li><a href="admin/seller-dashboard.php">Seller Dashboard</a></li>
-                    <li><a href="my-products.php">My Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
                 <?php endif; ?>
                 <li class="mobile-menu-divider"></li>
-                <li><a href="php/logout.php" class="mobile-logout-link">Logout</a></li>
+                <li><a href="<?php echo $baseUrl; ?>php/logout.php" class="mobile-logout-link">Logout</a></li>
             <?php else: ?>
                 <li class="mobile-menu-divider"></li>
                 <li><a href="#login-modal" class="login-link-mobile">Login</a></li>
@@ -153,15 +171,15 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="search-wrapper">
                 <input type="search" id="mobile-menu-search" name="q" placeholder="Search for products...">
                 <button class="search-btn" type="submit">
-                    <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
+                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
                 </button>
             </div>
         </div>
         
-        <a href="cart.php" class="mobile-menu-cart">
+        <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
             <span class="cart-text">Cart</span>
             <div class="cart-icon-wrapper">
-                <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
                 <span class="cart-count">0</span>
             </div>
         </a>
@@ -173,7 +191,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="search-wrapper">
                 <input type="search" id="mobile-search" name="q" placeholder="Search for products...">
                 <button class="search-btn" type="submit">
-                    <img src="images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
+                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="20px" height="20px" alt="Search">
                 </button>
             </div>
         </form>
@@ -197,7 +215,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="error-message">Please fix the errors below</div>
         </div>
         
-        <form action="php/register.php" method="post" class="register-form" id="register-form">
+        <form action="<?php echo $baseUrl; ?>php/register.php" method="post" class="register-form" id="register-form">
             <fieldset class="form-fields">
                 <legend>Create Account</legend>
                 
@@ -218,7 +236,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="password-wrapper">
                         <input type="password" id="password" name="password" placeholder="Create password" required>
                         <button type="button" class="toggle-password" data-target="password">
-                            <img src="images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
                         </button>
                     </div>
                     <small class="error-text" id="password-error"></small>
@@ -229,7 +247,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="password-wrapper">
                         <input type="password" id="confirm-password" name="confirm_password" placeholder="Repeat your password" required>
                         <button type="button" class="toggle-password" data-target="confirm-password">
-                            <img src="images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
                         </button>
                     </div>
                     <small class="error-text" id="confirm_password-error"></small>
@@ -241,13 +259,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 <div class="radio-buttons">
                     <input type="radio" id="buy" name="user_type" value="buyer" checked>
                     <label for="buy" class="radio-btn radio">
-                        <img src="images/icons/buy-cash-finance-svgrepo-com.svg" width="20px" height="20px" alt="Buy icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/buy-cash-finance-svgrepo-com.svg" width="20px" height="20px" alt="Buy icon">
                         Buy Products
                     </label>
                     
                     <input type="radio" id="sell" name="user_type" value="seller">
                     <label for="sell" class="radio-btn radio">
-                        <img src="images/icons/sell-svgrepo-com.svg" width="20px" height="20px" alt="Sell icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/sell-svgrepo-com.svg" width="20px" height="20px" alt="Sell icon">
                         Sell Products
                     </label>
                 </div>
@@ -275,7 +293,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="error-message">Please fix the errors below</div>
         </div>
         
-        <form action="php/login.php" method="post" class="login-form">
+        <form action="<?php echo $baseUrl; ?>php/login.php" method="post" class="login-form">
             <fieldset class="form-fields">
                 <legend>Login Account</legend>
                 <div class="input-group">
@@ -287,7 +305,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="password-wrapper">
                         <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
                         <button type="button" class="toggle-password" data-target="login-password">
-                            <img src="images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
                         </button>
                     </div>
                 </div>

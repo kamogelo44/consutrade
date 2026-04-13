@@ -141,21 +141,25 @@ table {
 	border-spacing: 0;
 }
 
-/* Make sure the body allows scrolling for sticky to work */
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    overflow-x: hidden;
-    overflow-y: auto;
-}
 
 /* ========== BASE STYLES ========== */
 html {
     scroll-behavior: smooth;
+}
+
+/* ========== FIXED HEADER OFFSET ========== */
+/* This adds padding to all main content to account for the fixed header */
+
+/* For desktop - header height is 70px */
+body {
+    padding-top: 70px;
+}
+
+/* For mobile - header height is 60px */
+@media (max-width: 768px) {
+    body {
+        padding-top: 60px;
+    }
 }
 
 @font-face {

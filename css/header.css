@@ -6,7 +6,7 @@
 
 /* ========== HEADER STYLES ========== */
 header {
-    position: sticky;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -337,7 +337,7 @@ header {
     
     /* ----- HEADER ----- */
     header {
-        position: sticky;
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;

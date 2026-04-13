@@ -1,0 +1,524 @@
+/* ========== SELLER DASHBOARD PAGE STYLES ========== */
+
+/* Stats Section */
+.stats-sect {
+    background-color: var(--gray-bg-light);
+    padding: 60px var(--spacing-xl);
+}
+
+.stats {
+    display: flex;
+    gap: var(--spacing-lg);
+    margin: 0 auto;
+    max-width: 1200px;
+    justify-content: center;
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    max-width: 280px;
+    padding: var(--spacing-lg);
+    background-color: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-num {
+    font-size: var(--font-3xl);
+    font-weight: var(--font-bold);
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-name {
+    font-size: var(--font-md);
+    color: var(--gray-medium);
+}
+
+/* Listings Section Layout */
+.listings-sect {
+    display: flex;
+    gap: var(--spacing-2xl);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 60px var(--spacing-xl);
+}
+
+/* Left Column - My Listings */
+.left-col {
+    flex: 2;
+}
+
+.sect-head {
+    font-size: var(--font-3xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-xl);
+    color: var(--dark-bg);
+}
+
+/* Listings Grid */
+.listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--spacing-lg);
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: var(--spacing-sm);
+}
+
+/* Custom scrollbar */
+.listings-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.listings-grid::-webkit-scrollbar-track {
+    background: var(--gray-lighter);
+    border-radius: var(--radius-round);
+}
+
+.listings-grid::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: var(--radius-round);
+}
+
+/* Listing Card */
+.listing-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    background-color: var(--white);
+    transition: all var(--transition-fast);
+}
+
+.listing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.prod-img {
+    width: 100%;
+    height: 150px;
+    background-color: var(--gray-lighter);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+}
+
+.prod-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.prod-descr {
+    flex: 1;
+    margin-bottom: var(--spacing-md);
+}
+
+.prod-name {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    color: var(--dark-bg);
+    margin-bottom: var(--spacing-xs);
+}
+
+.prod-price {
+    font-size: var(--font-lg);
+    font-weight: var(--font-bold);
+    color: var(--primary-color);
+}
+
+.btn-cont {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: auto;
+}
+
+.edit-btn, .delete-btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.edit-btn {
+    background-color: var(--primary-fade);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.edit-btn:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.delete-btn {
+    background-color: var(--error-light);
+    color: var(--error);
+    border: 1px solid var(--error);
+}
+
+.delete-btn:hover {
+    background-color: var(--error);
+    color: var(--white);
+}
+
+.empty-listings {
+    text-align: center;
+    padding: 60px var(--spacing-xl);
+    background-color: var(--gray-bg-light);
+    border-radius: var(--radius-lg);
+    color: var(--gray-medium);
+}
+
+.empty-listings p {
+    margin-bottom: var(--spacing-md);
+}
+
+/* Right Column - Quick Actions & Orders */
+.right-col {
+    flex: 1;
+}
+
+.right-col h1 {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-lg);
+    color: var(--dark-bg);
+}
+
+.right-col h2 {
+    font-size: var(--font-xl);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--spacing-md);
+    color: var(--dark-bg);
+}
+
+/* Quick Actions Buttons */
+.q-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.add-listing-btn, 
+.view-all-order, 
+.Edit-my-profile {
+    padding: 14px 20px;
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: center;
+}
+
+.add-listing-btn {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+}
+
+.add-listing-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.view-all-order {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.view-all-order:hover {
+    background-color: var(--primary-fade);
+    transform: translateY(-2px);
+}
+
+.Edit-my-profile {
+    background-color: var(--gray-bg);
+    color: var(--gray-dark);
+    border: 1px solid var(--border-light);
+}
+
+.Edit-my-profile:hover {
+    background-color: var(--gray-lighter);
+    transform: translateY(-2px);
+}
+
+/* Recent Orders Section */
+.recent-orders {
+    background-color: var(--gray-bg-light);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.recent-orders h2 {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* Recent Order Card */
+.rec-order-card {
+    background-color: var(--white);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+}
+
+.rec-order-card:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
+}
+
+.order-id {
+    font-weight: var(--font-bold);
+    color: var(--primary-color);
+}
+
+.cust-name {
+    font-weight: var(--font-medium);
+    color: var(--gray-dark);
+    margin: var(--spacing-xs) 0;
+}
+
+.order-state-container {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.status-completed {
+    background-color: var(--success-light);
+    color: var(--success);
+    padding: 4px 10px;
+    border-radius: var(--radius-round);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+}
+
+.status-pending {
+    background-color: var(--warning-light);
+    color: var(--warning);
+    padding: 4px 10px;
+    border-radius: var(--radius-round);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+}
+
+.status-cancelled {
+    background-color: var(--error-light);
+    color: var(--error);
+    padding: 4px 10px;
+    border-radius: var(--radius-round);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+}
+
+.placeholder-text {
+    text-align: center;
+    padding: 40px var(--spacing-md);
+    color: var(--gray-medium);
+}
+
+/* Add Listing Modal */
+.listing-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: var(--z-modal);
+    justify-content: center;
+    align-items: center;
+}
+
+.listing-modal.active {
+    display: flex;
+}
+
+.listing-modal-content {
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+    position: relative;
+}
+
+.listing-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.listing-modal-header h2 {
+    font-size: var(--font-xl);
+    font-weight: var(--font-bold);
+}
+
+.listing-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--gray-medium);
+}
+
+.listing-form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.listing-form-group label {
+    display: block;
+    font-weight: var(--font-medium);
+    margin-bottom: var(--spacing-xs);
+    color: var(--gray-dark);
+}
+
+.listing-form-group input,
+.listing-form-group textarea,
+.listing-form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+}
+
+.listing-form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.listing-submit-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
+    font-weight: var(--font-bold);
+    cursor: pointer;
+    margin-top: var(--spacing-md);
+}
+
+.listing-submit-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+/* ========== RESPONSIVE STYLES ========== */
+@media (max-width: 1024px) {
+    .listings-sect {
+        flex-direction: column;
+        gap: var(--spacing-lg);
+        padding: 40px var(--spacing-md);
+    }
+    
+    .stats {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .stat-card {
+        min-width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-sect {
+        padding: 30px var(--spacing-md);
+    }
+    
+    .stats {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .stat-card {
+        width: 100%;
+        max-width: 280px;
+    }
+    
+    .listings-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: var(--spacing-md);
+    }
+    
+    .sect-head {
+        font-size: var(--font-2xl);
+        text-align: center;
+    }
+    
+    .right-col h1 {
+        font-size: var(--font-xl);
+        text-align: center;
+    }
+    
+    .q-actions {
+        align-items: center;
+    }
+    
+    .add-listing-btn, 
+    .view-all-order, 
+    .Edit-my-profile {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .listings-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .listing-card {
+        max-width: 100%;
+    }
+    
+    .btn-cont {
+        flex-direction: column;
+    }
+    
+    .edit-btn, .delete-btn {
+        width: 100%;
+    }
+    
+    .listing-modal-content {
+        padding: var(--spacing-lg);
+    }
+}
