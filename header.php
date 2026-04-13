@@ -1,3 +1,17 @@
+<?php
+/*
+ * ConsuTrade - Header Component
+ * Author: Kamogelo Phale
+ * 
+ * This file contains the header HTML and navigation for all pages
+ * I include this at the top of every page using <?php include 'header.php'; ?>
+ */
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+?>
 <!-- header.php - Just the header and modals -->
 <header>
     <!-- Left: Hamburger -->
@@ -39,7 +53,7 @@
             
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
                 <?php if ($_SESSION['role'] === 'seller'): ?>
-                    <li><a href="../admin/seller-dashboard.php">Sell</a></li>
+                    <li><a href="admin/seller-dashboard.php">Sell</a></li>
                 <?php else: ?>
                     <li><a href="sell.php" id="sell-link">Sell</a></li>
                 <?php endif; ?>
@@ -60,7 +74,7 @@
                         <li><a href="profile.php">My Profile</a></li>
                         <li><a href="my-orders.php">My Orders</a></li>
                         <?php if ($_SESSION['role'] === 'seller'): ?>
-                            <li><a href="../admin/seller-dashboard.php">Seller Dashboard</a></li>
+                            <li><a href="admin/seller-dashboard.php">Seller Dashboard</a></li>
                             <li><a href="my-products.php">My Products</a></li>
                         <?php endif; ?>
                         <li><a href="php/logout.php">Logout</a></li>
@@ -110,7 +124,7 @@
             
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
                 <?php if ($_SESSION['role'] === 'seller'): ?>
-                    <li><a href="../admin/seller-dashboard.php">Sell</a></li>
+                    <li><a href="admin/seller-dashboard.php">Sell</a></li>
                 <?php else: ?>
                     <li><a href="sell.php" class="sell-link-mobile">Sell</a></li>
                 <?php endif; ?>
@@ -123,7 +137,7 @@
                 <li><a href="profile.php">My Profile</a></li>
                 <li><a href="my-orders.php">My Orders</a></li>
                 <?php if ($_SESSION['role'] === 'seller'): ?>
-                    <li><a href="../admin/seller-dashboard.php">Seller Dashboard</a></li>
+                    <li><a href="admin/seller-dashboard.php">Seller Dashboard</a></li>
                     <li><a href="my-products.php">My Products</a></li>
                 <?php endif; ?>
                 <li class="mobile-menu-divider"></li>

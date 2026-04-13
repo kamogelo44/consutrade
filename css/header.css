@@ -6,6 +6,10 @@
 
 /* ========== HEADER STYLES ========== */
 header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 70px;
     display: flex;
     background-color: var(--dark-bg);
@@ -13,7 +17,8 @@ header {
     align-items: center;
     padding: 0 30px;
     gap: var(--spacing-xl);
-    position: relative;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .logo {
@@ -332,11 +337,16 @@ header {
     
     /* ----- HEADER ----- */
     header {
+        position: sticky;
+        top: 0;
+        left: 0;
+        right: 0;
         height: 60px;
         padding: 0 15px;
         gap: 0;
         justify-content: space-between;
         align-items: center;
+        z-index: 1000;
     }
     
     /* Hide desktop elements */
@@ -691,7 +701,14 @@ header {
         justify-content: center;
         line-height: 1;
     }
-    
+    /* Active style for mobile cart link */
+    .mobile-menu-cart.active .cart-text {
+        color: var(--primary-color);
+    }
+
+    .mobile-menu-cart.active .cart-count {
+        background-color: var(--primary-dark);
+    }
     /* ----- OVERLAY (dark background when menu is open) ----- */
     .menu-overlay {
         position: fixed;

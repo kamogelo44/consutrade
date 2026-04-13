@@ -141,6 +141,18 @@ table {
 	border-spacing: 0;
 }
 
+/* Make sure the body allows scrolling for sticky to work */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
 /* ========== BASE STYLES ========== */
 html {
     scroll-behavior: smooth;

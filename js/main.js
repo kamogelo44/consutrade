@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Get all navigation links (desktop and mobile)
-        var navLinks = document.querySelectorAll('.nav-links a, .mobile-nav-links a');
+        var navLinks = document.querySelectorAll('.nav-links a, .mobile-nav-links a, .mobile-menu-cart');
         
         // Loop through and add active class to matching link
         for (var i = 0; i < navLinks.length; i++) {
@@ -324,40 +324,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== CART COUNT ==========
-    // Reads from localStorage and updates all cart badges on the page
-    // I need to call this whenever items are added/removed from cart
-    
-    function updateCartCount() {
-        var cartCount = 0;
-        var savedCart = localStorage.getItem('consutrade_cart');
-        
-        if (savedCart) {
-            try {
-                var cart = JSON.parse(savedCart);
-                // Loop through each item and add up quantities
-                for (var i = 0; i < cart.length; i++) {
-                    cartCount += cart[i].quantity || 1;
-                }
-            } catch(e) {
-                // If JSON is corrupted, just ignore it
-                console.log('Error reading cart:', e);
-            }
-        }
-        
-        // Update all cart count badges (there are multiple on desktop and mobile)
-        var cartBadges = document.querySelectorAll('.cart-count');
-        for (var i = 0; i < cartBadges.length; i++) {
-            cartBadges[i].textContent = cartCount;
-        }
-        
-        // Update the cart page item count if we're on that page
-        var itemNum = document.querySelector('.item-num');
-        if (itemNum) {
-            itemNum.textContent = cartCount;
-        }
-    }
-
     // ========== AUTO-CLOSE MODAL ON SUCCESS ==========
     // If there's a flash message and no errors, close any open modals
     // This prevents the modal from staying open after successful registration/login
@@ -423,11 +389,146 @@ document.addEventListener('DOMContentLoaded', function() {
                     mobileDropdownMenu.classList.remove('show');
                 }
             }
+        }); 
+    }
+
+    // ========== MY CART FUNCTIONS ==========
+    // took me forever to figure out fetch() but i got it working
+    
+    function addToCart(productId, productName, productPrice, quantity = 1) {
+        fetch('php/add-to-cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                product_name: productName,
+                product_price: productPrice,
+                quantity: quantity
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                updateCartCount();
+                alert('Item added to cart!');
+            } else {
+                alert('Error adding item to cart');
+            }
+        })
+        .catch(function(error) {
+            console.log('Error:', error);
+            alert('Something went wrong');
         });
     }
     
-    // Run this when page loads
+    function updateCartItem(productId, quantity) {
+        fetch('php/update-cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: quantity
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                updateCartCount();
+                location.reload();
+            }
+        })
+        .catch(function(error) {
+            console.log('Error:', error);
+        });
+    }
+    
+    function removeFromCart(productId) {
+        fetch('php/remove-from-cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId
+            })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                updateCartCount();
+                location.reload();
+            }
+        })
+        .catch(function(error) {
+            console.log('Error:', error);
+        });
+    }
+    
+    function updateCartCount() {
+        fetch('php/get-cart.php')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var cartCount = data.item_count;
+                var cartBadges = document.querySelectorAll('.cart-count');
+                for (var i = 0; i < cartBadges.length; i++) {
+                    cartBadges[i].textContent = cartCount;
+                }
+                
+                var itemNum = document.querySelector('.item-num');
+                if (itemNum) {
+                    itemNum.textContent = cartCount;
+                }
+            }
+        })
+        .catch(function(error) {
+            console.log('Error fetching cart count:', error);
+        });
+    }
+
+    // Load all cart items for the cart page - only runs on cart.php
+    function loadCart() {
+        // Only run this on the cart page
+        if (window.location.pathname.includes('cart.php')) {
+            fetch('php/get-cart.php')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    displayCartItems(data);
+                    updateOrderSummary(data);
+                }
+            })
+            .catch(function(error) {
+                console.log('Error loading cart:', error);
+            });
+        }
+    }
+    
+    // Display cart items on the page (I need to finish this function)
+    function displayCartItems(cartData) {
+        // This will be implemented when I build the cart page
+        // For now it's a placeholder
+        console.log('Cart items:', cartData.items);
+    }
+    
+    // Update the order summary totals
+    function updateOrderSummary(cartData) {
+        var subtotalSpan = document.querySelector('.sub-total-val');
+        var deliverySpan = document.querySelector('.deliv-fee-val');
+        var totalSpan = document.querySelector('.total-val');
+        
+        if (subtotalSpan) subtotalSpan.textContent = cartData.subtotal;
+        if (deliverySpan) deliverySpan.textContent = cartData.delivery_fee;
+        if (totalSpan) totalSpan.textContent = cartData.total;
+    }
+    
+    // Run these when page loads
     updateCartCount();
+    loadCart();
     
     // TODO: Features I want to add later when I have time:
     // 1. Product image preview when uploading (like Facebook does)

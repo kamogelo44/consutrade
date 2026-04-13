@@ -92,6 +92,9 @@
                                 <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                                 <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                             </div>
+                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                                Add to Cart
+                            </button>
                         </div>
 
                         <!-- Card 2 -->
@@ -108,6 +111,9 @@
                                 <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                                 <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                             </div>
+                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                                Add to Cart
+                            </button>                            
                         </div>
 
                         <!-- Card 3 -->
@@ -124,6 +130,9 @@
                                 <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                                 <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                             </div>
+                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                                Add to Cart
+                            </button>                            
                         </div>
 
                         <!-- Card 4 -->
@@ -140,6 +149,9 @@
                                 <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                                 <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                             </div>
+                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                                Add to Cart
+                            </button>                            
                         </div>
                     </div>
                 </section>

@@ -127,7 +127,7 @@ unset($_SESSION['flash']);
                 <div class="error-message">Please fix the errors below</div>
             </div>
             
-            <form action="php/register.php" method="post" class="register-form" id="register-form">
+            <form action="php/register.php" method="post" autocomplete="on" class="register-form" id="register-form">
                 <fieldset class="form-fields">
                     <legend>Create Account</legend>
                     
@@ -206,7 +206,7 @@ unset($_SESSION['flash']);
                 <div class="error-message">Please fix the errors below</div>
             </div>
             
-            <form action="php/login.php" method="post" class="login-form">
+            <form action="php/login.php" method="post" autocomplete="on" class="login-form">
                 <fieldset class="form-fields">
                     <legend>Login Account</legend>
                     <div class="input-group">
@@ -297,6 +297,9 @@ unset($_SESSION['flash']);
                         <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                         <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
+                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                        Add to Cart
+                    </button>                    
                 </div>
 
                 <!-- Card 2 -->
@@ -313,6 +316,9 @@ unset($_SESSION['flash']);
                         <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                         <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
+                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                        Add to Cart
+                    </button>                    
                 </div>
 
                 <!-- Card 3 -->
@@ -329,6 +335,9 @@ unset($_SESSION['flash']);
                         <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                         <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
+                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                        Add to Cart
+                    </button>                    
                 </div>
 
                 <!-- Card 4 -->
@@ -345,7 +354,10 @@ unset($_SESSION['flash']);
                         <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
                         <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
                     </div>
-                </div>
+                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
+                        Add to Cart
+                    </button>                     
+                </div>               
             </div>
         </section>
     
