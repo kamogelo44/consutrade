@@ -77,87 +77,69 @@
                 
                 <!--Products grid for listings page-->
                 <section class="listings-products">
-                    <div class="listings-grid">
-                        <!-- Card 1 -->
-                        <div class="prod-card">
-                            <div class="img-container">
-                                <img src="" alt="Product Image">
-                            </div>
-                            <p class="prod-name">Product Name</p>
-                            <p class="prod-price">R 0.00</p>
-                            <div class="seller-info">
-                                <img src="" alt="Seller Profile Picture">
-                                <p class="seller-name">Seller: Gethro Molungsi</p>
-                                <p class="location">Polokwane</p>
-                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                            </div>
-                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                                Add to Cart
-                            </button>
-                        </div>
-
-                        <!-- Card 2 -->
-                        <div class="prod-card">
-                            <div class="img-container">
-                                <img src="" alt="Product Image">
-                            </div>
-                            <p class="prod-name">Product Name</p>
-                            <p class="prod-price">R 0.00</p>
-                            <div class="seller-info">
-                                <img src="" alt="Seller Profile Picture">
-                                <p class="seller-name">Seller: Gethro Molungsi</p>
-                                <p class="location">Polokwane</p>
-                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                            </div>
-                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                                Add to Cart
-                            </button>                            
-                        </div>
-
-                        <!-- Card 3 -->
-                        <div class="prod-card">
-                            <div class="img-container">
-                                <img src="" alt="Product Image">
-                            </div>
-                            <p class="prod-name">Product Name</p>
-                            <p class="prod-price">R 0.00</p>
-                            <div class="seller-info">
-                                <img src="" alt="Seller Profile Picture">
-                                <p class="seller-name">Seller: Gethro Molungsi</p>
-                                <p class="location">Polokwane</p>
-                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                            </div>
-                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                                Add to Cart
-                            </button>                            
-                        </div>
-
-                        <!-- Card 4 -->
-                        <div class="prod-card">
-                            <div class="img-container">
-                                <img src="" alt="Product Image">
-                            </div>
-                            <p class="prod-name">Product Name</p>
-                            <p class="prod-price">R 0.00</p>
-                            <div class="seller-info">
-                                <img src="" alt="Seller Profile Picture">
-                                <p class="seller-name">Seller: Gethro Molungsi</p>
-                                <p class="location">Polokwane</p>
-                                <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                                <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                            </div>
-                            <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                                Add to Cart
-                            </button>                            
-                        </div>
+                    <div class="listings-grid" id="products-grid">
+                        <!-- Products will be loaded here by JavaScript -->
+                        <div class="loading-spinner">Loading products...</div>
                     </div>
                 </section>
             </div>
         </main>
+    <script>
+    // Load products when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchProducts();
+    });
 
+    function fetchProducts() {
+        fetch('php/get-products.php')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success && data.products.length > 0) {
+                    displayProducts(data.products);
+                } else {
+                    document.getElementById('products-grid').innerHTML = '<p class="no-products">No products found.</p>';
+                }
+            })
+            .catch(function(error) {
+                console.log('Error:', error);
+                document.getElementById('products-grid').innerHTML = '<p class="error">Error loading products. Please try again.</p>';
+            });
+    }
+
+    function displayProducts(products) {
+        var grid = document.getElementById('products-grid');
+        grid.innerHTML = '';
+        
+        for (var i = 0; i < products.length; i++) {
+            var product = products[i];
+            var verifiedIcon = product.is_verified ? 
+                '<img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">' : 
+                '<img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">';
+            
+            var card = document.createElement('div');
+            card.className = 'prod-card';
+            card.innerHTML = `
+                <a href="product-details.php?id=${product.id}" class="product-link">
+                    <div class="img-container">
+                        <img src="${product.image}" alt="${product.name}">
+                    </div>
+                    <p class="prod-name">${product.name}</p>
+                    <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                    <div class="seller-info">
+                        <img src="images/icons/profile-svgrepo-com.svg" alt="Seller Profile Picture">
+                        <p class="seller-name">Seller: ${product.seller_name}</p>
+                        <p class="location">${product.location}</p>
+                        ${verifiedIcon}
+                    </div>
+                </a>
+                <button class="add-to-cart-btn" onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price})">
+                    Add to Cart
+                </button>
+            `;
+            grid.appendChild(card);
+        }
+    }
+    </script>
         <!--Footer-->
         <?php include 'footer.php'?>
         

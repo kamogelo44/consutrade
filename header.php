@@ -3,7 +3,8 @@
  * ConsuTrade - Header Component
  * Author: Kamogelo Phale
  * 
- * This file contains the header HTML and navigation for all pages
+ * This file contains the header HTML and navigation for main website pages ONLY
+ * Admin pages use admin/admin-header.php instead
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -11,36 +12,18 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $baseUrl = "/www/consutrade/";
 
-// Determine if we're in the admin/dashboard area
-$is_admin_area = strpos($_SERVER['REQUEST_URI'], '/admin/') !== false;
-
-// Determine current page for active links
-$current_page = basename($_SERVER['REQUEST_URI']);
-$current_page = strtok($current_page, '?');
-$current_dashboard_page = '';
-
-if ($is_admin_area) {
-    if ($current_page === 'seller-dashboard.php') {
-        $current_dashboard_page = 'Dashboard';
-    } elseif ($current_page === 'my-orders.php') {
-        $current_dashboard_page = 'Orders';
-    } elseif ($current_page === 'promotions.php') {
-        $current_dashboard_page = 'Promotion';
-    } elseif ($current_page === 'inbox.php') {
-        $current_dashboard_page = 'Inbox';
-    } elseif ($current_page === 'admin-dashboard.php') {
-        $current_dashboard_page = 'Admin Dashboard';
-    }
-}
-
 // Determine user role
 $user_role = isset($_SESSION['role']) ? $_SESSION['role'] : '';
 $is_admin = ($user_role === 'admin');
 $is_seller = ($user_role === 'seller');
 $is_buyer = ($user_role === 'buyer');
 $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+
+// Determine current page for active links (main site only)
+$current_page = basename($_SERVER['REQUEST_URI']);
+$current_page = strtok($current_page, '?');
 ?>
-<!-- header.php - Just the header and modals -->
+<!-- header.php - Main Website Header -->
 <header>
     <!-- Left: Hamburger -->
     <button class="hamburger" id="hamburger">
@@ -57,13 +40,10 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
         <button class="mobile-search-icon" id="mobileSearchIcon">
             <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" class="icon-white" width="22px" height="22px" alt="Search">
         </button>
-        <!-- Cart only shows on main website, not in admin area -->
-        <?php if (!$is_admin_area): ?>
-            <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-header-cart">
-                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                <span class="cart-count">0</span>
-            </a>
-        <?php endif; ?>
+        <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-header-cart">
+            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+            <span class="cart-count">0</span>
+        </a>
     </div>
 
     <!-- Desktop Search Form -->
@@ -79,36 +59,16 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
     <!-- Desktop Navigation -->
     <nav class="nav-container" id="nav-menu">
         <ul class="nav-links">
-            <!-- DIFFERENT NAVIGATION BASED ON LOCATION (admin area vs main site) -->
-            <?php if ($is_admin_area): ?>
-                <!-- ===== ADMIN AREA NAVIGATION (Dashboard links) ===== -->
-                <?php if ($is_logged_in && $is_admin): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php" class="<?php echo ($current_dashboard_page === 'Admin Dashboard') ? 'active' : ''; ?>">Admin Dashboard</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/users.php">Manage Users</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/all-products.php">All Products</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a></li>
-                <?php elseif ($is_logged_in && $is_seller): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo ($current_dashboard_page === 'Dashboard') ? 'active' : ''; ?>">Dashboard</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="<?php echo ($current_dashboard_page === 'Orders') ? 'active' : ''; ?>">Orders</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/promotions.php" class="<?php echo ($current_dashboard_page === 'Promotion') ? 'active' : ''; ?>">Promotion</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/inbox.php" class="<?php echo ($current_dashboard_page === 'Inbox') ? 'active' : ''; ?>">Inbox</a></li>
-                <?php else: ?>
-                    <!-- If someone tries to access admin area without login, show minimal nav -->
-                    <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
-                <?php endif; ?>
-            <?php else: ?>
-                <!-- ===== MAIN WEBSITE NAVIGATION (Regular links for everyone) ===== -->
-                <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
-                <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
-                
-                <!-- Sell link - visible to guests and buyers (not shown to sellers on main site) -->
-                <?php if (!$is_seller): ?>
-                    <?php if ($is_logged_in && $is_buyer): ?>
-                        <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link">Sell</a></li>
-                    <?php elseif (!$is_logged_in): ?>
-                        <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
-                    <?php endif; ?>
+            <!-- Main Website Navigation -->
+            <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
+            <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
+            
+            <!-- Sell link - visible to guests and buyers (not shown to sellers on main site) -->
+            <?php if (!$is_seller): ?>
+                <?php if ($is_logged_in && $is_buyer): ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link">Sell</a></li>
+                <?php elseif (!$is_logged_in): ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
                 <?php endif; ?>
             <?php endif; ?>
             
@@ -126,7 +86,7 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
                         <!-- Common for all logged-in users -->
                         <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
                         
-                        <!-- Role-specific links (these work regardless of location) -->
+                        <!-- Role-specific links -->
                         <?php if ($is_admin): ?>
                             <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
                         <?php elseif ($is_seller): ?>
@@ -148,13 +108,11 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
             <?php endif; ?>
         </ul>
         
-        <!-- Cart Icon - Only shows on main website, not in admin area -->
-        <?php if (!$is_admin_area): ?>
-            <a href="<?php echo $baseUrl; ?>cart.php" class="desktop-cart">
-                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                <span class="cart-count">0</span>
-            </a>
-        <?php endif; ?>
+        <!-- Cart Icon -->
+        <a href="<?php echo $baseUrl; ?>cart.php" class="desktop-cart">
+            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+            <span class="cart-count">0</span>
+        </a>
     </nav>
 
     <!-- Mobile Side Menu Content -->
@@ -183,47 +141,29 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
         <?php endif; ?>
         
         <ul class="mobile-nav-links">
-            <!-- Mobile navigation based on LOCATION (admin area vs main site) -->
-            <?php if ($is_admin_area): ?>
-                <!-- Admin Area Mobile Navigation -->
-                <?php if ($is_logged_in && $is_admin): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/users.php">Manage Users</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/all-products.php">All Products</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a></li>
-                <?php elseif ($is_logged_in && $is_seller): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/promotions.php">Promotion</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/inbox.php">Inbox</a></li>
-                <?php else: ?>
-                    <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
-                <?php endif; ?>
-            <?php else: ?>
-                <!-- Main Website Mobile Navigation -->
-                <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
-                <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
-                
-                <?php if (!$is_seller): ?>
-                    <?php if ($is_logged_in && $is_buyer): ?>
-                        <li><a href="<?php echo $baseUrl; ?>sell.php" class="sell-link-mobile">Sell</a></li>
-                    <?php elseif (!$is_logged_in): ?>
-                        <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
-                    <?php endif; ?>
+            <!-- Main Website Mobile Navigation -->
+            <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
+            <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
+            
+            <!-- Sell link - visible to guests and buyers (not shown to sellers on main site) -->
+            <?php if (!$is_seller): ?>
+                <?php if ($is_logged_in && $is_buyer): ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php" class="sell-link-mobile">Sell</a></li>
+                <?php elseif (!$is_logged_in): ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
                 <?php endif; ?>
             <?php endif; ?>
             
+            <!-- Additional logged-in user links -->
             <?php if ($is_logged_in): ?>
                 <li class="mobile-menu-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
                 
+                <!-- Role-specific extra links -->
                 <?php if ($is_admin): ?>
                     <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
                 <?php elseif ($is_seller): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
                     <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">My Orders</a></li>
                 <?php elseif ($is_buyer): ?>
                     <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
                     <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
@@ -247,16 +187,14 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
             </div>
         </div>
         
-        <!-- Cart - Only shows on main website -->
-        <?php if (!$is_admin_area): ?>
-            <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
-                <span class="cart-text">Cart</span>
-                <div class="cart-icon-wrapper">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
-                    <span class="cart-count">0</span>
-                </div>
-            </a>
-        <?php endif; ?>
+        <!-- Cart Link -->
+        <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
+            <span class="cart-text">Cart</span>
+            <div class="cart-icon-wrapper">
+                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" class="icon-white" width="24px" height="24px" alt="Shopping Cart">
+                <span class="cart-count">0</span>
+            </div>
+        </a>
     </div>
 
     <!-- Mobile Expandable Search -->

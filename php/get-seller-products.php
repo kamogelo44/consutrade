@@ -4,7 +4,6 @@
  * Author: Kamogelo Phale
  */
 
-// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -15,7 +14,6 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'items' => [], 'item_count' => 0, 'subtotal' => 0, 'delivery_fee' => 0, 'total' => 0];
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     echo json_encode($response);
     exit;
@@ -23,13 +21,8 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Updated query with correct column names from your products table
-$sql = "SELECT c.cart_id, c.product_id, c.quantity, 
-        p.title as product_name, 
-        p.price, 
-        p.image_url, 
-        p.quantity as stock, 
-        u.full_name as seller_name
+// NO p.quantity in this query at all
+$sql = "SELECT c.cart_id, c.product_id, c.quantity, p.title as product_name, p.price, p.image_url, u.full_name as seller_name
         FROM cart c
         LEFT JOIN products p ON c.product_id = p.product_id
         LEFT JOIN users u ON p.seller_id = u.user_id
@@ -51,7 +44,6 @@ $subtotal = 0;
 $item_count = 0;
 
 while ($row = $result->fetch_assoc()) {
-    // Skip if product doesn't exist anymore
     if (!$row['product_name']) {
         continue;
     }
@@ -75,13 +67,11 @@ while ($row = $result->fetch_assoc()) {
         'product_name' => $row['product_name'],
         'price' => (float)$row['price'],
         'quantity' => (int)$row['quantity'],
-        'stock' => (int)($row['stock'] ?? 0),
         'image' => $imagePath,
         'seller_name' => $row['seller_name'] ?? 'Unknown Seller'
     ];
 }
 
-// Delivery fee: Free for orders over R500, otherwise R50
 $delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
 $total = $subtotal + $delivery_fee;
 
@@ -94,7 +84,6 @@ $response['total'] = number_format($total, 2);
 $stmt->close();
 $conn->close();
 
-// Clean any output buffers
 while (ob_get_level()) {
     ob_end_clean();
 }

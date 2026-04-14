@@ -29,7 +29,7 @@ unset($_SESSION['flash']);
     
     <?php if (!empty($registerErrors)): ?>
     <script>
-    //Open the modal if there are errors
+    // Open the modal if there are errors
     document.addEventListener('DOMContentLoaded', function() {
         var modal = document.getElementById('register-modal');
         if (modal) {
@@ -164,82 +164,10 @@ unset($_SESSION['flash']);
         <!--Featured products section-->
         <section class="featured">
             <h1 class="section-heading">Recently Listed</h1>
-            <div class="prod-grid">
-                <!-- Card 1 -->
-                <div class="prod-card">
-                    <div class="img-container">
-                        <img src="" alt="Product Image">
-                    </div>
-                    <p class="prod-name">Product Name</p>
-                    <p class="prod-price">R 0.00</p>
-                    <div class="seller-info">
-                        <img src="" alt="Seller Profile Picture">
-                        <p class="seller-name">Seller: Gethro Molungsi</p>
-                        <p class="location">Polokwane</p>
-                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                    </div>
-                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                        Add to Cart
-                    </button>                    
+            <div class="prod-grid" id="products-grid">
+                <div class="loading-spinner" style="text-align: center; grid-column: 1/-1; padding: 40px;">
+                    Loading products...
                 </div>
-
-                <!-- Card 2 -->
-                <div class="prod-card">
-                    <div class="img-container">
-                        <img src="" alt="Product Image">
-                    </div>
-                    <p class="prod-name">Product Name</p>
-                    <p class="prod-price">R 0.00</p>
-                    <div class="seller-info">
-                        <img src="" alt="Seller Profile Picture">
-                        <p class="seller-name">Seller: Gethro Molungsi</p>
-                        <p class="location">Polokwane</p>
-                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                    </div>
-                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                        Add to Cart
-                    </button>                    
-                </div>
-
-                <!-- Card 3 -->
-                <div class="prod-card">
-                    <div class="img-container">
-                        <img src="" alt="Product Image">
-                    </div>
-                    <p class="prod-name">Product Name</p>
-                    <p class="prod-price">R 0.00</p>
-                    <div class="seller-info">
-                        <img src="" alt="Seller Profile Picture">
-                        <p class="seller-name">Seller: Gethro Molungsi</p>
-                        <p class="location">Polokwane</p>
-                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                    </div>
-                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                        Add to Cart
-                    </button>                    
-                </div>
-
-                <!-- Card 4 -->
-                <div class="prod-card">
-                    <div class="img-container">
-                        <img src="" alt="Product Image">
-                    </div>
-                    <p class="prod-name">Product Name</p>
-                    <p class="prod-price">R 0.00</p>
-                    <div class="seller-info">
-                        <img src="" alt="Seller Profile Picture">
-                        <p class="seller-name">Seller: Gethro Molungsi</p>
-                        <p class="location">Polokwane</p>
-                        <img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">
-                        <img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">
-                    </div>
-                    <button class="add-to-cart-btn" data-id="1" data-name="Product Name" data-price="99.99">
-                        Add to Cart
-                    </button>                     
-                </div>               
             </div>
         </section>
     
@@ -267,5 +195,76 @@ unset($_SESSION['flash']);
     <?php include 'footer.php'; ?>
 
     <script src="js/main.js"></script>
+    <script>
+        // Load featured products when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFeaturedProducts();
+        });
+
+        function loadFeaturedProducts() {
+            fetch('php/get-products.php')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    var grid = document.getElementById('products-grid');
+                    
+                    if (data.success && data.products.length > 0) {
+                        // Show only first 4 products for homepage
+                        var featuredProducts = data.products.slice(0, 4);
+                        displayFeaturedProducts(featuredProducts);
+                    } else {
+                        grid.innerHTML = '<p style="text-align: center; grid-column: 1/-1;">No products available yet.</p>';
+                    }
+                })
+                .catch(function(error) {
+                    console.log('Error:', error);
+                    document.getElementById('products-grid').innerHTML = '<p style="text-align: center; grid-column: 1/-1; color: #f44336;">Error loading products. Please refresh the page.</p>';
+                });
+        }
+
+        function displayFeaturedProducts(products) {
+            var grid = document.getElementById('products-grid');
+            grid.innerHTML = '';
+            
+            for (var i = 0; i < products.length; i++) {
+                var product = products[i];
+                
+                // Determine which verification icon to show
+                var verifiedIcon = product.is_verified ? 
+                    '<img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">' : 
+                    '<img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">';
+                
+                // Create the product card
+                var card = document.createElement('div');
+                card.className = 'prod-card';
+                card.innerHTML = `
+                    <a href="product-details.php?id=${product.id}" style="text-decoration: none; color: inherit;">
+                        <div class="img-container">
+                            <img src="${product.image}" alt="${product.name}">
+                        </div>
+                        <p class="prod-name">${escapeHtml(product.name)}</p>
+                        <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                        <div class="seller-info">
+                            <img src="images/icons/profile-svgrepo-com.svg" alt="Seller Profile Picture">
+                            <p class="seller-name">Seller: ${escapeHtml(product.seller_name)}</p>
+                            <p class="location">${escapeHtml(product.location)}</p>
+                            ${verifiedIcon}
+                        </div>
+                    </a>
+                    <button class="add-to-cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                        Add to Cart
+                    </button>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        // Helper function to escape HTML and prevent XSS attacks
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
 </body>
 </html>

@@ -23,12 +23,11 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Updated query with correct column names from your products table
+// REMOVED p.quantity since it doesn't exist in your products table
 $sql = "SELECT c.cart_id, c.product_id, c.quantity, 
         p.title as product_name, 
         p.price, 
-        p.image_url, 
-        p.quantity as stock, 
+        p.image_url,
         u.full_name as seller_name
         FROM cart c
         LEFT JOIN products p ON c.product_id = p.product_id
@@ -56,6 +55,7 @@ while ($row = $result->fetch_assoc()) {
         continue;
     }
     
+    // Fix image path
     $imagePath = $row['image_url'];
     if ($imagePath && strpos($imagePath, '/www/consutrade/') === 0) {
         $imagePath = substr($imagePath, strlen('/www/consutrade/'));
@@ -75,7 +75,7 @@ while ($row = $result->fetch_assoc()) {
         'product_name' => $row['product_name'],
         'price' => (float)$row['price'],
         'quantity' => (int)$row['quantity'],
-        'stock' => (int)($row['stock'] ?? 0),
+        'stock' => 999, // Default large number since no stock column
         'image' => $imagePath,
         'seller_name' => $row['seller_name'] ?? 'Unknown Seller'
     ];

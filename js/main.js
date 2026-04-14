@@ -29,54 +29,19 @@ document.addEventListener('DOMContentLoaded', function() {
             currentPage = 'index.php';
         }
         
-        // Get the full current URL for matching absolute paths
-        var currentUrl = window.location.href;
-        var baseUrl = '/www/consutrade/';
-        
-        // Check if we're in admin area
-        var isAdminArea = path.includes('/admin/');
-        var dashboardPage = '';
-        
-        if (isAdminArea) {
-            if (currentPage === 'seller-dashboard.php') {
-                dashboardPage = 'Dashboard';
-            } else if (currentPage === 'my-orders.php') {
-                dashboardPage = 'Orders';
-            } else if (currentPage === 'promotions.php') {
-                dashboardPage = 'Promotion';
-            } else if (currentPage === 'inbox.php') {
-                dashboardPage = 'Inbox';
-            } else if (currentPage === 'admin-dashboard.php') {
-                dashboardPage = 'Admin Dashboard';
-            } else if (currentPage === 'users.php') {
-                dashboardPage = 'Manage Users';
-            } else if (currentPage === 'all-products.php') {
-                dashboardPage = 'All Products';
-            } else if (currentPage === 'all-orders.php') {
-                dashboardPage = 'All Orders';
-            } else if (currentPage === 'my-products.php') {
-                dashboardPage = 'My Products';
-            }
-        }
-        
-        // Get all navigation links
+        // Get all navigation links - only for main website
         var navLinks = document.querySelectorAll('.nav-links a, .mobile-nav-links a, .mobile-menu-cart');
         
         for (var i = 0; i < navLinks.length; i++) {
             var link = navLinks[i];
             var href = link.getAttribute('href');
-            var linkText = link.textContent.trim();
             
             // Remove active class from all links first
             link.classList.remove('active');
             
-            // For admin area pages, match by dashboard page name
-            if (isAdminArea && dashboardPage === linkText) {
-                link.classList.add('active');
-            }
             // For regular pages, check if the link href matches the current page
-            else if (href) {
-                // Extract just the filename from href (handles absolute paths like /www/consutrade/index.php)
+            if (href) {
+                // Extract just the filename from href (handles absolute paths)
                 var hrefPage = href.substring(href.lastIndexOf('/') + 1);
                 
                 // Remove query parameters if any
@@ -107,6 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 // Handle profile page
                 else if (currentPage === 'profile.php' && hrefPage === 'profile.php') {
+                    link.classList.add('active');
+                }
+                // Handle my-orders page for buyers
+                else if (currentPage === 'my-orders.php' && hrefPage === 'my-orders.php') {
                     link.classList.add('active');
                 }
             }
@@ -415,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
-      // ========== USER DROPDOWN TOGGLE (DESKTOP) ==========
+    // ========== USER DROPDOWN TOGGLE (DESKTOP) ==========
     // Took me a while to figure out how to close dropdown when clicking outside
     // Had to use event listeners properly
 
@@ -437,6 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
     // ========== MOBILE DROPDOWN TOGGLE ==========
     var mobileDropdownToggle = document.getElementById('mobileDropdownToggle');
     var mobileDropdownMenu = document.getElementById('mobileDropdownMenu');
@@ -459,7 +429,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========== MY CART FUNCTIONS ==========
     // took me forever to figure out fetch() but i got it working
-    
+    // Using absolute paths to avoid 404 errors from different folders
+
     function addToCart(productId, productName, productPrice, quantity = 1) {
         fetch('php/add-to-cart.php', {
             method: 'POST',
@@ -487,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Something went wrong');
         });
     }
-    
+
     function updateCartItem(productId, quantity) {
         fetch('php/update-cart.php', {
             method: 'POST',
@@ -510,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Error:', error);
         });
     }
-    
+
     function removeFromCart(productId) {
         fetch('php/remove-from-cart.php', {
             method: 'POST',
@@ -532,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Error:', error);
         });
     }
-    
+
     function updateCartCount() {
         fetch('php/get-cart.php')
         .then(function(response) { return response.json(); })
@@ -573,11 +544,90 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Display cart items on the page (I need to finish this function)
+    // Display cart items on the page
     function displayCartItems(cartData) {
-        // This will be implemented when I build the cart page
-        // For now it's a placeholder
-        console.log('Cart items:', cartData.items);
+        var desktopTableBody = document.querySelector('.product-table tbody');
+        var mobileContainer = document.querySelector('.mobile-cart-items');
+        var emptyCartDiv = document.getElementById('empty-cart');
+        var cartLayout = document.querySelector('.cart-layout');
+        
+        if (!cartData.items || cartData.items.length === 0) {
+            // Show empty cart state
+            if (emptyCartDiv) emptyCartDiv.style.display = 'flex';
+            if (cartLayout) cartLayout.style.display = 'none';
+            return;
+        }
+        
+        // Hide empty cart, show layout
+        if (emptyCartDiv) emptyCartDiv.style.display = 'none';
+        if (cartLayout) cartLayout.style.display = 'flex';
+        
+        // Clear existing rows
+        if (desktopTableBody) desktopTableBody.innerHTML = '';
+        if (mobileContainer) mobileContainer.innerHTML = '';
+        
+        // Loop through cart items and create rows/cards
+        for (var i = 0; i < cartData.items.length; i++) {
+            var item = cartData.items[i];
+            var verifiedBadge = '<div class="verified-badge-cart"><img src="images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification"><p>Verified Seller</p></div>';
+            
+            // Desktop table row
+            if (desktopTableBody) {
+                var row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="product-cell" data-label="Product">
+                        <div class="cart-product-wrapper">
+                            <div class="cart-img-container">
+                                <img src="${item.image}" alt="${item.product_name}">
+                            </div>
+                            <div class="cart-prod-info">
+                                <p class="prod-name">${item.product_name}</p>
+                                <p><span class="num-avail">${item.stock}</span> Available</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="seller-cell" data-label="Seller">
+                        <div class="seller-cart-info">
+                            <p class="seller-name">${item.seller_name}</p>
+                            <div class="verification">
+                                ${verifiedBadge}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="price-cell" data-label="Price">R ${parseFloat(item.price).toFixed(2)}</td>
+                    <td class="actions-cell" data-label="Actions">
+                        <button class="remove-btn" onclick="removeFromCart(${item.product_id})">Remove</button>
+                    </td>
+                `;
+                desktopTableBody.appendChild(row);
+            }
+            
+            // Mobile card
+            if (mobileContainer) {
+                var card = document.createElement('div');
+                card.className = 'mobile-cart-card';
+                card.innerHTML = `
+                    <div class="mobile-cart-img">
+                        <img src="${item.image}" alt="${item.product_name}">
+                    </div>
+                    <div class="mobile-cart-details">
+                        <h3 class="mobile-prod-name">${item.product_name}</h3>
+                        <p class="mobile-availability"><span class="num-avail">${item.stock}</span> Available</p>
+                    </div>
+                    <div class="mobile-cart-seller">
+                        <p class="seller-name">${item.seller_name}</p>
+                        ${verifiedBadge}
+                    </div>
+                    <div class="mobile-cart-price">
+                        <p class="price">R ${parseFloat(item.price).toFixed(2)}</p>
+                    </div>
+                    <div class="mobile-cart-actions">
+                        <button class="remove-btn" onclick="removeFromCart(${item.product_id})">Remove</button>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            }
+        }
     }
     
     // Update the order summary totals

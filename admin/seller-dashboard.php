@@ -66,21 +66,6 @@ if ($earnings_row = $earnings_result->fetch_assoc()) {
 $earnings_stmt->close();
 
 $conn->close();
-
-// Determine current dashboard page for active links
-$current_dashboard_page = '';
-$current_page = basename($_SERVER['REQUEST_URI']);
-$current_page = strtok($current_page, '?');
-
-if ($current_page === 'seller-dashboard.php') {
-    $current_dashboard_page = 'Dashboard';
-} elseif ($current_page === 'my-orders.php') {
-    $current_dashboard_page = 'Orders';
-} elseif ($current_page === 'promotions.php') {
-    $current_dashboard_page = 'Promotion';
-} elseif ($current_page === 'inbox.php') {
-    $current_dashboard_page = 'Inbox';
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -94,7 +79,7 @@ if ($current_page === 'seller-dashboard.php') {
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
 </head>
 <body class="dashboard-page">
-    <!-- Header -->
+    <!-- Header - using main header.php -->
     <?php include dirname(__DIR__) . '/header.php'; ?>
 
     <main>
@@ -128,14 +113,7 @@ if ($current_page === 'seller-dashboard.php') {
             <div class="left-col">
                 <h1 class="sect-head">My Listings</h1>
                 <div class="listings-grid" id="listings-grid">
-                    <?php if ($total_products > 0): ?>
-                        <p class="placeholder-text">Loading your products...</p>
-                    <?php else: ?>
-                        <div class="empty-listings">
-                            <p>You haven't listed any products yet.</p>
-                            <button class="add-listing-btn" onclick="openAddListingModal()">+ Add Your First Product</button>
-                        </div>
-                    <?php endif; ?>
+                    <div class="loading-spinner">Loading your products...</div>
                 </div>
             </div>
 
@@ -143,7 +121,7 @@ if ($current_page === 'seller-dashboard.php') {
                 <h1>Quick Actions</h1>
                 <div class="q-actions">
                     <button class="add-listing-btn" onclick="openAddListingModal()">+ Add New Listing</button>
-                    <button class="view-all-order" onclick="window.location.href='<?php echo $baseUrl; ?>admin/my-orders.php'">View All Orders</button>
+                    <button class="view-all-order" onclick="window.location.href='my-orders.php'">View All Orders</button>
                     <button class="Edit-my-profile" onclick="window.location.href='<?php echo $baseUrl; ?>profile.php'">Edit My Profile</button>
                 </div>
                 
@@ -164,7 +142,7 @@ if ($current_page === 'seller-dashboard.php') {
                 <h2>Add New Product</h2>
                 <button class="listing-modal-close" onclick="closeAddListingModal()">&times;</button>
             </div>
-            <form id="add-product-form" action="<?php echo $baseUrl; ?>php/add-product.php" method="post" enctype="multipart/form-data">
+            <form id="add-product-form" action="../php/add-product.php" method="post" enctype="multipart/form-data">
                 <div class="listing-form-group">
                     <label for="product-title">Product Title</label>
                     <input type="text" id="product-title" name="title" required>
@@ -199,14 +177,135 @@ if ($current_page === 'seller-dashboard.php') {
 
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <script>
+        // Load seller's products when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSellerProducts();
+            loadRecentOrders();
+        });
+
+        function loadSellerProducts() {
+            // Use ../ to go up from admin/ to root, then into php/
+            fetch('../php/get-seller-products.php')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    var grid = document.getElementById('listings-grid');
+                    
+                    if (data.success && data.products.length > 0) {
+                        displaySellerProducts(data.products);
+                    } else {
+                        grid.innerHTML = `
+                            <div class="empty-listings">
+                                <p>You haven't listed any products yet.</p>
+                                <button class="add-listing-btn" onclick="openAddListingModal()">+ Add Your First Product</button>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(function(error) {
+                    console.log('Error:', error);
+                    document.getElementById('listings-grid').innerHTML = '<p class="error">Error loading products. Please refresh the page.</p>';
+                });
+        }
+
+        function displaySellerProducts(products) {
+            var grid = document.getElementById('listings-grid');
+            grid.innerHTML = '';
+            
+            for (var i = 0; i < products.length; i++) {
+                var product = products[i];
+                var card = document.createElement('div');
+                card.className = 'listing-card';
+                card.innerHTML = `
+                    <div class="listing-img">
+                        <img src="${product.image}" alt="${product.name}" onerror="this.src='../images/default-product.jpg'">
+                    </div>
+                    <div class="listing-info">
+                        <h3 class="listing-title">${escapeHtml(product.name)}</h3>
+                        <p class="listing-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                        <p class="listing-status ${product.status}">${product.status}</p>
+                        <div class="listing-actions">
+                            <button class="edit-btn" onclick="editProduct(${product.id})">Edit</button>
+                            <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function loadRecentOrders() {
+            fetch('../php/get-recent-orders.php')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    var ordersList = document.getElementById('recent-orders-list');
+                    
+                    if (data.success && data.orders.length > 0) {
+                        ordersList.innerHTML = '';
+                        for (var i = 0; i < data.orders.length; i++) {
+                            var order = data.orders[i];
+                            var orderItem = document.createElement('div');
+                            orderItem.className = 'order-item';
+                            orderItem.innerHTML = `
+                                <p class="order-id">Order #${order.id}</p>
+                                <p class="order-amount">R ${parseFloat(order.total).toFixed(2)}</p>
+                                <p class="order-status ${order.status}">${order.status}</p>
+                            `;
+                            ordersList.appendChild(orderItem);
+                        }
+                    } else {
+                        ordersList.innerHTML = '<p class="placeholder-text">No recent orders to display.</p>';
+                    }
+                })
+                .catch(function(error) {
+                    console.log('Error:', error);
+                });
+        }
+
         function openAddListingModal() {
             document.getElementById('add-listing-modal').classList.add('active');
         }
-        
+
         function closeAddListingModal() {
             document.getElementById('add-listing-modal').classList.remove('active');
         }
-        
+
+        function editProduct(productId) {
+            window.location.href = 'edit-product.php?id=' + productId;
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                fetch('../php/delete-product.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ product_id: productId })
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        loadSellerProducts();
+                        alert('Product deleted successfully!');
+                    } else {
+                        alert('Error deleting product: ' + data.message);
+                    }
+                })
+                .catch(function(error) {
+                    console.log('Error:', error);
+                    alert('Something went wrong');
+                });
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Modal click outside to close
         var modal = document.getElementById('add-listing-modal');
         if (modal) {
             modal.addEventListener('click', function(e) {
@@ -215,6 +314,25 @@ if ($current_page === 'seller-dashboard.php') {
                 }
             });
         }
+
+        // Display flash message if exists
+        <?php if (isset($_SESSION['flash'])): ?>
+            var flashMsg = document.createElement('div');
+            flashMsg.className = 'flash-message';
+            flashMsg.textContent = '<?php echo $_SESSION['flash']; ?>';
+            document.querySelector('main').insertBefore(flashMsg, document.querySelector('main').firstChild);
+            setTimeout(function() { flashMsg.remove(); }, 5000);
+            <?php unset($_SESSION['flash']); ?>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['product_errors'])): ?>
+            var errorMsg = document.createElement('div');
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = '<?php echo implode(', ', $_SESSION['product_errors']); ?>';
+            document.querySelector('main').insertBefore(errorMsg, document.querySelector('main').firstChild);
+            setTimeout(function() { errorMsg.remove(); }, 5000);
+            <?php unset($_SESSION['product_errors']); ?>
+        <?php endif; ?>
     </script>
 </body>
 </html>
