@@ -13,6 +13,9 @@
  * - Active navigation link highlighting
  */
 
+// Base URL for all fetch requests - works from any folder (root or admin)
+var baseUrl = '/www/consutrade/';
+
 // Wait for the page to finish loading - learned this the hard way when my JS ran before elements existed
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -332,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var userConfirmed = confirm('You are currently registered as a buyer.\n\nWould you like to upgrade to a seller account? This will allow you to list and sell products on ConsuTrade.');
         
         if (userConfirmed) {
-            window.location.href = 'php/upgrade-to-seller.php';
+            window.location.href = baseUrl + 'php/upgrade-to-seller.php';
         }
     }
     
@@ -354,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var userConfirmed = confirm('Are you sure you want to upgrade to a seller account?\n\nYou will be able to list and sell your products on ConsuTrade.');
             
             if (userConfirmed) {
-                window.location.href = 'php/upgrade-to-seller.php';
+                window.location.href = baseUrl + 'php/upgrade-to-seller.php';
             }
         });
     }
@@ -429,10 +432,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========== MY CART FUNCTIONS ==========
     // took me forever to figure out fetch() but i got it working
-    // Using absolute paths to avoid 404 errors from different folders
+    // Using baseUrl variable to work from any folder (root or admin)
 
     function addToCart(productId, productName, productPrice, quantity = 1) {
-        fetch('php/add-to-cart.php', {
+        fetch(baseUrl + 'php/add-to-cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -460,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCartItem(productId, quantity) {
-        fetch('php/update-cart.php', {
+        fetch(baseUrl + 'php/update-cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -483,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function removeFromCart(productId) {
-        fetch('php/remove-from-cart.php', {
+        fetch(baseUrl + 'php/remove-from-cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -505,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCartCount() {
-        fetch('php/get-cart.php')
+        fetch(baseUrl + 'php/get-cart.php')
         .then(function(response) { return response.json(); })
         .then(function(data) {
             if (data.success) {
@@ -530,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function loadCart() {
         // Only run this on the cart page
         if (window.location.pathname.includes('cart.php')) {
-            fetch('php/get-cart.php')
+            fetch(baseUrl + 'php/get-cart.php')
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.success) {
@@ -569,7 +572,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Loop through cart items and create rows/cards
         for (var i = 0; i < cartData.items.length; i++) {
             var item = cartData.items[i];
-            var verifiedBadge = '<div class="verified-badge-cart"><img src="images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification"><p>Verified Seller</p></div>';
+            var verifiedBadge = '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification"><p>Verified Seller</p></div>';
+            
+            // Fix image path
+            var imagePath = item.image;
+            if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                imagePath = baseUrl + imagePath;
+            }
             
             // Desktop table row
             if (desktopTableBody) {
@@ -578,17 +587,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="product-cell" data-label="Product">
                         <div class="cart-product-wrapper">
                             <div class="cart-img-container">
-                                <img src="${item.image}" alt="${item.product_name}">
+                                <img src="${imagePath}" alt="${item.product_name}" onerror="this.src='${baseUrl}images/default-product.jpg'">
                             </div>
                             <div class="cart-prod-info">
-                                <p class="prod-name">${item.product_name}</p>
-                                <p><span class="num-avail">${item.stock}</span> Available</p>
+                                <p class="prod-name">${escapeHtml(item.product_name)}</p>
+                                <p>Quantity: ${item.quantity}</p>
                             </div>
                         </div>
                     </td>
                     <td class="seller-cell" data-label="Seller">
                         <div class="seller-cart-info">
-                            <p class="seller-name">${item.seller_name}</p>
+                            <p class="seller-name">${escapeHtml(item.seller_name)}</p>
                             <div class="verification">
                                 ${verifiedBadge}
                             </div>
@@ -608,14 +617,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 card.className = 'mobile-cart-card';
                 card.innerHTML = `
                     <div class="mobile-cart-img">
-                        <img src="${item.image}" alt="${item.product_name}">
+                        <img src="${imagePath}" alt="${item.product_name}" onerror="this.src='${baseUrl}images/default-product.jpg'">
                     </div>
                     <div class="mobile-cart-details">
-                        <h3 class="mobile-prod-name">${item.product_name}</h3>
-                        <p class="mobile-availability"><span class="num-avail">${item.stock}</span> Available</p>
+                        <h3 class="mobile-prod-name">${escapeHtml(item.product_name)}</h3>
+                        <p>Quantity: ${item.quantity}</p>
                     </div>
                     <div class="mobile-cart-seller">
-                        <p class="seller-name">${item.seller_name}</p>
+                        <p class="seller-name">${escapeHtml(item.seller_name)}</p>
                         ${verifiedBadge}
                     </div>
                     <div class="mobile-cart-price">
@@ -639,6 +648,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (subtotalSpan) subtotalSpan.textContent = cartData.subtotal;
         if (deliverySpan) deliverySpan.textContent = cartData.delivery_fee;
         if (totalSpan) totalSpan.textContent = cartData.total;
+    }
+    
+    // Helper function to escape HTML and prevent XSS attacks
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     // Run these when page loads

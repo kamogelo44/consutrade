@@ -228,31 +228,58 @@ unset($_SESSION['flash']);
             for (var i = 0; i < products.length; i++) {
                 var product = products[i];
                 
-                // Determine which verification icon to show
+                // Determine verification icon
                 var verifiedIcon = product.is_verified ? 
-                    '<img src="images/icons/verified-svgrepo-com.svg" width="24px" height="24px" alt="Verified">' : 
-                    '<img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="24px" height="24px" alt="Not Verified">';
+                    '<div class="verified-icon"><img src="images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="Verified Seller"></div>' : 
+                    '';
+                
+                // Determine condition badge class
+                var conditionClass = '';
+                var conditionText = product.condition || 'Good';
+                if (conditionText === 'New') conditionClass = 'new';
+                else if (conditionText === 'Like New') conditionClass = 'like-new';
+                else if (conditionText === 'Good') conditionClass = 'good';
+                else if (conditionText === 'Fair') conditionClass = 'fair';
                 
                 // Create the product card
                 var card = document.createElement('div');
                 card.className = 'prod-card';
                 card.innerHTML = `
-                    <a href="product-details.php?id=${product.id}" style="text-decoration: none; color: inherit;">
-                        <div class="img-container">
-                            <img src="${product.image}" alt="${product.name}">
-                        </div>
-                        <p class="prod-name">${escapeHtml(product.name)}</p>
+                    <div class="img-container">
+                        <a href="product-details.php?id=${product.id}">
+                            <img src="${product.image}" alt="${escapeHtml(product.name)}" onerror="this.src='images/default-product.jpg'">
+                        </a>
+                    </div>
+                    <div class="prod-info-container">
+                        <h3 class="prod-name">
+                            <a href="product-details.php?id=${product.id}">
+                                ${escapeHtml(product.name)}
+                            </a>
+                        </h3>
                         <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                        <div class="condition-badge ${conditionClass}">${conditionText}</div>
                         <div class="seller-info">
-                            <img src="images/icons/profile-svgrepo-com.svg" alt="Seller Profile Picture">
-                            <p class="seller-name">Seller: ${escapeHtml(product.seller_name)}</p>
-                            <p class="location">${escapeHtml(product.location)}</p>
+                            <div class="seller-avatar">
+                                <img src="images/icons/profile-svgrepo-com.svg" alt="Seller">
+                            </div>
+                            <div class="seller-details">
+                                <p class="seller-name">${escapeHtml(product.seller_name)}</p>
+                                <p class="location">
+                                    <img src="images/icons/pin-location-svgrepo-com.svg" alt="Location">
+                                    ${escapeHtml(product.location)}
+                                </p>
+                            </div>
                             ${verifiedIcon}
                         </div>
-                    </a>
-                    <button class="add-to-cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                        Add to Cart
-                    </button>
+                        <button class="add-to-cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
+                            Add to Cart
+                        </button>
+                        <div class="payment-badge">
+                            <span>Secure payment via</span>
+                            <img src="images/icons/Payfast logo.svg" alt="PayFast">
+                        </div>
+                    </div>
                 `;
                 grid.appendChild(card);
             }
