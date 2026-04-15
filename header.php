@@ -19,6 +19,35 @@ $is_seller = ($user_role === 'seller');
 $is_buyer = ($user_role === 'buyer');
 $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
 
+// Fetch location from session or database (only if logged in)
+$user_location = '';
+if ($is_logged_in) {
+    // First check if location is already in session
+    if (isset($_SESSION['location']) && !empty($_SESSION['location'])) {
+        $user_location = $_SESSION['location'];
+    } else {
+        // Only fetch from database if we have user_id and location not in session
+        if (isset($_SESSION['user_id']) && !isset($_SESSION['location'])) {
+            require_once 'php/config.php';
+            if (isset($conn) && $conn && !$conn->connect_error) {
+                $user_id = $_SESSION['user_id'];
+                $sql = "SELECT location FROM users WHERE user_id = ?";
+                $stmt = $conn->prepare($sql);
+                if ($stmt) {
+                    $stmt->bind_param('i', $user_id);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    if ($row = $result->fetch_assoc()) {
+                        $user_location = $row['location'];
+                        $_SESSION['location'] = $user_location;
+                    }
+                    $stmt->close();
+                }
+            }
+        }
+    }
+}
+
 // Determine current page for active links (main site only)
 $current_page = basename($_SERVER['REQUEST_URI']);
 $current_page = strtok($current_page, '?');
@@ -77,16 +106,25 @@ $current_page = strtok($current_page, '?');
                 <li class="user-dropdown">
                     <div class="user-info">
                         <span class="welcome-text">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+                        <?php if ($user_location): ?>
+                        <span class="user-location-badge">
+                            <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="12px" height="12px" alt="location">
+                            <?php echo htmlspecialchars($user_location); ?>
+                        </span>
+                        <?php endif; ?>
                         <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" class="profile-icon" width="32px" height="32px" alt="Profile">
                         <button class="dropdown-toggle" id="desktopDropdownToggle">
                             <img src="<?php echo $baseUrl; ?>images/icons/chevron-down-svgrepo-com.svg" class="icon-white" width="16px" height="16px" alt="Menu">
                         </button>
                     </div>
                     <ul class="dropdown-menu" id="desktopDropdownMenu">
-                        <!-- Common for all logged-in users -->
                         <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                        
-                        <!-- Role-specific links -->
+                        <?php if ($user_location): ?>
+                        <li><a href="#" class="location-item">
+                            <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14px" height="14px" alt="location">
+                            <?php echo htmlspecialchars($user_location); ?>
+                        </a></li>
+                        <?php endif; ?>
                         <?php if ($is_admin): ?>
                             <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
                         <?php elseif ($is_seller): ?>
@@ -97,7 +135,6 @@ $current_page = strtok($current_page, '?');
                             <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
                             <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
                         <?php endif; ?>
-                        
                         <li class="dropdown-divider"></li>
                         <li><a href="<?php echo $baseUrl; ?>php/logout.php">Logout</a></li>
                     </ul>
@@ -135,6 +172,12 @@ $current_page = strtok($current_page, '?');
                     <div class="mobile-profile-text">
                         <span class="mobile-profile-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
                         <span class="mobile-profile-role"><?php echo ucfirst($user_role); ?></span>
+                        <?php if ($user_location): ?>
+                        <span class="mobile-profile-location">
+                            <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="12px" height="12px" alt="location">
+                            <?php echo htmlspecialchars($user_location); ?>
+                        </span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -158,8 +201,12 @@ $current_page = strtok($current_page, '?');
             <?php if ($is_logged_in): ?>
                 <li class="mobile-menu-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                
-                <!-- Role-specific extra links -->
+                <?php if ($user_location): ?>
+                <li class="mobile-location-item">
+                    <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14px" height="14px" alt="location">
+                    <?php echo htmlspecialchars($user_location); ?>
+                </li>
+                <?php endif; ?>
                 <?php if ($is_admin): ?>
                     <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
                 <?php elseif ($is_seller): ?>
@@ -168,7 +215,6 @@ $current_page = strtok($current_page, '?');
                     <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
                     <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
                 <?php endif; ?>
-                
                 <li class="mobile-menu-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>php/logout.php" class="mobile-logout-link">Logout</a></li>
             <?php else: ?>
@@ -284,6 +330,13 @@ $current_page = strtok($current_page, '?');
                 <small class="error-text" id="role-error"></small>
             </fieldset>
             
+            <!-- Location field for sellers -->
+            <div class="input-group" id="location-field" style="display: none;">
+                <label for="location">Location (City, Province)</label>
+                <input type="text" id="location" name="location" placeholder="e.g., Johannesburg, Soweto">
+                <small class="error-text" id="location-error"></small>
+            </div>
+            
             <button type="submit" class="submit-btn">Create Account</button>
             
             <p class="login-link">Already have an account? <a href="#login-modal">Login</a></p>
@@ -328,3 +381,32 @@ $current_page = strtok($current_page, '?');
         </form>
     </div>
 </div>
+
+<script>
+// Show location field when seller is selected
+var sellRadio = document.getElementById('sell');
+var buyRadio = document.getElementById('buy');
+var locationField = document.getElementById('location-field');
+
+if (sellRadio && buyRadio && locationField) {
+    sellRadio.addEventListener('change', function() {
+        if (this.checked) {
+            locationField.style.display = 'block';
+        }
+    });
+    
+    buyRadio.addEventListener('change', function() {
+        if (this.checked) {
+            locationField.style.display = 'none';
+        }
+    });
+}
+
+// Pre-fill location field if returning from error
+<?php if (isset($_SESSION['register_form_data']['location']) && !empty($_SESSION['register_form_data']['location'])): ?>
+var locationInput = document.getElementById('location');
+if (locationInput) {
+    locationInput.value = '<?php echo addslashes($_SESSION['register_form_data']['location']); ?>';
+}
+<?php endif; ?>
+</script>

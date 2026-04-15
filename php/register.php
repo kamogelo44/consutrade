@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     $role = $_POST['user_type'];
+    $location = isset($_POST['location']) ? trim($_POST['location']) : '';
     
     $errors = [];
 
@@ -46,6 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['role'] = 'Please select a valid account type';
     }
     
+    if (empty($location) && $role === 'seller') {
+        $errors['location'] = 'Location is required for sellers';
+    }
+    
     // Check if email already exists
     if (empty($errors)) {
         $check_sql = "SELECT user_id FROM users WHERE email = ?";
@@ -63,15 +68,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Insert into database
     if (empty($errors)) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $sql = "INSERT INTO users (full_name, email, password, role, created_at) VALUES (?, ?, ?, ?, NOW())";
+        $sql = "INSERT INTO users (full_name, email, password, role, location, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param('ssss', $full_name, $email, $hashed_password, $role);
+        $stmt->bind_param('sssss', $full_name, $email, $hashed_password, $role, $location);
         
         if ($stmt->execute()) {
             $new_user_id = $conn->insert_id;
             $_SESSION['user_id'] = $new_user_id;
             $_SESSION['full_name'] = $full_name;
             $_SESSION['role'] = $role;
+            $_SESSION['location'] = $location;
             $_SESSION['logged_in'] = true;
 
             // Redirect based on role
@@ -93,7 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['register_form_data'] = [
             'fullname' => $full_name,
             'email' => $email,
-            'role' => $role
+            'role' => $role,
+            'location' => $location
         ];
         header('Location: ' . $baseUrl . 'index.php?open=register');
         exit;

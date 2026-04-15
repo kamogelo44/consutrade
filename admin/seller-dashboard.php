@@ -64,8 +64,6 @@ if ($earnings_row = $earnings_result->fetch_assoc()) {
     $total_earnings = $earnings_row['total'] ?? 0;
 }
 $earnings_stmt->close();
-
-$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

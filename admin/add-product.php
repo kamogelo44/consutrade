@@ -99,13 +99,13 @@ include dirname(__DIR__) . '/header.php';
                         <legend>Basic Information</legend>
                         
                         <div class="form-group">
-                            <label for="product-title">Product Title *</label>
+                            <label for="product-title">Product Title</label>
                             <input type="text" id="product-title" name="title" required 
                                    placeholder="e.g., Handmade Leather Bag" onkeyup="updateProgress()">
                         </div>
 
                         <div class="form-group">
-                            <label for="product-category">Category *</label>
+                            <label for="product-category">Category</label>
                             <select id="product-category" name="category_id" required onchange="updateProgress()">
                                 <option value="">Select Category</option>
                                 <option value="1">Clothing & Accessories</option>
@@ -120,13 +120,13 @@ include dirname(__DIR__) . '/header.php';
 
                         <div class="form-row">
                             <div class="form-group half">
-                                <label for="product-price">Price (R) *</label>
+                                <label for="product-price">Price (R)</label>
                                 <input type="number" id="product-price" name="price" step="0.01" required 
                                        placeholder="0.00" onkeyup="updateProgress()">
                             </div>
                             <div class="form-group half">
-                                <label for="product-condition">Condition *</label>
-                                <select id="product-condition" name="condition" required onchange="updateProgress()">
+                                <label for="product-condition">Condition</label>
+                                <select id="product-condition" name="condition" onchange="updateProgress()">
                                     <option value="">Select Condition</option>
                                     <option value="New">Brand New</option>
                                     <option value="Like New">Like New</option>
@@ -137,9 +137,10 @@ include dirname(__DIR__) . '/header.php';
                         </div>
 
                         <div class="form-group">
-                            <label for="product-description">Description *</label>
+                            <label for="product-description">Description</label>
                             <textarea id="product-description" name="description" rows="5" 
                                       placeholder="Describe your product in detail..." 
+                                      required
                                       onkeyup="updateProgress()"></textarea>
                         </div>
                     </fieldset>
@@ -153,12 +154,12 @@ include dirname(__DIR__) . '/header.php';
                         
                         <!-- Main Image Upload -->
                         <div class="form-group">
-                            <label>Main Product Image *</label>
+                            <label>Main Product Image</label>
                             <div class="image-upload-container" id="main-image-container">
                                 <input type="file" id="main-image" name="main_image" accept="image/*" required>
                                 <div class="image-preview" id="main-image-preview">
                                     <div class="upload-placeholder">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/photos-filled-svgrepo-com.svg" width="48px" height="48px" alt="Upload">
+                                        <img src="<?php echo $baseUrl; ?>/images/icons/camera-svgrepo-com.svg" width="48px" height="48px" alt="Upload">
                                         <p>Click to upload main image</p>
                                         <small>Recommended: 800x800px, max 2MB</small>
                                     </div>
@@ -209,7 +210,7 @@ include dirname(__DIR__) . '/header.php';
                     <!-- Location & Contact -->
                     <fieldset class="form-section">
                         <legend>
-                            <img src="<?php echo $baseUrl; ?>images/icons/delivery-svgrepo-com.svg" width="20px" height="20px" alt="Location">
+                            <img src="<?php echo $baseUrl; ?>images/icons/contact-location.svg" width="20px" height="20px" alt="Location">
                             Location & Contact
                         </legend>
                         

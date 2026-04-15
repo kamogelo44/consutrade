@@ -1,0 +1,398 @@
+/* ========== PROFILE PAGE STYLES ========== */
+/* Author: Kamogelo Phale */
+
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+}
+
+.profile-header h1 {
+    font-size: var(--font-3xl);
+    font-weight: var(--font-bold);
+    color: var(--dark-bg);
+    margin-bottom: var(--spacing-sm);
+}
+
+.profile-header p {
+    color: var(--gray-medium);
+}
+
+/* Success/Error Messages */
+.success-message {
+    background-color: var(--success-light);
+    color: var(--success);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+    border-left: 3px solid var(--success);
+}
+
+.error-message {
+    background-color: var(--error-light);
+    color: var(--error);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+    border-left: 3px solid var(--error);
+}
+
+/* Profile Layout */
+.profile-layout {
+    display: flex;
+    gap: var(--spacing-2xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+/* Left Column */
+.profile-left {
+    flex: 1;
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    align-self: flex-start;
+}
+
+.profile-avatar img {
+    width: 100px;
+    height: 100px;
+    background-color: var(--primary-fade);
+    border-radius: 50%;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.profile-avatar h2 {
+    font-size: var(--font-xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-sm);
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-round);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+}
+
+.role-badge.role-seller {
+    background-color: var(--primary-fade);
+    color: var(--primary-color);
+}
+
+.role-badge.role-buyer {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+.role-badge.role-admin {
+    background-color: var(--error-light);
+    color: var(--error);
+}
+
+/* Profile Stats */
+.profile-stats {
+    margin-top: var(--spacing-xl);
+    text-align: left;
+    border-top: 1px solid var(--border-light);
+    padding-top: var(--spacing-xl);
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.stat-label {
+    font-weight: var(--font-medium);
+    color: var(--gray-dark);
+}
+
+.stat-value {
+    color: var(--gray-medium);
+}
+
+/* Right Column */
+.profile-right {
+    flex: 2;
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.profile-form h3 {
+    font-size: var(--font-xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+    display: block;
+    font-weight: var(--font-medium);
+    margin-bottom: var(--spacing-sm);
+    color: var(--gray-dark);
+}
+
+.form-group input {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+    transition: all var(--transition-fast);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+}
+
+.form-group input:disabled {
+    background-color: var(--gray-bg);
+    cursor: not-allowed;
+}
+
+.form-group small {
+    display: block;
+    margin-top: var(--spacing-xs);
+    font-size: var(--font-xs);
+    color: var(--gray-light);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+}
+
+.save-btn {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-bold);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.save-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.change-password-btn {
+    background-color: transparent;
+    color: var(--gray-dark);
+    border: 1px solid var(--border-light);
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+    display: inline-block;
+}
+
+.change-password-btn:hover {
+    background-color: var(--gray-bg);
+}
+
+/* Seller Section */
+.seller-section {
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.seller-section h3 {
+    font-size: var(--font-xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.seller-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.info-card {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background-color: var(--gray-bg-light);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.info-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-sm);
+}
+
+.info-card img {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-md);
+}
+
+.info-card .cart {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+}
+
+.info-card h4 {
+    font-size: var(--font-base);
+    font-weight: var(--font-bold);
+    color: var(--black);
+    margin-bottom: var(--spacing-sm);
+}
+
+.info-card p {
+    color: var(--gray-medium);
+    font-size: var(--font-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Info Card Link */
+.info-card-link {
+    text-decoration: none;
+    display: block;
+}
+
+.info-card-link:hover .info-card {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.info-link-text {
+    display: inline-block;
+    margin-top: var(--spacing-sm);
+    color: var(--primary-color);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+}
+
+.info-card {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background-color: var(--gray-bg-light);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    height: 100%;
+}
+
+.info-card .cart {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+}
+
+.info-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Verification Badge */
+.verification-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-round);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+    margin-top: var(--spacing-sm);
+    text-align: center;
+}
+
+.verification-badge.verified {
+    background-color: var(--success-light);
+    color: var(--success);
+}
+
+.verification-badge.not-verified {
+    background-color: var(--warning-light);
+    color: var(--warning);
+}
+
+/* Info Card Numbers */
+.info-number {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    color: var(--primary-color);
+    margin: var(--spacing-sm) 0;
+}
+
+.verified-text {
+    color: var(--success);
+    font-weight: var(--font-medium);
+}
+
+.not-verified-text {
+    color: var(--warning);
+    font-weight: var(--font-medium);
+}
+
+.info-card small {
+    display: block;
+    margin-top: var(--spacing-xs);
+    color: var(--gray-light);
+    font-size: var(--font-xs);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: var(--spacing-md);
+    }
+    
+    .profile-layout {
+        flex-direction: column;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .save-btn, .change-password-btn {
+        text-align: center;
+    }
+    
+    .seller-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-header h1 {
+        font-size: var(--font-2xl);
+    }
+    
+    .profile-avatar img {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .profile-avatar h2 {
+        font-size: var(--font-lg);
+    }
+}
