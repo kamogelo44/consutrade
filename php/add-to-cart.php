@@ -1,59 +1,101 @@
 <?php
 /*
- * ConsuTrade - Add to Cart API
+ * ConsuTrade - Add to Cart
  * Author: Kamogelo Phale
- * 
- * This file adds products to the shopping cart session
- * I spent way too long figuring out how sessions actually work
  */
 
 session_start();
+require_once 'config.php';
 
-// had to add this check because first time users were getting errors
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
+header('Content-Type: application/json');
 
-// trying to get the data from my javascript fetch request
-$data = json_decode(file_get_contents('php://input'), true);
+$response = ['success' => false, 'message' => ''];
 
-if (!$data) {
-    // incase someone submits the form the old fashioned way
-    $product_id = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
-    $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
-} else {
-    $product_id = isset($data['product_id']) ? (int)$data['product_id'] : 0;
-    $quantity = isset($data['quantity']) ? (int)$data['quantity'] : 1;
-    $product_name = isset($data['product_name']) ? $data['product_name'] : '';
-    $product_price = isset($data['product_price']) ? (float)$data['product_price'] : 0;
-}
-
-if ($product_id <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid product ID']);
+// Check if user is logged in
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    $response['message'] = 'Please login to add items to cart';
+    echo json_encode($response);
     exit;
 }
 
-// if the product is already sitting in the cart just add more to the quantity
-if (!isset($_SESSION['cart'][$product_id])) {
-    $_SESSION['cart'][$product_id] = [
-        'id' => $product_id,
-        'name' => $product_name,
-        'price' => $product_price,
-        'quantity' => $quantity
-    ];
+$input = json_decode(file_get_contents('php://input'), true);
+$product_id = isset($input['product_id']) ? (int)$input['product_id'] : 0;
+$quantity = isset($input['quantity']) ? (int)$input['quantity'] : 1;
+$user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['role'];
+
+if ($product_id <= 0) {
+    $response['message'] = 'Invalid product';
+    echo json_encode($response);
+    exit;
+}
+
+// Check if product exists and get seller info
+$product_sql = "SELECT seller_id, title FROM products WHERE product_id = ? AND status = 'active'";
+$product_stmt = $conn->prepare($product_sql);
+$product_stmt->bind_param('i', $product_id);
+$product_stmt->execute();
+$product_result = $product_stmt->get_result();
+
+if ($product_result->num_rows === 0) {
+    $response['message'] = 'Product not found';
+    echo json_encode($response);
+    $product_stmt->close();
+    $conn->close();
+    exit;
+}
+
+$product = $product_result->fetch_assoc();
+$product_stmt->close();
+
+// Prevent sellers from buying their own products
+if ($user_role === 'seller' && $product['seller_id'] == $user_id) {
+    $response['message'] = 'You cannot purchase your own products';
+    echo json_encode($response);
+    $conn->close();
+    exit;
+}
+
+// Check if item already in cart
+$check_sql = "SELECT cart_id, quantity FROM cart WHERE user_id = ? AND product_id = ?";
+$check_stmt = $conn->prepare($check_sql);
+$check_stmt->bind_param('ii', $user_id, $product_id);
+$check_stmt->execute();
+$check_result = $check_stmt->get_result();
+
+if ($check_result->num_rows > 0) {
+    // Update existing cart item
+    $cart_item = $check_result->fetch_assoc();
+    $new_quantity = $cart_item['quantity'] + $quantity;
+    $update_sql = "UPDATE cart SET quantity = ? WHERE cart_id = ?";
+    $update_stmt = $conn->prepare($update_sql);
+    $update_stmt->bind_param('ii', $new_quantity, $cart_item['cart_id']);
+    
+    if ($update_stmt->execute()) {
+        $response['success'] = true;
+        $response['message'] = 'Cart updated successfully';
+    } else {
+        $response['message'] = 'Failed to update cart';
+    }
+    $update_stmt->close();
 } else {
-    $_SESSION['cart'][$product_id]['quantity'] += $quantity;
+    // Add new item to cart
+    $insert_sql = "INSERT INTO cart (user_id, product_id, quantity, added_at) VALUES (?, ?, ?, NOW())";
+    $insert_stmt = $conn->prepare($insert_sql);
+    $insert_stmt->bind_param('iii', $user_id, $product_id, $quantity);
+    
+    if ($insert_stmt->execute()) {
+        $response['success'] = true;
+        $response['message'] = 'Item added to cart';
+    } else {
+        $response['message'] = 'Failed to add item to cart';
+    }
+    $insert_stmt->close();
 }
 
-// counting total items for the little red badge on the cart icon
-$total_items = 0;
-foreach ($_SESSION['cart'] as $item) {
-    $total_items += $item['quantity'];
-}
+$check_stmt->close();
+$conn->close();
 
-echo json_encode([
-    'success' => true,
-    'cart_count' => $total_items,
-    'message' => 'Product added to cart'
-]);
+echo json_encode($response);
+exit;
 ?>

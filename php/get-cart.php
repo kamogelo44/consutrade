@@ -4,10 +4,6 @@
  * Author: Kamogelo Phale
  */
 
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 session_start();
 require_once 'config.php';
 
@@ -23,7 +19,6 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// REMOVED p.quantity since your products table doesn't have it
 $sql = "SELECT c.cart_id, c.product_id, c.quantity, 
         p.title as product_name, 
         p.price, 
@@ -37,7 +32,6 @@ $sql = "SELECT c.cart_id, c.product_id, c.quantity,
 $stmt = $conn->prepare($sql);
 
 if (!$stmt) {
-    $response['message'] = 'SQL Error: ' . $conn->error;
     echo json_encode($response);
     exit;
 }
@@ -50,19 +44,11 @@ $subtotal = 0;
 $item_count = 0;
 
 while ($row = $result->fetch_assoc()) {
-    // Skip if product doesn't exist anymore
     if (!$row['product_name']) {
         continue;
     }
     
     $imagePath = $row['image_url'];
-    if (!empty($imagePath)) {
-        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
-        if (!file_exists($fullPath)) {
-            $imagePath = '';
-        }
-    }
-
     if (empty($imagePath)) {
         $imagePath = 'images/default-product.png';
     }
@@ -82,7 +68,6 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-// Delivery fee: Free for orders over R500, otherwise R50
 $delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
 $total = $subtotal + $delivery_fee;
 
@@ -94,11 +79,6 @@ $response['total'] = number_format($total, 2);
 
 $stmt->close();
 $conn->close();
-
-// Clean any output buffers
-while (ob_get_level()) {
-    ob_end_clean();
-}
 
 echo json_encode($response);
 exit;

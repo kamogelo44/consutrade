@@ -4,87 +4,118 @@
  * Author: Kamogelo Phale
  */
 
-// Turn off error output to prevent HTML in JSON
 error_reporting(0);
 ini_set('display_errors', 0);
 
 session_start();
-require_once 'config.php';
 
-header('Content-Type: application/json');
+// Database connection
+$host = 'localhost';
+$db_name = 'consutrade';
+$username = 'root';
+$password = '';
+
+$conn = new mysqli($host, $username, $password, $db_name);
+
+if ($conn->connect_error) {
+    echo json_encode(['success' => false, 'error' => 'Database connection failed']);
+    exit;
+}
+
+$conn->set_charset('utf8mb4');
 
 $response = ['success' => false, 'product' => null];
 
 if (isset($_GET['id'])) {
     $product_id = (int)$_GET['id'];
-    //Get product details with gallery images
-    $sql = "SELECT p.product_id, p.title as product_name, p.price, p.description, 
-            p.image_url, p.gallery_images, p.location, p.condition, p.category_id,
-            p.status, p.created_at,
-            u.full_name as seller_name, u.email as seller_email, u.user_id as seller_id,
-            u.id_verified as is_verified,
-            (SELECT AVG(rating) FROM reviews WHERE seller_id = u.user_id) as avg_rating,
-            (SELECT COUNT(*) FROM reviews WHERE seller_id = u.user_id) as review_count
-            FROM products p 
-            JOIN users u ON p.seller_id = u.user_id 
-            WHERE p.product_id = ? AND p.status != 'deleted'";
     
-    $stmt = $conn->prepare($sql);
-    if ($stmt) {
-        $stmt->bind_param('i', $product_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
+    if ($product_id > 0) {
+        $sql = "SELECT p.product_id, p.title, p.price, p.description, 
+                p.image_url, p.gallery_images, p.location, p.condition, p.category_id,
+                u.full_name as seller_name, u.user_id as seller_id,
+                u.id_verified as is_verified
+                FROM products p 
+                LEFT JOIN users u ON p.seller_id = u.user_id 
+                WHERE p.product_id = ?";
         
-        if ($result && $result->num_rows > 0) {
-            $row = $result->fetch_assoc();
+        $stmt = $conn->prepare($sql);
+        
+        if ($stmt) {
+            $stmt->bind_param('i', $product_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
             
-            // Get category name
-            $category_name = 'General';
-            $cat_sql = "SELECT name FROM categories WHERE category_id = ?";
-            $cat_stmt = $conn->prepare($cat_sql);
-            if ($cat_stmt) {
-                $cat_stmt->bind_param('i', $row['category_id']);
-                $cat_stmt->execute();
-                $cat_result = $cat_stmt->get_result();
-                if ($cat_row = $cat_result->fetch_assoc()) {
-                    $category_name = $cat_row['name'];
+            if ($result && $result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                
+                // Get category name using 'category_name' column
+                $category_name = 'General';
+                if ($row['category_id'] > 0) {
+                    $cat_sql = "SELECT category_name FROM categories WHERE category_id = ?";
+                    $cat_stmt = $conn->prepare($cat_sql);
+                    if ($cat_stmt) {
+                        $cat_stmt->bind_param('i', $row['category_id']);
+                        $cat_stmt->execute();
+                        $cat_result = $cat_stmt->get_result();
+                        if ($cat_result && $cat_result->num_rows > 0) {
+                            $cat_row = $cat_result->fetch_assoc();
+                            $category_name = $cat_row['category_name'];
+                        }
+                        $cat_stmt->close();
+                    }
                 }
-                $cat_stmt->close();
+                
+                // Get seller rating
+                $avg_rating = 0;
+                $review_count = 0;
+                $rating_sql = "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM reviews WHERE seller_id = ?";
+                $rating_stmt = $conn->prepare($rating_sql);
+                if ($rating_stmt) {
+                    $rating_stmt->bind_param('i', $row['seller_id']);
+                    $rating_stmt->execute();
+                    $rating_result = $rating_stmt->get_result();
+                    if ($rating_row = $rating_result->fetch_assoc()) {
+                        $avg_rating = round($rating_row['avg_rating'] ?? 0, 1);
+                        $review_count = (int)($rating_row['review_count'] ?? 0);
+                    }
+                    $rating_stmt->close();
+                }
+                
+                $response['product'] = [
+                    'id' => $row['product_id'],
+                    'name' => $row['title'],
+                    'price' => (float)$row['price'],
+                    'description' => $row['description'] ?? '',
+                    'condition' => $row['condition'] ?? '',
+                    'location' => $row['location'] ?? '',
+                    'category_id' => $row['category_id'],
+                    'category_name' => $category_name,
+                    'image' => $row['image_url'] ?? 'images/default-product.png',
+                    'gallery_images' => $row['gallery_images'],
+                    'seller_name' => $row['seller_name'] ?? 'Unknown Seller',
+                    'seller_id' => $row['seller_id'],
+                    'is_verified' => $row['is_verified'] == 1,
+                    'avg_rating' => $avg_rating,
+                    'review_count' => $review_count
+                ];
+                $response['success'] = true;
+            } else {
+                $response['error'] = 'Product not found';
             }
-            
-            $response['product'] = [
-                'id' => $row['product_id'],
-                'name' => $row['product_name'],
-                'price' => (float)$row['price'],
-                'description' => $row['description'] ?? '',
-                'condition' => $row['condition'] ?? '',
-                'location' => $row['location'] ?? '',
-                'category_id' => $row['category_id'],
-                'category_name' => $category_name,
-                'image' => $row['image_url'] ?? 'images/default-product.png',
-                'gallery_images' => $row['gallery_images'],
-                'seller_name' => $row['seller_name'],
-                'seller_id' => $row['seller_id'],
-                'seller_email' => $row['seller_email'],
-                'is_verified' => $row['is_verified'] == 1,
-                'avg_rating' => round($row['avg_rating'] ?? 0, 1),
-                'review_count' => (int)($row['review_count'] ?? 0),
-                'status' => $row['status'],
-                'created_at' => $row['created_at']
-            ];
-            $response['success'] = true;
+            $stmt->close();
+        } else {
+            $response['error'] = 'Database prepare error';
         }
-        $stmt->close();
+    } else {
+        $response['error'] = 'Invalid product ID';
     }
+} else {
+    $response['error'] = 'No product ID provided';
 }
 
 $conn->close();
 
-// Clean any output buffers
-while (ob_get_level()) {
-    ob_end_clean();
-}
-
+header('Content-Type: application/json');
 echo json_encode($response);
 exit;
 ?>

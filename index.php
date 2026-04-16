@@ -24,12 +24,12 @@ unset($_SESSION['flash']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/login-signup.css">
     <link rel="stylesheet" href="css/header.css">
     
     <?php if (!empty($registerErrors)): ?>
     <script>
-    // Open the modal if there are errors
     document.addEventListener('DOMContentLoaded', function() {
         var modal = document.getElementById('register-modal');
         if (modal) {
@@ -37,7 +37,6 @@ unset($_SESSION['flash']);
             document.body.style.overflow = 'hidden';
         }
         
-        // Fill in the form data that was submitted
         <?php if (!empty($registerFormData['fullname'])): ?>
         var fullnameInput = document.getElementById('fullname');
         if (fullnameInput) fullnameInput.value = '<?php echo addslashes($registerFormData['fullname']); ?>';
@@ -53,7 +52,6 @@ unset($_SESSION['flash']);
         if (sellRadio) sellRadio.checked = true;
         <?php endif; ?>
         
-        // Show error messages
         <?php foreach ($registerErrors as $field => $message): ?>
         var errorEl = document.getElementById('<?php echo $field; ?>-error');
         if (errorEl) {
@@ -63,7 +61,6 @@ unset($_SESSION['flash']);
         }
         <?php endforeach; ?>
         
-        // Show error container
         var errorContainer = document.getElementById('register-error-container');
         if (errorContainer) {
             errorContainer.style.display = 'block';
@@ -74,7 +71,6 @@ unset($_SESSION['flash']);
 
     <?php if (!empty($loginErrors)): ?>
     <script>
-    // Open login modal if there are login errors
     document.addEventListener('DOMContentLoaded', function() {
         var modal = document.getElementById('login-modal');
         if (modal) {
@@ -82,13 +78,11 @@ unset($_SESSION['flash']);
             document.body.style.overflow = 'hidden';
         }
         
-        // Pre-fill email
         var emailInput = document.getElementById('login-email');
         if (emailInput) {
             emailInput.value = '<?php echo addslashes($loginEmail); ?>';
         }
         
-        // Show error messages
         <?php foreach ($loginErrors as $field => $message): ?>
         var errorEl = document.createElement('small');
         errorEl.className = 'error-text';
@@ -163,7 +157,10 @@ unset($_SESSION['flash']);
     
         <!--Featured products section-->
         <section class="featured">
-            <h1 class="section-heading">Recently Listed</h1>
+            <div class="featured-header">
+                <h1 class="section-heading">Recently Listed</h1>
+                <a href="product-listings.php" class="view-all-link">View All Products →</a>
+            </div>
             <div class="prod-grid" id="products-grid">
                 <div class="loading-spinner" style="text-align: center; grid-column: 1/-1; padding: 40px;">
                     Loading products...
@@ -196,42 +193,49 @@ unset($_SESSION['flash']);
 
     <script src="js/main.js"></script>
     <script>
-        // Load featured products when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFeaturedProducts();
-        });
+    // Pass user data to JavaScript
+    var currentUserId = <?php echo $_SESSION['user_id'] ?? 0; ?>;
+    var currentUserRole = '<?php echo $_SESSION['role'] ?? ""; ?>';
+    </script>
 
-        function loadFeaturedProducts() {
+    <script src="js/products.js"></script>
+    <script>
+        // Load featured products for homepage (only first 4)
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHomepageProducts();
+        });
+        
+        function loadHomepageProducts() {
+            var grid = document.getElementById('products-grid');
+            grid.innerHTML = '<div class="loading-spinner">Loading products...</div>';
+            
             fetch('php/get-products.php')
                 .then(function(response) { return response.json(); })
                 .then(function(data) {
-                    var grid = document.getElementById('products-grid');
-                    
-                    if (data.success && data.products.length > 0) {
+                    if (data.success && data.products && data.products.length > 0) {
                         // Show only first 4 products for homepage
                         var featuredProducts = data.products.slice(0, 4);
-                        displayFeaturedProducts(featuredProducts);
+                        displayHomepageProducts(featuredProducts);
                     } else {
-                        grid.innerHTML = '<p style="text-align: center; grid-column: 1/-1;">No products available yet.</p>';
+                        grid.innerHTML = '<p class="no-products">No products available yet.</p>';
                     }
                 })
-                .catch(function(error) {
-                    console.log('Error:', error);
-                    document.getElementById('products-grid').innerHTML = '<p style="text-align: center; grid-column: 1/-1; color: #f44336;">Error loading products. Please refresh the page.</p>';
+                .catch(function() {
+                    grid.innerHTML = '<p class="error">Error loading products. Please refresh the page.</p>';
                 });
         }
-
-        function displayFeaturedProducts(products) {
+        
+        function displayHomepageProducts(products) {
             var grid = document.getElementById('products-grid');
             grid.innerHTML = '';
             
             for (var i = 0; i < products.length; i++) {
                 var product = products[i];
                 
-                // Determine verification icon
-                var verifiedIcon = product.is_verified ? 
-                    '<div class="verified-icon"><img src="images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="Verified Seller"></div>' : 
-                    '';
+                // Determine verification badge
+                var verifiedBadge = product.is_verified ? 
+                    '<div class="verified-badge-card"><img src="images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="Verified"><span>Verified Seller</span></div>' : 
+                    '<div class="unverified-badge-card"><img src="images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="Not Verified"><span>Unverified</span></div>';
                 
                 // Determine condition badge class
                 var conditionClass = '';
@@ -241,23 +245,30 @@ unset($_SESSION['flash']);
                 else if (conditionText === 'Good') conditionClass = 'good';
                 else if (conditionText === 'Fair') conditionClass = 'fair';
                 
+                // Fix image path
+                var imagePath = product.image;
+                if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                    imagePath = '/www/consutrade/' + imagePath;
+                }
+                
                 // Create the product card
                 var card = document.createElement('div');
                 card.className = 'prod-card';
+                card.style.cursor = 'pointer';
+                card.addEventListener('click', (function(id) {
+                    return function() {
+                        window.location.href = 'product-details.php?id=' + id;
+                    };
+                })(product.id));
+                
                 card.innerHTML = `
                     <div class="img-container">
-                        <a href="product-details.php?id=${product.id}">
-                            <img src="${product.image}" alt="${product.name}" onerror="this.src='/www/consutrade/images/default-product.png'">
-                        </a>
+                        <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
+                        <div class="condition-badge ${conditionClass}">${conditionText}</div>
                     </div>
                     <div class="prod-info-container">
-                        <h3 class="prod-name">
-                            <a href="product-details.php?id=${product.id}">
-                                ${escapeHtml(product.name)}
-                            </a>
-                        </h3>
+                        <h3 class="prod-name">${escapeHtml(product.name)}</h3>
                         <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                        <div class="condition-badge ${conditionClass}">${conditionText}</div>
                         <div class="seller-info">
                             <div class="seller-avatar">
                                 <img src="images/icons/profile-svgrepo-com.svg" alt="Seller">
@@ -265,13 +276,13 @@ unset($_SESSION['flash']);
                             <div class="seller-details">
                                 <p class="seller-name">${escapeHtml(product.seller_name)}</p>
                                 <p class="location">
-                                    <img src="images/icons/pin-location-svgrepo-com.svg" alt="Location">
+                                    <img src="images/icons/pin-location-svgrepo-com.svg" width="10px" height="10px" alt="location">
                                     ${escapeHtml(product.location)}
                                 </p>
                             </div>
-                            ${verifiedIcon}
+                            ${verifiedBadge}
                         </div>
-                        <button class="add-to-cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
                             <img src="images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
                             Add to Cart
                         </button>
@@ -284,8 +295,7 @@ unset($_SESSION['flash']);
                 grid.appendChild(card);
             }
         }
-
-        // Helper function to escape HTML and prevent XSS attacks
+        
         function escapeHtml(text) {
             if (!text) return '';
             var div = document.createElement('div');

@@ -1,50 +1,48 @@
 <?php
 /*
- * ConsuTrade - Remove from Cart API
+ * ConsuTrade - Remove from Cart
  * Author: Kamogelo Phale
- * 
- * Just removes one item from the cart - nothing fancy
- * I made a separate file for this because it felt cleaner
  */
 
 session_start();
+require_once 'config.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
+header('Content-Type: application/json');
 
-if (!$data) {
-    echo json_encode(['success' => false, 'message' => 'Invalid request']);
+$response = ['success' => false, 'message' => ''];
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    $response['message'] = 'Please login to remove items';
+    echo json_encode($response);
     exit;
 }
 
-$product_id = isset($data['product_id']) ? (int)$data['product_id'] : 0;
+$input = json_decode(file_get_contents('php://input'), true);
+$product_id = isset($input['product_id']) ? (int)$input['product_id'] : 0;
+$user_id = $_SESSION['user_id'];
 
-if ($product_id <= 0 || !isset($_SESSION['cart'][$product_id])) {
-    echo json_encode(['success' => false, 'message' => 'Product not found in cart']);
+if ($product_id <= 0) {
+    $response['message'] = 'Invalid product';
+    echo json_encode($response);
     exit;
 }
 
-unset($_SESSION['cart'][$product_id]);
+// Delete item from cart
+$sql = "DELETE FROM cart WHERE user_id = ? AND product_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('ii', $user_id, $product_id);
 
-// recalc totals after removal
-$subtotal = 0;
-$total_items = 0;
-foreach ($_SESSION['cart'] as $item) {
-    $subtotal += $item['price'] * $item['quantity'];
-    $total_items += $item['quantity'];
-}
-
-if ($subtotal > 500) {
-    $delivery_fee = 0;
+if ($stmt->execute()) {
+    $response['success'] = true;
+    $response['message'] = 'Item removed from cart';
 } else {
-    $delivery_fee = 50;
+    $response['message'] = 'Failed to remove item';
 }
-$total = $subtotal + $delivery_fee;
 
-echo json_encode([
-    'success' => true,
-    'subtotal' => $subtotal,
-    'delivery_fee' => $delivery_fee,
-    'total' => $total,
-    'cart_count' => $total_items
-]);
+$stmt->close();
+$conn->close();
+
+echo json_encode($response);
+exit;
 ?>

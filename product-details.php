@@ -35,6 +35,10 @@ if ($product_id <= 0) {
     <!--Footer-->
     <?php include 'footer.php'; ?>
     
+    <script>
+    // Pass PHP session data to JavaScript
+    var isLoggedIn = <?php echo isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true ? 'true' : 'false'; ?>;
+    </script>
     <script src="js/main.js"></script>
     <script>
         // Get product ID from URL
@@ -45,15 +49,19 @@ if ($product_id <= 0) {
             if (productId > 0) {
                 loadProductDetails(productId);
             } else {
-                document.getElementById('product-details-container').innerHTML = '<p class="error" style="text-align: center; padding: 60px;">Product not found.</p>';
+                showError('Product not found.');
             }
         });
 
         function loadProductDetails(id) {
+            // Show loading state
+            var container = document.getElementById('product-details-container');
+            container.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 60px;">Loading product details...</div>';
+            
             fetch('/www/consutrade/php/get-product.php?id=' + id)
                 .then(function(response) { 
                     if (!response.ok) {
-                        throw new Error('HTTP error ' + response.status);
+                        throw new Error('Server error: ' + response.status);
                     }
                     return response.json(); 
                 })
@@ -61,23 +69,23 @@ if ($product_id <= 0) {
                     if (data.success && data.product) {
                         displayProductDetails(data.product);
                     } else {
-                        showError('Product not found.');
+                        showError(data.error || 'Product not found.');
                     }
                 })
                 .catch(function(error) {
                     console.log('Error:', error);
-                    showError('Error loading product. Please try again.');
+                    showError('Unable to load product. Please try again later.');
                 });
         }
-
+        
         function showError(message) {
             var container = document.getElementById('product-details-container');
             container.innerHTML = `
-                <div class="error-container" style="text-align: center; padding: 80px 20px;">
+                <div class="error-container" style="text-align: center; padding: 80px 20px; max-width: 500px; margin: 0 auto;">
                     <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="64px" height="64px" alt="Error" style="opacity: 0.5; margin-bottom: 20px;">
-                    <h2 style="color: var(--error); margin-bottom: 10px;">Oops!</h2>
-                    <p style="color: var(--gray-medium);">${message}</p>
-                    <button onclick="window.location.href='/www/consutrade/product-listings.php'" style="margin-top: 20px; padding: 10px 24px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">Browse Products</button>
+                    <h2 style="color: #f44336; margin-bottom: 10px; font-size: 24px;">Oops!</h2>
+                    <p style="color: #666;">${message}</p>
+                    <button onclick="window.location.href='/www/consutrade/product-listings.php'" style="margin-top: 20px; padding: 10px 24px; background-color: #FF6B00; color: white; border: none; border-radius: 8px; cursor: pointer;">Browse Products</button>
                 </div>
             `;
         }
@@ -117,7 +125,7 @@ if ($product_id <= 0) {
                 }
             }
             
-            // Fill remaining thumbnail slots with empty placeholders
+            // Fill remaining thumbnail slots
             for (var i = galleryImages.length; i < 4; i++) {
                 galleryHtml += `
                     <div class="small-img empty-thumb">
@@ -127,24 +135,11 @@ if ($product_id <= 0) {
             }
             
             // Determine verification badge
-            var verificationBadge = '';
-            if (product.is_verified) {
-                verificationBadge = `
-                    <div class="verified-badge">
-                        <img src="/www/consutrade/images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification">
-                        <p>Verified Seller</p>
-                    </div>
-                `;
-            } else {
-                verificationBadge = `
-                    <div class="not-verified-badge">
-                        <img src="/www/consutrade/images/icons/not-verified-svgrepo-com.svg" width="20px" height="20px" alt="not-verified">
-                        <p>Not Verified Seller</p>
-                    </div>
-                `;
-            }
+            var verificationBadge = product.is_verified ? 
+                '<div class="verified-badge"><img src="/www/consutrade/images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification"><p>Verified Seller</p></div>' : 
+                '<div class="not-verified-badge"><img src="/www/consutrade/images/icons/not-verified-svgrepo-com.svg" width="20px" height="20px" alt="not-verified"><p>Not Verified Seller</p></div>';
             
-            // Calculate average rating (placeholder - you can implement actual rating system)
+            // Build stars
             var rating = product.avg_rating || 0;
             var starsHtml = '';
             for (var i = 1; i <= 5; i++) {
@@ -155,7 +150,7 @@ if ($product_id <= 0) {
                 }
             }
             
-            // Build condition HTML (only if condition exists)
+            // Build condition HTML
             var conditionHtml = '';
             if (product.condition && product.condition !== '') {
                 conditionHtml = `<p class="sub-head">Condition: <span class="condition">${escapeHtml(product.condition)}</span></p>`;
@@ -164,17 +159,14 @@ if ($product_id <= 0) {
             // Build location HTML
             var locationHtml = '';
             if (product.location) {
-                var locationParts = product.location.split(',');
-                var city = locationParts[0] || '';
-                var province = locationParts[1] || '';
-                locationHtml = `<p class="sub-head">Location: <span class="city">${escapeHtml(city)}</span> <span class="province">${escapeHtml(province)}</span></p>`;
+                locationHtml = `<p class="sub-head">Location: <span class="city">${escapeHtml(product.location)}</span></p>`;
             }
             
             container.innerHTML = `
                 <div class="breadcrumb">
-                    <a href="index.php">Home</a>
+                    <a href="/www/consutrade/index.php">Home</a>
                     <span> > </span>
-                    <a href="product-listings.php">Product Listings</a>
+                    <a href="/www/consutrade/product-listings.php">Product Listings</a>
                     <span> > </span>
                     <span>${escapeHtml(product.name)}</span>
                 </div>
@@ -235,11 +227,8 @@ if ($product_id <= 0) {
                 <div class="actions">
                     <div class="actions-card">
                         <div class="avail">
-                            <p>
-                                <span class="num-avail"> In Stock </span>
-                            </p>
+                            <p><span class="num-avail">In Stock</span></p>
                         </div>
-
                         <div class="action-btns">
                             <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
                                 <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Cart">
