@@ -125,9 +125,9 @@ include dirname(__DIR__) . '/header.php';
                                        placeholder="0.00" onkeyup="updateProgress()">
                             </div>
                             <div class="form-group half">
-                                <label for="product-condition">Condition</label>
+                                <label for="product-condition">Condition (if applicable)</label>
                                 <select id="product-condition" name="condition" onchange="updateProgress()">
-                                    <option value="">Select Condition</option>
+                                    <option value="">Not Applicable</option>
                                     <option value="New">Brand New</option>
                                     <option value="Like New">Like New</option>
                                     <option value="Good">Good</option>
@@ -156,10 +156,10 @@ include dirname(__DIR__) . '/header.php';
                         <div class="form-group">
                             <label>Main Product Image</label>
                             <div class="image-upload-container" id="main-image-container">
-                                <input type="file" id="main-image" name="main_image" accept="image/*" required>
+                                <input type="file" id="main-image" name="image" accept="image/*" required>
                                 <div class="image-preview" id="main-image-preview">
                                     <div class="upload-placeholder">
-                                        <img src="<?php echo $baseUrl; ?>/images/icons/camera-svgrepo-com.svg" width="48px" height="48px" alt="Upload">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/camera-svgrepo-com.svg" width="48px" height="48px" alt="Upload">
                                         <p>Click to upload main image</p>
                                         <small>Recommended: 800x800px, max 2MB</small>
                                     </div>

@@ -6,9 +6,6 @@
  * Returns all products for the logged-in seller
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 session_start();
 require_once 'config.php';
 
@@ -23,30 +20,32 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSI
 }
 
 $seller_id = $_SESSION['user_id'];
+$baseUrl = "/www/consutrade/";
 
-// Using 'title' as product_name since your table uses 'title'
 $sql = "SELECT product_id, title as product_name, price, image_url, status, created_at
         FROM products 
         WHERE seller_id = ? 
         ORDER BY created_at DESC";
 
 $stmt = $conn->prepare($sql);
-
-if (!$stmt) {
-    $response['message'] = 'SQL Error: ' . $conn->error;
-    echo json_encode($response);
-    exit;
-}
-
 $stmt->bind_param('i', $seller_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 while ($row = $result->fetch_assoc()) {
-    // Fix image path
+    // Image path
     $imagePath = $row['image_url'];
-    if (empty($imagePath)) {
-        $imagePath = 'images/default-product.jpg';
+    
+    // Check if the image file actually exists
+    if (!empty($imagePath)) {
+        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
+        if (file_exists($fullPath)) {
+            $imagePath = $baseUrl . $imagePath;
+        } else {
+            $imagePath = $baseUrl . 'images/default-product.png';
+        }
+    } else {
+        $imagePath = $baseUrl . 'images/default-product.png';
     }
     
     $response['products'][] = [

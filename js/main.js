@@ -104,10 +104,12 @@ document.addEventListener('DOMContentLoaded', function() {
         sideMenu.classList.toggle('active');
         overlay.classList.toggle('active');
         
-        // Stop scrolling when menu is open - otherwise the background scrolls behind the menu
+        // Add/remove menu-open class to body for CSS styling
         if (sideMenu.classList.contains('active')) {
+            document.body.classList.add('menu-open');
             document.body.style.overflow = 'hidden';
         } else {
+            document.body.classList.remove('menu-open');
             document.body.style.overflow = '';
         }
     }
@@ -580,14 +582,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 imagePath = baseUrl + imagePath;
             }
             
-            // Desktop table row
+            // Desktop table row - image now has onerror fallback directly in the src
             if (desktopTableBody) {
                 var row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="product-cell" data-label="Product">
                         <div class="cart-product-wrapper">
                             <div class="cart-img-container">
-                                <img src="${imagePath}" alt="${item.product_name}" onerror="this.src='${baseUrl}images/default-product.jpg'">
+                                <img src="${imagePath}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'">
                             </div>
                             <div class="cart-prod-info">
                                 <p class="prod-name">${escapeHtml(item.product_name)}</p>
@@ -611,13 +613,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 desktopTableBody.appendChild(row);
             }
             
-            // Mobile card
+            // Mobile card - image now has onerror fallback directly in the src
             if (mobileContainer) {
                 var card = document.createElement('div');
                 card.className = 'mobile-cart-card';
                 card.innerHTML = `
                     <div class="mobile-cart-img">
-                        <img src="${imagePath}" alt="${item.product_name}" onerror="this.src='${baseUrl}images/default-product.jpg'">
+                        <img src="${imagePath}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'">
                     </div>
                     <div class="mobile-cart-details">
                         <h3 class="mobile-prod-name">${escapeHtml(item.product_name)}</h3>

@@ -271,10 +271,10 @@ session_start();
             for (var i = 0; i < products.length; i++) {
                 var product = products[i];
                 
-                // Determine which verification icon to show
-                var verifiedIcon = product.is_verified ? 
-                    '<div class="verified-icon"><img src="images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="Verified Seller"></div>' : 
-                    '<img src="images/icons/not-verified-svgrepo-com.svg" class="not-verified-icon" width="16px" height="16px" alt="Not Verified">';
+                // Determine verification badge
+                var verifiedBadge = product.is_verified ? 
+                    '<div class="verified-badge-card"><img src="images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="Verified"><span>Verified Seller</span></div>' : 
+                    '<div class="unverified-badge-card"><img src="images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="Not Verified"><span>Unverified</span></div>';
                 
                 // Determine condition badge class and text
                 var conditionClass = '';
@@ -287,17 +287,20 @@ session_start();
                 // Create the product card
                 var card = document.createElement('div');
                 card.className = 'prod-card';
+                card.style.cursor = 'pointer';
+                card.addEventListener('click', function(id) {
+                    return function() {
+                        window.location.href = 'product-details.php?id=' + id;
+                    };
+                }(product.id));
+                
                 card.innerHTML = `
                     <div class="img-container">
-                        <a href="product-details.php?id=${product.id}">
-                            <img src="${product.image}" alt="${escapeHtml(product.name)}" onerror="this.src='images/default-product.jpg'">
-                        </a>
+                        <img src="${product.image}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
                         <div class="condition-badge ${conditionClass}">${conditionText}</div>
                     </div>
                     <div class="prod-info-container">
-                        <h3 class="prod-name">
-                            <a href="product-details.php?id=${product.id}">${escapeHtml(product.name)}</a>
-                        </h3>
+                        <h3 class="prod-name">${escapeHtml(product.name)}</h3>
                         <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
                         <div class="seller-info">
                             <div class="seller-avatar">
@@ -310,9 +313,9 @@ session_start();
                                     ${escapeHtml(product.location)}
                                 </p>
                             </div>
-                            ${verifiedIcon}
+                            ${verifiedBadge}
                         </div>
-                        <button class="add-to-cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
                             <img src="images/icons/shopping-cart-01-svgrepo-com.svg" width="16px" height="16px" alt="Cart">
                             Add to Cart
                         </button>

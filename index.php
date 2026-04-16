@@ -247,7 +247,7 @@ unset($_SESSION['flash']);
                 card.innerHTML = `
                     <div class="img-container">
                         <a href="product-details.php?id=${product.id}">
-                            <img src="${product.image}" alt="${escapeHtml(product.name)}" onerror="this.src='images/default-product.jpg'">
+                            <img src="${product.image}" alt="${product.name}" onerror="this.src='/www/consutrade/images/default-product.png'">
                         </a>
                     </div>
                     <div class="prod-info-container">

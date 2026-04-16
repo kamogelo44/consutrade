@@ -22,11 +22,9 @@ $is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
 // Fetch location from session or database (only if logged in)
 $user_location = '';
 if ($is_logged_in) {
-    // First check if location is already in session
     if (isset($_SESSION['location']) && !empty($_SESSION['location'])) {
         $user_location = $_SESSION['location'];
     } else {
-        // Only fetch from database if we have user_id and location not in session
         if (isset($_SESSION['user_id']) && !isset($_SESSION['location'])) {
             require_once 'php/config.php';
             if (isset($conn) && $conn && !$conn->connect_error) {
@@ -48,20 +46,19 @@ if ($is_logged_in) {
     }
 }
 
-// Determine current page for active links (main site only)
+// Determine current page for active links
 $current_page = basename($_SERVER['REQUEST_URI']);
 $current_page = strtok($current_page, '?');
 ?>
-<!-- header.php - Main Website Header -->
 <header>
-    <!-- Left: Hamburger -->
+    <!-- Hamburger Menu Button -->
     <button class="hamburger" id="hamburger">
         <span></span>
         <span></span>
         <span></span>
     </button>
 
-    <!-- Center: Logo -->
+    <!-- Logo -->
     <div class="logo"><a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a></div>
 
     <!-- Mobile Header Icons -->
@@ -75,7 +72,7 @@ $current_page = strtok($current_page, '?');
         </a>
     </div>
 
-    <!-- Desktop Search Form -->
+    <!-- Desktop Search -->
     <form action="" method="get" class="desktop-search">
         <div class="search-wrapper">
             <input type="search" id="search" name="q" placeholder="Search for products...">
@@ -86,26 +83,22 @@ $current_page = strtok($current_page, '?');
     </form>
 
     <!-- Desktop Navigation -->
-    <nav class="nav-container" id="nav-menu">
+    <nav class="nav-container">
         <ul class="nav-links">
-            <!-- Main Website Navigation -->
+            <!-- Main Navigation -->
             <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
             <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
             
-            <!-- Sell link - visible to guests and buyers (not shown to sellers on main site) -->
+            <!-- Sell Link - Only for non-sellers -->
             <?php if (!$is_seller): ?>
-                <?php if ($is_logged_in && $is_buyer): ?>
-                    <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link">Sell</a></li>
-                <?php elseif (!$is_logged_in): ?>
-                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
-                <?php endif; ?>
+                <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link">Sell</a></li>
             <?php endif; ?>
             
-            <!-- ===== USER DROPDOWN (visible when logged in) ===== -->
+            <!-- User Section -->
             <?php if ($is_logged_in): ?>
                 <li class="user-dropdown">
                     <div class="user-info">
-                        <span class="welcome-text">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+                        <span class="welcome-text"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
                         <?php if ($user_location): ?>
                         <span class="user-location-badge">
                             <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="12px" height="12px" alt="location">
@@ -118,23 +111,21 @@ $current_page = strtok($current_page, '?');
                         </button>
                     </div>
                     <ul class="dropdown-menu" id="desktopDropdownMenu">
+                        <!-- Common for all users -->
                         <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                        <?php if ($user_location): ?>
-                        <li><a href="#" class="location-item">
-                            <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14px" height="14px" alt="location">
-                            <?php echo htmlspecialchars($user_location); ?>
-                        </a></li>
-                        <?php endif; ?>
+                        
+                        <!-- Role-specific dashboard links -->
                         <?php if ($is_admin): ?>
                             <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
                         <?php elseif ($is_seller): ?>
-                            <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
+                            <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
                             <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
                             <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">My Orders</a></li>
                         <?php elseif ($is_buyer): ?>
                             <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
                             <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
                         <?php endif; ?>
+                        
                         <li class="dropdown-divider"></li>
                         <li><a href="<?php echo $baseUrl; ?>php/logout.php">Logout</a></li>
                     </ul>
@@ -152,13 +143,14 @@ $current_page = strtok($current_page, '?');
         </a>
     </nav>
 
-    <!-- Mobile Side Menu Content -->
+    <!-- Mobile Side Menu -->
     <div class="mobile-side-menu" id="mobile-side-menu">
         <button class="side-menu-hamburger" id="sideMenuHamburger">
             <span></span>
             <span></span>
             <span></span>
         </button>
+        
         <div class="mobile-menu-header">
             <div class="mobile-menu-logo">
                 <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
@@ -166,55 +158,46 @@ $current_page = strtok($current_page, '?');
         </div>
         
         <?php if ($is_logged_in): ?>
-            <div class="mobile-profile-section">
-                <div class="mobile-profile-info">
-                    <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" class="mobile-profile-avatar" width="40px" height="40px" alt="Profile">
-                    <div class="mobile-profile-text">
-                        <span class="mobile-profile-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                        <span class="mobile-profile-role"><?php echo ucfirst($user_role); ?></span>
-                        <?php if ($user_location): ?>
-                        <span class="mobile-profile-location">
-                            <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="12px" height="12px" alt="location">
-                            <?php echo htmlspecialchars($user_location); ?>
-                        </span>
-                        <?php endif; ?>
-                    </div>
+        <div class="mobile-profile-section">
+            <div class="mobile-profile-info">
+                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" class="mobile-profile-avatar" width="40px" height="40px" alt="Profile">
+                <div class="mobile-profile-text">
+                    <span class="mobile-profile-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+                    <span class="mobile-profile-role"><?php echo ucfirst($user_role); ?></span>
+                    <?php if ($user_location): ?>
+                    <span class="mobile-profile-location">
+                        <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="12px" height="12px" alt="location">
+                        <?php echo htmlspecialchars($user_location); ?>
+                    </span>
+                    <?php endif; ?>
                 </div>
             </div>
+        </div>
         <?php endif; ?>
         
         <ul class="mobile-nav-links">
-            <!-- Main Website Mobile Navigation -->
             <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
             <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
             
-            <!-- Sell link - visible to guests and buyers (not shown to sellers on main site) -->
             <?php if (!$is_seller): ?>
-                <?php if ($is_logged_in && $is_buyer): ?>
-                    <li><a href="<?php echo $baseUrl; ?>sell.php" class="sell-link-mobile">Sell</a></li>
-                <?php elseif (!$is_logged_in): ?>
-                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
-                <?php endif; ?>
+                <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
             <?php endif; ?>
             
-            <!-- Additional logged-in user links -->
             <?php if ($is_logged_in): ?>
                 <li class="mobile-menu-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                <?php if ($user_location): ?>
-                <li class="mobile-location-item">
-                    <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14px" height="14px" alt="location">
-                    <?php echo htmlspecialchars($user_location); ?>
-                </li>
-                <?php endif; ?>
+                
                 <?php if ($is_admin): ?>
                     <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
                 <?php elseif ($is_seller): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
                     <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">My Orders</a></li>
                 <?php elseif ($is_buyer): ?>
                     <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
                     <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
                 <?php endif; ?>
+                
                 <li class="mobile-menu-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>php/logout.php" class="mobile-logout-link">Logout</a></li>
             <?php else: ?>
@@ -233,7 +216,6 @@ $current_page = strtok($current_page, '?');
             </div>
         </div>
         
-        <!-- Cart Link -->
         <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
             <span class="cart-text">Cart</span>
             <div class="cart-icon-wrapper">
@@ -330,7 +312,6 @@ $current_page = strtok($current_page, '?');
                 <small class="error-text" id="role-error"></small>
             </fieldset>
             
-            <!-- Location field for sellers -->
             <div class="input-group" id="location-field" style="display: none;">
                 <label for="location">Location (City, Province)</label>
                 <input type="text" id="location" name="location" placeholder="e.g., Johannesburg, Soweto">
@@ -402,7 +383,6 @@ if (sellRadio && buyRadio && locationField) {
     });
 }
 
-// Pre-fill location field if returning from error
 <?php if (isset($_SESSION['register_form_data']['location']) && !empty($_SESSION['register_form_data']['location'])): ?>
 var locationInput = document.getElementById('location');
 if (locationInput) {

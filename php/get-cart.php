@@ -56,8 +56,15 @@ while ($row = $result->fetch_assoc()) {
     }
     
     $imagePath = $row['image_url'];
+    if (!empty($imagePath)) {
+        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
+        if (!file_exists($fullPath)) {
+            $imagePath = '';
+        }
+    }
+
     if (empty($imagePath)) {
-        $imagePath = 'images/default-product.jpg';
+        $imagePath = 'images/default-product.png';
     }
     
     $item_total = $row['price'] * $row['quantity'];

@@ -932,46 +932,34 @@ body {
     width: 100%;
 }
 
-/* Verification badges */
-.verification {
+/* Verification Badge on Product Card */
+.verified-badge-card, .unverified-badge-card {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-round);
+    font-size: 10px;
+    font-weight: var(--font-medium);
+    white-space: nowrap;
 }
 
-.verified-badge {
-    display: flex;
+.verified-badge-card {
     background-color: var(--success-light);
-    justify-content: center;
-    align-items: center;
-    gap: var(--spacing-sm);
-    width: 150px;
-    height: 30px;
-    border: 1px solid var(--success);
-    border-radius: var(--radius-sm);
-}
-
-.not-verified-badge {
-    display: none;
-    justify-content: center;
-    align-items: center;
-    gap: var(--spacing-sm);
-    background-color: var(--error-light);
-    width: 150px;
-    height: 30px;
-    border: 1px solid var(--error);
-    border-radius: var(--radius-sm);
-}
-
-.verified-badge p {
-    font-size: var(--font-md);
-    font-weight: var(--font-bold);
     color: var(--success);
 }
 
-.not-verified-badge p {
-    font-size: var(--font-md);
-    font-weight: var(--font-bold);
-    color: var(--error);
+.verified-badge-card img {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(122deg) brightness(98%) contrast(84%);
+}
+
+.unverified-badge-card {
+    background-color: var(--warning-light);
+    color: var(--warning);
+}
+
+.unverified-badge-card img {
+    opacity: 0.7;
 }
 
 .seller-profile {

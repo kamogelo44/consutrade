@@ -3,7 +3,7 @@
  * ConsuTrade - Add Product Handler
  * Author: Kamogelo Phale
  * 
- * Handles product uploads with automatic WebP image compression
+ * Handles product uploads with automatic WebP image compression for main image and thumbnails
  */
 
 session_start();
@@ -26,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category_id = (int)($_POST['category_id'] ?? 0);
     $price = (float)($_POST['price'] ?? 0);
     $description = trim($_POST['description'] ?? '');
+    $condition = !empty($_POST['condition']) ? trim($_POST['condition']) : NULL;
+    $location = trim($_POST['location'] ?? '');
     $seller_id = $_SESSION['user_id'];
     
     // Validate inputs
@@ -45,24 +47,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Product description is required';
     }
     
-    // Handle image upload with WebP conversion
-    $image_path = '';
+    // Handle main image upload with WebP conversion
+    $main_image_path = '';
+    $gallery_images = [];
+    
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $image_path = convertToWebP($_FILES['image'], $seller_id, $title);
-        if (!$image_path) {
-            $errors[] = 'Failed to process image. Please try again.';
+        $main_image_path = convertToWebP($_FILES['image'], $seller_id, $title, 'main');
+        if (!$main_image_path) {
+            $errors[] = 'Failed to process main image. Please try again.';
         }
     } else {
         $errors[] = 'Please upload a product image';
     }
     
+    // Handle thumbnail images (up to 4)
+    for ($i = 0; $i <= 3; $i++) {
+        $thumbnail_key = 'thumbnail_' . $i;
+        if (isset($_FILES[$thumbnail_key]) && $_FILES[$thumbnail_key]['error'] === UPLOAD_ERR_OK) {
+            $thumbnail_path = convertToWebP($_FILES[$thumbnail_key], $seller_id, $title, 'thumb_' . $i);
+            if ($thumbnail_path) {
+                $gallery_images[] = $thumbnail_path;
+            }
+        }
+    }
+    
     // If no errors, save to database
     if (empty($errors)) {
-        $sql = "INSERT INTO products (seller_id, category_id, product_name, description, price, image_url, status, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, 'active', NOW())";
+        // Convert gallery images array to JSON for storage
+        $gallery_json = !empty($gallery_images) ? json_encode($gallery_images) : null;
         
+        $sql = "INSERT INTO products (seller_id, category_id, title, description, price, `condition`, location, image_url, gallery_images, status, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
+        $condition_value = ($condition === NULL) ? NULL : $condition;
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param('iissds', $seller_id, $category_id, $title, $description, $price, $image_path);
+        $stmt->bind_param('iissdssss', $seller_id, $category_id, $title, $description, $price, $condition, $location, $main_image_path, $gallery_json);
         
         if ($stmt->execute()) {
             $_SESSION['flash'] = 'Product added successfully!';
@@ -80,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
         exit;
     } else {
-        // Store errors in session and redirect back
         $_SESSION['product_errors'] = $errors;
         header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
         exit;
@@ -93,10 +110,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  * @param array $file The uploaded file from $_FILES
  * @param int $seller_id The seller's ID
  * @param string $product_title The product title for filename
+ * @param string $prefix Optional prefix for filename
  * @return string|false The path to the WebP image or false on failure
  */
-function convertToWebP($file, $seller_id, $product_title) {
-    // Create upload directory if it doesn't exist (relative to project root)
+function convertToWebP($file, $seller_id, $product_title, $prefix = 'main') {
+    // Create upload directory if it doesn't exist
     $upload_dir = dirname(__DIR__) . '/uploads/products/';
     if (!file_exists($upload_dir)) {
         mkdir($upload_dir, 0777, true);
@@ -105,8 +123,8 @@ function convertToWebP($file, $seller_id, $product_title) {
     // Generate unique filename
     $timestamp = time();
     $safe_title = preg_replace('/[^a-zA-Z0-9_-]/', '_', $product_title);
-    $safe_title = substr($safe_title, 0, 50); // Limit length
-    $filename = $seller_id . '_' . $timestamp . '_' . $safe_title . '.webp';
+    $safe_title = substr($safe_title, 0, 50);
+    $filename = $seller_id . '_' . $timestamp . '_' . $prefix . '_' . $safe_title . '.webp';
     $destination = $upload_dir . $filename;
     
     // Get image info
@@ -124,7 +142,6 @@ function convertToWebP($file, $seller_id, $product_title) {
             break;
         case 'image/png':
             $image = imagecreatefrompng($source);
-            // Preserve transparency for PNG
             imagepalettetotruecolor($image);
             imagealphablending($image, true);
             imagesavealpha($image, true);
@@ -155,23 +172,17 @@ function convertToWebP($file, $seller_id, $product_title) {
         
         $resized = imagecreatetruecolor($new_width, $new_height);
         
-        // Preserve transparency for resized image
         imagealphablending($resized, false);
         imagesavealpha($resized, true);
         
         imagecopyresampled($resized, $image, 0, 0, 0, 0, $new_width, $new_height, $orig_width, $orig_height);
-        $image = null;
         $image = $resized;
     }
     
-    // Save as WebP with 80% quality (good balance of size and quality)
+    // Save as WebP with 80% quality
     $success = imagewebp($image, $destination, 80);
     
-    // Free memory
-    $image = null;
-    
     if ($success) {
-        // Return the web path for database storage (relative to web root)
         return 'uploads/products/' . $filename;
     }
     
