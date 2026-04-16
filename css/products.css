@@ -515,29 +515,55 @@
     height: auto;
 }
 
+/* PayFast Security Badge */
+.payfast-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-light);
+    font-size: var(--font-sm);
+    color: var(--gray-medium);
+}
+
+.payfast-badge img {
+    height: 30px;
+    width: auto;
+}
 /* ========== PAGINATION ========== */
 .pagination {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-2xl);
+    margin-bottom: var(--spacing-xl);
     flex-wrap: wrap;
 }
 
 .page-btn {
-    padding: 8px 16px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
     background-color: var(--white);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast);
-    font-size: var(--font-sm);
+    font-size: var(--font-md);
     font-weight: var(--font-medium);
+    color: var(--gray-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .page-btn:hover {
     background-color: var(--primary-fade);
     border-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 .page-btn.active {
@@ -549,6 +575,72 @@
 .page-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Previous/Next buttons styling */
+.page-btn.prev-btn,
+.page-btn.next-btn {
+    min-width: 100px;
+    background-color: var(--gray-bg);
+}
+
+.page-btn.prev-btn:hover,
+.page-btn.next-btn:hover {
+    background-color: var(--primary-fade);
+    border-color: var(--primary-color);
+}
+
+/* Page dots */
+.page-dots {
+    padding: 0 4px;
+    color: var(--gray-light);
+    font-size: var(--font-md);
+}
+
+/* Pagination info (showing X of Y results) */
+.pagination-info {
+    text-align: center;
+    margin-top: var(--spacing-lg);
+    font-size: var(--font-sm);
+    color: var(--gray-medium);
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+    .pagination {
+        gap: var(--spacing-xs);
+        margin-top: var(--spacing-xl);
+    }
+    
+    .page-btn {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 8px;
+        font-size: var(--font-sm);
+    }
+    
+    .page-btn.prev-btn,
+    .page-btn.next-btn {
+        min-width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination {
+        gap: 4px;
+    }
+    
+    .page-btn {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 6px;
+        font-size: var(--font-xs);
+    }
+    
+    .page-btn.prev-btn,
+    .page-btn.next-btn {
+        min-width: 70px;
+    }
 }
 
 /* ========== LOADING & EMPTY STATES ========== */
@@ -1066,26 +1158,79 @@
     width: 100%;
 }
 
+/* ========== BREADCRUMB NAVIGATION ========== */
 .breadcrumb {
-    margin: 30px 0 0 30px;
-    padding: 0 15px;
-    font-size: var(--font-sm);
+    margin: 30px 0 20px 30px;
+    padding: 12px 20px;
+    font-size: var(--font-md);
+    background-color: var(--gray-bg-light);
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .breadcrumb a {
     text-decoration: none;
     color: var(--primary-color);
     transition: color var(--transition-fast);
+    font-weight: var(--font-medium);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
 }
 
 .breadcrumb a:hover {
+    background-color: var(--primary-fade);
     text-decoration: underline;
 }
 
 .breadcrumb span {
     color: var(--gray-medium);
+    font-weight: var(--font-normal);
 }
 
+.breadcrumb .current-page {
+    color: var(--dark-bg);
+    font-weight: var(--font-semibold);
+    background-color: var(--primary-fade);
+    padding: 4px 12px;
+    border-radius: var(--radius-round);
+}
+
+/* Breadcrumb separator */
+.breadcrumb-separator {
+    color: var(--gray-light);
+    font-size: var(--font-md);
+    margin: 0 4px;
+}
+
+/* Responsive breadcrumb */
+@media (max-width: 768px) {
+    .breadcrumb {
+        margin: 20px 15px;
+        padding: 10px 15px;
+        font-size: var(--font-sm);
+        width: calc(100% - 30px);
+    }
+    
+    .breadcrumb a {
+        padding: 3px 6px;
+    }
+    
+    .breadcrumb .current-page {
+        padding: 3px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .breadcrumb {
+        margin: 15px 12px;
+        padding: 8px 12px;
+        font-size: var(--font-xs);
+        width: calc(100% - 24px);
+    }
+}
 /* Top items - product images and info */
 .top-items {
     display: flex;

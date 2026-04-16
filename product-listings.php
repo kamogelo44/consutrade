@@ -26,6 +26,13 @@ session_start();
     <?php include 'header.php'; ?>
 
     <main>
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb">
+            <a href="index.php">Home</a>
+            <span class="breadcrumb-separator">></span>
+            <span class="current-page">All Products</span>
+        </div>
+
         <div class="listings-body">
             <!-- Filter button - only shows on mobile devices -->
             <button class="filter-btn" id="mobileFilterBtn">
@@ -115,7 +122,7 @@ session_start();
                     </fieldset> 
                 </form>
             </aside>
-            
+
             <!-- Products Grid Section -->
             <section class="listings-products">
                 <!-- Header with title and sort options -->

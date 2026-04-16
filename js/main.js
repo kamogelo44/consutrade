@@ -513,20 +513,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== SELL LINK HANDLING ==========
     var sellLink = document.getElementById('sell-link');
     var sellLinkMobile = document.querySelector('.sell-link-mobile');
-    
+
     function handleSellLink(e) {
-        e.preventDefault();
-        var userConfirmed = confirm('You are currently registered as a buyer.\n\nWould you like to upgrade to a seller account? This will allow you to list and sell products on ConsuTrade.');
+        // Check if user is logged in via a data attribute or global variable
+        // You'll need to pass this from PHP to JavaScript
         
-        if (userConfirmed) {
-            window.location.href = baseUrl + 'php/upgrade-to-seller.php';
+        if (typeof isLoggedIn !== 'undefined' && isLoggedIn === true) {
+            // Logged in - check role
+            if (typeof currentUserRole !== 'undefined' && currentUserRole === 'buyer') {
+                e.preventDefault();
+                var userConfirmed = confirm('You are currently registered as a buyer.\n\nWould you like to upgrade to a seller account? This will allow you to list and sell products on ConsuTrade.');
+                
+                if (userConfirmed) {
+                    window.location.href = baseUrl + 'php/upgrade-to-seller.php';
+                }
+            }
+            // If already seller, let the link work normally (go to sell.php)
         }
+        // If not logged in, let the link work normally (go to sell.php)
     }
-    
+
     if (sellLink) {
         sellLink.addEventListener('click', handleSellLink);
     }
-    
+
     if (sellLinkMobile) {
         sellLinkMobile.addEventListener('click', handleSellLink);
     }

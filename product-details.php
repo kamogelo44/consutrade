@@ -43,10 +43,8 @@ if ($product_id <= 0) {
     </script>
     <script src="js/main.js"></script>
     <script>
-        // Get product ID from URL
         var productId = <?php echo $product_id; ?>;
         
-        // Load product details when page loads
         document.addEventListener('DOMContentLoaded', function() {
             if (productId > 0) {
                 loadProductDetails(productId);
@@ -236,7 +234,7 @@ if ($product_id <= 0) {
                             ${starsHtml}
                             <p id="output">Rating: ${rating}/5 (${product.review_count || 0} reviews)</p>
                         </div>
-                        <button class="view-profile" onclick="window.location.href='/www/consutrade/profile.php?seller_id=${product.seller_id}'">
+                        <button class="view-profile" onclick="window.location.href='/www/consutrade/seller-profile.php?id=${product.seller_id}'">
                             View Seller Profile
                         </button>
                     </div>
@@ -250,6 +248,11 @@ if ($product_id <= 0) {
                         <div class="action-btns">
                             ${actionButtonsHtml}
                         </div>
+                        <!-- PayFast Security Badge -->
+                        <div class="payfast-badge">
+                            <img src="/www/consutrade/images/icons/Payfast logo.svg" alt="PayFast" width="80px">
+                            <span>Secure payments by PayFast</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -258,7 +261,6 @@ if ($product_id <= 0) {
         function changeMainImage(imagePath, selectedIndex) {
             var mainImage = document.getElementById('main-product-image');
             if (mainImage) {
-                // Add fade effect for smooth transition
                 mainImage.style.opacity = '0.5';
                 mainImage.src = imagePath;
                 mainImage.onload = function() {
@@ -270,7 +272,6 @@ if ($product_id <= 0) {
                 };
             }
             
-            // Update active class on thumbnails
             var thumbnails = document.querySelectorAll('.small-img');
             for (var i = 0; i < thumbnails.length; i++) {
                 thumbnails[i].classList.remove('active');

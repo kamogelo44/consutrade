@@ -362,7 +362,11 @@ $current_page = strtok($current_page, '?');
         </form>
     </div>
 </div>
-
+<script>
+// Pass user data to JavaScript
+var isLoggedIn = <?php echo isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true ? 'true' : 'false'; ?>;
+var currentUserRole = '<?php echo $_SESSION['role'] ?? ""; ?>';
+</script>
 <script>
 // Show location field when seller is selected
 var sellRadio = document.getElementById('sell');
