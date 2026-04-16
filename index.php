@@ -200,108 +200,117 @@ unset($_SESSION['flash']);
 
     <script src="js/products.js"></script>
     <script>
-        // Load featured products for homepage (only first 4)
-        document.addEventListener('DOMContentLoaded', function() {
-            loadHomepageProducts();
-        });
+    // Load featured products when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFeaturedProducts();
+    });
+
+    function loadFeaturedProducts() {
+        var grid = document.getElementById('products-grid');
+        if (!grid) return;
         
-        function loadHomepageProducts() {
-            var grid = document.getElementById('products-grid');
-            grid.innerHTML = '<div class="loading-spinner">Loading products...</div>';
-            
-            fetch('php/get-products.php')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success && data.products && data.products.length > 0) {
-                        // Show only first 4 products for homepage
-                        var featuredProducts = data.products.slice(0, 4);
-                        displayHomepageProducts(featuredProducts);
-                    } else {
-                        grid.innerHTML = '<p class="no-products">No products available yet.</p>';
-                    }
-                })
-                .catch(function() {
-                    grid.innerHTML = '<p class="error">Error loading products. Please refresh the page.</p>';
-                });
-        }
+        grid.innerHTML = '<div class="loading-spinner">Loading products...</div>';
         
-        function displayHomepageProducts(products) {
-            var grid = document.getElementById('products-grid');
-            grid.innerHTML = '';
-            
-            for (var i = 0; i < products.length; i++) {
-                var product = products[i];
-                
-                // Determine verification badge
-                var verifiedBadge = product.is_verified ? 
-                    '<div class="verified-badge-card"><img src="images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="Verified"><span>Verified Seller</span></div>' : 
-                    '<div class="unverified-badge-card"><img src="images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="Not Verified"><span>Unverified</span></div>';
-                
-                // Determine condition badge class
-                var conditionClass = '';
-                var conditionText = product.condition || 'Good';
-                if (conditionText === 'New') conditionClass = 'new';
-                else if (conditionText === 'Like New') conditionClass = 'like-new';
-                else if (conditionText === 'Good') conditionClass = 'good';
-                else if (conditionText === 'Fair') conditionClass = 'fair';
-                
-                // Fix image path
-                var imagePath = product.image;
-                if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                    imagePath = '/www/consutrade/' + imagePath;
+        fetch('/www/consutrade/php/get-products.php?page=1&limit=4')
+            .then(function(response) { 
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
                 }
-                
-                // Create the product card
-                var card = document.createElement('div');
-                card.className = 'prod-card';
-                card.style.cursor = 'pointer';
-                card.addEventListener('click', (function(id) {
-                    return function() {
-                        window.location.href = 'product-details.php?id=' + id;
-                    };
-                })(product.id));
-                
-                card.innerHTML = `
-                    <div class="img-container">
-                        <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
-                        <div class="condition-badge ${conditionClass}">${conditionText}</div>
-                    </div>
-                    <div class="prod-info-container">
-                        <h3 class="prod-name">${escapeHtml(product.name)}</h3>
-                        <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                        <div class="seller-info">
-                            <div class="seller-avatar">
-                                <img src="images/icons/profile-svgrepo-com.svg" alt="Seller">
-                            </div>
-                            <div class="seller-details">
-                                <p class="seller-name">${escapeHtml(product.seller_name)}</p>
-                                <p class="location">
-                                    <img src="images/icons/pin-location-svgrepo-com.svg" width="10px" height="10px" alt="location">
-                                    ${escapeHtml(product.location)}
-                                </p>
-                            </div>
-                            ${verifiedBadge}
-                        </div>
-                        <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
-                            Add to Cart
-                        </button>
-                        <div class="payment-badge">
-                            <span>Secure payment via</span>
-                            <img src="images/icons/Payfast logo.svg" alt="PayFast">
-                        </div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            }
-        }
+                return response.json(); 
+            })
+            .then(function(data) {
+                if (data.success && data.products && data.products.length > 0) {
+                    // Show only first 4 products for homepage
+                    var featuredProducts = data.products.slice(0, 4);
+                    displayFeaturedProducts(featuredProducts);
+                } else {
+                    grid.innerHTML = '<p class="no-products">No products available yet.</p>';
+                }
+            })
+            .catch(function(error) {
+                console.log('Error:', error);
+                grid.innerHTML = '<p class="error">Error loading products. Please refresh the page.</p>';
+            });
+    }
+
+    function displayFeaturedProducts(products) {
+        var grid = document.getElementById('products-grid');
+        if (!grid) return;
         
-        function escapeHtml(text) {
-            if (!text) return '';
-            var div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        grid.innerHTML = '';
+        
+        for (var i = 0; i < products.length; i++) {
+            var product = products[i];
+            
+            // Fix image path
+            var imagePath = product.image;
+            if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                imagePath = '/www/consutrade/' + imagePath;
+            }
+            
+            // Determine verification badge
+            var verifiedBadge = product.is_verified ? 
+                '<div class="verified-badge-card"><img src="/www/consutrade/images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="Verified"><span>Verified Seller</span></div>' : 
+                '<div class="unverified-badge-card"><img src="/www/consutrade/images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="Not Verified"><span>Unverified</span></div>';
+            
+            // Determine condition badge
+            var conditionClass = '';
+            var conditionText = product.condition || 'Good';
+            if (conditionText === 'New') conditionClass = 'new';
+            else if (conditionText === 'Like New') conditionClass = 'like-new';
+            else if (conditionText === 'Good') conditionClass = 'good';
+            else if (conditionText === 'Fair') conditionClass = 'fair';
+            
+            var card = document.createElement('div');
+            card.className = 'prod-card';
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', (function(id) {
+                return function() {
+                    window.location.href = '/www/consutrade/product-details.php?id=' + id;
+                };
+            })(product.id));
+            
+            card.innerHTML = `
+                <div class="img-container">
+                    <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
+                    <div class="condition-badge ${conditionClass}">${conditionText}</div>
+                </div>
+                <div class="prod-info-container">
+                    <h3 class="prod-name">${escapeHtml(product.name)}</h3>
+                    <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                    <div class="seller-info">
+                        <div class="seller-avatar">
+                            <img src="/www/consutrade/images/icons/profile-svgrepo-com.svg" alt="Seller">
+                        </div>
+                        <div class="seller-details">
+                            <p class="seller-name">${escapeHtml(product.seller_name)}</p>
+                            <p class="location">
+                                <img src="/www/consutrade/images/icons/pin-location-svgrepo-com.svg" width="10px" height="10px" alt="location">
+                                ${escapeHtml(product.location)}
+                            </p>
+                        </div>
+                        ${verifiedBadge}
+                    </div>
+                    <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                        <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
+                        Add to Cart
+                    </button>
+                    <div class="payment-badge">
+                        <span>Secure payment via</span>
+                        <img src="/www/consutrade/images/icons/Payfast logo.svg" alt="PayFast">
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
         }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
     </script>
 </body>
 </html>

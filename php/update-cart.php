@@ -1,57 +1,37 @@
 <?php
 /*
- * ConsuTrade - Update Cart API
+ * ConsuTrade - Update Cart
  * Author: Kamogelo Phale
  * 
- * Updates how many of a product someone wants to buy
- * I had to test this multiple times because the math kept breaking
+ * Updates quantity of a product in cart (disabled - quantity always 1)
  */
 
 session_start();
+require_once 'config.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
+header('Content-Type: application/json');
 
-if (!$data) {
-    echo json_encode(['success' => false, 'message' => 'Invalid request']);
+$response = ['success' => false, 'message' => 'Quantity cannot be changed. Each item can only be added once.'];
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    $response['message'] = 'Please login to update cart';
+    echo json_encode($response);
     exit;
 }
 
-$product_id = isset($data['product_id']) ? (int)$data['product_id'] : 0;
-$quantity = isset($data['quantity']) ? (int)$data['quantity'] : 0;
+$input = json_decode(file_get_contents('php://input'), true);
+$product_id = isset($input['product_id']) ? (int)$input['product_id'] : 0;
+$user_id = $_SESSION['user_id'];
 
-if ($product_id <= 0 || !isset($_SESSION['cart'][$product_id])) {
-    echo json_encode(['success' => false, 'message' => 'Product not found in cart']);
+if ($product_id <= 0) {
+    $response['message'] = 'Invalid product';
+    echo json_encode($response);
     exit;
 }
 
-// if someone sets quantity to 0 just remove the item completely
-if ($quantity <= 0) {
-    unset($_SESSION['cart'][$product_id]);
-} else {
-    $_SESSION['cart'][$product_id]['quantity'] = $quantity;
-}
+// Since quantity is always 1 for unique items, we don't allow updates
 
-// recalculating everything again because numbers changed
-$subtotal = 0;
-$total_items = 0;
-foreach ($_SESSION['cart'] as $item) {
-    $subtotal += $item['price'] * $item['quantity'];
-    $total_items += $item['quantity'];
-}
-
-if ($subtotal > 500) {
-    $delivery_fee = 0;
-} else {
-    $delivery_fee = 50;
-}
-$total = $subtotal + $delivery_fee;
-
-echo json_encode([
-    'success' => true,
-    'subtotal' => $subtotal,
-    'delivery_fee' => $delivery_fee,
-    'total' => $total,
-    'cart_count' => $total_items,
-    'item_total' => isset($_SESSION['cart'][$product_id]) ? $_SESSION['cart'][$product_id]['price'] * $_SESSION['cart'][$product_id]['quantity'] : 0
-]);
+echo json_encode($response);
+exit;
 ?>

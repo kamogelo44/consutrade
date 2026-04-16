@@ -1109,6 +1109,12 @@
     margin-bottom: var(--spacing-md);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    
+}
+
+/* Smooth image transition */
+#main-product-image {
+    transition: opacity 0.3s ease;
 }
 
 .main-img img {
@@ -1144,11 +1150,18 @@
     box-shadow: var(--shadow-sm);
 }
 
+.small-img.active {
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2);
+}
+
 .small-img img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
+
+
 
 /* Product information */
 .product-info {
@@ -1450,6 +1463,21 @@
 .action-btns .buy-btn:hover {
     background-color: var(--primary-dark);
     transform: translateY(-2px);
+}
+
+/* Own product message - shown to sellers on their own product details */
+.own-product-message {
+    text-align: center;
+    padding: 15px;
+    background-color: var(--warning-light);
+    border-radius: var(--radius-md);
+    width: 100%;
+}
+
+.own-product-message p {
+    color: var(--warning);
+    font-weight: var(--font-medium);
+    margin: 0;
 }
 
 /* ========== RESPONSIVE STYLES FOR PRODUCT DETAILS PAGE ========== */

@@ -2,6 +2,8 @@
 /*
  * ConsuTrade - Remove from Cart
  * Author: Kamogelo Phale
+ * 
+ * Removes a product from the user's cart
  */
 
 session_start();

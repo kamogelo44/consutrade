@@ -19,7 +19,8 @@ var baseUrl = '/www/consutrade/';
 // ========== GLOBAL CART FUNCTIONS ==========
 // These need to be global so they can be called from onclick attributes in dynamically created cards
 
-function addToCart(productId, productName, productPrice, quantity = 1) {
+function addToCart(productId, productName, productPrice) {
+    // No quantity parameter - each product can only be added once
     fetch(baseUrl + 'php/add-to-cart.php', {
         method: 'POST',
         headers: {
@@ -28,8 +29,7 @@ function addToCart(productId, productName, productPrice, quantity = 1) {
         body: JSON.stringify({
             product_id: productId,
             product_name: productName,
-            product_price: productPrice,
-            quantity: quantity
+            product_price: productPrice
         })
     })
     .then(function(response) { return response.json(); })
@@ -45,7 +45,6 @@ function addToCart(productId, productName, productPrice, quantity = 1) {
         alert('Something went wrong');
     });
 }
-
 function updateCartItem(productId, quantity) {
     fetch(baseUrl + 'php/update-cart.php', {
         method: 'POST',

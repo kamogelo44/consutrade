@@ -2,90 +2,43 @@
 /*
  * ConsuTrade - Get All Products
  * Author: Kamogelo Phale
+ * 
+ * Returns all active products for the listings page
+ * 
  */
-
-// Don't start session if already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 require_once 'config.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
 
-$response = ['success' => false, 'products' => []];
+$response = ['success' => false, 'products' => [], 'total_pages' => 1, 'current_page' => 1];
 
 // Get filter parameters
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = 12;
 $offset = ($page - 1) * $limit;
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
-$categories = isset($_GET['categories']) ? explode(',', $_GET['categories']) : [];
-$price_range = isset($_GET['price_range']) ? $_GET['price_range'] : '';
-$location = isset($_GET['location']) ? trim($_GET['location']) : '';
 
-$sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url, p.location, p.status, p.condition,
+// Simple query without filters first to test
+$sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url, p.location, p.condition,
         u.full_name as seller_name, u.user_id as seller_id,
         u.id_verified as is_verified
         FROM products p 
         JOIN users u ON p.seller_id = u.user_id 
-        WHERE p.status = 'active'";
-
-$params = [];
-$types = "";
-
-if (!empty($categories)) {
-    $placeholders = implode(',', array_fill(0, count($categories), '?'));
-    $sql .= " AND p.category_id IN ($placeholders)";
-    $params = array_merge($params, $categories);
-    $types .= str_repeat('s', count($categories));
-}
-
-if (!empty($price_range)) {
-    switch ($price_range) {
-        case 'under100':
-            $sql .= " AND p.price < 100";
-            break;
-        case '100-500':
-            $sql .= " AND p.price BETWEEN 100 AND 500";
-            break;
-        case '500-1000':
-            $sql .= " AND p.price BETWEEN 500 AND 1000";
-            break;
-        case 'over1000':
-            $sql .= " AND p.price > 1000";
-            break;
-    }
-}
-
-if (!empty($location)) {
-    $sql .= " AND u.location LIKE ?";
-    $params[] = "%$location%";
-    $types .= "s";
-}
-
-switch ($sort) {
-    case 'price_low':
-        $sql .= " ORDER BY p.price ASC";
-        break;
-    case 'price_high':
-        $sql .= " ORDER BY p.price DESC";
-        break;
-    case 'newest':
-    default:
-        $sql .= " ORDER BY p.created_at DESC";
-        break;
-}
-
-$sql .= " LIMIT ? OFFSET ?";
-$params[] = $limit;
-$params[] = $offset;
-$types .= "ii";
+        WHERE p.status = 'active'
+        ORDER BY p.created_at DESC
+        LIMIT ? OFFSET ?";
 
 $stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
+
+if (!$stmt) {
+    echo json_encode($response);
+    $conn->close();
+    exit;
 }
+
+$stmt->bind_param('ii', $limit, $offset);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -108,10 +61,13 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-// Get total count for pagination
-$count_sql = "SELECT COUNT(*) as total FROM products p JOIN users u ON p.seller_id = u.user_id WHERE p.status = 'active'";
+// Get total count
+$count_sql = "SELECT COUNT(*) as total FROM products WHERE status = 'active'";
 $count_result = $conn->query($count_sql);
-$total_rows = $count_result->fetch_assoc()['total'];
+$total_rows = 0;
+if ($count_result) {
+    $total_rows = $count_result->fetch_assoc()['total'];
+}
 $total_pages = ceil($total_rows / $limit);
 
 $response['success'] = true;

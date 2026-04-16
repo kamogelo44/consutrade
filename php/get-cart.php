@@ -4,7 +4,11 @@
  * Author: Kamogelo Phale
  */
 
-session_start();
+// Only start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once 'config.php';
 
 header('Content-Type: application/json');
@@ -33,6 +37,7 @@ $stmt = $conn->prepare($sql);
 
 if (!$stmt) {
     echo json_encode($response);
+    $conn->close();
     exit;
 }
 

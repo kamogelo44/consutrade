@@ -29,21 +29,33 @@ $seller_id = $_SESSION['user_id'];
 $success_message = '';
 $error_message = '';
 
-// Handle product deletion
+// Handle product deletion (soft delete)
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $product_id = (int)$_GET['delete'];
     
-    // Soft delete - update status to 'deleted'
-    $delete_sql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
-    $delete_stmt = $conn->prepare($delete_sql);
-    $delete_stmt->bind_param('ii', $product_id, $seller_id);
+    // First check if product belongs to this seller
+    $check_sql = "SELECT product_id FROM products WHERE product_id = ? AND seller_id = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param('ii', $product_id, $seller_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
     
-    if ($delete_stmt->execute()) {
-        $success_message = 'Product deleted successfully!';
+    if ($check_result->num_rows > 0) {
+        // Soft delete - update status to 'deleted'
+        $delete_sql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
+        $delete_stmt = $conn->prepare($delete_sql);
+        $delete_stmt->bind_param('ii', $product_id, $seller_id);
+        
+        if ($delete_stmt->execute()) {
+            $success_message = 'Product deleted successfully!';
+        } else {
+            $error_message = 'Failed to delete product.';
+        }
+        $delete_stmt->close();
     } else {
-        $error_message = 'Failed to delete product.';
+        $error_message = 'Product not found or does not belong to you.';
     }
-    $delete_stmt->close();
+    $check_stmt->close();
 }
 
 // Handle status update (activate/suspend)
@@ -51,28 +63,47 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     $product_id = (int)$_GET['id'];
     $action = $_GET['action'];
     
-    $new_status = ($action === 'activate') ? 'active' : 'suspended';
+    // First check if product belongs to this seller
+    $check_sql = "SELECT product_id, status FROM products WHERE product_id = ? AND seller_id = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param('ii', $product_id, $seller_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
     
-    $status_sql = "UPDATE products SET status = ? WHERE product_id = ? AND seller_id = ?";
-    $status_stmt = $conn->prepare($status_sql);
-    $status_stmt->bind_param('sii', $new_status, $product_id, $seller_id);
-    
-    if ($status_stmt->execute()) {
-        $success_message = ($action === 'activate') ? 'Product activated successfully!' : 'Product suspended successfully!';
+    if ($check_result->num_rows > 0) {
+        $product_data = $check_result->fetch_assoc();
+        $new_status = ($action === 'activate') ? 'active' : 'suspended';
+        
+        // Prevent activating if already active or suspending if already suspended
+        if (($action === 'activate' && $product_data['status'] === 'active') ||
+            ($action === 'suspend' && $product_data['status'] === 'suspended')) {
+            $error_message = ($action === 'activate') ? 'Product is already active.' : 'Product is already suspended.';
+        } else {
+            $status_sql = "UPDATE products SET status = ? WHERE product_id = ? AND seller_id = ?";
+            $status_stmt = $conn->prepare($status_sql);
+            $status_stmt->bind_param('sii', $new_status, $product_id, $seller_id);
+            
+            if ($status_stmt->execute()) {
+                $success_message = ($action === 'activate') ? 'Product activated successfully!' : 'Product suspended successfully!';
+            } else {
+                $error_message = 'Failed to update product status.';
+            }
+            $status_stmt->close();
+        }
     } else {
-        $error_message = 'Failed to update product status.';
+        $error_message = 'Product not found or does not belong to you.';
     }
-    $status_stmt->close();
+    $check_stmt->close();
 }
 
 // Get filter parameters
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build query
+// Build query (exclude deleted products from view)
 $sql = "SELECT product_id, title as product_name, price, image_url, status, created_at, category_id
         FROM products 
-        WHERE seller_id = ?";
+        WHERE seller_id = ? AND status != 'deleted'";
 
 $params = [$seller_id];
 $types = "i";
@@ -104,12 +135,12 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Get product statistics
+// Get product statistics (excluding deleted)
 $stats_sql = "SELECT 
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
                 SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) as suspended
-              FROM products WHERE seller_id = ?";
+              FROM products WHERE seller_id = ? AND status != 'deleted'";
 $stats_stmt = $conn->prepare($stats_sql);
 $stats_stmt->bind_param('i', $seller_id);
 $stats_stmt->execute();
@@ -118,6 +149,15 @@ $stats = $stats_result->fetch_assoc();
 $stats_stmt->close();
 
 $conn->close();
+
+// Preserve filter parameters for links
+$filter_params = '';
+if ($status_filter !== 'all') {
+    $filter_params .= '&status=' . $status_filter;
+}
+if (!empty($search_term)) {
+    $filter_params .= '&search=' . urlencode($search_term);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -174,9 +214,9 @@ $conn->close();
                 
                 <div class="filters">
                     <div class="status-filters">
-                        <a href="?status=all" class="filter-btn <?php echo $status_filter === 'all' ? 'active' : ''; ?>">All</a>
-                        <a href="?status=active" class="filter-btn <?php echo $status_filter === 'active' ? 'active' : ''; ?>">Active</a>
-                        <a href="?status=suspended" class="filter-btn <?php echo $status_filter === 'suspended' ? 'active' : ''; ?>">Suspended</a>
+                        <a href="?status=all<?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>" class="filter-btn <?php echo $status_filter === 'all' ? 'active' : ''; ?>">All</a>
+                        <a href="?status=active<?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>" class="filter-btn <?php echo $status_filter === 'active' ? 'active' : ''; ?>">Active</a>
+                        <a href="?status=suspended<?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>" class="filter-btn <?php echo $status_filter === 'suspended' ? 'active' : ''; ?>">Suspended</a>
                     </div>
                     
                     <div class="search-bar">
@@ -217,14 +257,12 @@ $conn->close();
                                             // Check if image_url exists and is valid
                                             $imagePath = '';
                                             if (!empty($product['image_url'])) {
-                                                // Check if the image file actually exists on the server
                                                 $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $product['image_url'];
                                                 if (file_exists($fullPath)) {
                                                     $imagePath = $baseUrl . $product['image_url'];
                                                 }
                                             }
                                             
-                                            // If no valid image, use default PNG
                                             if (empty($imagePath)) {
                                                 $imagePath = $baseUrl . 'images/default-product.png';
                                             }
@@ -248,19 +286,19 @@ $conn->close();
                                         <?php echo date('d M Y', strtotime($product['created_at'])); ?>
                                     </td>
                                     <td class="product-actions-cell">
-                                        <a href="edit-product.php?id=<?php echo $product['product_id']; ?>" class="action-btn edit-btn" title="Edit">
+                                        <a href="edit-product.php?id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" class="action-btn edit-btn" title="Edit">
                                             <img src="<?php echo $baseUrl; ?>images/icons/edit-svgrepo-com.svg" width="16px" height="16px" alt="Edit">
                                         </a>
                                         
                                         <?php if ($product['status'] === 'active'): ?>
-                                            <a href="?action=suspend&id=<?php echo $product['product_id']; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search_term); ?>" 
+                                            <a href="?action=suspend&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
                                                class="action-btn suspend-btn" 
                                                title="Suspend"
                                                onclick="return confirm('Are you sure you want to suspend this product? It will no longer be visible to buyers.');">
                                                 <img src="<?php echo $baseUrl; ?>images/icons/hide-svgrepo-com.svg" width="16px" height="16px" alt="Suspend">
                                             </a>
-                                        <?php else: ?>
-                                            <a href="?action=activate&id=<?php echo $product['product_id']; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search_term); ?>" 
+                                        <?php elseif ($product['status'] === 'suspended'): ?>
+                                            <a href="?action=activate&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
                                                class="action-btn activate-btn" 
                                                title="Activate"
                                                onclick="return confirm('Are you sure you want to activate this product? It will be visible to buyers.');">
@@ -268,7 +306,7 @@ $conn->close();
                                             </a>
                                         <?php endif; ?>
                                         
-                                        <a href="?delete=<?php echo $product['product_id']; ?>&status=<?php echo $status_filter; ?>&search=<?php echo urlencode($search_term); ?>" 
+                                        <a href="?delete=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
                                            class="action-btn delete-btn" 
                                            title="Delete"
                                            onclick="return confirm('Are you sure you want to delete this product? This action cannot be undone.');">

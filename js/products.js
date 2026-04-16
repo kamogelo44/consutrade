@@ -145,25 +145,13 @@ function loadProducts() {
 
 // Display products in the grid
 function displayProducts(products) {
-    var isOwnProduct = (currentUserRole === 'seller' && product.seller_id == currentUserId);
-    var addToCartButton = '';
-    if (!isOwnProduct) {
-        addToCartButton = `<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-            <img src="images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
-            Add to Cart
-        </button>`;
-    } else {
-        addToCartButton = `<button class="own-product-btn" disabled style="background-color: #ccc; cursor: not-allowed;">
-            Your Product
-        </button>`;
-    }
     var grid = document.getElementById('products-grid');
     grid.innerHTML = '';
     
     for (var i = 0; i < products.length; i++) {
         var product = products[i];
-        
-        // Determine verification badge - text + icon for clarity
+
+        // Determine verification badge
         var verifiedBadge = product.is_verified ? 
             '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="Verified"><span>Verified Seller</span></div>' : 
             '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="Not Verified"><span>Unverified</span></div>';
@@ -182,7 +170,20 @@ function displayProducts(products) {
             imagePath = baseUrl + imagePath;
         }
         
-        // Create the product card - ENTIRE CARD CLICKABLE
+        // Check if this is the seller's own product
+        var isOwnProduct = (typeof currentUserRole !== 'undefined' && currentUserRole === 'seller' && product.seller_id == currentUserId);
+        var addToCartButton = '';
+
+        if (!isOwnProduct) {
+            addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', ' + product.price + ')">' +
+                '<img src="' + baseUrl + 'images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">' +
+                'Add to Cart' +
+                '</button>';
+        } else {
+            addToCartButton = '<button class="own-product-btn" disabled style="background-color: #ccc; cursor: not-allowed; width: 100%; padding: 10px; border-radius: 8px; border: none;">Your Product</button>';
+        }
+        
+        // Create the product card
         var card = document.createElement('div');
         card.className = 'prod-card';
         card.style.cursor = 'pointer';
@@ -194,7 +195,7 @@ function displayProducts(products) {
         
         card.innerHTML = `
             <div class="img-container">
-                <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
+                <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='${baseUrl}images/default-product.png'">
                 <div class="condition-badge ${conditionClass}">${conditionText}</div>
             </div>
             <div class="prod-info-container">
@@ -202,24 +203,21 @@ function displayProducts(products) {
                 <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
                 <div class="seller-info">
                     <div class="seller-avatar">
-                        <img src="images/icons/profile-svgrepo-com.svg" alt="Seller">
+                        <img src="${baseUrl}images/icons/profile-svgrepo-com.svg" alt="Seller">
                     </div>
                     <div class="seller-details">
                         <p class="seller-name">${escapeHtml(product.seller_name)}</p>
                         <p class="location">
-                            <img src="images/icons/pin-location-svgrepo-com.svg" width="10px" height="10px" alt="location">
+                            <img src="${baseUrl}images/icons/pin-location-svgrepo-com.svg" width="10px" height="10px" alt="location">
                             ${escapeHtml(product.location)}
                         </p>
                     </div>
                     ${verifiedBadge}
                 </div>
-                <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                    <img src="images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
-                    Add to Cart
-                </button>
+                ${addToCartButton}
                 <div class="payment-badge">
                     <span>Secure payment via</span>
-                    <img src="images/icons/Payfast logo.svg" alt="PayFast">
+                    <img src="${baseUrl}images/icons/Payfast logo.svg" alt="PayFast">
                 </div>
             </div>
         `;
@@ -242,7 +240,7 @@ function displayPagination() {
         html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous</button>';
     }
     
-    // Page numbers - show limited pages for better UX
+    // Page numbers
     for (var i = 1; i <= totalPages; i++) {
         if (i === currentPage) {
             html += '<button class="page-btn active" disabled>' + i + '</button>';
@@ -278,7 +276,6 @@ function resetFilters() {
 }
 
 // ========== PRODUCT DETAILS PAGE FUNCTIONS ==========
-// Handles loading and displaying individual product details
 
 function loadProductDetails(id) {
     var container = document.getElementById('product-details-container');
@@ -339,29 +336,29 @@ function displayProductDetails(product) {
         }
     }
     
-    // Build gallery thumbnails HTML
+    // Build gallery thumbnails HTML with active class
     var galleryHtml = '';
-    if (galleryImages.length > 0) {
-        for (var i = 0; i < galleryImages.length && i < 4; i++) {
-            var thumbPath = galleryImages[i];
+    for (var i = 0; i < 4; i++) {
+        var thumbPath = galleryImages[i] || null;
+        var activeClass = (i === 0 && !thumbPath) ? 'active' : '';
+        
+        if (thumbPath) {
             if (thumbPath && !thumbPath.startsWith('http') && !thumbPath.startsWith('/')) {
                 thumbPath = baseUrl + thumbPath;
             }
+            activeClass = (i === 0) ? 'active' : '';
             galleryHtml += `
-                <div class="small-img" onclick="changeMainImage('${thumbPath}')">
+                <div class="small-img ${activeClass}" data-image-index="${i}" onclick="changeMainImage('${thumbPath}', ${i})">
                     <img src="${thumbPath}" alt="Product thumbnail" onerror="this.src='${baseUrl}images/default-product.png'">
                 </div>
             `;
+        } else {
+            galleryHtml += `
+                <div class="small-img empty-thumb">
+                    <img src="${baseUrl}images/default-product.png" alt="No image">
+                </div>
+            `;
         }
-    }
-    
-    // Fill remaining thumbnail slots
-    for (var i = galleryImages.length; i < 4; i++) {
-        galleryHtml += `
-            <div class="small-img empty-thumb">
-                <img src="${baseUrl}images/default-product.png" alt="No image">
-            </div>
-        `;
     }
     
     // Determine verification badge
@@ -369,7 +366,7 @@ function displayProductDetails(product) {
         '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification"><p>Verified Seller</p></div>' : 
         '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20px" height="20px" alt="not-verified"><p>Not Verified Seller</p></div>';
     
-    // Build stars with rating
+    // Build stars
     var rating = product.avg_rating || 0;
     var starsHtml = '';
     for (var i = 1; i <= 5; i++) {
@@ -390,6 +387,26 @@ function displayProductDetails(product) {
     var locationHtml = '';
     if (product.location) {
         locationHtml = `<p class="sub-head">Location: <span class="city">${escapeHtml(product.location)}</span></p>`;
+    }
+    
+    // Check if this is the seller's own product
+    var isOwnProduct = (typeof currentUserRole !== 'undefined' && currentUserRole === 'seller' && product.seller_id == currentUserId);
+    var actionButtonsHtml = '';
+    
+    if (!isOwnProduct) {
+        actionButtonsHtml = `
+            <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Cart">
+                Add to Cart
+            </button>
+            <button class="buy-btn" onclick="buyNow(${product.id})">Buy Now</button>
+        `;
+    } else {
+        actionButtonsHtml = `
+            <div class="own-product-message">
+                <p>You cannot purchase your own product.</p>
+            </div>
+        `;
     }
     
     container.innerHTML = `
@@ -445,10 +462,7 @@ function displayProductDetails(product) {
                 </div>
                 <div class="star-reviews">
                     <h1>Seller Reviews</h1>
-                    <div class="stars-container">
-                        ${starsHtml}
-                        <p class="rating-message">Click stars to leave a review</p>
-                    </div>
+                    ${starsHtml}
                     <p id="output">Rating: ${rating}/5 (${product.review_count || 0} reviews)</p>
                 </div>
                 <button class="view-profile" onclick="window.location.href='${baseUrl}profile.php?seller_id=${product.seller_id}'">
@@ -463,17 +477,13 @@ function displayProductDetails(product) {
                     <p><span class="num-avail">In Stock</span></p>
                 </div>
                 <div class="action-btns">
-                    <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                        <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Cart">
-                        Add to Cart
-                    </button>
-                    <button class="buy-btn" onclick="buyNow(${product.id})">Buy Now</button>
+                    ${actionButtonsHtml}
                 </div>
             </div>
         </div>
     `;
     
-    // Add star click handler - using isLoggedIn variable from PHP
+    // Add star click handler
     var stars = document.querySelectorAll('.star');
     stars.forEach(function(star) {
         star.addEventListener('click', function() {
@@ -487,26 +497,35 @@ function displayProductDetails(product) {
     });
 }
 
-function changeMainImage(imagePath) {
+function changeMainImage(imagePath, selectedIndex) {
     var mainImage = document.getElementById('main-product-image');
     if (mainImage) {
+        mainImage.style.opacity = '0.5';
         mainImage.src = imagePath;
+        mainImage.onload = function() {
+            mainImage.style.opacity = '1';
+        };
+        mainImage.onerror = function() {
+            mainImage.src = baseUrl + 'images/default-product.png';
+            mainImage.style.opacity = '1';
+        };
+    }
+    
+    // Update active class on thumbnails
+    var thumbnails = document.querySelectorAll('.small-img');
+    for (var i = 0; i < thumbnails.length; i++) {
+        thumbnails[i].classList.remove('active');
+        if (i == selectedIndex) {
+            thumbnails[i].classList.add('active');
+        }
     }
 }
 
 function buyNow(productId) {
-    // The addToCart function is in main.js
-    // This will be called when the page loads and addToCart is available
-    if (typeof addToCart === 'function') {
-        // Note: product name and price need to be passed
-        // This is a simplified version
-        window.location.href = baseUrl + 'cart.php';
-    } else {
-        window.location.href = baseUrl + 'cart.php';
-    }
+    window.location.href = baseUrl + 'cart.php';
 }
 
-// Helper function to escape HTML and prevent XSS attacks
+// Helper function to escape HTML
 function escapeHtml(text) {
     if (!text) return '';
     var div = document.createElement('div');

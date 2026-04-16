@@ -38,6 +38,8 @@ if ($product_id <= 0) {
     <script>
     // Pass PHP session data to JavaScript
     var isLoggedIn = <?php echo isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true ? 'true' : 'false'; ?>;
+    var currentUserId = <?php echo $_SESSION['user_id'] ?? 0; ?>;
+    var currentUserRole = '<?php echo $_SESSION['role'] ?? ""; ?>';
     </script>
     <script src="js/main.js"></script>
     <script>
@@ -54,7 +56,6 @@ if ($product_id <= 0) {
         });
 
         function loadProductDetails(id) {
-            // Show loading state
             var container = document.getElementById('product-details-container');
             container.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 60px;">Loading product details...</div>';
             
@@ -84,7 +85,7 @@ if ($product_id <= 0) {
                 <div class="error-container" style="text-align: center; padding: 80px 20px; max-width: 500px; margin: 0 auto;">
                     <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="64px" height="64px" alt="Error" style="opacity: 0.5; margin-bottom: 20px;">
                     <h2 style="color: #f44336; margin-bottom: 10px; font-size: 24px;">Oops!</h2>
-                    <p style="color: #666;">${message}</p>
+                    <p style="color: #666;">${escapeHtml(message)}</p>
                     <button onclick="window.location.href='/www/consutrade/product-listings.php'" style="margin-top: 20px; padding: 10px 24px; background-color: #FF6B00; color: white; border: none; border-radius: 8px; cursor: pointer;">Browse Products</button>
                 </div>
             `;
@@ -109,27 +110,24 @@ if ($product_id <= 0) {
                 }
             }
             
-            // Build gallery thumbnails HTML
-            var galleryHtml = '';
-            if (galleryImages.length > 0) {
-                for (var i = 0; i < galleryImages.length && i < 4; i++) {
-                    var thumbPath = galleryImages[i];
-                    if (thumbPath && !thumbPath.startsWith('http') && !thumbPath.startsWith('/')) {
-                        thumbPath = '/www/consutrade/' + thumbPath;
-                    }
-                    galleryHtml += `
-                        <div class="small-img" onclick="changeMainImage('${thumbPath}')">
-                            <img src="${thumbPath}" alt="Product thumbnail" onerror="this.src='/www/consutrade/images/default-product.png'">
-                        </div>
-                    `;
+            // Build all images array (main image + gallery images)
+            var allImages = [mainImage];
+            for (var i = 0; i < galleryImages.length; i++) {
+                var thumbPath = galleryImages[i];
+                if (thumbPath && !thumbPath.startsWith('http') && !thumbPath.startsWith('/')) {
+                    thumbPath = '/www/consutrade/' + thumbPath;
                 }
+                allImages.push(thumbPath);
             }
             
-            // Fill remaining thumbnail slots
-            for (var i = galleryImages.length; i < 4; i++) {
+            // Build gallery thumbnails HTML with active class
+            var galleryHtml = '';
+            for (var i = 0; i < 4; i++) {
+                var thumbPath = allImages[i] || '/www/consutrade/images/default-product.png';
+                var activeClass = (i === 0) ? 'active' : '';
                 galleryHtml += `
-                    <div class="small-img empty-thumb">
-                        <img src="/www/consutrade/images/default-product.png" alt="No image">
+                    <div class="small-img ${activeClass}" data-image-index="${i}" onclick="changeMainImage('${thumbPath}', ${i})">
+                        <img src="${thumbPath}" alt="Product thumbnail" onerror="this.src='/www/consutrade/images/default-product.png'">
                     </div>
                 `;
             }
@@ -160,6 +158,26 @@ if ($product_id <= 0) {
             var locationHtml = '';
             if (product.location) {
                 locationHtml = `<p class="sub-head">Location: <span class="city">${escapeHtml(product.location)}</span></p>`;
+            }
+            
+            // Check if this is the seller's own product
+            var isOwnProduct = (currentUserRole === 'seller' && product.seller_id == currentUserId);
+            var actionButtonsHtml = '';
+            
+            if (!isOwnProduct) {
+                actionButtonsHtml = `
+                    <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                        <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Cart">
+                        Add to Cart
+                    </button>
+                    <button class="buy-btn" onclick="buyNow(${product.id})">Buy Now</button>
+                `;
+            } else {
+                actionButtonsHtml = `
+                    <div class="own-product-message">
+                        <p>You cannot purchase your own product.</p>
+                    </div>
+                `;
             }
             
             container.innerHTML = `
@@ -230,26 +248,42 @@ if ($product_id <= 0) {
                             <p><span class="num-avail">In Stock</span></p>
                         </div>
                         <div class="action-btns">
-                            <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                                <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Cart">
-                                Add to Cart
-                            </button>
-                            <button class="buy-btn" onclick="buyNow(${product.id})">Buy Now</button>
+                            ${actionButtonsHtml}
                         </div>
                     </div>
                 </div>
             `;
         }
         
-        function changeMainImage(imagePath) {
+        function changeMainImage(imagePath, selectedIndex) {
             var mainImage = document.getElementById('main-product-image');
             if (mainImage) {
+                // Add fade effect for smooth transition
+                mainImage.style.opacity = '0.5';
                 mainImage.src = imagePath;
+                mainImage.onload = function() {
+                    mainImage.style.opacity = '1';
+                };
+                mainImage.onerror = function() {
+                    mainImage.src = '/www/consutrade/images/default-product.png';
+                    mainImage.style.opacity = '1';
+                };
+            }
+            
+            // Update active class on thumbnails
+            var thumbnails = document.querySelectorAll('.small-img');
+            for (var i = 0; i < thumbnails.length; i++) {
+                thumbnails[i].classList.remove('active');
+                if (i == selectedIndex) {
+                    thumbnails[i].classList.add('active');
+                }
             }
         }
         
         function buyNow(productId) {
-            addToCart(productId, arguments[1], arguments[2]);
+            var productName = arguments[1];
+            var productPrice = arguments[2];
+            addToCart(productId, productName, productPrice);
             window.location.href = '/www/consutrade/cart.php';
         }
         
