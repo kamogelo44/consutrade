@@ -717,6 +717,15 @@
     transform: translateX(4px);
 }
 
+/*LCP Optimization*/
+.prod-card, .listing-card, .stat-card {
+    contain: content;
+}
+
+.prod-grid, .listings-grid {
+    contain: layout;
+}
+
 /* ========== RESPONSIVE STYLES ========== */
 
 /* Desktop Ultra Wide - 1600px and above */

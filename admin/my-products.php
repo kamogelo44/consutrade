@@ -333,7 +333,6 @@ if (!empty($search_term)) {
         </div>
     </main>
 
-    <?php include dirname(__DIR__) . '/footer.php'; ?>
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 </body>
 </html>

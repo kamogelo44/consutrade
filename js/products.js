@@ -192,10 +192,12 @@ function displayProducts(products) {
                 window.location.href = baseUrl + 'product-details.php?id=' + id;
             };
         })(product.id));
-        
         card.innerHTML = `
             <div class="img-container">
-                <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='${baseUrl}images/default-product.png'">
+                <img src="${imagePath}" alt="${escapeHtml(product.name)}" 
+                    width="280" height="280" 
+                    onerror="this.src='/www/consutrade/images/default-product.png'"
+                    loading="lazy">
                 <div class="condition-badge ${conditionClass}">${conditionText}</div>
             </div>
             <div class="prod-info-container">

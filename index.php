@@ -16,21 +16,33 @@ unset($_SESSION['login_email']);
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 ?>
-
+<!-- This is the only webpage that has web vital essentials -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
+    <meta name="description" content="Buy and sell products from local South African traders. Secure payments with PayFast.">
     
-    <!-- Preload hero image for faster loading -->
-    <link rel="preload" as="image" href="images/hero-img.webp" type="image/webp" fetchpriority="high">
-
+    <!-- Preconnect for external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    
+    <!-- Preload hero images for different device sizes (LCP optimization) -->
+    <link rel="preload" as="image" href="images/hero-img.webp" type="image/webp" media="(min-width: 992px)" fetchpriority="high">
+    <link rel="preload" as="image" href="images/hero-img-tablets.webp" type="image/webp" media="(min-width: 768px) and (max-width: 991px)" fetchpriority="high">
+    <link rel="preload" as="image" href="images/hero-img-phones.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
+    
+    <!-- Preload critical CSS -->
+    <link rel="preload" as="style" href="css/style.css">
+    <link rel="preload" as="style" href="css/header.css">
+    
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/login-signup.css">
     <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
     
     <?php if (!empty($registerErrors)): ?>
     <script>
@@ -117,8 +129,16 @@ unset($_SESSION['flash']);
         </div>
         <?php endif; ?>
         
-        <!--Hero section-->
+        <!--Hero section with optimized image loading -->
         <section class="hero">
+            <picture>
+                <source srcset="images/hero-img.webp" type="image/webp" media="(min-width: 992px)">
+                <source srcset="images/hero-img-tablets.webp" type="image/webp" media="(min-width: 768px)">
+                <source srcset="images/hero-img-phones.webp" type="image/webp" media="(max-width: 767px)">
+                <img src="images/hero-img.webp" alt="South African marketplace" class="hero-bg-image" fetchpriority="high" width="1920" height="500">
+            </picture>
+            <!-- Add overlay div for better text visibility -->
+            <div class="hero-overlay"></div>
             <div class="hero-container">
                 <div class="txt-container">
                     <h1>Buy and Sell at the comfort of your home in South Africa.</h1>
@@ -136,27 +156,27 @@ unset($_SESSION['flash']);
             <h1 class="section-heading">How it works</h1>
             <div class="how-container">
                 <div class="card">
-                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
+                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
                     <h2>Register</h2>
                     <p>Create your free seller account</p>
                 </div>
 
-                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow">
+                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow" loading="lazy">
 
                 <div class="card">
-                    <img src="images/icons/product-catalog-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
+                    <img src="images/icons/product-catalog-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
                     <h2>List</h2>
                     <p>Upload your products in minutes</p>
                 </div>
 
-                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow">
+                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow" loading="lazy">
 
                 <div class="card">
-                    <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
+                    <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
                     <h2>Get Paid</h2>
                     <p>Receive payments securely with 
-                        <a href="https://www.payfast.co.za" class="payfast-badge"  target="_blank">
-                            <img src="images/icons/Payfast logo.svg" alt="PayFast icon">
+                        <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank">
+                            <img src="images/icons/Payfast logo.svg" alt="PayFast icon" width="60" height="20" loading="lazy">
                         </a>
                     </p>
                 </div>
@@ -170,7 +190,7 @@ unset($_SESSION['flash']);
                 <a href="product-listings.php" class="view-all-link">View All Products →</a>
             </div>
             <div class="prod-grid" id="products-grid">
-                <div class="loading-spinner" style="text-align: center; grid-column: 1/-1; padding: 40px;">
+                <div class="loading-spinner">
                     Loading products...
                 </div>
             </div>
@@ -179,17 +199,17 @@ unset($_SESSION['flash']);
         <!--Trust banner-->
         <section class="trust">
             <div class="card">
-                <img src="images/icons/secure-card-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="secure payments" class="icon">
+                <img src="images/icons/secure-card-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="secure payments" class="icon" loading="lazy">
                 <h2>Secure Payments</h2>
                 <p>PayFast protected</p>
             </div>
             <div class="card">
-                <img src="images/icons/verified-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="verfied" class="icon">
+                <img src="images/icons/verified-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="verified" class="icon" loading="lazy">
                 <h2>Verified Sellers</h2>
                 <p>All sellers are checked</p>
             </div>
             <div class="card">
-                <img src="images/icons/delivery-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="delivery" class="icon">
+                <img src="images/icons/delivery-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48px" height="48px" alt="delivery" class="icon" loading="lazy">
                 <h2>Nationwide Delivery</h2>
                 <p>We deliver across SA</p>
             </div>
@@ -228,7 +248,6 @@ unset($_SESSION['flash']);
             })
             .then(function(data) {
                 if (data.success && data.products && data.products.length > 0) {
-                    // Show only first 4 products for homepage
                     var featuredProducts = data.products.slice(0, 4);
                     displayFeaturedProducts(featuredProducts);
                 } else {
@@ -269,6 +288,9 @@ unset($_SESSION['flash']);
             else if (conditionText === 'Good') conditionClass = 'good';
             else if (conditionText === 'Fair') conditionClass = 'fair';
             
+            // Use eager loading for first 4 images, lazy for others
+            var loadingAttr = (i < 4) ? 'eager' : 'lazy';
+            
             var card = document.createElement('div');
             card.className = 'prod-card';
             card.style.cursor = 'pointer';
@@ -280,7 +302,10 @@ unset($_SESSION['flash']);
             
             card.innerHTML = `
                 <div class="img-container">
-                    <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
+                    <img src="${imagePath}" alt="${escapeHtml(product.name)}" 
+                         width="280" height="280"
+                         loading="${loadingAttr}"
+                         onerror="this.src='/www/consutrade/images/default-product.png'">
                     <div class="condition-badge ${conditionClass}">${conditionText}</div>
                 </div>
                 <div class="prod-info-container">
@@ -288,24 +313,24 @@ unset($_SESSION['flash']);
                     <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
                     <div class="seller-info">
                         <div class="seller-avatar">
-                            <img src="/www/consutrade/images/icons/profile-svgrepo-com.svg" alt="Seller">
+                            <img src="/www/consutrade/images/icons/profile-svgrepo-com.svg" alt="Seller" width="32" height="32" loading="lazy">
                         </div>
                         <div class="seller-details">
                             <p class="seller-name">${escapeHtml(product.seller_name)}</p>
                             <p class="location">
-                                <img src="/www/consutrade/images/icons/pin-location-svgrepo-com.svg" width="10px" height="10px" alt="location">
+                                <img src="/www/consutrade/images/icons/pin-location-svgrepo-com.svg" width="10px" height="10px" alt="location" loading="lazy">
                                 ${escapeHtml(product.location)}
                             </p>
                         </div>
                         ${verifiedBadge}
                     </div>
                     <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                        <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
+                        <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart" width="16" height="16" loading="lazy">
                         Add to Cart
                     </button>
                     <div class="payment-badge">
                         <span>Secure payment via</span>
-                        <img src="/www/consutrade/images/icons/Payfast logo.svg" alt="PayFast">
+                        <img src="/www/consutrade/images/icons/Payfast logo.svg" alt="PayFast" width="40" height="16" loading="lazy">
                     </div>
                 </div>
             `;

@@ -68,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/styles.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/admin-login.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin-login.css">
 </head>
 <body class="admin-login-body">
     <div class="admin-login-container">

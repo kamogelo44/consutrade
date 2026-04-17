@@ -7,7 +7,8 @@
  * - Takes email and password from login form
  * - Checks if user exists in database
  * - Verifies password using password_verify()
- * - Starts session and redirects based on role (buyer/seller)
+ * - Starts session and redirects based on role (buyer/seller ONLY)
+ * - Admin users are NOT allowed to login here (use admin/login.php)
  *
  */
 
@@ -36,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($errors)) {
         
         // Prepare statement to prevent SQL injection
-        $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ?";
+        $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role != 'admin'";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('s', $email);
         $stmt->execute();
@@ -61,10 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Set flash message for success
                 $_SESSION['flash'] = 'Welcome back, ' . $user['full_name'] . '!';
                 
-                // Redirect based on role
-                if ($user['role'] === 'admin') {
-                    header('Location: /www/consutrade/admin/admin-dashboard.php');
-                } elseif ($user['role'] === 'seller') {
+                // Redirect based on role (only buyer or seller)
+                if ($user['role'] === 'seller') {
                     header('Location: /www/consutrade/admin/seller-dashboard.php');
                 } else {
                     header('Location: /www/consutrade/index.php');
@@ -76,8 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $errors['password'] = 'Incorrect password';
             }
         } else {
-            // No user found with this email
-            $errors['email'] = 'No account found with this email';
+            // No user found with this email or user is admin
+            $errors['email'] = 'Invalid email or password';
         }
         
         $stmt->close();

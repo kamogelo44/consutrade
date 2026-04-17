@@ -87,6 +87,7 @@ if ($role === 'seller') {
     <title>My Profile - ConsuTrade</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/login-signup.css">
 </head>

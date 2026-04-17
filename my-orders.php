@@ -73,6 +73,7 @@ $conn->close();
     <title>My Orders - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
     <link rel="stylesheet" href="css/my-orders.css">
 </head>

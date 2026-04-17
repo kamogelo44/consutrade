@@ -20,6 +20,7 @@ if ($product_id <= 0) {
     <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/login-signup.css">
     <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
     <title>Product Details - ConsuTrade</title>
 </head>
 <body>

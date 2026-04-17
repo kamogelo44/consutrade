@@ -22,6 +22,7 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
     <link rel="stylesheet" href="css/login-signup.css">
     <link rel="stylesheet" href="css/sell.css">
     <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
 </head>
 <body>
     <!--Header-->
