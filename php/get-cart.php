@@ -4,7 +4,6 @@
  * Author: Kamogelo Phale
  */
 
-// Only start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -23,11 +22,13 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Add id_verified to the query
 $sql = "SELECT c.cart_id, c.product_id, c.quantity, 
         p.title as product_name, 
         p.price, 
         p.image_url,
-        u.full_name as seller_name
+        u.full_name as seller_name,
+        u.id_verified as is_verified
         FROM cart c
         LEFT JOIN products p ON c.product_id = p.product_id
         LEFT JOIN users u ON p.seller_id = u.user_id
@@ -37,7 +38,6 @@ $stmt = $conn->prepare($sql);
 
 if (!$stmt) {
     echo json_encode($response);
-    $conn->close();
     exit;
 }
 
@@ -69,7 +69,8 @@ while ($row = $result->fetch_assoc()) {
         'price' => (float)$row['price'],
         'quantity' => (int)$row['quantity'],
         'image' => $imagePath,
-        'seller_name' => $row['seller_name'] ?? 'Unknown Seller'
+        'seller_name' => $row['seller_name'] ?? 'Unknown Seller',
+        'is_verified' => $row['is_verified'] == 1  // Add this line
     ];
 }
 

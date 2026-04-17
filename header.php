@@ -59,7 +59,9 @@ $current_page = strtok($current_page, '?');
     </button>
 
     <!-- Logo -->
-    <div class="logo"><a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a></div>
+    <div class="logo">
+        <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
+    </div>
 
     <!-- Mobile Header Icons -->
     <div class="header-icons">

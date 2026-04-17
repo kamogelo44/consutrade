@@ -23,6 +23,10 @@ unset($_SESSION['flash']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
+    
+    <!-- Preload hero image for faster loading -->
+    <link rel="preload" as="image" href="images/hero-img.webp" type="image/webp" fetchpriority="high">
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/login-signup.css">
@@ -150,7 +154,11 @@ unset($_SESSION['flash']);
                 <div class="card">
                     <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
                     <h2>Get Paid</h2>
-                    <p>Receive payments securely with <a href="https://www.payfast.co.za" target="_blank">PayFast</a></p>
+                    <p>Receive payments securely with 
+                        <a href="https://www.payfast.co.za" class="payfast-badge"  target="_blank">
+                            <img src="images/icons/Payfast logo.svg" alt="PayFast icon">
+                        </a>
+                    </p>
                 </div>
             </div>
         </section>

@@ -80,7 +80,10 @@ session_start();
                                     Continue Shopping
                                 </button>
                                 <div class="security-badge">
-                                    Secured with <a href="https://www.payfast.co.za" target="_blank">PayFast</a>
+                                    <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank">
+                                        Secured with 
+                                        <img src="images/icons/Payfast logo.svg" alt="PayFast Logo">
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -93,5 +96,11 @@ session_start();
         <?php include 'footer.php'; ?>
         
         <script src="js/main.js"></script>
+        <script>
+            // Add checkout button functionality
+            document.getElementById('checkout-btn').addEventListener('click', function() {
+                window.location.href = 'checkout.php';
+            });
+        </script>
     </body>
 </html>

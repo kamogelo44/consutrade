@@ -138,33 +138,33 @@ function loadCart() {
 
 // Display cart items on the page
 function displayCartItems(cartData) {
-    var desktopTableBody = document.querySelector('.product-table tbody');
-    var mobileContainer = document.querySelector('.mobile-cart-items');
+    var desktopTableBody = document.getElementById('cart-table-body');
+    var mobileContainer = document.getElementById('mobile-cart-items');
     var emptyCartDiv = document.getElementById('empty-cart');
-    var cartLayout = document.querySelector('.cart-layout');
+    var cartLayout = document.getElementById('cart-layout');
     var cartItemCount = document.getElementById('cart-item-count');
     
     if (!cartData.items || cartData.items.length === 0) {
-        // Show empty cart state
         if (emptyCartDiv) emptyCartDiv.style.display = 'flex';
         if (cartLayout) cartLayout.style.display = 'none';
         if (cartItemCount) cartItemCount.textContent = '0';
         return;
     }
     
-    // Hide empty cart, show layout
     if (emptyCartDiv) emptyCartDiv.style.display = 'none';
     if (cartLayout) cartLayout.style.display = 'flex';
     if (cartItemCount) cartItemCount.textContent = cartData.items.length;
     
-    // Clear existing rows
     if (desktopTableBody) desktopTableBody.innerHTML = '';
     if (mobileContainer) mobileContainer.innerHTML = '';
     
-    // Loop through cart items and create rows/cards
     for (var i = 0; i < cartData.items.length; i++) {
         var item = cartData.items[i];
-        var verifiedBadge = '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification"><p>Verified Seller</p></div>';
+        
+        // Use the correct badge based on seller verification status
+        var verifiedBadge = item.is_verified ? 
+            '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="verification"><span>Verified Seller</span></div>' : 
+            '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="not-verified"><span>Unverified</span></div>';
         
         // Fix image path
         var imagePath = item.image;
@@ -175,7 +175,6 @@ function displayCartItems(cartData) {
         // Desktop table row
         if (desktopTableBody) {
             var row = document.createElement('tr');
-            row.setAttribute('data-product-id', item.product_id);
             row.innerHTML = `
                 <td class="product-cell" data-label="Product">
                     <div class="cart-product-wrapper">
@@ -184,7 +183,6 @@ function displayCartItems(cartData) {
                         </div>
                         <div class="cart-prod-info">
                             <p class="prod-name">${escapeHtml(item.product_name)}</p>
-                            <p>Quantity: ${item.quantity}</p>
                         </div>
                     </div>
                 </td>
@@ -208,14 +206,12 @@ function displayCartItems(cartData) {
         if (mobileContainer) {
             var card = document.createElement('div');
             card.className = 'mobile-cart-card';
-            card.setAttribute('data-product-id', item.product_id);
             card.innerHTML = `
                 <div class="mobile-cart-img">
                     <img src="${imagePath}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'">
                 </div>
                 <div class="mobile-cart-details">
                     <h3 class="mobile-prod-name">${escapeHtml(item.product_name)}</h3>
-                    <p>Quantity: ${item.quantity}</p>
                 </div>
                 <div class="mobile-cart-seller">
                     <p class="seller-name">${escapeHtml(item.seller_name)}</p>

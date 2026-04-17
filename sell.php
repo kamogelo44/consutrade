@@ -93,7 +93,11 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
                 <div class="card">
                     <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
                     <h2>Get Paid</h2>
-                    <p>Receive payments securely with <a href="https://www.payfast.co.za" target="_blank">PayFast</a></p>
+                    <p>Receive payments securely with 
+                        <a href="https://www.payfast.co.za" class="payfast-badge"  target="_blank">
+                            <img src="images/icons/Payfast logo.svg" alt="PayFast icon">
+                        </a>
+                    </p>
                 </div>
             </div>
         </section>

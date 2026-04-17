@@ -522,7 +522,10 @@ function changeMainImage(imagePath, selectedIndex) {
 }
 
 function buyNow(productId) {
-    window.location.href = baseUrl + 'cart.php';
+    // First add to cart
+    addToCart(productId, productName, productPrice);
+    // Then redirect to checkout page
+    window.location.href = '/www/consutrade/checkout.php';
 }
 
 // Helper function to escape HTML
