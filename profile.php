@@ -95,11 +95,30 @@ if ($role === 'seller') {
     <?php include 'header.php'; ?>
 
     <main class="profile-container">
-        <div class="profile-header">
-            <h1>My Profile</h1>
-            <p>Manage your account information</p>
+        <!-- User Profile Header -->
+        <div class="profile-user-header">
+            <div class="profile-user-avatar">
+                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile Avatar">
+            </div>
+            <div class="profile-user-info">
+                <h1><?php echo htmlspecialchars($user['full_name']); ?></h1>
+                <div class="profile-user-meta">
+                    <span class="role-badge role-<?php echo $user['role']; ?>">
+                        <?php echo ucfirst($user['role']); ?>
+                    </span>
+                    <?php if ($user['role'] === 'seller'): ?>
+                        <?php if ($user['id_verified'] == 1): ?>
+                            <span class="verification-badge verified">Verified Seller</span>
+                        <?php else: ?>
+                            <span class="verification-badge not-verified">Not Verified</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    <span class="member-since">Member since <?php echo date('M Y', strtotime($user['created_at'])); ?></span>
+                </div>
+            </div>
         </div>
 
+        <!-- Flash Messages -->
         <?php if ($success_message): ?>
             <div class="success-message"><?php echo $success_message; ?></div>
         <?php endif; ?>
@@ -108,46 +127,25 @@ if ($role === 'seller') {
             <div class="error-message"><?php echo $error_message; ?></div>
         <?php endif; ?>
 
-        <div class="profile-layout">
-            <!-- Left Column - Profile Info -->
-            <div class="profile-left">
-                <div class="profile-avatar">
-                    <img src="images/icons/profile-svgrepo-com.svg" alt="Profile Avatar">
-                    <h2><?php echo htmlspecialchars($user['full_name']); ?></h2>
-                    <span class="role-badge role-<?php echo $user['role']; ?>">
-                        <?php echo ucfirst($user['role']); ?>
-                    </span>
-                    <?php if ($user['role'] === 'seller'): ?>
-                        <?php if ($user['id_verified'] == 1): ?>
-                            <div class="verification-badge verified">
-                                Verified Seller
-                            </div>
-                        <?php else: ?>
-                            <div class="verification-badge not-verified">
-                                Not Verified
-                            </div>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                </div>
-                
-                <div class="profile-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Member Since</span>
-                        <span class="stat-value"><?php echo date('M Y', strtotime($user['created_at'])); ?></span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Email</span>
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- Left Column - Profile Stats -->
+            <div class="profile-stats-card">
+                <h3>Account Information</h3>
+                <div class="stats-list">
+                    <div class="stat-row">
+                        <span class="stat-label">Email Address</span>
                         <span class="stat-value"><?php echo htmlspecialchars($user['email']); ?></span>
                     </div>
                     <?php if ($user['role'] === 'seller'): ?>
-                    <div class="stat-item">
+                    <div class="stat-row">
                         <span class="stat-label">Location</span>
                         <span class="stat-value"><?php echo htmlspecialchars($user['location'] ?: 'Not set'); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if ($user['phone']): ?>
-                    <div class="stat-item">
-                        <span class="stat-label">Phone</span>
+                    <div class="stat-row">
+                        <span class="stat-label">Phone Number</span>
                         <span class="stat-value"><?php echo htmlspecialchars($user['phone']); ?></span>
                     </div>
                     <?php endif; ?>
@@ -155,10 +153,9 @@ if ($role === 'seller') {
             </div>
 
             <!-- Right Column - Edit Form -->
-            <div class="profile-right">
-                <form method="POST" action="" class="profile-form">
-                    <h3>Edit Profile Information</h3>
-                    
+            <div class="profile-edit-card">
+                <h3>Edit Profile</h3>
+                <form method="POST" action="" class="profile-edit-form">
                     <div class="form-group">
                         <label for="full_name">Full Name</label>
                         <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
@@ -179,8 +176,9 @@ if ($role === 'seller') {
                     <?php endif; ?>
                     
                     <div class="form-group">
-                        <label for="phone">Phone Number (Optional)</label>
+                        <label for="phone">Phone Number</label>
                         <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="e.g., 071 234 5678">
+                        <small>Optional but recommended for order updates</small>
                     </div>
                     
                     <div class="form-actions">
@@ -192,38 +190,50 @@ if ($role === 'seller') {
         </div>
         
         <?php if ($user['role'] === 'seller'): ?>
-        <!-- Seller Specific Section -->
-        <div class="seller-section">
-            <h3>Seller Information</h3>
-            <div class="seller-info-grid">
-                <a href="admin/seller-dashboard.php" class="info-card-link">
-                    <div class="info-card">
-                        <img src="images/icons/product-catalog-svgrepo-com.svg" alt="Products">
-                        <h4>Total Products</h4>
-                        <p class="info-number"><?php echo $total_products; ?></p>
-                        <span class="info-link-text">Manage Products →</span>
+        <!-- Seller Dashboard Links -->
+        <div class="seller-dashboard-links">
+            <h3>Seller Dashboard</h3>
+            <div class="seller-links-grid">
+                <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="seller-link-card">
+                    <div class="seller-link-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard">
                     </div>
-                </a>
-                <a href="admin/my-orders.php" class="info-card-link">
-                    <div class="info-card">
-                        <img src="images/icons/shopping-cart-01-svgrepo-com.svg" class="cart" alt="Orders">
-                        <h4>Total Sales</h4>
-                        <p class="info-number"><?php echo $total_sales; ?></p>
-                        <span class="info-link-text">View Orders →</span>
+                    <div class="seller-link-info">
+                        <h4>Dashboard</h4>
+                        <p>View your sales overview</p>
                     </div>
+                    <span class="seller-link-arrow">→</span>
                 </a>
-                <div class="info-card">
-                    <?php if ($user['id_verified'] == 1): ?>
-                        <img src="images/icons/verified-svgrepo-com.svg" alt="Verified">
-                        <h4>Verification Status</h4>
-                        <p class="verified-text">Your account is verified</p>
-                    <?php else: ?>
-                        <img src="images/icons/not-verified-svgrepo-com.svg" alt="Not Verified">
-                        <h4>Verification Status</h4>
-                        <p class="not-verified-text">Complete your profile to get verified</p>
-                        <small>Add location and phone number</small>
-                    <?php endif; ?>
-                </div>
+                <a href="<?php echo $baseUrl; ?>admin/my-products.php" class="seller-link-card">
+                    <div class="seller-link-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
+                    </div>
+                    <div class="seller-link-info">
+                        <h4>My Products</h4>
+                        <p>Manage your product listings</p>
+                    </div>
+                    <span class="seller-link-arrow">→</span>
+                </a>
+                <a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="seller-link-card">
+                    <div class="seller-link-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders">
+                    </div>
+                    <div class="seller-link-info">
+                        <h4>My Orders</h4>
+                        <p>Track and manage orders</p>
+                    </div>
+                    <span class="seller-link-arrow">→</span>
+                </a>
+                <a href="<?php echo $baseUrl; ?>admin/add-product.php" class="seller-link-card">
+                    <div class="seller-link-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add Product">
+                    </div>
+                    <div class="seller-link-info">
+                        <h4>Add Product</h4>
+                        <p>List a new product for sale</p>
+                    </div>
+                    <span class="seller-link-arrow">→</span>
+                </a>
             </div>
         </div>
         <?php endif; ?>

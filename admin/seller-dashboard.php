@@ -22,261 +22,234 @@ if ($_SESSION['role'] !== 'seller') {
     exit;
 }
 
-// Include database connection
-require_once dirname(__DIR__) . '/php/config.php';
-
-// Get seller's stats
-$total_products = 0;
-$total_orders = 0;
-$pending_orders = 0;
-$total_earnings = 0;
-
-// Get total products count
-$product_sql = "SELECT COUNT(*) as count FROM products WHERE seller_id = ?";
-$product_stmt = $conn->prepare($product_sql);
-$product_stmt->bind_param('i', $_SESSION['user_id']);
-$product_stmt->execute();
-$product_result = $product_stmt->get_result();
-if ($product_row = $product_result->fetch_assoc()) {
-    $total_products = $product_row['count'];
-}
-$product_stmt->close();
-
-// Get orders count
-$order_sql = "SELECT COUNT(*) as count, SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending FROM orders WHERE seller_id = ?";
-$order_stmt = $conn->prepare($order_sql);
-$order_stmt->bind_param('i', $_SESSION['user_id']);
-$order_stmt->execute();
-$order_result = $order_stmt->get_result();
-if ($order_row = $order_result->fetch_assoc()) {
-    $total_orders = $order_row['count'];
-    $pending_orders = $order_row['pending'] ?? 0;
-}
-$order_stmt->close();
-
-// Get total earnings
-$earnings_sql = "SELECT SUM(total_price) as total FROM orders WHERE seller_id = ? AND status = 'completed'";
-$earnings_stmt = $conn->prepare($earnings_sql);
-$earnings_stmt->bind_param('i', $_SESSION['user_id']);
-$earnings_stmt->execute();
-$earnings_result = $earnings_stmt->get_result();
-if ($earnings_row = $earnings_result->fetch_assoc()) {
-    $total_earnings = $earnings_row['total'] ?? 0;
-}
-$earnings_stmt->close();
+// Set current page for active sidebar link
+$current_page = 'dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConsuTrade - Seller Dashboard</title>
+    <title>Seller Dashboard - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="css/seller-dashboard.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
 </head>
-<body class="dashboard-page">
-    <!-- Header - using main header.php -->
-    <?php include dirname(__DIR__) . '/header.php'; ?>
+<body class="seller-dashboard-page">
 
-    <main>
+<!-- Mobile Toggle Button with spans for smooth animation -->
+<button class="seller-mobile-toggle" id="sellerHamburger">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<!-- Main Dashboard Wrapper -->
+<div class="seller-dashboard">
+    <!-- Sidebar -->
+    <aside class="seller-sidebar" id="sellerSideMenu">
+        <div class="seller-sidebar-header">
+            <div class="seller-sidebar-logo">
+                <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Consu<span>Trade</span></a>
+            </div>
+            <!-- Close button for mobile - using spans for smooth transition -->
+            <button class="seller-sidebar-close" id="sellerSidebarClose">
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        
+        <nav class="seller-sidebar-nav">
+            <ul>
+                <li>
+                    <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo $current_page === 'dashboard' ? 'active' : ''; ?>">
+                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" width="20px" height="20px" alt="Dashboard" onerror="this.style.display='none'">
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo $baseUrl; ?>admin/my-products.php">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="20px" height="20px" alt="Products" onerror="this.style.display='none'">
+                        <span>My Products</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo $baseUrl; ?>admin/my-orders.php">
+                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="20px" height="20px" alt="Orders" onerror="this.style.display='none'">
+                        <span>My Orders</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo $baseUrl; ?>admin/add-product.php">
+                        <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" width="20px" height="20px" alt="Add Product" onerror="this.style.display='none'">
+                        <span>Add Product</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="seller-sidebar-footer">
+            <a href="<?php echo $baseUrl; ?>profile.php" class="seller-sidebar-link">
+                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" width="20px" height="20px" onerror="this.style.display='none'">
+                <span>My Profile</span>
+            </a>
+            <a href="<?php echo $baseUrl; ?>php/logout.php" class="seller-sidebar-link logout">
+                <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout" width="20px" height="20px" onerror="this.style.display='none'">
+                <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div class="seller-menu-overlay" id="sellerMenuOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="seller-main-content">
+        <!-- User Profile Section -->
+        <div class="user-profile-section">
+            <div class="user-avatar">
+                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" onerror="this.style.display='none'">
+            </div>
+            <div class="user-welcome">
+                <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h2>
+                <p>Here's what's happening with your store today.</p>
+            </div>
+        </div>
+        
         <!-- Flash Message -->
         <?php if (isset($_SESSION['flash'])): ?>
-            <div class="flash-message"><?php echo $_SESSION['flash']; unset($_SESSION['flash']); ?></div>
+            <div class="flash-message" id="flashMessage"><?php echo $_SESSION['flash']; unset($_SESSION['flash']); ?></div>
+            <script>setTimeout(function() { var f = document.getElementById('flashMessage'); if(f) f.remove(); }, 5000);</script>
         <?php endif; ?>
-
+        
+        <?php if (isset($_SESSION['product_errors'])): ?>
+            <div class="error-message" id="errorMessage"><?php echo implode(', ', $_SESSION['product_errors']); unset($_SESSION['product_errors']); ?></div>
+            <script>setTimeout(function() { var e = document.getElementById('errorMessage'); if(e) e.remove(); }, 5000);</script>
+        <?php endif; ?>
+        
         <!-- Stats Section -->
-        <section class="stats-sect">
-            <div class="stats">
-                <div class="stat-card">
-                    <h2 class="stat-num">R<?php echo number_format($total_earnings, 2); ?></h2>
-                    <p class="stat-name">Total Earnings</p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" alt="Earnings" class="stat-icon-img" onerror="this.style.display='none'">
                 </div>
-
-                <div class="stat-card">
-                    <h2 class="stat-num"><?php echo $total_products; ?></h2>
-                    <p class="stat-name">Active Listings</p>
-                </div>
-
-                <div class="stat-card">
-                    <h2 class="stat-num"><?php echo $pending_orders; ?></h2>
-                    <p class="stat-name">Pending Orders</p>
+                <div class="stat-info">
+                    <h3>Total Earnings</h3>
+                    <p class="stat-number" id="stat-earnings">R0.00</p>
                 </div>
             </div>
-        </section>
-
-        <!-- Listings Section -->
-        <section class="listings-sect">
-            <div class="left-col">
-                <h1 class="sect-head">My Listings</h1>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products" class="stat-icon-img" onerror="this.style.display='none'">
+                </div>
+                <div class="stat-info">
+                    <h3>Total Products</h3>
+                    <p class="stat-number" id="stat-products">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders" class="stat-icon-img" onerror="this.style.display='none'">
+                </div>
+                <div class="stat-info">
+                    <h3>Pending Orders</h3>
+                    <p class="stat-number" id="stat-pending">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Sections - Three columns layout -->
+        <div class="dashboard-sections three-columns">
+            <!-- My Listings Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>My Listings</h2>
+                    <a href="my-products.php" class="view-all-link">View All →</a>
+                </div>
                 <div class="listings-grid" id="listings-grid">
                     <div class="loading-spinner">Loading your products...</div>
                 </div>
-            </div>
-
-            <div class="right-col">
-                <h1>Quick Actions</h1>
-                <div class="q-actions">
-                    <button class="add-listing-btn" onclick="window.location.href='add-product.php'">+ Add New Listing</button>
-                    <button class="view-all-order" onclick="window.location.href='my-orders.php'">View All Orders</button>
-                    <button class="Edit-my-profile" onclick="window.location.href='<?php echo $baseUrl; ?>profile.php'">Edit My Profile</button>
+                <div class="quick-actions">
+                    <a href="add-product.php" class="quick-action-btn add-product-btn">
+                        <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add" onerror="this.style.display='none'">
+                        <span>Add New Product</span>
+                    </a>
                 </div>
-                
-                <div class="recent-orders">
+            </div>
+            
+            <!-- Recent Orders Section -->
+            <div class="section-card">
+                <div class="section-header">
                     <h2>Recent Orders</h2>
-                    <div class="orders-list" id="recent-orders-list">
-                        <p class="placeholder-text">No recent orders to display.</p>
-                    </div>
+                    <a href="my-orders.php" class="view-all-link">View All →</a>
+                </div>
+                <div class="orders-list" id="recent-orders-list">
+                    <p class="placeholder-text">No recent orders to display.</p>
                 </div>
             </div>
-        </section>
+            
+            <!-- Profile & Settings Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Profile & Settings</h2>
+                </div>
+                <div class="profile-shortcuts">
+                    <a href="<?php echo $baseUrl; ?>profile.php" class="profile-shortcut-link">
+                        <div class="profile-shortcut-icon">
+                            <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" onerror="this.style.display='none'">
+                        </div>
+                        <div class="profile-shortcut-info">
+                            <h3>My Profile</h3>
+                            <p>View and edit your personal information</p>
+                        </div>
+                        <span class="profile-shortcut-arrow">→</span>
+                    </a>
+                    <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="profile-shortcut-link">
+                        <div class="profile-shortcut-icon">
+                            <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard" onerror="this.style.display='none'">
+                        </div>
+                        <div class="profile-shortcut-info">
+                            <h3>Dashboard</h3>
+                            <p>Return to your seller dashboard</p>
+                        </div>
+                        <span class="profile-shortcut-arrow">→</span>
+                    </a>
+                    <a href="<?php echo $baseUrl; ?>admin/my-products.php" class="profile-shortcut-link">
+                        <div class="profile-shortcut-icon">
+                            <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products" onerror="this.style.display='none'">
+                        </div>
+                        <div class="profile-shortcut-info">
+                            <h3>Manage Products</h3>
+                            <p>Add, edit or remove your products</p>
+                        </div>
+                        <span class="profile-shortcut-arrow">→</span>
+                    </a>
+                    <a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="profile-shortcut-link">
+                        <div class="profile-shortcut-icon">
+                            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders" onerror="this.style.display='none'">
+                        </div>
+                        <div class="profile-shortcut-info">
+                            <h3>Order History</h3>
+                            <p>Track and manage your orders</p>
+                        </div>
+                        <span class="profile-shortcut-arrow">→</span>
+                    </a>
+                    <a href="<?php echo $baseUrl; ?>php/logout.php" class="profile-shortcut-link logout-link">
+                        <div class="profile-shortcut-icon">
+                            <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout" onerror="this.style.display='none'">
+                        </div>
+                        <div class="profile-shortcut-info">
+                            <h3>Logout</h3>
+                            <p>Sign out of your account</p>
+                        </div>
+                        <span class="profile-shortcut-arrow">→</span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </main>
+</div>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-<script>
-    // Load seller's products when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        loadSellerProducts();
-        loadRecentOrders();
-    });
-
-    function loadSellerProducts() {
-        fetch('/www/consutrade/php/get-seller-products.php')
-            .then(function(response) { 
-                if (!response.ok) {
-                    throw new Error('HTTP error ' + response.status);
-                }
-                return response.json(); 
-            })
-            .then(function(data) {
-                var grid = document.getElementById('listings-grid');
-                
-                if (data.success && data.products && data.products.length > 0) {
-                    displaySellerProducts(data.products);
-                } else {
-                    grid.innerHTML = `
-                        <div class="empty-listings">
-                            <p>You haven't listed any products yet.</p>
-                            <button class="add-listing-btn" onclick="window.location.href='add-product.php'">+ Add Your First Product</button>
-                        </div>
-                    `;
-                }
-            })
-            .catch(function(error) {
-                console.log('Error:', error);
-                document.getElementById('listings-grid').innerHTML = '<p class="error">Error loading products. Please refresh the page.</p>';
-            });
-    }
-
-    function displaySellerProducts(products) {
-        var grid = document.getElementById('listings-grid');
-        grid.innerHTML = '';
-        
-        for (var i = 0; i < products.length; i++) {
-            var product = products[i];
-            var card = document.createElement('div');
-            card.className = 'listing-card';
-            card.innerHTML = `
-                <div class="listing-img">
-                    <img src="${product.image}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.jpg'">
-                </div>
-                <div class="listing-info">
-                    <h3 class="listing-title">${escapeHtml(product.name)}</h3>
-                    <p class="listing-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                    <p class="listing-status ${product.status}">${product.status}</p>
-                    <div class="listing-actions">
-                        <button class="edit-btn" onclick="editProduct(${product.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
-        }
-    }
-
-    function loadRecentOrders() {
-        fetch('/www/consutrade/php/get-recent-orders.php')
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                var ordersList = document.getElementById('recent-orders-list');
-                
-                if (data.success && data.orders && data.orders.length > 0) {
-                    ordersList.innerHTML = '';
-                    for (var i = 0; i < data.orders.length; i++) {
-                        var order = data.orders[i];
-                        var orderItem = document.createElement('div');
-                        orderItem.className = 'order-item';
-                        orderItem.innerHTML = `
-                            <p class="order-id">Order #${order.id}</p>
-                            <p class="order-amount">R ${parseFloat(order.total).toFixed(2)}</p>
-                            <p class="order-status ${order.status}">${order.status}</p>
-                        `;
-                        ordersList.appendChild(orderItem);
-                    }
-                } else {
-                    ordersList.innerHTML = '<p class="placeholder-text">No recent orders to display.</p>';
-                }
-            })
-            .catch(function(error) {
-                console.log('Error:', error);
-            });
-    }
-
-    function editProduct(productId) {
-        window.location.href = 'edit-product.php?id=' + productId;
-    }
-
-    function deleteProduct(productId) {
-        if (confirm('Are you sure you want to delete this product?')) {
-            fetch('/www/consutrade/php/delete-product.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ product_id: productId })
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    loadSellerProducts();
-                    alert('Product deleted successfully!');
-                } else {
-                    alert('Error deleting product: ' + data.message);
-                }
-            })
-            .catch(function(error) {
-                console.log('Error:', error);
-                alert('Something went wrong');
-            });
-        }
-    }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        var div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    // Display flash message if exists
-    <?php if (isset($_SESSION['flash'])): ?>
-        var flashMsg = document.createElement('div');
-        flashMsg.className = 'flash-message';
-        flashMsg.textContent = '<?php echo $_SESSION['flash']; ?>';
-        document.querySelector('main').insertBefore(flashMsg, document.querySelector('main').firstChild);
-        setTimeout(function() { flashMsg.remove(); }, 5000);
-        <?php unset($_SESSION['flash']); ?>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['product_errors'])): ?>
-        var errorMsg = document.createElement('div');
-        errorMsg.className = 'error-message';
-        errorMsg.textContent = '<?php echo implode(', ', $_SESSION['product_errors']); ?>';
-        document.querySelector('main').insertBefore(errorMsg, document.querySelector('main').firstChild);
-        setTimeout(function() { errorMsg.remove(); }, 5000);
-        <?php unset($_SESSION['product_errors']); ?>
-    <?php endif; ?>
-</script>
+<script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
 </body>
 </html>

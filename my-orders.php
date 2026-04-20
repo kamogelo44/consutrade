@@ -78,7 +78,7 @@ $conn->close();
     <link rel="stylesheet" href="css/my-orders.css">
 </head>
 <body class="my-orders-page">
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
 
     <main>
         <div class="orders-container">
@@ -228,7 +228,7 @@ $conn->close();
         </div>
     </div>
 
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
     
     <script src="js/main.js"></script>
     <script>

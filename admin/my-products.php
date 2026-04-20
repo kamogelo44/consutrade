@@ -29,11 +29,13 @@ $seller_id = $_SESSION['user_id'];
 $success_message = '';
 $error_message = '';
 
+// Set current page for active sidebar link
+$current_page = 'products';
+
 // Handle product deletion (soft delete)
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $product_id = (int)$_GET['delete'];
     
-    // First check if product belongs to this seller
     $check_sql = "SELECT product_id FROM products WHERE product_id = ? AND seller_id = ?";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param('ii', $product_id, $seller_id);
@@ -41,7 +43,6 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $check_result = $check_stmt->get_result();
     
     if ($check_result->num_rows > 0) {
-        // Soft delete - update status to 'deleted'
         $delete_sql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
         $delete_stmt = $conn->prepare($delete_sql);
         $delete_stmt->bind_param('ii', $product_id, $seller_id);
@@ -63,7 +64,6 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     $product_id = (int)$_GET['id'];
     $action = $_GET['action'];
     
-    // First check if product belongs to this seller
     $check_sql = "SELECT product_id, status FROM products WHERE product_id = ? AND seller_id = ?";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param('ii', $product_id, $seller_id);
@@ -74,7 +74,6 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         $product_data = $check_result->fetch_assoc();
         $new_status = ($action === 'activate') ? 'active' : 'suspended';
         
-        // Prevent activating if already active or suspending if already suspended
         if (($action === 'activate' && $product_data['status'] === 'active') ||
             ($action === 'suspend' && $product_data['status'] === 'suspended')) {
             $error_message = ($action === 'activate') ? 'Product is already active.' : 'Product is already suspended.';
@@ -100,7 +99,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build query (exclude deleted products from view)
+// Build query
 $sql = "SELECT product_id, title as product_name, price, image_url, status, created_at, category_id
         FROM products 
         WHERE seller_id = ? AND status != 'deleted'";
@@ -135,7 +134,7 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Get product statistics (excluding deleted)
+// Get product statistics
 $stats_sql = "SELECT 
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
@@ -150,7 +149,6 @@ $stats_stmt->close();
 
 $conn->close();
 
-// Preserve filter parameters for links
 $filter_params = '';
 if ($status_filter !== 'all') {
     $filter_params .= '&status=' . $status_filter;
@@ -166,14 +164,14 @@ if (!empty($search_term)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Products - ConsuTrade Seller</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
-    <link rel="stylesheet" href="css/my-products.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-products.css">
 </head>
-<body class="my-products-page">
-    <?php include dirname(__DIR__) . '/header.php'; ?>
+<body class="my-products-page seller-dashboard-page">
 
-    <main>
+<?php include 'includes/seller-sidebar.php'; ?>
+
+        <!-- Products Content -->
         <div class="products-container">
             <!-- Page Header -->
             <div class="page-header">
@@ -193,23 +191,39 @@ if (!empty($search_term)) {
             <!-- Stats Cards -->
             <div class="stats-cards">
                 <div class="stat-card">
-                    <div class="stat-value"><?php echo $stats['total']; ?></div>
-                    <div class="stat-label">Total Products</div>
+                    <div class="stat-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Total">
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Products</h3>
+                        <p class="stat-number"><?php echo $stats['total']; ?></p>
+                    </div>
                 </div>
-                <div class="stat-card active">
-                    <div class="stat-value"><?php echo $stats['active']; ?></div>
-                    <div class="stat-label">Active</div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" alt="Active">
+                    </div>
+                    <div class="stat-info">
+                        <h3>Active</h3>
+                        <p class="stat-number active"><?php echo $stats['active']; ?></p>
+                    </div>
                 </div>
-                <div class="stat-card suspended">
-                    <div class="stat-value"><?php echo $stats['suspended']; ?></div>
-                    <div class="stat-label">Suspended</div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/hide-svgrepo-com.svg" alt="Suspended">
+                    </div>
+                    <div class="stat-info">
+                        <h3>Suspended</h3>
+                        <p class="stat-number suspended"><?php echo $stats['suspended']; ?></p>
+                    </div>
                 </div>
             </div>
 
             <!-- Action Bar -->
             <div class="action-bar">
                 <a href="add-product.php" class="add-product-btn">
-                    + Add New Product
+                    <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add">
+                    Add New Product
                 </a>
                 
                 <div class="filters">
@@ -234,92 +248,71 @@ if (!empty($search_term)) {
                 </div>
             </div>
 
-            <!-- Products Table -->
-            <div class="products-table-wrapper">
+            <!-- Products Grid -->
+            <div class="products-grid">
                 <?php if (count($products) > 0): ?>
-                    <table class="products-table">
-                        <thead>
-                            <tr>
-                                <th>Image</th>
-                                <th>Product Name</th>
-                                <th>Price</th>
-                                <th>Status</th>
-                                <th>Listed Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($products as $product): ?>
-                                <tr>
-                                    <td class="product-image-cell">
-                                        <div class="product-thumb">
-                                            <?php
-                                            // Check if image_url exists and is valid
-                                            $imagePath = '';
-                                            if (!empty($product['image_url'])) {
-                                                $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $product['image_url'];
-                                                if (file_exists($fullPath)) {
-                                                    $imagePath = $baseUrl . $product['image_url'];
-                                                }
-                                            }
-                                            
-                                            if (empty($imagePath)) {
-                                                $imagePath = $baseUrl . 'images/default-product.png';
-                                            }
-                                            ?>
-                                            <img src="<?php echo $imagePath; ?>" 
-                                                alt="<?php echo htmlspecialchars($product['product_name']); ?>">
-                                        </div>
-                                    </td>
-                                    <td class="product-name-cell">
-                                        <?php echo htmlspecialchars($product['product_name']); ?>
-                                    </td>
-                                    <td class="product-price-cell">
-                                        R <?php echo number_format($product['price'], 2); ?>
-                                    </td>
-                                    <td class="product-status-cell">
-                                        <span class="status-badge status-<?php echo $product['status']; ?>">
-                                            <?php echo ucfirst($product['status']); ?>
-                                        </span>
-                                    </td>
-                                    <td class="product-date-cell">
-                                        <?php echo date('d M Y', strtotime($product['created_at'])); ?>
-                                    </td>
-                                    <td class="product-actions-cell">
-                                        <a href="edit-product.php?id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" class="action-btn edit-btn" title="Edit">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/edit-svgrepo-com.svg" width="16px" height="16px" alt="Edit">
+                    <?php foreach ($products as $product): ?>
+                        <div class="product-card">
+                            <div class="product-image">
+                                <?php
+                                $imagePath = '';
+                                if (!empty($product['image_url'])) {
+                                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $product['image_url'];
+                                    if (file_exists($fullPath)) {
+                                        $imagePath = $baseUrl . $product['image_url'];
+                                    }
+                                }
+                                if (empty($imagePath)) {
+                                    $imagePath = $baseUrl . 'images/default-product.png';
+                                }
+                                ?>
+                                <img src="<?php echo $imagePath; ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>">
+                                <div class="product-status-badge status-<?php echo $product['status']; ?>">
+                                    <?php echo ucfirst($product['status']); ?>
+                                </div>
+                            </div>
+                            <div class="product-details">
+                                <h3 class="product-title"><?php echo htmlspecialchars($product['product_name']); ?></h3>
+                                <p class="product-price">R <?php echo number_format($product['price'], 2); ?></p>
+                                <p class="product-date">Listed: <?php echo date('d M Y', strtotime($product['created_at'])); ?></p>
+                                <div class="product-actions">
+                                    <a href="edit-product.php?id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" class="action-btn edit-btn" title="Edit">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/edit-svgrepo-com.svg" alt="Edit">
+                                        <span>Edit</span>
+                                    </a>
+                                    
+                                    <?php if ($product['status'] === 'active'): ?>
+                                        <a href="?action=suspend&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
+                                           class="action-btn suspend-btn" 
+                                           title="Suspend"
+                                           onclick="return confirm('Are you sure you want to suspend this product? It will no longer be visible to buyers.');">
+                                            <img src="<?php echo $baseUrl; ?>images/icons/hide-svgrepo-com.svg" alt="Suspend">
+                                            <span>Suspend</span>
                                         </a>
-                                        
-                                        <?php if ($product['status'] === 'active'): ?>
-                                            <a href="?action=suspend&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
-                                               class="action-btn suspend-btn" 
-                                               title="Suspend"
-                                               onclick="return confirm('Are you sure you want to suspend this product? It will no longer be visible to buyers.');">
-                                                <img src="<?php echo $baseUrl; ?>images/icons/hide-svgrepo-com.svg" width="16px" height="16px" alt="Suspend">
-                                            </a>
-                                        <?php elseif ($product['status'] === 'suspended'): ?>
-                                            <a href="?action=activate&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
-                                               class="action-btn activate-btn" 
-                                               title="Activate"
-                                               onclick="return confirm('Are you sure you want to activate this product? It will be visible to buyers.');">
-                                                <img src="<?php echo $baseUrl; ?>images/icons/show-svgrepo-com.svg" width="16px" height="16px" alt="Activate">
-                                            </a>
-                                        <?php endif; ?>
-                                        
-                                        <a href="?delete=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
-                                           class="action-btn delete-btn" 
-                                           title="Delete"
-                                           onclick="return confirm('Are you sure you want to delete this product? This action cannot be undone.');">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" width="16px" height="16px" alt="Delete">
+                                    <?php elseif ($product['status'] === 'suspended'): ?>
+                                        <a href="?action=activate&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
+                                           class="action-btn activate-btn" 
+                                           title="Activate"
+                                           onclick="return confirm('Are you sure you want to activate this product? It will be visible to buyers.');">
+                                            <img src="<?php echo $baseUrl; ?>images/icons/show-svgrepo-com.svg" alt="Activate">
+                                            <span>Activate</span>
                                         </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                                    <?php endif; ?>
+                                    
+                                    <a href="?delete=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
+                                       class="action-btn delete-btn" 
+                                       title="Delete"
+                                       onclick="return confirm('Are you sure you want to delete this product? This action cannot be undone.');">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" alt="Delete">
+                                        <span>Delete</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 <?php else: ?>
                     <div class="empty-products">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64px" height="64px" alt="No products">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="No products">
                         <h3>No Products Found</h3>
                         <p><?php echo !empty($search_term) ? 'No products match your search criteria.' : 'You haven\'t listed any products yet.'; ?></p>
                         <?php if (!empty($search_term)): ?>
@@ -332,7 +325,9 @@ if (!empty($search_term)) {
             </div>
         </div>
     </main>
+</div>
 
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
+<script src="<?php echo $baseUrl; ?>js/main.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
 </body>
 </html>

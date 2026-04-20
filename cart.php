@@ -15,7 +15,7 @@ session_start();
     </head>
     <body>
         <!--Header-->
-        <?php include 'header.php'; ?>
+        <?php include 'includes/header.php'; ?>
 
         <main>
             <div class="cart-container">
@@ -94,7 +94,7 @@ session_start();
         </main>
 
         <!--Footer-->
-        <?php include 'footer.php'; ?>
+        <?php include 'includes/footer.php'; ?>
         
         <script src="js/main.js"></script>
         <script>

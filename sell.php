@@ -21,12 +21,13 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/login-signup.css">
     <link rel="stylesheet" href="css/sell.css">
+    <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/footer.css">
 </head>
 <body>
     <!--Header-->
-    <?php include 'header.php'?>
+    <?php include 'includes/header.php'?>
 
     <main>
         <!-- Hero Section -->
@@ -76,27 +77,27 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
             <h1 class="section-heading">How it works</h1>
             <div class="how-container">
                 <div class="card">
-                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
+                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
                     <h2>Register</h2>
                     <p>Create your free seller account</p>
                 </div>
 
-                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow">
+                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow" loading="lazy">
 
                 <div class="card">
-                    <img src="images/icons/product-catalog-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
+                    <img src="images/icons/product-catalog-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
                     <h2>List</h2>
                     <p>Upload your products in minutes</p>
                 </div>
 
-                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow">
+                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow" loading="lazy">
 
                 <div class="card">
-                    <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon">
+                    <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
                     <h2>Get Paid</h2>
                     <p>Receive payments securely with 
-                        <a href="https://www.payfast.co.za" class="payfast-badge"  target="_blank">
-                            <img src="images/icons/Payfast logo.svg" alt="PayFast icon">
+                        <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank">
+                            <img src="images/icons/Payfast logo.svg" alt="PayFast icon" width="60" height="20" loading="lazy">
                         </a>
                     </p>
                 </div>
@@ -139,7 +140,7 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
     </main>
 
     <!--Footer-->
-    <?php include 'footer.php'?>
+    <?php include 'includes/footer.php'?>
 
     <script src="js/main.js"></script>
 </body>

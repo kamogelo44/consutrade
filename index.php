@@ -120,7 +120,7 @@ unset($_SESSION['flash']);
 <body>
 
     <!--Header-->
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
 
     <main class="content">
         <?php if ($flash): ?>
@@ -217,7 +217,7 @@ unset($_SESSION['flash']);
     </main>
 
     <!--Footer-->
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
 
     <script src="js/main.js"></script>
     <script>

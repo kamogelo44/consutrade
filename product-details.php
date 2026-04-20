@@ -25,16 +25,16 @@ if ($product_id <= 0) {
 </head>
 <body>
     <!--Header-->
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
     
     <main>
         <section class="products-details" id="product-details-container">
-            <div class="loading-spinner" style="text-align: center; padding: 60px;">Loading product details...</div>
+            <div class="loading-spinner">Loading product details...</div>
         </section>
     </main>
 
     <!--Footer-->
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
     
     <script>
     // Pass PHP session data to JavaScript
@@ -56,7 +56,7 @@ if ($product_id <= 0) {
 
         function loadProductDetails(id) {
             var container = document.getElementById('product-details-container');
-            container.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 60px;">Loading product details...</div>';
+            container.innerHTML = '<div class="loading-spinner">Loading product details...</div>';
             
             fetch('/www/consutrade/php/get-product.php?id=' + id)
                 .then(function(response) { 
@@ -81,11 +81,11 @@ if ($product_id <= 0) {
         function showError(message) {
             var container = document.getElementById('product-details-container');
             container.innerHTML = `
-                <div class="error-container" style="text-align: center; padding: 80px 20px; max-width: 500px; margin: 0 auto;">
-                    <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="64px" height="64px" alt="Error" style="opacity: 0.5; margin-bottom: 20px;">
-                    <h2 style="color: #f44336; margin-bottom: 10px; font-size: 24px;">Oops!</h2>
-                    <p style="color: #666;">${escapeHtml(message)}</p>
-                    <button onclick="window.location.href='/www/consutrade/product-listings.php'" style="margin-top: 20px; padding: 10px 24px; background-color: #FF6B00; color: white; border: none; border-radius: 8px; cursor: pointer;">Browse Products</button>
+                <div class="error-state">
+                    <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Error" class="error-icon">
+                    <h2 class="error-title">Oops!</h2>
+                    <p class="error-message-text">${escapeHtml(message)}</p>
+                    <button class="error-action-btn" onclick="window.location.href='/www/consutrade/product-listings.php'">Browse Products</button>
                 </div>
             `;
         }
@@ -133,8 +133,8 @@ if ($product_id <= 0) {
             
             // Determine verification badge
             var verificationBadge = product.is_verified ? 
-                '<div class="verified-badge"><img src="/www/consutrade/images/icons/verified-svgrepo-com.svg" width="20px" height="20px" alt="verification"><p>Verified Seller</p></div>' : 
-                '<div class="not-verified-badge"><img src="/www/consutrade/images/icons/not-verified-svgrepo-com.svg" width="20px" height="20px" alt="not-verified"><p>Not Verified Seller</p></div>';
+                '<div class="verified-badge"><img src="/www/consutrade/images/icons/verified-svgrepo-com.svg" width="20" height="20" alt="verification"><p>Verified Seller</p></div>' : 
+                '<div class="not-verified-badge"><img src="/www/consutrade/images/icons/not-verified-svgrepo-com.svg" width="20" height="20" alt="not-verified"><p>Not Verified Seller</p></div>';
             
             // Build stars
             var rating = product.avg_rating || 0;
@@ -166,7 +166,7 @@ if ($product_id <= 0) {
             if (!isOwnProduct) {
                 actionButtonsHtml = `
                     <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                        <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="24px" height="24px" alt="Cart">
+                        <img src="/www/consutrade/images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart">
                         Add to Cart
                     </button>
                     <button class="buy-btn" onclick="buyNow(${product.id})">Buy Now</button>
@@ -223,7 +223,7 @@ if ($product_id <= 0) {
                     <div class="rev-container">
                         <div class="seller-profile">
                             <div class="profile-pic">
-                                <img src="/www/consutrade/images/icons/profile-svgrepo-com.svg" width="24px" height="24px" alt="Seller Profile Picture">
+                                <img src="/www/consutrade/images/icons/profile-svgrepo-com.svg" width="24" height="24" alt="Seller Profile Picture">
                             </div>
                             <p class="seller-name">${escapeHtml(product.seller_name)}</p>
                         </div>
@@ -249,9 +249,8 @@ if ($product_id <= 0) {
                         <div class="action-btns">
                             ${actionButtonsHtml}
                         </div>
-                        <!-- PayFast Security Badge -->
                         <div class="payfast-badge">
-                            <img src="/www/consutrade/images/icons/Payfast logo.svg" alt="PayFast" width="80px">
+                            <img src="/www/consutrade/images/icons/Payfast logo.svg" alt="PayFast" width="80">
                             <span>Secure payments by PayFast</span>
                         </div>
                     </div>

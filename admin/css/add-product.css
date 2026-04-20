@@ -6,11 +6,11 @@
 /* Page Container */
 .add-product-page {
     background-color: var(--gray-bg);
-    min-height: calc(100vh - 60px);
+    min-height: 100vh;
 }
 
 .add-product-container {
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: var(--spacing-xl);
 }
@@ -42,7 +42,7 @@
 .left-column {
     flex: 1;
     position: sticky;
-    top: 90px;
+    top: calc(90px + var(--spacing-lg));
     height: fit-content;
 }
 
@@ -78,7 +78,6 @@
     border-bottom: 2px solid var(--primary-fade);
     padding-bottom: var(--spacing-sm);
 }
-
 
 /* Tips List */
 .tips-list {
@@ -320,17 +319,10 @@
 
 /* Upload Placeholder Small */
 .upload-placeholder-small {
+    font-size: 32px;
+    font-weight: var(--font-bold);
+    color: var(--gray-light);
     text-align: center;
-}
-
-.upload-placeholder-small img {
-    margin-bottom: var(--spacing-sm);
-    opacity: 0.6;
-}
-
-.upload-placeholder-small p {
-    font-size: var(--font-sm);
-    color: var(--gray-medium);
 }
 
 /* Hidden file inputs */
@@ -350,17 +342,17 @@
     margin-top: var(--spacing-xl);
 }
 
-/* Cancel Button */
+/* Cancel Button - Red styling */
 .cancel-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-md) var(--spacing-xl);
-    background-color: var(--gray-bg);
-    border: 1px solid var(--border-light);
+    background-color: var(--error-light);
+    border: 1px solid var(--error);
     border-radius: var(--radius-md);
-    color: var(--gray-dark);
+    color: var(--error);
     font-size: var(--font-base);
     font-weight: var(--font-medium);
     cursor: pointer;
@@ -368,14 +360,20 @@
 }
 
 .cancel-btn:hover {
-    background-color: var(--border-light);
+    background-color: var(--error);
+    color: var(--white);
     transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.cancel-btn:hover img {
+    filter: brightness(0) invert(1);
 }
 
 .cancel-btn img {
     width: 16px;
     height: 16px;
-    filter: brightness(0) saturate(100%) invert(40%);
+    filter: brightness(0) saturate(100%) invert(27%) sepia(94%) saturate(3000%) hue-rotate(348deg) brightness(95%) contrast(95%);
 }
 
 /* Submit Button */
@@ -407,9 +405,47 @@
     filter: brightness(0) invert(1);
 }
 
+/* Success/Error Messages */
+.success-message {
+    background-color: var(--success-light);
+    color: var(--success);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    border-left: 3px solid var(--success);
+    font-size: var(--font-md);
+}
+
+.error-message {
+    background-color: var(--error-light);
+    color: var(--error);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    border-left: 3px solid var(--error);
+    font-size: var(--font-md);
+}
+
+/* Required field indicator */
+.form-group label:has(+ input[required])::after,
+.form-group label:has(+ select[required])::after,
+.form-group label:has(+ textarea[required])::after {
+    content: "*";
+    color: var(--error);
+    margin-left: 4px;
+}
+
 /* ========== RESPONSIVE STYLES ========== */
 
-/* Tablet */
+/* Desktop Large */
+@media (max-width: 1200px) {
+    .add-product-container {
+        max-width: 95%;
+        padding: var(--spacing-lg);
+    }
+}
+
+/* Tablet Landscape */
 @media (max-width: 992px) {
     .add-product-layout {
         flex-direction: column;
@@ -420,6 +456,7 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
     }
     
     .tips-card, .progress-card, .help-card {
@@ -427,14 +464,18 @@
     }
     
     .thumbnails-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
-/* Mobile Landscape */
+/* Tablet Portrait */
 @media (max-width: 768px) {
     .add-product-container {
         padding: var(--spacing-md);
+    }
+    
+    .add-product-header {
+        margin-bottom: var(--spacing-xl);
     }
     
     .add-product-header h1 {
@@ -448,6 +489,14 @@
     .left-column {
         grid-template-columns: 1fr;
         gap: var(--spacing-md);
+    }
+    
+    .tips-card, .progress-card, .help-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .tips-card h3, .progress-card h3, .help-card h3 {
+        font-size: var(--font-base);
     }
     
     .form-row {
@@ -464,6 +513,7 @@
     
     .thumbnails-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
     }
     
     .form-actions {
@@ -476,14 +526,10 @@
     }
 }
 
-/* Mobile Portrait */
-@media (max-width: 480px) {
+/* Mobile Landscape */
+@media (max-width: 576px) {
     .add-product-container {
         padding: var(--spacing-sm);
-    }
-    
-    .add-product-header {
-        margin-bottom: var(--spacing-xl);
     }
     
     .add-product-header h1 {
@@ -491,11 +537,11 @@
     }
     
     .tips-card, .progress-card, .help-card {
-        padding: var(--spacing-lg);
+        padding: var(--spacing-md);
     }
     
-    .tips-card h3, .progress-card h3, .help-card h3 {
-        font-size: var(--font-base);
+    .tips-list li {
+        font-size: var(--font-sm);
     }
     
     .form-section {
@@ -514,11 +560,11 @@
     }
     
     .thumbnails-grid {
-        gap: var(--spacing-sm);
+        grid-template-columns: repeat(2, 1fr);
     }
     
-    .upload-placeholder-small p {
-        font-size: 10px;
+    .upload-placeholder {
+        padding: var(--spacing-md);
     }
     
     .upload-placeholder p {
@@ -528,46 +574,54 @@
     .upload-placeholder small {
         font-size: 10px;
     }
+    
+    .upload-placeholder-small {
+        font-size: 24px;
+    }
 }
 
-/* Loading State */
-.loading-spinner {
-    text-align: center;
-    padding: var(--spacing-2xl);
-    color: var(--gray-medium);
+/* Mobile Portrait */
+@media (max-width: 480px) {
+    .add-product-header h1 {
+        font-size: var(--font-lg);
+    }
+    
+    .tips-card h3, .progress-card h3, .help-card h3 {
+        font-size: var(--font-sm);
+    }
+    
+    .form-section legend {
+        font-size: var(--font-base);
+    }
+    
+    .thumbnails-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .thumbnail-upload {
+        aspect-ratio: 16/9;
+    }
+    
+    .cancel-btn, .submit-btn {
+        font-size: var(--font-sm);
+    }
 }
 
-/* Error Message */
-.error-message {
-    background-color: var(--error-light);
-    color: var(--error);
-    padding: var(--spacing-md);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--spacing-lg);
-    border-left: 3px solid var(--error);
-    font-size: var(--font-md);
-}
-
-/* Success Message */
-.success-message {
-    background-color: var(--success-light);
-    color: var(--success);
-    padding: var(--spacing-md);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--spacing-lg);
-    border-left: 3px solid var(--success);
-    font-size: var(--font-md);
-}
-
-/* Required field indicator */
-.form-group label::after {
-    content: "*";
-    color: var(--error);
-    margin-left: 4px;
-}
-
-.form-group label:has(+ input:not([required]))::after,
-.form-group label:has(+ select:not([required]))::after,
-.form-group label:has(+ textarea:not([required]))::after {
-    content: "";
+/* Small Mobile */
+@media (max-width: 360px) {
+    .add-product-container {
+        padding: var(--spacing-xs);
+    }
+    
+    .add-product-header h1 {
+        font-size: var(--font-base);
+    }
+    
+    .tips-card, .progress-card, .help-card {
+        padding: var(--spacing-sm);
+    }
+    
+    .form-section {
+        padding: var(--spacing-sm);
+    }
 }

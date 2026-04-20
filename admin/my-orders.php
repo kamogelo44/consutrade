@@ -22,6 +22,9 @@ if ($_SESSION['role'] !== 'seller') {
     exit;
 }
 
+// Set current page for active sidebar link
+$current_page = 'orders';
+
 // Include database connection
 require_once dirname(__DIR__) . '/php/config.php';
 
@@ -29,9 +32,10 @@ require_once dirname(__DIR__) . '/php/config.php';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build query
+// Build query with item count
 $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
-        u.full_name as buyer_name, u.email as buyer_email
+        u.full_name as buyer_name, u.email as buyer_email,
+        (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.order_id) as item_count
         FROM orders o
         JOIN users u ON o.buyer_id = u.user_id
         WHERE o.seller_id = ?";
@@ -74,15 +78,14 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade Seller</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl;?>css/login-signup.css">
-    <link rel="stylesheet" href="css/my-orders.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-orders.css">
 </head>
-<body class="my-orders-page">
-    <!-- Header -->
-    <?php include dirname(__DIR__) . '/header.php'; ?>
+<body class="my-orders-page seller-dashboard-page">
 
-    <main>
+<?php include 'includes/seller-sidebar.php'; ?>
+
+        <!-- Orders Content -->
         <div class="orders-container">
             <!-- Page Header -->
             <div class="page-header">
@@ -194,179 +197,181 @@ $conn->close();
             </div>
         </div>
     </main>
+</div>
 
-    <!-- Order Details Modal -->
-    <div id="order-modal" class="order-modal">
-        <div class="order-modal-content">
-            <div class="order-modal-header">
-                <h2>Order Details</h2>
-                <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
-            </div>
-            <div id="order-details-content" class="order-details-content">
-                <div class="loading-spinner">Loading order details...</div>
-            </div>
+<!-- Order Details Modal -->
+<div id="order-modal" class="order-modal">
+    <div class="order-modal-content">
+        <div class="order-modal-header">
+            <h2>Order Details</h2>
+            <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
+        </div>
+        <div id="order-details-content" class="order-details-content">
+            <div class="loading-spinner">Loading order details...</div>
         </div>
     </div>
+</div>
 
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script>
-        function viewOrderDetails(orderId) {
-            var modal = document.getElementById('order-modal');
-            var content = document.getElementById('order-details-content');
-            
-            modal.classList.add('active');
-            content.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
-            
-            fetch('/www/consutrade/php/get-order-details.php?order_id=' + orderId)
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        displayOrderDetails(data.order);
-                    } else {
-                        content.innerHTML = '<p class="error">Error loading order details.</p>';
-                    }
-                })
-                .catch(function(error) {
-                    console.log('Error:', error);
-                    content.innerHTML = '<p class="error">Error loading order details.</p>';
-                });
-        }
+<script src="<?php echo $baseUrl; ?>js/main.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
+<script>
+    function viewOrderDetails(orderId) {
+        var modal = document.getElementById('order-modal');
+        var content = document.getElementById('order-details-content');
         
-        function displayOrderDetails(order) {
-            var content = document.getElementById('order-details-content');
-            var itemsHtml = '';
-            
-            for (var i = 0; i < order.items.length; i++) {
-                var item = order.items[i];
-                itemsHtml += `
-                    <div class="order-item">
-                        <div class="order-item-img">
-                            <img src="${item.image}" alt="${item.product_name}" onerror="this.src='/www/consutrade/images/default-product.jpg'">
-                        </div>
-                        <div class="order-item-details">
-                            <h4>${escapeHtml(item.product_name)}</h4>
-                            <p>Quantity: ${item.quantity}</p>
-                        </div>
-                        <div class="order-item-price">
-                            R ${parseFloat(item.price).toFixed(2)}
-                        </div>
+        modal.classList.add('active');
+        content.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
+        
+        fetch('/www/consutrade/php/get-order-details.php?order_id=' + orderId)
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    displayOrderDetails(data.order);
+                } else {
+                    content.innerHTML = '<p class="error">Error loading order details.</p>';
+                }
+            })
+            .catch(function(error) {
+                console.log('Error:', error);
+                content.innerHTML = '<p class="error">Error loading order details.</p>';
+            });
+    }
+    
+    function displayOrderDetails(order) {
+        var content = document.getElementById('order-details-content');
+        var itemsHtml = '';
+        
+        for (var i = 0; i < order.items.length; i++) {
+            var item = order.items[i];
+            itemsHtml += `
+                <div class="order-item">
+                    <div class="order-item-img">
+                        <img src="${item.image_url || '/www/consutrade/images/default-product.png'}" alt="${escapeHtml(item.product_name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
                     </div>
-                `;
-            }
-            
-            content.innerHTML = `
-                <div class="order-info-section">
-                    <div class="info-row">
-                        <span class="info-label">Order Number:</span>
-                        <span class="info-value">#${order.order_id}</span>
+                    <div class="order-item-details">
+                        <h4>${escapeHtml(item.product_name)}</h4>
+                        <p>Quantity: ${item.quantity}</p>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Order Date:</span>
-                        <span class="info-value">${order.created_at}</span>
+                    <div class="order-item-price">
+                        R ${parseFloat(item.price).toFixed(2)}
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Order Status:</span>
-                        <span class="info-value status-${order.status}">${order.status.toUpperCase()}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Customer Name:</span>
-                        <span class="info-value">${escapeHtml(order.buyer_name)}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Customer Email:</span>
-                        <span class="info-value">${escapeHtml(order.buyer_email)}</span>
-                    </div>
-                    ${order.shipping_address ? `
-                    <div class="info-row">
-                        <span class="info-label">Shipping Address:</span>
-                        <span class="info-value">${escapeHtml(order.shipping_address)}</span>
-                    </div>
-                    ` : ''}
-                </div>
-                
-                <h3>Order Items</h3>
-                <div class="order-items-list">
-                    ${itemsHtml}
-                </div>
-                
-                <div class="order-total-section">
-                    <div class="total-row">
-                        <span>Subtotal:</span>
-                        <span>R ${parseFloat(order.subtotal).toFixed(2)}</span>
-                    </div>
-                    <div class="total-row">
-                        <span>Delivery Fee:</span>
-                        <span>R ${parseFloat(order.delivery_fee).toFixed(2)}</span>
-                    </div>
-                    <div class="total-row grand-total">
-                        <span>Total:</span>
-                        <span>R ${parseFloat(order.total).toFixed(2)}</span>
-                    </div>
-                </div>
-                
-                <div class="order-actions">
-                    ${order.status === 'pending' ? '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process Order</button>' : ''}
-                    ${order.status === 'processing' ? '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Mark as Shipped</button>' : ''}
-                    ${order.status === 'shipped' ? '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Mark as Completed</button>' : ''}
-                    ${order.status === 'pending' || order.status === 'processing' ? '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>' : ''}
                 </div>
             `;
         }
         
-        function updateOrderStatus(orderId, newStatus) {
-            var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
-            if (newStatus === 'cancelled') {
-                confirmMsg = 'Are you sure you want to cancel this order? This action cannot be undone.';
-            }
+        content.innerHTML = `
+            <div class="order-info-section">
+                <div class="info-row">
+                    <span class="info-label">Order Number:</span>
+                    <span class="info-value">#${order.order_id}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Order Date:</span>
+                    <span class="info-value">${order.created_at}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Order Status:</span>
+                    <span class="info-value status-${order.status}">${order.status.toUpperCase()}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Customer Name:</span>
+                    <span class="info-value">${escapeHtml(order.buyer_name)}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Customer Email:</span>
+                    <span class="info-value">${escapeHtml(order.buyer_email)}</span>
+                </div>
+                ${order.shipping_address ? `
+                <div class="info-row">
+                    <span class="info-label">Shipping Address:</span>
+                    <span class="info-value">${escapeHtml(order.shipping_address)}</span>
+                </div>
+                ` : ''}
+            </div>
             
-            if (confirm(confirmMsg)) {
-                fetch('/www/consutrade/php/update-order-status.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        order_id: orderId,
-                        status: newStatus
-                    })
+            <h3>Order Items</h3>
+            <div class="order-items-list">
+                ${itemsHtml}
+            </div>
+            
+            <div class="order-total-section">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>R ${parseFloat(order.subtotal).toFixed(2)}</span>
+                </div>
+                <div class="total-row">
+                    <span>Delivery Fee:</span>
+                    <span>R ${parseFloat(order.delivery_fee).toFixed(2)}</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Total:</span>
+                    <span>R ${parseFloat(order.total).toFixed(2)}</span>
+                </div>
+            </div>
+            
+            <div class="order-actions">
+                ${order.status === 'pending' ? '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process Order</button>' : ''}
+                ${order.status === 'processing' ? '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Mark as Shipped</button>' : ''}
+                ${order.status === 'shipped' ? '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Mark as Completed</button>' : ''}
+                ${order.status === 'pending' || order.status === 'processing' ? '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>' : ''}
+            </div>
+        `;
+    }
+    
+    function updateOrderStatus(orderId, newStatus) {
+        var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
+        if (newStatus === 'cancelled') {
+            confirmMsg = 'Are you sure you want to cancel this order? This action cannot be undone.';
+        }
+        
+        if (confirm(confirmMsg)) {
+            fetch('/www/consutrade/php/update-order-status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    status: newStatus
                 })
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        alert('Order status updated successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error updating order status: ' + data.message);
-                    }
-                })
-                .catch(function(error) {
-                    console.log('Error:', error);
-                    alert('Something went wrong');
-                });
-            }
-        }
-        
-        function closeOrderModal() {
-            var modal = document.getElementById('order-modal');
-            modal.classList.remove('active');
-        }
-        
-        function escapeHtml(text) {
-            if (!text) return '';
-            var div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        // Close modal when clicking outside
-        var modal = document.getElementById('order-modal');
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeOrderModal();
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    alert('Order status updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error updating order status: ' + data.message);
                 }
+            })
+            .catch(function(error) {
+                console.log('Error:', error);
+                alert('Something went wrong');
             });
         }
-    </script>
+    }
+    
+    function closeOrderModal() {
+        var modal = document.getElementById('order-modal');
+        modal.classList.remove('active');
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Close modal when clicking outside
+    var modal = document.getElementById('order-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeOrderModal();
+            }
+        });
+    }
+</script>
 </body>
 </html>

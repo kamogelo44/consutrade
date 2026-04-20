@@ -27,7 +27,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <link rel="stylesheet" href="css/footer.css">
 </head>
 <body>
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
 
     <main style="max-width: 600px; margin: 60px auto; padding: 0 20px; text-align: center;">
         <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
@@ -44,6 +44,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         </div>
     </main>
 
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

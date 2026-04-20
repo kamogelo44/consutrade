@@ -1,0 +1,267 @@
+/* ========== ADMIN DASHBOARD STYLES ========== */
+/* Author: Kamogelo Phale */
+
+/* Dashboard Welcome */
+.dashboard-welcome {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    color: var(--white);
+}
+
+.dashboard-welcome h1 {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-sm);
+}
+
+.dashboard-welcome p {
+    font-size: var(--font-md);
+    opacity: 0.9;
+}
+
+/* Stats Cards */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.stat-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary-fade);
+    border-radius: var(--radius-round);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon img {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-info h3 {
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    color: var(--gray-medium);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-number {
+    font-size: var(--font-3xl);
+    font-weight: var(--font-bold);
+    color: var(--primary-color);
+}
+
+.stat-number.pending {
+    color: var(--warning);
+}
+
+/* Recent Activity Section */
+.admin-recent {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xl);
+}
+
+.recent-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.recent-card h2 {
+    font-size: var(--font-xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.recent-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: var(--spacing-lg);
+}
+
+.recent-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recent-table th,
+.recent-table td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.recent-table th {
+    font-weight: var(--font-bold);
+    color: var(--gray-dark);
+    background-color: var(--gray-bg-light);
+}
+
+.recent-table td {
+    color: var(--gray-dark);
+    font-size: var(--font-sm);
+}
+
+/* Role Badges */
+.role-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--radius-round);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+}
+
+.role-badge.role-admin {
+    background-color: var(--error-light);
+    color: var(--error);
+}
+
+.role-badge.role-seller {
+    background-color: var(--primary-fade);
+    color: var(--primary-color);
+}
+
+.role-badge.role-buyer {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--radius-round);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+}
+
+.status-badge.status-pending {
+    background-color: var(--warning-light);
+    color: var(--warning);
+}
+
+.status-badge.status-processing {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+.status-badge.status-shipped {
+    background-color: var(--primary-fade);
+    color: var(--primary-color);
+}
+
+.status-badge.status-completed {
+    background-color: var(--success-light);
+    color: var(--success);
+}
+
+.status-badge.status-cancelled {
+    background-color: var(--error-light);
+    color: var(--error);
+}
+
+/* View All Link */
+.view-all-link {
+    display: inline-block;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+}
+
+.view-all-link:hover {
+    color: var(--primary-dark);
+    transform: translateX(4px);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .admin-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 992px) {
+    .admin-recent {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .recent-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .recent-table th,
+    .recent-table td {
+        padding: var(--spacing-sm);
+        font-size: var(--font-xs);
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-welcome {
+        padding: var(--spacing-lg);
+    }
+    
+    .dashboard-welcome h1 {
+        font-size: var(--font-xl);
+    }
+    
+    .dashboard-welcome p {
+        font-size: var(--font-sm);
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .stat-icon img {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .stat-number {
+        font-size: var(--font-2xl);
+    }
+}

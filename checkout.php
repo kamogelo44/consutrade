@@ -80,7 +80,7 @@ $order_id = time() . '_' . $user_id;
     <link rel="stylesheet" href="css/checkout.css">
 </head>
 <body>
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
 
     <main class="checkout-container">
         <h1>Checkout</h1>
@@ -157,7 +157,7 @@ $order_id = time() . '_' . $user_id;
         </div>
     </main>
 
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
     <script src="js/main.js"></script>
 </body>
 </html>

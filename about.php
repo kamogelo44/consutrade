@@ -19,7 +19,7 @@ $baseUrl = "/www/consutrade/";
     <link rel="stylesheet" href="css/login-signup.css">
 </head>
 <body>
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
 
     <main style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
         <h1 style="font-size: 32px; font-weight: bold; margin-bottom: 20px; color: #1A1A1A;">About ConsuTrade</h1>
@@ -48,6 +48,6 @@ $baseUrl = "/www/consutrade/";
         </div>
     </main>
 
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

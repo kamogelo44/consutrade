@@ -95,7 +95,7 @@ $conn->close();
     <link rel="stylesheet" href="css/seller-profile.css">
 </head>
 <body>
-    <?php include 'header.php'; ?>
+    <?php include 'includes/header.php'; ?>
 
     <main class="seller-profile-container">
         <!-- Breadcrumb -->
@@ -231,7 +231,7 @@ $conn->close();
         </section>
     </main>
 
-    <?php include 'footer.php'; ?>
+    <?php include 'includes/footer.php'; ?>
     <script src="js/main.js"></script>
 </body>
 </html>

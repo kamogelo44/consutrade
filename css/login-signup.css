@@ -1,5 +1,7 @@
-/* ========== MODAL STYLES (Shared by Login & Register) ========== */
+/* ========== LOGIN & REGISTER MODAL STYLES ========== */
+/* Author: Kamogelo Phale */
 
+/* ========== MODAL CONTAINER ========== */
 .modal {
     display: flex;
     position: fixed;
@@ -8,7 +10,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0);
-    z-index: 1000;
+    z-index: 2000;
     justify-content: center;
     align-items: center;
     transition: background-color 0.4s ease, visibility 0.4s;
@@ -17,28 +19,44 @@
 }
 
 .modal.active {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.8);
     visibility: visible;
     pointer-events: auto;
 }
 
+/* ========== MODAL CONTENT ========== */
 .modal-content {
     position: relative;
     background-color: #ffffff;
-    border-radius: 12px;
+    border-radius: 20px;
     width: 90%;
-    max-width: 500px;
+    max-width: 420px;
+    padding: 28px 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
     max-height: 90vh;
     overflow-y: auto;
-    padding: 30px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    opacity: 0;
-    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Custom scrollbar for modal content */
+.modal-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: #FF6B00;
+    border-radius: 4px;
 }
 
 /* Login modal - slides in from LEFT */
 #login-modal .modal-content {
-    transform: translateX(-80px);
+    transform: translateX(-40px);
 }
 
 #login-modal.active .modal-content {
@@ -48,7 +66,7 @@
 
 /* Register modal - slides in from RIGHT */
 #register-modal .modal-content {
-    transform: translateX(80px);
+    transform: translateX(40px);
 }
 
 #register-modal.active .modal-content {
@@ -56,18 +74,25 @@
     transform: translateX(0);
 }
 
-/* Close Button */
+/* ========== CLOSE BUTTON ========== */
 .btn-close {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 16px;
+    right: 16px;
     width: 32px;
     height: 32px;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.05);
     border: none;
+    border-radius: 50%;
     cursor: pointer;
     padding: 0;
     z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.btn-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: rotate(90deg);
 }
 
 .btn-close::before,
@@ -76,11 +101,10 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 20px;
+    width: 16px;
     height: 2px;
-    background-color: #999999;
+    background-color: #666;
     border-radius: 2px;
-    transition: background-color 0.2s ease;
 }
 
 .btn-close::before {
@@ -96,17 +120,17 @@
     background-color: #FF6B00;
 }
 
-/* Modal Header */
+/* ========== MODAL HEADER ========== */
 .modal-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .modal-header h1 {
-    font-size: 28px;
-    font-weight: bold;
+    font-size: 24px;
+    font-weight: 700;
     color: #1A1A1A;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .modal-header h1 span {
@@ -114,57 +138,61 @@
 }
 
 .modal-header p {
-    font-size: 14px;
-    color: #666666;
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 0;
 }
 
-/* Form Styles */
-.register-form,
-.login-form {
+/* ========== ERROR CONTAINER ========== */
+.error-container {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    display: none;
+    animation: shakeError 0.4s ease;
+}
+
+.error-container .error-message {
+    color: #c62828;
+    font-size: 12px;
+    margin: 0;
+    font-weight: 500;
+}
+
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* ========== FORM STYLES ========== */
+.login-form,
+.register-form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-}
-
-/* Fieldset Styles */
-.form-fields {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 0;
-}
-
-.form-fields legend {
-    font-weight: bold;
-    color: #333333;
-    padding: 0 10px;
-    font-size: 16px;
+    gap: 14px;
 }
 
 /* Input Groups */
 .input-group {
-    margin-bottom: 15px;
-    position: relative;
-}
-
-.input-group:last-child {
     margin-bottom: 0;
 }
 
 .input-group label {
     display: block;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    color: #333333;
+    color: #333;
     margin-bottom: 5px;
-    transition: color 0.2s ease;
 }
 
 .input-group input {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #cccccc;
-    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
     font-size: 14px;
     box-sizing: border-box;
     transition: all 0.2s ease;
@@ -176,149 +204,122 @@
     box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
 }
 
-/* ========== ERROR STYLES - PROMINENT ========== */
-
-/* Error container - shows at top of modal */
-.error-container {
-    background-color: #ffebee;
-    border-left: 4px solid #f44336;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    display: none;
-    animation: shakeError 0.4s ease;
+.input-group input::placeholder {
+    color: #bbb;
+    font-size: 13px;
 }
 
-.error-container .error-message {
-    color: #c62828;
-    font-size: 14px;
-    text-align: left;
-    margin: 0;
-    font-weight: 600;
-}
-
-.error-container .error-message::before {
-    content: '';
-    font-size: 14px;
-}
-
-/* Individual field error text - RED and BOLD */
-.error-text {
-    color: #f44336 !important;
-    font-size: 12px !important;
-    display: block !important;
-    margin-top: 6px !important;
-    margin-bottom: 0 !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.3px !important;
-}
-
-/* Error text with icon */
-.error-text::before {
-    content: '';
-    font-size: 10px;
-}
-
-/* Error state for input groups */
-.input-group.error input {
-    border-color: #f44336 !important;
-    background-color: #fff5f5 !important;
-    box-shadow: 0 0 0 1px rgba(244, 67, 54, 0.1) !important;
-}
-
-.input-group.error label {
-    color: #f44336 !important;
-    font-weight: 600 !important;
-}
-
-/* Error state for radio buttons fieldset */
-.user-type.error {
-    border-color: #f44336 !important;
-    background-color: #fff5f5 !important;
-}
-
-.user-type.error legend {
-    color: #f44336 !important;
-    font-weight: 600 !important;
-}
-
-/* Shake animation for errors */
-@keyframes shakeError {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-}
-
-/* Password toggle wrapper */
-.password-wrapper {
+/* Password wrapper with inline styles - keep consistent */
+.password-field-wrapper {
     position: relative;
-    display: flex;
-    align-items: center;
 }
 
-.password-wrapper input {
-    flex: 1;
-    padding-right: 40px;
+.password-field-wrapper input {
+    width: 100%;
+    padding-right: 38px;
 }
 
-.toggle-password {
+.password-toggle-btn {
     position: absolute;
-    right: 10px;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 6px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background-color 0.2s ease;
 }
 
-.toggle-password img {
+.password-toggle-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.password-toggle-btn img {
+    width: 18px;
+    height: 18px;
     opacity: 0.6;
     transition: opacity 0.2s;
 }
 
-.toggle-password:hover img {
+.password-toggle-btn:hover img {
     opacity: 1;
 }
 
-/* Flash message */
-.flash {
-    background: #e6f4ea;
-    border-left: 4px solid #2e7d32;
-    padding: 12px 20px;
-    margin: 20px auto;
-    max-width: 1200px;
-    font-size: 14px;
-    border-radius: 4px;
+/* Error States */
+.input-group.error input {
+    border-color: #f44336;
+    background-color: #fff5f5;
 }
 
-/* Forgot password link */
+.input-group.error label {
+    color: #f44336;
+}
+
+.error-text {
+    color: #f44336;
+    font-size: 11px;
+    display: block;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* Forgot Password Link */
 .reset-pass {
-    text-align: right;
-    margin: -10px 0 5px 0;
+    text-align: center;
+    margin: -2px 0 0 0;
 }
 
 .reset-pass a {
-    font-size: 13px;
-    color: #666666;
+    font-size: 12px;
+    color: #FF6B00;
     text-decoration: none;
+    font-weight: 500;
     transition: color 0.2s ease;
 }
 
 .reset-pass a:hover {
-    color: #FF6B00;
+    color: #e05f00;
     text-decoration: underline;
 }
 
-/* Register link inside login modal */
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 11px;
+    background-color: #FF6B00;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 6px;
+}
+
+.submit-btn:hover {
+    background-color: #e05f00;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Register Link (inside login modal) */
 .register-link {
     text-align: center;
-    font-size: 14px;
-    color: #666666;
-    margin: 15px 0 0 0;
-    padding-top: 15px;
-    border-top: 1px solid #e0e0e0;
+    font-size: 13px;
+    color: #666;
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
 }
 
 .register-link a {
@@ -331,12 +332,12 @@
     text-decoration: underline;
 }
 
-/* Login link inside register modal */
+/* Login Link (inside register modal) */
 .login-link {
     text-align: center;
-    font-size: 14px;
-    color: #666666;
-    margin: 10px 0 0 0;
+    font-size: 13px;
+    color: #666;
+    margin-top: 6px;
 }
 
 .login-link a {
@@ -349,64 +350,77 @@
     text-decoration: underline;
 }
 
-/* Custom Radio Buttons (for registration only) */
-.user-type {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 20px;
+/* ========== REGISTER MODAL SPECIFIC ========== */
+/* Fieldset Styles */
+.form-fields {
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 14px;
     margin: 0;
-    transition: all 0.2s ease;
+}
+
+.form-fields legend {
+    font-weight: 600;
+    color: #333;
+    padding: 0 10px;
+    font-size: 13px;
+    width: auto;
+}
+
+/* User Type Radio Buttons */
+.user-type {
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 0;
 }
 
 .user-type legend {
-    font-weight: bold;
-    color: #333333;
+    font-weight: 600;
+    color: #333;
     padding: 0 10px;
-    font-size: 16px;
-    transition: color 0.2s ease;
+    font-size: 13px;
 }
 
 .radio-buttons {
     display: flex;
-    gap: 15px;
-    margin-top: 5px;
+    gap: 12px;
+    margin-top: 6px;
 }
 
 .radio-buttons input[type="radio"] {
     opacity: 0;
     position: fixed;
     width: 0;
-    height: 0;
 }
 
 .radio-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     background-color: #f8f9fa;
-    padding: 12px 24px;
-    border: 2px solid #e0e0e0;
+    padding: 8px 14px;
+    border: 2px solid #e5e5e5;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     text-align: center;
     flex: 1;
 }
 
 .radio {
-    background-color: #ffffff;
-    border-color: #cccccc;
-    color: #555555;
+    background-color: white;
+    border-color: #ddd;
+    color: #555;
 }
 
 .radio img {
-    width: 20px;
-    height: 20px;
-    transition: all 0.2s ease;
-    filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%);
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(0%) brightness(95%);
 }
 
 .radio-btn:hover {
@@ -421,7 +435,7 @@
 }
 
 .radio:hover img {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%);
 }
 
 .radio-buttons input[type="radio"]:checked + .radio {
@@ -431,68 +445,90 @@
 }
 
 .radio-buttons input[type="radio"]:checked + .radio img {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%);
 }
 
-/* Submit Button */
-.submit-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #FF6B00;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+/* Register form specific spacing */
+.register-form .input-group {
+    margin-bottom: 10px;
 }
 
-.submit-btn:hover {
-    background-color: #e05f00;
+.register-form .input-group:last-child {
+    margin-bottom: 0;
 }
 
-.submit-btn:active {
-    transform: scale(0.98);
-}
-
-/* ========== MODAL RESPONSIVE STYLES ========== */
-
+/* ========== RESPONSIVE STYLES ========== */
 @media (max-width: 768px) {
     .modal-content {
-        width: 95%;
-        padding: 20px;
+        width: 92%;
+        padding: 22px 20px;
+        max-width: 380px;
+        max-height: 85vh;
     }
     
     .modal-header h1 {
-        font-size: 24px;
+        font-size: 22px;
+    }
+    
+    .modal-header p {
+        font-size: 12px;
     }
     
     .form-fields,
     .user-type {
-        padding: 15px;
+        padding: 12px;
+    }
+    
+    .radio-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .radio-btn {
+        padding: 8px 12px;
     }
 }
 
 @media (max-width: 480px) {
     .modal-content {
-        padding: 20px 15px;
+        padding: 18px 16px;
+        width: 95%;
+        max-height: 90vh;
     }
     
-    .radio-buttons {
-        flex-direction: column;
-        gap: 10px;
+    .modal-header {
+        margin-bottom: 16px;
+    }
+    
+    .modal-header h1 {
+        font-size: 20px;
+    }
+    
+    .form-fields,
+    .user-type {
+        padding: 10px;
+    }
+    
+    .form-fields legend,
+    .user-type legend {
+        font-size: 12px;
+    }
+    
+    .input-group label {
+        font-size: 12px;
+    }
+    
+    .input-group input {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .submit-btn {
+        padding: 10px;
     }
     
     .radio-btn {
-        justify-content: center;
-    }
-    
-    .reset-pass {
-        text-align: center;
-    }
-    
-    .error-text {
-        font-size: 11px !important;
+        padding: 7px 10px;
+        font-size: 12px;
     }
 }
