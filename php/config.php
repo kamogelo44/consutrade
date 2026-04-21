@@ -4,7 +4,8 @@
  * Author: Kamogelo Phale
  *
  */
-
+// Base URL for the site
+$baseUrl = "/www/consutrade/";
 $host = 'localhost';
 $db_name = 'consutrade';
 $username = 'root';

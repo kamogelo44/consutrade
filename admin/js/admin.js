@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function loadDashboardStats() {
-        fetch('get-stats.php')
+        fetch('get-user-stats.php')
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.success) {

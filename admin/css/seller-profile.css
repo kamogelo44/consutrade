@@ -1,123 +1,97 @@
-/* ========== PROFILE PAGE STYLES ========== */
+/* ========== SELLER PROFILE PAGE STYLES ========== */
 /* Author: Kamogelo Phale */
+/* This stylesheet contains all styles specific to the seller profile page in the admin dashboard */
 
-.profile-container {
+/* ========== PROFILE CONTENT WRAPPER ========== */
+.profile-content-wrapper {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--spacing-xl);
 }
 
-/* ========== USER PROFILE HEADER ========== */
-.profile-user-header {
-    display: flex;
-    align-items: center;
-    gap: 32px;
+/* ========== PROFILE HEADER CARD ========== */
+.profile-header-card {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     border-radius: var(--radius-lg);
-    padding: 32px 40px;
-    margin-bottom: 32px;
+    padding: 32px;
+    margin-bottom: 24px;
     color: var(--white);
 }
 
-/* Profile Avatar with Upload Button */
-.profile-user-avatar {
+.profile-avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.profile-avatar-container {
     position: relative;
     width: 120px;
     height: 120px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-md);
     flex-shrink: 0;
-    overflow: visible;
 }
 
-.profile-user-avatar img {
+.profile-avatar-large {
     width: 100%;
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
     background-color: var(--white);
     padding: 4px;
+    box-shadow: var(--shadow-md);
 }
 
-.stat-divider {
-    height: 1px;
-    background-color: var(--border-light);
-    margin: 8px 0;
-}
-
-/* Camera upload button - positioned at bottom right */
-.avatar-upload-btn {
+.profile-avatar-container .avatar-upload-btn {
     position: absolute;
     bottom: 5px;
     right: 5px;
     width: 36px;
     height: 36px;
-    background-color: var(--primary-color);
+    background-color: var(--white);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
-    border: 3px solid var(--white);
-    z-index: 2;
+    border: 2px solid var(--primary-color);
     box-shadow: var(--shadow-sm);
 }
 
-.avatar-upload-btn:hover {
-    background-color: var(--primary-dark);
+.profile-avatar-container .avatar-upload-btn:hover {
     transform: scale(1.1);
+    background-color: var(--primary-fade);
 }
 
-.avatar-upload-btn img {
+.profile-avatar-container .avatar-upload-btn img {
     width: 18px;
     height: 18px;
-    filter: brightness(0) invert(1);
-    margin: 0;
 }
 
-.profile-user-info {
-    flex: 1;
-}
-
-.profile-user-info h1 {
-    font-size: 32px;
+.profile-header-info h2 {
+    font-size: 28px;
     font-weight: bold;
     margin-bottom: 12px;
 }
 
-.profile-user-meta {
+.profile-badges {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+    margin-bottom: 8px;
 }
 
-.role-badge {
-    display: inline-block;
-    padding: 6px 14px;
+.role-badge.seller-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
     border-radius: var(--radius-round);
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.role-badge.role-seller {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: var(--white);
-}
-
-.role-badge.role-buyer {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: var(--white);
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .verification-badge {
-    display: inline-block;
-    padding: 6px 14px;
+    padding: 4px 12px;
     border-radius: var(--radius-round);
     font-size: 12px;
     font-weight: 500;
@@ -134,127 +108,110 @@
 }
 
 .member-since {
-    font-size: 13px;
+    font-size: 12px;
     opacity: 0.9;
 }
 
-/* ========== SUCCESS/ERROR MESSAGES ========== */
-.success-message {
-    background-color: var(--success-light);
-    color: var(--success);
-    padding: 14px 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 24px;
-    text-align: center;
-    border-left: 4px solid var(--success);
-    font-weight: 500;
+.profile-email {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 8px;
 }
 
-.error-message {
-    background-color: var(--error-light);
-    color: var(--error);
-    padding: 14px 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 24px;
-    text-align: center;
-    border-left: 4px solid var(--error);
-    font-weight: 500;
-}
-
-/* ========== PROFILE CONTENT - TWO COLUMNS ========== */
-.profile-content {
+/* ========== TWO COLUMN LAYOUT ========== */
+.profile-two-columns {
     display: flex;
-    gap: 32px;
-    margin-bottom: 40px;
+    gap: 24px;
+    margin-bottom: 32px;
 }
 
-/* ========== STATS CARD (LEFT COLUMN) ========== */
+/* Left Column - Stats Card */
 .profile-stats-card {
     flex: 1;
     background-color: var(--white);
     border-radius: var(--radius-lg);
-    padding: 28px;
+    padding: 24px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-light);
 }
 
 .profile-stats-card h3 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     padding-bottom: 12px;
     border-bottom: 2px solid var(--primary-color);
     color: var(--dark-bg);
 }
 
+/* Right Column - Edit Card */
+.profile-edit-card {
+    flex: 2;
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+}
+
+.profile-edit-card h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--dark-bg);
+}
+
+/* ========== STATS LIST STYLES ========== */
 .stats-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
 }
 
 .stat-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.stat-row:last-child {
-    border-bottom: none;
+    padding: 8px 0;
 }
 
 .stat-label {
-    font-weight: 600;
+    font-weight: 500;
     color: var(--gray-dark);
     font-size: 14px;
 }
 
 .stat-value {
     color: var(--dark-bg);
-    font-weight: 500;
     font-size: 14px;
     text-align: right;
-    word-break: break-word;
-    max-width: 60%;
 }
 
 .stat-value.highlight {
     color: var(--primary-color);
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
 }
 
-/* ========== EDIT CARD (RIGHT COLUMN) ========== */
-.profile-edit-card {
-    flex: 2;
-    background-color: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 28px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
+.stat-divider {
+    height: 1px;
+    background-color: var(--border-light);
+    margin: 8px 0;
 }
 
-.profile-edit-card h3 {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid var(--primary-color);
-    color: var(--dark-bg);
-}
-
+/* ========== FORM STYLES ========== */
 .profile-edit-form {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .form-group label {
@@ -288,7 +245,6 @@
 .form-group small {
     font-size: 12px;
     color: var(--gray-light);
-    margin-top: 4px;
 }
 
 /* ========== FORM ACTIONS ========== */
@@ -336,31 +292,31 @@
     color: var(--primary-color);
 }
 
-/* ========== SELLER DASHBOARD LINKS ========== */
-.seller-dashboard-links {
+/* ========== QUICK ACTIONS SECTION ========== */
+.quick-actions-section {
     background-color: var(--white);
     border-radius: var(--radius-lg);
-    padding: 28px;
+    padding: 24px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-light);
 }
 
-.seller-dashboard-links h3 {
-    font-size: 20px;
+.quick-actions-section h3 {
+    font-size: 18px;
     font-weight: bold;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     padding-bottom: 12px;
     border-bottom: 2px solid var(--primary-color);
     color: var(--dark-bg);
 }
 
-.seller-links-grid {
+.quick-actions-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
 }
 
-.seller-link-card {
+.quick-action-card {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -372,13 +328,13 @@
     border: 1px solid transparent;
 }
 
-.seller-link-card:hover {
+.quick-action-card:hover {
     background-color: var(--primary-fade);
     transform: translateX(6px);
     border-color: var(--primary-light);
 }
 
-.seller-link-icon {
+.quick-action-icon {
     width: 48px;
     height: 48px;
     background-color: var(--white);
@@ -390,105 +346,111 @@
     box-shadow: var(--shadow-sm);
 }
 
-.seller-link-icon img {
+.quick-action-icon img {
     width: 24px;
     height: 24px;
     filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
 }
 
-.seller-link-info {
+.quick-action-info {
     flex: 1;
 }
 
-.seller-link-info h4 {
-    font-size: 16px;
+.quick-action-info h4 {
+    font-size: 15px;
     font-weight: 600;
     color: var(--dark-bg);
     margin-bottom: 4px;
 }
 
-.seller-link-info p {
+.quick-action-info p {
     font-size: 12px;
     color: var(--gray-medium);
     margin: 0;
 }
 
-.seller-link-arrow {
+.quick-action-arrow {
     font-size: 20px;
     color: var(--gray-light);
     transition: all var(--transition-fast);
-    flex-shrink: 0;
 }
 
-.seller-link-card:hover .seller-link-arrow {
+.quick-action-card:hover .quick-action-arrow {
     transform: translateX(4px);
     color: var(--primary-color);
 }
 
+/* ========== FLASH & ERROR MESSAGES ========== */
+.flash-message, .error-message {
+    padding: 12px 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.flash-message {
+    background-color: var(--success-light);
+    color: var(--success);
+    border-left: 4px solid var(--success);
+}
+
+.error-message {
+    background-color: var(--error-light);
+    color: var(--error);
+    border-left: 4px solid var(--error);
+}
+
+/* ========== DASHBOARD HEADER OVERRIDES ========== */
+.dashboard-header {
+    margin-bottom: 24px;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--dark-bg);
+    margin-bottom: 4px;
+}
+
+.dashboard-header p {
+    color: var(--gray-medium);
+    font-size: 14px;
+}
+
 /* ========== RESPONSIVE STYLES ========== */
 
-/* Tablet */
-@media (max-width: 992px) {
-    .profile-container {
-        max-width: 95%;
-        padding: var(--spacing-lg);
-    }
-    
-    .profile-user-header {
-        padding: 28px 32px;
-        gap: 24px;
-    }
-    
-    .profile-user-avatar {
-        width: 100px;
-        height: 100px;
+/* Tablet Landscape */
+@media (max-width: 1024px) {
+    .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-/* Tablet Portrait / Mobile Landscape */
+/* Tablet Portrait */
 @media (max-width: 768px) {
-    .profile-container {
-        padding: var(--spacing-md);
-    }
-    
-    .profile-user-header {
+    .profile-avatar-section {
         flex-direction: column;
         text-align: center;
-        padding: 28px 20px;
         gap: 20px;
     }
     
-    .profile-user-meta {
-        justify-content: center;
-    }
-    
-    .profile-user-info h1 {
-        font-size: 24px;
-    }
-    
-    .profile-content {
+    .profile-two-columns {
         flex-direction: column;
-        gap: 24px;
     }
     
     .profile-stats-card,
     .profile-edit-card {
-        padding: 20px;
+        flex: auto;
     }
     
     .stat-row {
         flex-direction: column;
         align-items: flex-start;
-        gap: 6px;
-    }
-    
-    .stat-label {
-        width: 100%;
+        gap: 4px;
     }
     
     .stat-value {
         text-align: left;
-        max-width: 100%;
     }
     
     .form-actions {
@@ -499,70 +461,75 @@
     .change-password-btn {
         width: 100%;
         text-align: center;
-        padding: 12px 20px;
     }
     
-    .seller-links-grid {
+    .quick-actions-grid {
         grid-template-columns: 1fr;
-        gap: 12px;
     }
     
-    .seller-link-card {
-        padding: 14px 16px;
+    .profile-header-card {
+        padding: 24px;
+    }
+    
+    .profile-header-info h2 {
+        font-size: 24px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 24px;
     }
 }
 
 /* Mobile */
 @media (max-width: 480px) {
-    .profile-container {
-        padding: var(--spacing-sm);
+    .profile-header-card {
+        padding: 20px;
     }
     
-    .profile-user-header {
-        padding: 20px 16px;
+    .profile-avatar-container {
+        width: 100px;
+        height: 100px;
     }
     
-    .profile-user-avatar {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .avatar-upload-btn {
-        width: 28px;
-        height: 28px;
+    .profile-avatar-container .avatar-upload-btn {
+        width: 30px;
+        height: 30px;
         bottom: 3px;
         right: 3px;
-        border-width: 2px;
     }
     
-    .avatar-upload-btn img {
+    .profile-avatar-container .avatar-upload-btn img {
         width: 14px;
         height: 14px;
     }
     
-    .profile-user-info h1 {
+    .profile-header-info h2 {
         font-size: 20px;
     }
     
-    .role-badge,
-    .verification-badge {
-        padding: 4px 10px;
-        font-size: 11px;
+    .profile-badges {
+        justify-content: center;
     }
     
-    .member-since {
-        font-size: 11px;
+    .profile-stats-card,
+    .profile-edit-card,
+    .quick-actions-section {
+        padding: 16px;
     }
     
     .profile-stats-card h3,
     .profile-edit-card h3,
-    .seller-dashboard-links h3 {
-        font-size: 18px;
+    .quick-actions-section h3 {
+        font-size: 16px;
     }
     
     .stat-label,
     .stat-value {
         font-size: 13px;
+    }
+    
+    .stat-value.highlight {
+        font-size: 14px;
     }
     
     .form-group label {
@@ -574,58 +541,92 @@
         font-size: 13px;
     }
     
-    .seller-link-icon {
+    .quick-action-card {
+        padding: 12px 16px;
+    }
+    
+    .quick-action-icon {
         width: 40px;
         height: 40px;
     }
     
-    .seller-link-icon img {
+    .quick-action-icon img {
         width: 20px;
         height: 20px;
     }
     
-    .seller-link-info h4 {
+    .quick-action-info h4 {
         font-size: 14px;
     }
     
-    .seller-link-info p {
+    .quick-action-info p {
         font-size: 11px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 20px;
+    }
+    
+    .dashboard-header p {
+        font-size: 12px;
     }
 }
 
 /* Small Mobile */
 @media (max-width: 360px) {
-    .profile-user-header {
-        padding: 16px 12px;
+    .profile-header-card {
+        padding: 16px;
     }
     
-    .profile-user-avatar {
-        width: 70px;
-        height: 70px;
+    .profile-avatar-container {
+        width: 80px;
+        height: 80px;
     }
     
-    .profile-user-info h1 {
+    .profile-header-info h2 {
         font-size: 18px;
+    }
+    
+    .role-badge.seller-badge,
+    .verification-badge {
+        padding: 3px 8px;
+        font-size: 10px;
+    }
+    
+    .member-since {
+        font-size: 10px;
+    }
+    
+    .profile-email {
+        font-size: 12px;
     }
     
     .profile-stats-card,
     .profile-edit-card,
-    .seller-dashboard-links {
-        padding: 16px;
+    .quick-actions-section {
+        padding: 12px;
     }
     
-    .seller-link-card {
-        padding: 12px;
+    .quick-action-card {
+        padding: 10px 12px;
         gap: 12px;
     }
     
-    .seller-link-icon {
+    .quick-action-icon {
         width: 36px;
         height: 36px;
     }
     
-    .seller-link-icon img {
+    .quick-action-icon img {
         width: 18px;
         height: 18px;
+    }
+    
+    .quick-action-info h4 {
+        font-size: 13px;
+    }
+    
+    .quick-action-info p {
+        font-size: 10px;
     }
 }

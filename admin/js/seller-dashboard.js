@@ -20,159 +20,137 @@ function editProduct(productId) {
 
 function deleteProduct(productId) {
     if (confirm('Are you sure you want to delete this product?')) {
-        fetch('/www/consutrade/php/delete-product.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        $.ajax({
+            url: '/www/consutrade/php/delete-product.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ product_id: productId }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    loadSellerProducts();
+                    alert('Product deleted successfully!');
+                } else {
+                    alert('Error deleting product: ' + data.message);
+                }
             },
-            body: JSON.stringify({ product_id: productId })
-        })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (data.success) {
-                loadSellerProducts();
-                alert('Product deleted successfully!');
-            } else {
-                alert('Error deleting product: ' + data.message);
+            error: function(xhr, status, error) {
+                console.log('Error:', error);
+                alert('Something went wrong');
             }
-        })
-        .catch(function(error) {
-            console.log('Error:', error);
-            alert('Something went wrong');
         });
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
     
     // ========== MOBILE SIDEBAR TOGGLE with span animation ==========
-    var hamburger = document.getElementById('sellerHamburger');
-    var sideMenu = document.getElementById('sellerSideMenu');
-    var overlay = document.getElementById('sellerMenuOverlay');
-    var closeBtn = document.getElementById('sellerSidebarClose');
+    var $hamburger = $('#sellerHamburger');
+    var $sideMenu = $('#sellerSideMenu');
+    var $overlay = $('#sellerMenuOverlay');
+    var $closeBtn = $('#sellerSidebarClose');
     
     function toggleSidebar() {
         // Toggle hamburger animation (turns into X)
-        if (hamburger) hamburger.classList.toggle('active');
+        $hamburger.toggleClass('active');
         
         // Toggle sidebar visibility
-        if (sideMenu) sideMenu.classList.toggle('active');
+        $sideMenu.toggleClass('active');
         
         // Toggle overlay
-        if (overlay) overlay.classList.toggle('active');
+        $overlay.toggleClass('active');
         
         // Prevent body scroll when menu is open
-        if (sideMenu && sideMenu.classList.contains('active')) {
-            document.body.classList.add('seller-menu-open');
-            document.body.style.overflow = 'hidden';
+        if ($sideMenu.hasClass('active')) {
+            $('body').addClass('seller-menu-open');
+            $('body').css('overflow', 'hidden');
         } else {
-            document.body.classList.remove('seller-menu-open');
-            document.body.style.overflow = '';
+            $('body').removeClass('seller-menu-open');
+            $('body').css('overflow', '');
         }
     }
     
     // Open/close with hamburger button
-    if (hamburger) {
-        hamburger.addEventListener('click', toggleSidebar);
-    }
+    $hamburger.on('click', toggleSidebar);
     
     // Close with close button (X) in sidebar
-    if (closeBtn) {
-        closeBtn.addEventListener('click', toggleSidebar);
-    }
+    $closeBtn.on('click', toggleSidebar);
     
     // Close with overlay click
-    if (overlay) {
-        overlay.addEventListener('click', toggleSidebar);
-    }
+    $overlay.on('click', toggleSidebar);
     
     // Close sidebar when clicking on a link (mobile only)
-    var sidebarLinks = document.querySelectorAll('.seller-sidebar-nav a, .seller-sidebar-link');
-    sidebarLinks.forEach(function(link) {
-        link.addEventListener('click', function() {
-            if (window.innerWidth <= 768) {
-                if (hamburger) hamburger.classList.remove('active');
-                if (sideMenu) sideMenu.classList.remove('active');
-                if (overlay) overlay.classList.remove('active');
-                document.body.classList.remove('seller-menu-open');
-                document.body.style.overflow = '';
-            }
-        });
+    $('.seller-sidebar-nav a, .seller-sidebar-link').on('click', function() {
+        if ($(window).width() <= 768) {
+            $hamburger.removeClass('active');
+            $sideMenu.removeClass('active');
+            $overlay.removeClass('active');
+            $('body').removeClass('seller-menu-open');
+            $('body').css('overflow', '');
+        }
     });
     
     // ========== LOAD DASHBOARD STATS ==========
-    loadDashboardStats();
-    loadSellerProducts();
-    loadRecentOrders();
-    
     function loadDashboardStats() {
-        fetch('/www/consutrade/admin/get-stats.php')
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
+        $.ajax({
+            url: '/www/consutrade/php/get-user-stats.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
                 if (data.success) {
-                    var earningsElement = document.getElementById('stat-earnings');
-                    var productsElement = document.getElementById('stat-products');
-                    var pendingElement = document.getElementById('stat-pending');
-                    
-                    if (earningsElement) earningsElement.textContent = 'R' + parseFloat(data.total_earnings || 0).toFixed(2);
-                    if (productsElement) productsElement.textContent = data.total_products || 0;
-                    if (pendingElement) pendingElement.textContent = data.pending_orders || 0;
+                    $('#stat-earnings').text('R' + parseFloat(data.total_earnings || 0).toFixed(2));
+                    $('#stat-products').text(data.total_products || 0);
+                    $('#stat-pending').text(data.pending_orders || 0);
                 }
-            })
-            .catch(function(error) {
+            },
+            error: function(xhr, status, error) {
                 console.log('Error loading dashboard stats:', error);
-            });
+            }
+        });
     }
     
     function loadSellerProducts() {
-        var grid = document.getElementById('listings-grid');
-        if (!grid) return;
+        var $grid = $('#listings-grid');
+        if (!$grid.length) return;
         
-        grid.innerHTML = '<div class="loading-spinner">Loading your products...</div>';
+        $grid.html('<div class="loading-spinner">Loading your products...</div>');
         
-        fetch('/www/consutrade/php/get-seller-products.php')
-            .then(function(response) { 
-                if (!response.ok) {
-                    throw new Error('HTTP error ' + response.status);
-                }
-                return response.json(); 
-            })
-            .then(function(data) {
+        $.ajax({
+            url: '/www/consutrade/php/get-seller-products.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
                 if (data.success && data.products && data.products.length > 0) {
                     displaySellerProducts(data.products);
                 } else {
-                    grid.innerHTML = `
+                    $grid.html(`
                         <div class="empty-listings">
                             <p>You haven't listed any products yet.</p>
                             <button class="add-listing-btn" onclick="window.location.href='add-product.php'">+ Add Your First Product</button>
                         </div>
-                    `;
+                    `);
                 }
-            })
-            .catch(function(error) {
+            },
+            error: function(xhr, status, error) {
                 console.log('Error loading products:', error);
-                grid.innerHTML = '<p class="error">Error loading products. Please refresh the page.</p>';
-            });
+                $grid.html('<p class="error">Error loading products. Please refresh the page.</p>');
+            }
+        });
     }
     
     function displaySellerProducts(products) {
-        var grid = document.getElementById('listings-grid');
-        if (!grid) return;
+        var $grid = $('#listings-grid');
+        $grid.empty();
         
-        grid.innerHTML = '';
-        
-        for (var i = 0; i < products.length; i++) {
-            var product = products[i];
-            
+        $.each(products, function(index, product) {
             // Fix image path - prepend base URL if needed
             var imagePath = product.image;
             if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
                 imagePath = '/www/consutrade/' + imagePath;
             }
             
-            var card = document.createElement('div');
-            card.className = 'listing-card';
-            card.innerHTML = `
+            var card = $('<div>').addClass('listing-card');
+            card.html(`
                 <div class="listing-img">
                     <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
                 </div>
@@ -185,45 +163,49 @@ document.addEventListener('DOMContentLoaded', function() {
                         <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
                     </div>
                 </div>
-            `;
-            grid.appendChild(card);
-        }
+            `);
+            $grid.append(card);
+        });
     }
     
     function loadRecentOrders() {
-        var ordersList = document.getElementById('recent-orders-list');
-        if (!ordersList) return;
+        var $ordersList = $('#recent-orders-list');
+        if (!$ordersList.length) return;
         
-        fetch('/www/consutrade/php/get-recent-orders.php')
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
+        $.ajax({
+            url: '/www/consutrade/php/get-recent-orders.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
                 if (data.success && data.orders && data.orders.length > 0) {
-                    ordersList.innerHTML = '';
-                    for (var i = 0; i < data.orders.length; i++) {
-                        var order = data.orders[i];
-                        var orderItem = document.createElement('div');
-                        orderItem.className = 'order-item';
-                        orderItem.innerHTML = `
+                    $ordersList.empty();
+                    $.each(data.orders, function(index, order) {
+                        var orderItem = $('<div>').addClass('order-item');
+                        orderItem.html(`
                             <p class="order-id">Order #${order.id}</p>
                             <p class="order-amount">R ${parseFloat(order.total).toFixed(2)}</p>
                             <p class="order-status ${order.status}">${order.status}</p>
-                        `;
-                        ordersList.appendChild(orderItem);
-                    }
+                        `);
+                        $ordersList.append(orderItem);
+                    });
                 } else {
-                    ordersList.innerHTML = '<p class="placeholder-text">No recent orders to display.</p>';
+                    $ordersList.html('<p class="placeholder-text">No recent orders to display.</p>');
                 }
-            })
-            .catch(function(error) {
+            },
+            error: function(xhr, status, error) {
                 console.log('Error loading orders:', error);
-                ordersList.innerHTML = '<p class="placeholder-text">Error loading orders.</p>';
-            });
+                $ordersList.html('<p class="placeholder-text">Error loading orders.</p>');
+            }
+        });
     }
     
     function escapeHtml(text) {
         if (!text) return '';
-        var div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return $('<div>').text(text).html();
     }
+    
+    // Initial load
+    loadDashboardStats();
+    loadSellerProducts();
+    loadRecentOrders();
 });

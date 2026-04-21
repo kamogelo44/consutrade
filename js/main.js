@@ -228,8 +228,7 @@ function escapeHtml(text) {
 }
 
 // Document Ready
-$(document).ready(function() {
-    
+$(document).ready(function() { 
     // ========== MOBILE MENU TOGGLE ==========
     var $mainToggle = $('#mobileMenuToggle');
     var $sideClose = $('#sideMenuClose');
@@ -305,6 +304,99 @@ $(document).ready(function() {
             }
         }
     });
+    
+    // ========== MODAL CONTROLS ==========
+    var $registerModal = $('#register-modal');
+    var $loginModal = $('#login-modal');
+    var $registerBtns = $('#registerBtn, #mobile-register-btn');
+    var $loginBtns = $('#loginBtn, #mobile-login-btn');
+    var $registerClose = $('#register-modal .btn-close');
+    var $loginClose = $('#login-modal .btn-close');
+    var $switchToRegister = $('#switch-to-register');
+    var $switchToLogin = $('#switch-to-login');
+
+    function openModal($modal) {
+        if ($modal.length) {
+            $modal.addClass('active');
+            $('body').css('overflow', 'hidden');
+        }
+    }
+
+    function closeModal($modal) {
+        if ($modal.length) {
+            $modal.removeClass('active');
+            $('body').css('overflow', '');
+        }
+    }
+
+    // Register buttons
+    if ($registerBtns.length) {
+        $registerBtns.on('click', function(e) {
+            e.preventDefault();
+            if ($loginModal.hasClass('active')) {
+                closeModal($loginModal);
+            }
+            openModal($registerModal);
+        });
+    }
+    
+    // Login buttons
+    if ($loginBtns.length) {
+        $loginBtns.on('click', function(e) {
+            e.preventDefault();
+            if ($registerModal.hasClass('active')) {
+                closeModal($registerModal);
+            }
+            openModal($loginModal);
+        });
+    }
+    
+    // Close buttons
+    if ($registerClose.length) {
+        $registerClose.on('click', function() { 
+            closeModal($registerModal); 
+        });
+    }
+    
+    if ($loginClose.length) {
+        $loginClose.on('click', function() { 
+            closeModal($loginModal); 
+        });
+    }
+    
+    // Close modal when clicking outside
+    $registerModal.on('click', function(e) {
+        if ($(e.target).is($registerModal)) {
+            closeModal($registerModal);
+        }
+    });
+    
+    $loginModal.on('click', function(e) {
+        if ($(e.target).is($loginModal)) {
+            closeModal($loginModal);
+        }
+    });
+
+    // Switch between modals
+    if ($switchToRegister.length) {
+        $switchToRegister.on('click', function(e) {
+            e.preventDefault();
+            closeModal($loginModal);
+            setTimeout(function() { 
+                openModal($registerModal); 
+            }, 400);
+        });
+    }
+
+    if ($switchToLogin.length) {
+        $switchToLogin.on('click', function(e) {
+            e.preventDefault();
+            closeModal($registerModal);
+            setTimeout(function() { 
+                openModal($loginModal); 
+            }, 400);
+        });
+    }
     
     // ========== USER DROPDOWN TOGGLE ==========
     var $userMenuBtn = $('#userMenuBtn');

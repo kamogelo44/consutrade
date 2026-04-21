@@ -166,6 +166,7 @@ if (!empty($search_term)) {
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-products.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 <body class="my-products-page seller-dashboard-page">
 

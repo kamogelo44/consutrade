@@ -74,90 +74,91 @@ $order_id = time() . '_' . $user_id;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - ConsuTrade</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/footer.css">
-    <link rel="stylesheet" href="css/checkout.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/checkout.css">
 </head>
 <body>
-    <?php include 'includes/header.php'; ?>
 
-    <main class="checkout-container">
-        <h1>Checkout</h1>
-        
-        <div class="checkout-layout">
-            <!-- Order Summary -->
-            <div class="order-summary">
-                <h2>Order Summary</h2>
-                
-                <?php foreach ($cart_items as $item): ?>
-                    <div class="checkout-item">
-                        <div class="item-info">
-                            <span class="item-name"><?php echo htmlspecialchars($item['product_name']); ?></span>
-                            <span class="item-quantity">x<?php echo $item['quantity']; ?></span>
-                        </div>
-                        <div class="item-price">R <?php echo number_format($item['price'] * $item['quantity'], 2); ?></div>
-                    </div>
-                <?php endforeach; ?>
-                
-                <div class="order-totals">
-                    <div class="total-row">
-                        <span>Subtotal:</span>
-                        <span>R <?php echo number_format($subtotal, 2); ?></span>
-                    </div>
-                    <div class="total-row">
-                        <span>Delivery Fee:</span>
-                        <span>R <?php echo number_format($delivery_fee, 2); ?></span>
-                    </div>
-                    <div class="total-row grand-total">
-                        <span>Total:</span>
-                        <span>R <?php echo number_format($total, 2); ?></span>
-                    </div>
-                </div>
-            </div>
+<?php include 'includes/header.php'; ?>
+
+<main class="checkout-container">
+    <h1>Checkout</h1>
+    
+    <div class="checkout-layout">
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h2>Order Summary</h2>
             
-            <!-- Payment Section -->
-            <div class="payment-section">
-                <h2>Payment Method</h2>
-                
-                <div class="payment-method">
-                    <div class="payment-option active">
-                        <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast" width="100px">
-                        <p>Secure payment via PayFast</p>
+            <?php foreach ($cart_items as $item): ?>
+                <div class="checkout-item">
+                    <div class="item-info">
+                        <span class="item-name"><?php echo htmlspecialchars($item['product_name']); ?></span>
+                        <span class="item-quantity">x<?php echo $item['quantity']; ?></span>
                     </div>
+                    <div class="item-price">R <?php echo number_format($item['price'] * $item['quantity'], 2); ?></div>
                 </div>
-                
-                <!-- PayFast Payment Form -->
-                <form action="https://sandbox.payfast.co.za/eng/process" method="post" id="payfast-form">
-                    <input type="hidden" name="merchant_id" value="10000100">
-                    <input type="hidden" name="merchant_key" value="46f0cd694581a">
-                    <input type="hidden" name="return_url" value="<?php echo $baseUrl; ?>order-confirmation.php">
-                    <input type="hidden" name="cancel_url" value="<?php echo $baseUrl; ?>cart.php">
-                    <input type="hidden" name="notify_url" value="<?php echo $baseUrl; ?>php/payfast-notify.php">
-                    
-                    <input type="hidden" name="m_payment_id" value="<?php echo $order_id; ?>">
-                    <input type="hidden" name="amount" value="<?php echo number_format($total, 2, '.', ''); ?>">
-                    <input type="hidden" name="item_name" value="ConsuTrade Order">
-                    <input type="hidden" name="item_description" value="Order from ConsuTrade">
-                    
-                    <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($user['full_name']); ?>">
-                    <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($user['email']); ?>">
-                    <?php if (!empty($user['phone'])): ?>
-                    <input type="hidden" name="cell_number" value="<?php echo htmlspecialchars($user['phone']); ?>">
-                    <?php endif; ?>
-                    
-                    <button type="submit" class="pay-now-btn">Pay Now with PayFast</button>
-                </form>
-                
-                <div class="security-badge">
-                    <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" width="20px" height="20px" alt="Secure">
-                    <span>Your payment is secure. All transactions are encrypted.</span>
+            <?php endforeach; ?>
+            
+            <div class="order-totals">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>R <?php echo number_format($subtotal, 2); ?></span>
+                </div>
+                <div class="total-row">
+                    <span>Delivery Fee:</span>
+                    <span>R <?php echo number_format($delivery_fee, 2); ?></span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Total:</span>
+                    <span>R <?php echo number_format($total, 2); ?></span>
                 </div>
             </div>
         </div>
-    </main>
+        
+        <!-- Payment Section -->
+        <div class="payment-section">
+            <h2>Payment Method</h2>
+            
+            <div class="payment-method">
+                <div class="payment-option active">
+                    <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast" width="100px">
+                    <p>Secure payment via PayFast</p>
+                </div>
+            </div>
+            
+            <!-- PayFast Payment Form -->
+            <form action="https://sandbox.payfast.co.za/eng/process" method="post" id="payfast-form">
+                <input type="hidden" name="merchant_id" value="10047996">
+                <input type="hidden" name="merchant_key" value="f6r9pv9pnq6so">
+                <input type="hidden" name="return_url" value="http://localhost/www/consutrade/order-confirmation.php">
+                <input type="hidden" name="cancel_url" value="http://localhost/www/consutrade/cart.php">
+                <input type="hidden" name="notify_url" value="http://localhost/www/consutrade/php/payfast-notify.php">
+                
+                <input type="hidden" name="m_payment_id" value="<?php echo $order_id; ?>">
+                <input type="hidden" name="amount" value="<?php echo number_format($total, 2, '.', ''); ?>">
+                <input type="hidden" name="item_name" value="ConsuTrade Order">
+                <input type="hidden" name="item_description" value="Order from ConsuTrade">
+                
+                <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($user['full_name']); ?>">
+                <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($user['email']); ?>">
+                <?php if (!empty($user['phone'])): ?>
+                <input type="hidden" name="cell_number" value="<?php echo htmlspecialchars($user['phone']); ?>">
+                <?php endif; ?>
+                
+                <button type="submit" class="pay-now-btn">Pay Now with PayFast</button>
+            </form>
+            
+            <div class="security-badge">
+                <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" width="20px" height="20px" alt="Secure">
+                <span>Your payment is secure. All transactions are encrypted.</span>
+            </div>
+        </div>
+    </div>
+</main>
 
-    <?php include 'includes/footer.php'; ?>
-    <script src="js/main.js"></script>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

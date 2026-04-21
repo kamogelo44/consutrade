@@ -351,22 +351,11 @@
     border-top: 1px solid var(--gray-dark);
     display: none;
     z-index: 1000;
-    animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .mobile-search-container.active {
-    display: block!important;
+    display: block !important;
+    animation: slideDown 0.3s ease;
 }
 
 .mobile-search-container .search-wrapper {
@@ -529,7 +518,7 @@
     color: var(--primary-color);
 }
 
-/* Side Menu Close Button (Simple X icon on the RIGHT side) */
+/* Side Menu Close Button */
 .side-menu-close {
     background: none;
     border: none;
@@ -539,7 +528,9 @@
     position: relative;
     padding: 0;
     flex-shrink: 0;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+    transform: scale(1);
 }
 
 .side-menu-close:hover {
@@ -565,6 +556,27 @@
 .side-menu-close span:nth-child(2) {
     transform: rotate(-45deg);
     top: 14px;
+}
+
+/* Side menu close button animations */
+.mobile-nav.active .side-menu-close {
+    animation: fadeInScale 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.mobile-nav:not(.active) .side-menu-close {
+    animation: fadeOutScale 0.3s ease forwards;
+}
+
+.mobile-nav:not(.active) .side-menu-close {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.mobile-nav.active .side-menu-close {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 /* Mobile Profile Section */
@@ -677,15 +689,6 @@
     animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
 /* Hide header elements when menu is open */
 body.menu-open .logo,
 body.menu-open .header-actions {
@@ -696,6 +699,18 @@ body.menu-open .header-actions {
 
 body.menu-open {
     overflow: hidden;
+}
+
+/* Hide the header hamburger completely when menu is open */
+body.menu-open .mobile-menu-toggle {
+    display: none !important;
+}
+
+/* Also adjust the logo to center when menu is open */
+body.menu-open .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* ========== RESPONSIVE STYLES ========== */

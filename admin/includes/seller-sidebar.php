@@ -63,7 +63,7 @@
         </nav>
         
         <div class="seller-sidebar-footer">
-            <a href="<?php echo $baseUrl; ?>profile.php" class="seller-sidebar-link">
+            <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="seller-sidebar-link">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" width="20px" height="20px" onerror="this.style.display='none'">
                 <span>My Profile</span>
             </a>

@@ -1,0 +1,145 @@
+/* ========== ANIMATIONS.CSS - All animation keyframes ========== */
+/* Author: Kamogelo Phale */
+
+/* ========== HAMBURGER TO X ANIMATION ========== */
+@keyframes hamburgerToX {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(135deg);
+    }
+}
+
+@keyframes xToHamburger {
+    0% {
+        transform: rotate(135deg);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+/* ========== SIDE MENU CLOSE BUTTON ANIMATIONS ========== */
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) rotate(-90deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes fadeOutScale {
+    0% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.5) rotate(90deg);
+    }
+}
+
+/* ========== MOBILE MENU SLIDE ANIMATIONS ========== */
+@keyframes slideInLeft {
+    from {
+        left: -100%;
+    }
+    to {
+        left: 0;
+    }
+}
+
+@keyframes slideOutLeft {
+    from {
+        left: 0;
+    }
+    to {
+        left: -100%;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* ========== MOBILE SEARCH SLIDE DOWN ========== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== MODAL SLIDE ANIMATIONS ========== */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-80px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(80px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* ========== CARD HOVER ANIMATIONS ========== */
+@keyframes cardHover {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-5px);
+    }
+}
+
+/* ========== BUTTON PULSE ANIMATION ========== */
+@keyframes buttonPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

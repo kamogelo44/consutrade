@@ -33,6 +33,7 @@ $current_page = 'dashboard';
     <title>Seller Dashboard - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 <body class="seller-dashboard-page">
 
@@ -88,7 +89,7 @@ $current_page = 'dashboard';
         </nav>
         
         <div class="seller-sidebar-footer">
-            <a href="<?php echo $baseUrl; ?>profile.php" class="seller-sidebar-link">
+            <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="seller-sidebar-link">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" width="20px" height="20px" onerror="this.style.display='none'">
                 <span>My Profile</span>
             </a>
@@ -193,7 +194,7 @@ $current_page = 'dashboard';
                     <h2>Profile & Settings</h2>
                 </div>
                 <div class="profile-shortcuts">
-                    <a href="<?php echo $baseUrl; ?>profile.php" class="profile-shortcut-link">
+                    <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="profile-shortcut-link">
                         <div class="profile-shortcut-icon">
                             <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" onerror="this.style.display='none'">
                         </div>

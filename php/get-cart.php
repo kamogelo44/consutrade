@@ -22,7 +22,6 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Add id_verified to the query
 $sql = "SELECT c.cart_id, c.product_id, c.quantity, 
         p.title as product_name, 
         p.price, 
@@ -70,7 +69,7 @@ while ($row = $result->fetch_assoc()) {
         'quantity' => (int)$row['quantity'],
         'image' => $imagePath,
         'seller_name' => $row['seller_name'] ?? 'Unknown Seller',
-        'is_verified' => $row['is_verified'] == 1  // Add this line
+        'is_verified' => $row['is_verified'] == 1  
     ];
 }
 

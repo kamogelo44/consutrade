@@ -28,6 +28,7 @@ $current_page = 'add-product';
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/add-product.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 <body class="add-product-page seller-dashboard-page">
 
@@ -112,12 +113,12 @@ $current_page = 'add-product';
                             <div class="form-group">
                                 <label for="product-title">Product Title</label>
                                 <input type="text" id="product-title" name="title" required 
-                                       placeholder="e.g., Handmade Leather Bag" onkeyup="updateProgress()">
+                                       placeholder="e.g., Handmade Leather Bag">
                             </div>
 
                             <div class="form-group">
                                 <label for="product-category">Category</label>
-                                <select id="product-category" name="category_id" required onchange="updateProgress()">
+                                <select id="product-category" name="category_id" required>
                                     <option value="">Select Category</option>
                                     <option value="1">Clothing & Accessories</option>
                                     <option value="2">Electronics</option>
@@ -133,11 +134,11 @@ $current_page = 'add-product';
                                 <div class="form-group half">
                                     <label for="product-price">Price (R)</label>
                                     <input type="number" id="product-price" name="price" step="0.01" required 
-                                           placeholder="0.00" onkeyup="updateProgress()">
+                                           placeholder="0.00">
                                 </div>
                                 <div class="form-group half">
                                     <label for="product-condition">Condition (if applicable)</label>
-                                    <select id="product-condition" name="condition" onchange="updateProgress()">
+                                    <select id="product-condition" name="condition">
                                         <option value="">Not Applicable</option>
                                         <option value="New">Brand New</option>
                                         <option value="Like New">Like New</option>
@@ -151,8 +152,7 @@ $current_page = 'add-product';
                                 <label for="product-description">Description</label>
                                 <textarea id="product-description" name="description" rows="5" 
                                           placeholder="Describe your product in detail..." 
-                                          required
-                                          onkeyup="updateProgress()"></textarea>
+                                          required></textarea>
                             </div>
                         </fieldset>
 
@@ -167,7 +167,7 @@ $current_page = 'add-product';
                             <div class="form-group">
                                 <label>Main Product Image</label>
                                 <div class="image-upload-container" id="main-image-container">
-                                    <input type="file" id="main-image" name="image" accept="image/*" required>
+                                    <input type="file" id="main-image" name="image" accept="image/*" required style="display: none;">
                                     <div class="image-preview" id="main-image-preview">
                                         <div class="upload-placeholder">
                                             <img src="<?php echo $baseUrl; ?>images/icons/camera-svgrepo-com.svg" width="48px" height="48px" alt="Upload">
@@ -183,7 +183,7 @@ $current_page = 'add-product';
                                 <label>Additional Images (Up to 4)</label>
                                 <div class="thumbnails-grid" id="thumbnails-grid">
                                     <div class="thumbnail-upload" data-index="0">
-                                        <input type="file" name="thumbnail_0" accept="image/*" class="thumbnail-input">
+                                        <input type="file" name="thumbnail_0" accept="image/*" class="thumbnail-input" style="display: none;">
                                         <div class="thumbnail-preview">
                                             <div class="upload-placeholder-small">
                                                 +
@@ -191,7 +191,7 @@ $current_page = 'add-product';
                                         </div>
                                     </div>
                                     <div class="thumbnail-upload" data-index="1">
-                                        <input type="file" name="thumbnail_1" accept="image/*" class="thumbnail-input">
+                                        <input type="file" name="thumbnail_1" accept="image/*" class="thumbnail-input" style="display: none;">
                                         <div class="thumbnail-preview">
                                             <div class="upload-placeholder-small">
                                                 +
@@ -199,7 +199,7 @@ $current_page = 'add-product';
                                         </div>
                                     </div>
                                     <div class="thumbnail-upload" data-index="2">
-                                        <input type="file" name="thumbnail_2" accept="image/*" class="thumbnail-input">
+                                        <input type="file" name="thumbnail_2" accept="image/*" class="thumbnail-input" style="display: none;">
                                         <div class="thumbnail-preview">
                                             <div class="upload-placeholder-small">
                                                 +
@@ -207,7 +207,7 @@ $current_page = 'add-product';
                                         </div>
                                     </div>
                                     <div class="thumbnail-upload" data-index="3">
-                                        <input type="file" name="thumbnail_3" accept="image/*" class="thumbnail-input">
+                                        <input type="file" name="thumbnail_3" accept="image/*" class="thumbnail-input" style="display: none;">
                                         <div class="thumbnail-preview">
                                             <div class="upload-placeholder-small">
                                                 +
@@ -228,7 +228,7 @@ $current_page = 'add-product';
                             <div class="form-group">
                                 <label for="product-location">Location</label>
                                 <input type="text" id="product-location" name="location" 
-                                       placeholder="e.g., Johannesburg, Soweto" onkeyup="updateProgress()">
+                                       placeholder="e.g., Johannesburg, Soweto">
                             </div>
                         </fieldset>
 
@@ -252,97 +252,126 @@ $current_page = 'add-product';
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
 <script>
+$(document).ready(function() {
     // Update progress bar based on form completion
     function updateProgress() {
-        var fields = ['product-title', 'product-category', 'product-price', 'product-description'];
+        var fields = ['#product-title', '#product-category', '#product-price', '#product-description'];
         var filled = 0;
         
         for (var i = 0; i < fields.length; i++) {
-            var field = document.getElementById(fields[i]);
-            if (field && field.value && field.value !== '') {
+            if ($(fields[i]).val() && $(fields[i]).val() !== '') {
                 filled++;
             }
         }
         
         // Check condition field (optional)
-        var condition = document.getElementById('product-condition');
-        if (condition && condition.value && condition.value !== '') {
+        if ($('#product-condition').val() && $('#product-condition').val() !== '') {
             filled++;
         }
         
         // Check location field (optional)
-        var location = document.getElementById('product-location');
-        if (location && location.value && location.value !== '') {
+        if ($('#product-location').val() && $('#product-location').val() !== '') {
             filled++;
         }
         
         // Check main image
-        var mainImage = document.getElementById('main-image');
-        if (mainImage && mainImage.files.length > 0) {
+        if ($('#main-image')[0].files.length > 0) {
             filled++;
         }
         
-        var totalFields = fields.length + 3; // condition + location + main image
-        var percentage = Math.round((filled / totalFields) * 100);
+        // Check thumbnails (count how many have images)
+        $('.thumbnail-input').each(function() {
+            if ($(this)[0].files.length > 0) {
+                filled++;
+            }
+        });
         
-        var progressBar = document.getElementById('progress-bar');
-        var progressText = document.getElementById('progress-text');
+        var totalFields = fields.length + 5; // condition + location + main image + 4 thumbnails
+        var percentage = Math.min(Math.round((filled / totalFields) * 100), 100);
         
-        if (progressBar) progressBar.style.width = percentage + '%';
-        if (progressText) progressText.textContent = percentage + '% Complete';
+        $('#progress-bar').css('width', percentage + '%');
+        $('#progress-text').text(percentage + '% Complete');
+        
+        // Change progress bar color based on percentage
+        if (percentage < 30) {
+            $('#progress-bar').css('background-color', '#dc3545');
+        } else if (percentage < 70) {
+            $('#progress-bar').css('background-color', '#ffc107');
+        } else {
+            $('#progress-bar').css('background-color', '#28a745');
+        }
     }
 
     // Main image preview
-    var mainImageInput = document.getElementById('main-image');
-    if (mainImageInput) {
-        mainImageInput.addEventListener('change', function(e) {
-            var file = e.target.files[0];
+    $('#main-image').on('change', function(e) {
+        var file = this.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                $('#main-image-preview').html('<img src="' + event.target.result + '" alt="Product preview">');
+                updateProgress();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Make main image container clickable
+    $('#main-image-container').on('click', function() {
+        $('#main-image').click();
+    });
+
+    // Thumbnail previews
+    $('.thumbnail-upload').each(function() {
+        var $container = $(this);
+        var index = $container.data('index');
+        var $input = $container.find('.thumbnail-input');
+        var $preview = $container.find('.thumbnail-preview');
+        
+        // Handle file selection
+        $input.on('change', function(e) {
+            var file = this.files[0];
             if (file) {
                 var reader = new FileReader();
                 reader.onload = function(event) {
-                    var preview = document.getElementById('main-image-preview');
-                    preview.innerHTML = '<img src="' + event.target.result + '" alt="Product preview">';
+                    $preview.html('<img src="' + event.target.result + '" alt="Thumbnail">');
                     updateProgress();
                 };
                 reader.readAsDataURL(file);
             }
         });
-    }
-
-    // Thumbnail previews
-    var thumbnailInputs = document.querySelectorAll('.thumbnail-input');
-    thumbnailInputs.forEach(function(input, index) {
-        input.addEventListener('change', function(e) {
-            var file = e.target.files[0];
-            if (file) {
-                var reader = new FileReader();
-                var container = document.querySelector('.thumbnail-upload[data-index="' + index + '"] .thumbnail-preview');
-                reader.onload = function(event) {
-                    container.innerHTML = '<img src="' + event.target.result + '" alt="Thumbnail">';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
         
-        // Make thumbnail-upload clickable
-        var thumbnailDiv = document.querySelector('.thumbnail-upload[data-index="' + index + '"]');
-        if (thumbnailDiv) {
-            thumbnailDiv.addEventListener('click', function() {
-                input.click();
-            });
-        }
+        // Make thumbnail container clickable
+        $container.on('click', function() {
+            $input.click();
+        });
     });
     
-    // Make main image container clickable
-    var mainImageContainer = document.getElementById('main-image-container');
-    if (mainImageContainer) {
-        mainImageContainer.addEventListener('click', function() {
-            document.getElementById('main-image').click();
-        });
-    }
+    // Update progress on all form inputs
+    $('#add-product-form input, #add-product-form select, #add-product-form textarea').on('change keyup', function() {
+        updateProgress();
+    });
+    
+    // Form submission with validation
+    $('#add-product-form').on('submit', function(e) {
+        // Check if main image is uploaded
+        if ($('#main-image')[0].files.length === 0) {
+            e.preventDefault();
+            alert('Please upload a main product image.');
+            return false;
+        }
+        
+        // Show loading state
+        var $submitBtn = $(this).find('.submit-btn');
+        var originalText = $submitBtn.html();
+        $submitBtn.html('<img src="<?php echo $baseUrl; ?>images/icons/loading.svg" width="16px" height="16px" alt="Loading"> Publishing...').prop('disabled', true);
+        
+        // Allow form to submit
+        return true;
+    });
     
     // Initial progress update
     updateProgress();
+});
 </script>
 </body>
 </html>

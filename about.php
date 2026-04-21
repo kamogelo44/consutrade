@@ -15,6 +15,7 @@ $baseUrl = "/www/consutrade/";
     <title>About Us - ConsuTrade</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/login-signup.css">
 </head>
