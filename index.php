@@ -1,6 +1,10 @@
 <?php
 session_start();
 
+require_once 'php/helpers.php';
+
+$baseUrl = getBaseUrl();
+
 // Read register errors
 $registerErrors = $_SESSION['register_errors'] ?? [];
 $registerFormData = $_SESSION['register_form_data'] ?? [];
@@ -17,7 +21,6 @@ unset($_SESSION['login_email']);
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 
-$baseUrl = "/www/consutrade/";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -218,6 +221,104 @@ $baseUrl = "/www/consutrade/";
 </main>
 
 <script src="js/products.js"></script>
+<?php if (!empty($loginErrors)): ?>
+<script>
+$(document).ready(function() {
+    var modal = document.getElementById('login-modal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    var emailInput = document.getElementById('login-email');
+    if (emailInput) {
+        emailInput.value = <?php echo json_encode($loginEmail); ?>;
+    }
+    
+    // Handle general error (top banner)
+    <?php if (isset($loginErrors['general'])): ?>
+    var errorContainer = document.getElementById('login-error-container');
+    if (errorContainer) {
+        errorContainer.style.display = 'block';
+        errorContainer.innerHTML = '<p class="error-message"><?php echo addslashes($loginErrors['general']); ?></p>';
+    }
+    <?php endif; ?>
+    
+    // Handle field-specific errors (NOT general)
+    <?php foreach ($loginErrors as $field => $message): ?>
+        <?php if ($field !== 'general'): ?>
+        var errorEl = document.createElement('small');
+        errorEl.className = 'error-text';
+        errorEl.textContent = <?php echo json_encode($message); ?>;
+        
+        var inputGroup = $('#login-<?php echo $field; ?>').closest('.input-group');
+        if (inputGroup.length) {
+            inputGroup.addClass('error');
+            inputGroup.find('.error-text').remove();
+            inputGroup.append(errorEl);
+        }
+        <?php endif; ?>
+    <?php endforeach; ?>
+});
+</script>
+<?php endif; ?>
+
+<?php if (!empty($registerErrors)): ?>
+<script>
+$(document).ready(function() {
+    var modal = document.getElementById('register-modal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // Restore form data
+    <?php if (!empty($registerFormData['full_name'])): ?>
+    $('#register-full-name').val(<?php echo json_encode($registerFormData['full_name']); ?>);
+    <?php endif; ?>
+    
+    <?php if (!empty($registerFormData['email'])): ?>
+    $('#register-email').val(<?php echo json_encode($registerFormData['email']); ?>);
+    <?php endif; ?>
+    
+    <?php if (!empty($registerFormData['phone'])): ?>
+    $('#register-phone').val(<?php echo json_encode($registerFormData['phone']); ?>);
+    <?php endif; ?>
+    
+    <?php if (!empty($registerFormData['role']) && $registerFormData['role'] == 'seller'): ?>
+    $('#seller').prop('checked', true);
+    <?php else: ?>
+    $('#buyer').prop('checked', true);
+    <?php endif; ?>
+    
+    // Handle general error (top banner)
+    <?php if (isset($registerErrors['general'])): ?>
+    var errorContainer = document.getElementById('register-error-container');
+    if (errorContainer) {
+        errorContainer.style.display = 'block';
+        errorContainer.innerHTML = '<p class="error-message"><?php echo addslashes($registerErrors['general']); ?></p>';
+    }
+    <?php endif; ?>
+    
+    // Handle field-specific errors (NOT general)
+    <?php foreach ($registerErrors as $field => $message): ?>
+        <?php if ($field !== 'general'): ?>
+        var errorEl = document.createElement('small');
+        errorEl.className = 'error-text';
+        errorEl.textContent = <?php echo json_encode($message); ?>;
+        
+        var inputField = $('#register-<?php echo $field; ?>');
+        if (inputField.length) {
+            var inputGroup = inputField.closest('.input-group');
+            inputGroup.addClass('error');
+            inputGroup.find('.error-text').remove();
+            inputGroup.append(errorEl);
+        }
+        <?php endif; ?>
+    <?php endforeach; ?>
+});
+</script>
+<?php endif; ?>
 <script>
 $(document).ready(function() {
     loadFeaturedProducts();
@@ -285,7 +386,8 @@ $(document).ready(function() {
                     <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
                     <div class="seller-info">
                         <div class="seller-avatar">
-                            <img src="${baseUrl}images/icons/profile-svgrepo-com.svg" alt="Seller" width="32" height="32" loading="lazy">
+                            <img src="${getSellerAvatar(product.profile_image)}" alt="${escapeHtml(product.seller_name)}" 
+                                onerror="this.src='${baseUrl}images/icons/profile-svgrepo-com.svg'">
                         </div>
                         <div class="seller-details">
                             <p class="seller-name">${escapeHtml(product.seller_name)}</p>

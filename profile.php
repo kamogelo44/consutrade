@@ -8,15 +8,16 @@
 
 session_start();
 
-$baseUrl = "/www/consutrade/";
+require_once 'php/config.php';
+require_once 'php/helpers.php';
+
+$baseUrl = getBaseUrl();
 
 // Check if user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
-
-require_once 'php/config.php';
 
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
@@ -32,14 +33,9 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Set profile image path
-if (!empty($user['profile_image']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $user['profile_image'])) {
-    $profile_image = $baseUrl . $user['profile_image'];
-} else {
-    $profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
-}
+// Set profile image path - using helper
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
-$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

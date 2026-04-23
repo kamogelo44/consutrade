@@ -11,6 +11,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once 'config.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'items' => [], 'item_count' => 0, 'subtotal' => 0, 'delivery_fee' => 0, 'total' => 0];
 

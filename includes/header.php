@@ -9,8 +9,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once dirname(__DIR__) . '/php/helpers.php';
+
 // Base URL for the site
-$baseUrl = "/www/consutrade/";
+$baseUrl = getBaseUrl();
 
 // Get current page for active link highlighting
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -24,9 +26,23 @@ $user_role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
 // Get user's full name or default
 $user_name = isset($_SESSION['full_name']) ? $_SESSION['full_name'] : 'User';
 
+// Get user profile image (without closing connection)
+$user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+if ($is_logged_in && isset($_SESSION['user_id'])) {
+    // Only include config if connection doesn't exist
+    if (!isset($conn) || !$conn) {
+        require_once dirname(__DIR__) . '/php/config.php';
+    }
+    $user = getUserById($conn, $_SESSION['user_id']);
+    if ($user && !empty($user['profile_image'])) {
+        $user_profile_image = getUserProfileImage($user['profile_image']);
+    }
+}
+
 // Get cart count
 $cart_count = 0;
 if ($is_logged_in && isset($_SESSION['user_id'])) {
+    // Use a separate connection for cart or get from session
     $cart_count = isset($_SESSION['cart_count']) ? $_SESSION['cart_count'] : 0;
 }
 ?>
@@ -71,7 +87,7 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
             <?php if ($is_logged_in): ?>
                 <div class="user-menu">
                     <button class="user-menu-btn" id="userMenuBtn">
-                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" class="user-avatar-icon">
+                        <img src="<?php echo $user_profile_image; ?>" alt="Profile" class="user-avatar-icon" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                         <span><?php echo htmlspecialchars($user_name); ?></span>
                         <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6 9 12 15 18 9"></polyline>
@@ -131,7 +147,7 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
         <?php if ($is_logged_in): ?>
             <div class="mobile-profile-section">
                 <div class="mobile-profile-info">
-                    <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" class="mobile-profile-avatar" width="40" height="40">
+                    <img src="<?php echo $user_profile_image; ?>" alt="Profile" class="mobile-profile-avatar" width="40" height="40" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                     <div class="mobile-profile-text">
                         <span class="mobile-profile-name"><?php echo htmlspecialchars($user_name); ?></span>
                         <span class="mobile-profile-role"><?php echo ucfirst($user_role); ?></span>
@@ -177,6 +193,7 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
     
     <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 </header>
+
 <?php if (!$is_logged_in): ?>
     <!-- Login Modal -->
     <div id="login-modal" class="modal">
@@ -195,10 +212,10 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
                 </div>
                 <div class="input-group">
                     <label for="login-password">Password</label>
-                    <div style="position: relative;">
-                        <input type="password" id="login-password" name="password" placeholder="Enter your password" required autocomplete="current-password" style="width: 100%; padding-right: 40px;">
-                        <button type="button" onclick="togglePassword('login-password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">
-                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18" style="opacity: 0.6;">
+                    <div class="password-field-wrapper">
+                        <input type="password" id="login-password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('login-password', this)">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
                         </button>
                     </div>
                     <span class="error-text" style="display: none;"></span>
@@ -242,20 +259,20 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
                     <legend>Security</legend>
                     <div class="input-group">
                         <label for="register-password">Password</label>
-                        <div style="position: relative;">
-                            <input type="password" id="register-password" name="password" placeholder="Create a password" required autocomplete="new-password" style="width: 100%; padding-right: 40px;">
-                            <button type="button" onclick="togglePassword('register-password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">
-                                <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18" style="opacity: 0.6;">
+                        <div class="password-field-wrapper">
+                            <input type="password" id="register-password" name="password" placeholder="Create a password" required autocomplete="new-password">
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('register-password', this)">
+                                <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
                             </button>
                         </div>
                         <span class="error-text" style="display: none;"></span>
                     </div>
                     <div class="input-group">
                         <label for="register-confirm-password">Confirm Password</label>
-                        <div style="position: relative;">
-                            <input type="password" id="register-confirm-password" name="confirm_password" placeholder="Confirm your password" required autocomplete="new-password" style="width: 100%; padding-right: 40px;">
-                            <button type="button" onclick="togglePassword('register-confirm-password', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">
-                                <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18" style="opacity: 0.6;">
+                        <div class="password-field-wrapper">
+                            <input type="password" id="register-confirm-password" name="confirm_password" placeholder="Confirm your password" required autocomplete="new-password">
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('register-confirm-password', this)">
+                                <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
                             </button>
                         </div>
                         <span class="error-text" style="display: none;"></span>
@@ -275,4 +292,4 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
             </form>
         </div>
     </div>
-<?php endif;?>
+<?php endif; ?>

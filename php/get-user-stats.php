@@ -8,8 +8,61 @@ session_start();
 require_once __DIR__ . '/config.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
 
-// Initialize response
+// ========== ADD THIS PUBLIC VIEW LOGIC FIRST ==========
+// Check if we're viewing a specific seller profile (public view)
+$view_seller_id = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
+
+if ($view_seller_id > 0) {
+    // Get stats for the viewed seller (no login required)
+    $user_id = $view_seller_id;
+    
+    // Get total products
+    $product_sql = "SELECT COUNT(*) as count FROM products WHERE seller_id = ? AND status != 'deleted'";
+    $product_stmt = $conn->prepare($product_sql);
+    $product_stmt->bind_param('i', $user_id);
+    $product_stmt->execute();
+    $product_result = $product_stmt->get_result();
+    $total_products = (int)$product_result->fetch_assoc()['count'];
+    $product_stmt->close();
+    
+    // Get completed orders count for seller
+    $sales_sql = "SELECT COUNT(*) as count FROM orders WHERE seller_id = ? AND status = 'completed'";
+    $sales_stmt = $conn->prepare($sales_sql);
+    $sales_stmt->bind_param('i', $user_id);
+    $sales_stmt->execute();
+    $sales_result = $sales_stmt->get_result();
+    $total_sales = (int)$sales_result->fetch_assoc()['count'];
+    $sales_stmt->close();
+    
+    // Get reviews
+    $review_sql = "SELECT COUNT(*) as count, AVG(rating) as avg FROM reviews WHERE seller_id = ?";
+    $review_stmt = $conn->prepare($review_sql);
+    $review_stmt->bind_param('i', $user_id);
+    $review_stmt->execute();
+    $review_result = $review_stmt->get_result();
+    $review_data = $review_result->fetch_assoc();
+    $total_reviews = (int)($review_data['count'] ?? 0);
+    $avg_rating = round($review_data['avg'] ?? 0, 1);
+    $review_stmt->close();
+    
+    echo json_encode([
+        'success' => true,
+        'total_products' => $total_products,
+        'total_sales' => $total_sales,
+        'total_revenue' => 0,
+        'total_reviews' => $total_reviews,
+        'avg_rating' => $avg_rating,
+        'pending_orders' => 0,
+        'total_orders' => 0,
+        'total_earnings' => 0
+    ]);
+    exit;
+}
+// ========== END PUBLIC VIEW LOGIC ==========
+
+// Initialize response for logged-in users
 $response = [
     'success' => false,
     'total_products' => 0,
@@ -22,12 +75,13 @@ $response = [
     'total_earnings' => 0
 ];
 
-// Check authentication
+// Check authentication for logged-in users
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     echo json_encode($response);
     exit;
 }
 
+// Rest of your existing code for logged-in users...
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 

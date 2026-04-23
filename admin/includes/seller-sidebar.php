@@ -4,11 +4,11 @@
  * Author: Kamogelo Phale
  * 
  * Reusable sidebar for seller dashboard pages
- * Requires: $current_page variable to be set before including
+ * Requires: $baseUrl and $current_page variables to be set before including
  * 
  * Usage:
- *   $current_page = 'dashboard'; // or 'products', 'orders', 'add-product'
- *   include 'admin/includes/seller-sidebar.php';
+ *   $current_page = 'dashboard'; // or 'products', 'orders', 'add-product', 'profile'
+ *   include 'includes/seller-sidebar.php';
  */
 ?>
 <!-- Mobile Toggle Button with spans for smooth animation -->
@@ -24,9 +24,9 @@
     <aside class="seller-sidebar" id="sellerSideMenu">
         <div class="seller-sidebar-header">
             <div class="seller-sidebar-logo">
-                <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Consu<span>TradeSeller</span></a>
+                <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Consu<span>Trade</span></a>
             </div>
-            <!-- Close button for mobile - using spans for smooth transition -->
+            <!-- Close button for mobile -->
             <button class="seller-sidebar-close" id="sellerSidebarClose">
                 <span></span>
                 <span></span>
@@ -63,7 +63,7 @@
         </nav>
         
         <div class="seller-sidebar-footer">
-            <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="seller-sidebar-link">
+            <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="seller-sidebar-link <?php echo $current_page === 'profile' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" width="20px" height="20px" onerror="this.style.display='none'">
                 <span>My Profile</span>
             </a>
@@ -77,5 +77,5 @@
     <!-- Overlay for mobile -->
     <div class="seller-menu-overlay" id="sellerMenuOverlay"></div>
 
-    <!-- Main Content -->
+    <!-- Main Content - This will be closed in the parent page -->
     <main class="seller-main-content">

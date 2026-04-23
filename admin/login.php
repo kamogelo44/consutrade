@@ -6,7 +6,11 @@
  * Separate login page for admin access only
  */
 
+require_once dirname(__DIR__) . '/php/helpers.php';
+
 session_start();
+
+$baseUrl = getBaseUrl();
 
 // If already logged in as admin, redirect to dashboard
 if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
@@ -14,12 +18,11 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_
     exit();
 }
 
-$baseUrl = "/www/consutrade/";
 $error = '';
 
 // Process login form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once '../php/config.php';
+    require_once dirname(__DIR__) . '/php/config.php';
     
     $email = trim($_POST['email']);
     $password = $_POST['password'];
@@ -38,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $result->fetch_assoc();
             
             if (password_verify($password, $user['password'])) {
-                // Regenerate session ID for security
                 session_regenerate_id(true);
                 
                 $_SESSION['user_id'] = $user['user_id'];
@@ -75,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="admin-login-container">
         <div class="admin-login-box">
             <div class="admin-login-header">
-                <h1>Consu<span>Trade</span><span class="admin-badge">Admin</span></h1>
+                <h1>Consu<span>Trade</span></h1>
                 <p>Administrator Access Only</p>
             </div>
             
@@ -95,17 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="password">Password</label>
                     <div class="password-wrapper">
                         <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                        <button type="button" class="toggle-password" data-target="password">
+                        <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
                             <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
                         </button>
                     </div>
                 </div>
                 
                 <button type="submit" class="admin-login-btn">Login to Admin Panel</button>
-                
-                <p class="back-to-site">
-                    <a href="<?php echo $baseUrl; ?>index.php">← Back to ConsuTrade</a>
-                </p>
             </form>
         </div>
     </div>

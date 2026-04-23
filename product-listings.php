@@ -1,6 +1,8 @@
 <?php
 session_start(); 
-$baseUrl = "/www/consutrade/";
+require_once 'php/helpers.php';
+
+$baseUrl = getBaseUrl();
 ?>
 <!DOCTYPE html>
 <html lang="en">

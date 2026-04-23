@@ -8,7 +8,10 @@
 
 session_start();
 
-$baseUrl = "/www/consutrade/";
+require_once "php/config.php";
+require_once "php/helpers.php";
+
+$baseUrl = getBaseUrl();
 
 // Check if user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -22,7 +25,7 @@ $order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
 // If no order_id in URL, check if we just completed a payment
 if ($order_id == 0 && isset($_GET['m_payment_id'])) {
     $parts = explode('_', $_GET['m_payment_id']);
-    $order_id = $parts[0] ?? 0;
+    $order_id = (int)($parts[0] ?? 0);
 }
 ?>
 <!DOCTYPE html>
@@ -45,7 +48,7 @@ if ($order_id == 0 && isset($_GET['m_payment_id'])) {
     <div class="confirmation-container">
         <div class="confirmation-card">
             <div class="confirmation-icon">
-                <img src="images/icons/verified-svgrepo-com.svg" width="48px" height="48px" alt="Confirmation Icon">
+                <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="64px" height="64px" alt="Confirmation Icon">
             </div>
             <h1 class="confirmation-title">Order Confirmed!</h1>
             <p class="confirmation-message">Thank you for your purchase. Your order has been received.</p>
@@ -72,6 +75,5 @@ $(document).ready(function() {
     updateCartCount();
 });
 </script>
-
 </body>
 </html>

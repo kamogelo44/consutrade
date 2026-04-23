@@ -7,8 +7,9 @@
  */
 
 session_start();
+require_once 'php/helpers.php';
 
-$baseUrl = "/www/consutrade/";
+$baseUrl = getBaseUrl();
 
 // Get search query from URL
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';

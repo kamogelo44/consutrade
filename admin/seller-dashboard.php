@@ -2,13 +2,13 @@
 /*
  * ConsuTrade - Seller Dashboard
  * Author: Kamogelo Phale
- * 
- * This is the main dashboard for sellers to manage their products and orders
  */
 
 session_start();
+require_once dirname(__DIR__) . '/php/config.php';
+require_once dirname(__DIR__) . '/php/helpers.php';
 
-$baseUrl = "/www/consutrade/";
+$baseUrl = getBaseUrl();
 
 // Check if user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -21,6 +21,11 @@ if ($_SESSION['role'] !== 'seller') {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
+
+// Get user data using helper
+$user = getUserById($conn, $_SESSION['user_id']);
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
+$conn->close();
 
 // Set current page for active sidebar link
 $current_page = 'dashboard';
@@ -37,81 +42,15 @@ $current_page = 'dashboard';
 </head>
 <body class="seller-dashboard-page">
 
-<!-- Mobile Toggle Button with spans for smooth animation -->
-<button class="seller-mobile-toggle" id="sellerHamburger">
-    <span></span>
-    <span></span>
-    <span></span>
-</button>
+<?php include 'includes/seller-sidebar.php'; ?>
 
-<!-- Main Dashboard Wrapper -->
-<div class="seller-dashboard">
-    <!-- Sidebar -->
-    <aside class="seller-sidebar" id="sellerSideMenu">
-        <div class="seller-sidebar-header">
-            <div class="seller-sidebar-logo">
-                <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Consu<span>Trade</span></a>
-            </div>
-            <!-- Close button for mobile - using spans for smooth transition -->
-            <button class="seller-sidebar-close" id="sellerSidebarClose">
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-        
-        <nav class="seller-sidebar-nav">
-            <ul>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo $current_page === 'dashboard' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" width="20px" height="20px" alt="Dashboard" onerror="this.style.display='none'">
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/my-products.php">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="20px" height="20px" alt="Products" onerror="this.style.display='none'">
-                        <span>My Products</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/my-orders.php">
-                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="20px" height="20px" alt="Orders" onerror="this.style.display='none'">
-                        <span>My Orders</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/add-product.php">
-                        <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" width="20px" height="20px" alt="Add Product" onerror="this.style.display='none'">
-                        <span>Add Product</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        
-        <div class="seller-sidebar-footer">
-            <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="seller-sidebar-link">
-                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" width="20px" height="20px" onerror="this.style.display='none'">
-                <span>My Profile</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>php/logout.php" class="seller-sidebar-link logout">
-                <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout" width="20px" height="20px" onerror="this.style.display='none'">
-                <span>Logout</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- Overlay for mobile -->
-    <div class="seller-menu-overlay" id="sellerMenuOverlay"></div>
-
-    <!-- Main Content -->
-    <main class="seller-main-content">
         <!-- User Profile Section -->
         <div class="user-profile-section">
             <div class="user-avatar">
-                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" onerror="this.style.display='none'">
+                <img src="<?php echo $profile_image; ?>" alt="Profile" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
             </div>
             <div class="user-welcome">
-                <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h2>
+                <h2>Welcome back, <?php echo htmlspecialchars($user['full_name']); ?>!</h2>
                 <p>Here's what's happening with your store today.</p>
             </div>
         </div>
@@ -201,16 +140,6 @@ $current_page = 'dashboard';
                         <div class="profile-shortcut-info">
                             <h3>My Profile</h3>
                             <p>View and edit your personal information</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard" onerror="this.style.display='none'">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>Dashboard</h3>
-                            <p>Return to your seller dashboard</p>
                         </div>
                         <span class="profile-shortcut-arrow">→</span>
                     </a>

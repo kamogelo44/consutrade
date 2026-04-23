@@ -145,6 +145,9 @@
     padding-top: var(--spacing-xl);
     text-align: center;
 }
+.footer-bottom p {
+    color: var(--gray-light);
+}
 
 .copyright {
     color: var(--gray-light);

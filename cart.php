@@ -1,7 +1,9 @@
 <?php
 session_start();
 
-$baseUrl = "/www/consutrade/";
+require_once 'php/helpers.php';
+
+$baseUrl = getBaseUrl();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,6 +17,7 @@ $baseUrl = "/www/consutrade/";
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
+
 </head>
 <body>
 

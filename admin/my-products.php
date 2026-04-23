@@ -2,23 +2,13 @@
 /*
  * ConsuTrade - My Products (Seller)
  * Author: Kamogelo Phale
- * 
- * This page displays all products for the logged-in seller
- * Sellers can edit, delete, and manage their product listings
  */
 
 session_start();
 
 $baseUrl = "/www/consutrade/";
 
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
-}
-
-// Check if user is a seller
-if ($_SESSION['role'] !== 'seller') {
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'seller') {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
@@ -28,43 +18,14 @@ require_once dirname(__DIR__) . '/php/config.php';
 $seller_id = $_SESSION['user_id'];
 $success_message = '';
 $error_message = '';
-
-// Set current page for active sidebar link
 $current_page = 'products';
-
-// Handle product deletion (soft delete)
-if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
-    $product_id = (int)$_GET['delete'];
-    
-    $check_sql = "SELECT product_id FROM products WHERE product_id = ? AND seller_id = ?";
-    $check_stmt = $conn->prepare($check_sql);
-    $check_stmt->bind_param('ii', $product_id, $seller_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    
-    if ($check_result->num_rows > 0) {
-        $delete_sql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
-        $delete_stmt = $conn->prepare($delete_sql);
-        $delete_stmt->bind_param('ii', $product_id, $seller_id);
-        
-        if ($delete_stmt->execute()) {
-            $success_message = 'Product deleted successfully!';
-        } else {
-            $error_message = 'Failed to delete product.';
-        }
-        $delete_stmt->close();
-    } else {
-        $error_message = 'Product not found or does not belong to you.';
-    }
-    $check_stmt->close();
-}
 
 // Handle status update (activate/suspend)
 if (isset($_GET['action']) && isset($_GET['id'])) {
     $product_id = (int)$_GET['id'];
     $action = $_GET['action'];
     
-    $check_sql = "SELECT product_id, status FROM products WHERE product_id = ? AND seller_id = ?";
+    $check_sql = "SELECT product_id, status FROM products WHERE product_id = ? AND seller_id = ? AND status != 'deleted'";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param('ii', $product_id, $seller_id);
     $check_stmt->execute();
@@ -99,63 +60,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build query
-$sql = "SELECT product_id, title as product_name, price, image_url, status, created_at, category_id
-        FROM products 
-        WHERE seller_id = ? AND status != 'deleted'";
-
-$params = [$seller_id];
-$types = "i";
-
-if ($status_filter !== 'all') {
-    $sql .= " AND status = ?";
-    $params[] = $status_filter;
-    $types .= "s";
-}
-
-if (!empty($search_term)) {
-    $sql .= " AND (title LIKE ? OR product_id LIKE ?)";
-    $search_param = "%$search_term%";
-    $params[] = $search_param;
-    $params[] = $search_param;
-    $types .= "ss";
-}
-
-$sql .= " ORDER BY created_at DESC";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param($types, ...$params);
-$stmt->execute();
-$result = $stmt->get_result();
-
-$products = [];
-while ($row = $result->fetch_assoc()) {
-    $products[] = $row;
-}
-$stmt->close();
-
-// Get product statistics
-$stats_sql = "SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
-                SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) as suspended
-              FROM products WHERE seller_id = ? AND status != 'deleted'";
-$stats_stmt = $conn->prepare($stats_sql);
-$stats_stmt->bind_param('i', $seller_id);
-$stats_stmt->execute();
-$stats_result = $stats_stmt->get_result();
-$stats = $stats_result->fetch_assoc();
-$stats_stmt->close();
-
 $conn->close();
-
-$filter_params = '';
-if ($status_filter !== 'all') {
-    $filter_params .= '&status=' . $status_filter;
-}
-if (!empty($search_term)) {
-    $filter_params .= '&search=' . urlencode($search_term);
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -172,15 +77,12 @@ if (!empty($search_term)) {
 
 <?php include 'includes/seller-sidebar.php'; ?>
 
-        <!-- Products Content -->
         <div class="products-container">
-            <!-- Page Header -->
             <div class="page-header">
                 <h1>My Products</h1>
                 <p>Manage all your product listings</p>
             </div>
 
-            <!-- Success/Error Messages -->
             <?php if ($success_message): ?>
                 <div class="success-message"><?php echo $success_message; ?></div>
             <?php endif; ?>
@@ -189,38 +91,6 @@ if (!empty($search_term)) {
                 <div class="error-message"><?php echo $error_message; ?></div>
             <?php endif; ?>
 
-            <!-- Stats Cards -->
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Total">
-                    </div>
-                    <div class="stat-info">
-                        <h3>Total Products</h3>
-                        <p class="stat-number"><?php echo $stats['total']; ?></p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" alt="Active">
-                    </div>
-                    <div class="stat-info">
-                        <h3>Active</h3>
-                        <p class="stat-number active"><?php echo $stats['active']; ?></p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <img src="<?php echo $baseUrl; ?>images/icons/hide-svgrepo-com.svg" alt="Suspended">
-                    </div>
-                    <div class="stat-info">
-                        <h3>Suspended</h3>
-                        <p class="stat-number suspended"><?php echo $stats['suspended']; ?></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Bar -->
             <div class="action-bar">
                 <a href="add-product.php" class="add-product-btn">
                     <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add">
@@ -235,7 +105,7 @@ if (!empty($search_term)) {
                     </div>
                     
                     <div class="search-bar">
-                        <form method="GET" action="">
+                        <form method="GET" action="" id="filter-form">
                             <input type="hidden" name="status" value="<?php echo $status_filter; ?>">
                             <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search_term); ?>">
                             <button type="submit">
@@ -249,80 +119,8 @@ if (!empty($search_term)) {
                 </div>
             </div>
 
-            <!-- Products Grid -->
-            <div class="products-grid">
-                <?php if (count($products) > 0): ?>
-                    <?php foreach ($products as $product): ?>
-                        <div class="product-card">
-                            <div class="product-image">
-                                <?php
-                                $imagePath = '';
-                                if (!empty($product['image_url'])) {
-                                    $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $product['image_url'];
-                                    if (file_exists($fullPath)) {
-                                        $imagePath = $baseUrl . $product['image_url'];
-                                    }
-                                }
-                                if (empty($imagePath)) {
-                                    $imagePath = $baseUrl . 'images/default-product.png';
-                                }
-                                ?>
-                                <img src="<?php echo $imagePath; ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>">
-                                <div class="product-status-badge status-<?php echo $product['status']; ?>">
-                                    <?php echo ucfirst($product['status']); ?>
-                                </div>
-                            </div>
-                            <div class="product-details">
-                                <h3 class="product-title"><?php echo htmlspecialchars($product['product_name']); ?></h3>
-                                <p class="product-price">R <?php echo number_format($product['price'], 2); ?></p>
-                                <p class="product-date">Listed: <?php echo date('d M Y', strtotime($product['created_at'])); ?></p>
-                                <div class="product-actions">
-                                    <a href="edit-product.php?id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" class="action-btn edit-btn" title="Edit">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/edit-svgrepo-com.svg" alt="Edit">
-                                        <span>Edit</span>
-                                    </a>
-                                    
-                                    <?php if ($product['status'] === 'active'): ?>
-                                        <a href="?action=suspend&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
-                                           class="action-btn suspend-btn" 
-                                           title="Suspend"
-                                           onclick="return confirm('Are you sure you want to suspend this product? It will no longer be visible to buyers.');">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/hide-svgrepo-com.svg" alt="Suspend">
-                                            <span>Suspend</span>
-                                        </a>
-                                    <?php elseif ($product['status'] === 'suspended'): ?>
-                                        <a href="?action=activate&id=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
-                                           class="action-btn activate-btn" 
-                                           title="Activate"
-                                           onclick="return confirm('Are you sure you want to activate this product? It will be visible to buyers.');">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/show-svgrepo-com.svg" alt="Activate">
-                                            <span>Activate</span>
-                                        </a>
-                                    <?php endif; ?>
-                                    
-                                    <a href="?delete=<?php echo $product['product_id']; ?><?php echo $filter_params; ?>" 
-                                       class="action-btn delete-btn" 
-                                       title="Delete"
-                                       onclick="return confirm('Are you sure you want to delete this product? This action cannot be undone.');">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" alt="Delete">
-                                        <span>Delete</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="empty-products">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="No products">
-                        <h3>No Products Found</h3>
-                        <p><?php echo !empty($search_term) ? 'No products match your search criteria.' : 'You haven\'t listed any products yet.'; ?></p>
-                        <?php if (!empty($search_term)): ?>
-                            <a href="?status=<?php echo $status_filter; ?>" class="clear-btn">Clear Search</a>
-                        <?php else: ?>
-                            <a href="add-product.php" class="add-btn">Add Your First Product</a>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
+            <div class="products-grid" id="products-grid">
+                <div class="loading-spinner">Loading products...</div>
             </div>
         </div>
     </main>
@@ -330,5 +128,149 @@ if (!empty($search_term)) {
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
-</body>
-</html>
+<script>
+var baseUrl = '<?php echo $baseUrl; ?>';
+var sellerId = <?php echo $seller_id; ?>;
+var statusFilter = '<?php echo $status_filter; ?>';
+var searchTerm = '<?php echo addslashes($search_term); ?>';
+
+// ========== GLOBAL FUNCTIONS (accessible from onclick) ==========
+function confirmDeleteProduct(productId) {
+    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+        var $card = $('.product-card[data-product-id="' + productId + '"]');
+        $card.css('opacity', '0.5');
+        
+        $.ajax({
+            url: baseUrl + 'php/delete-product.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ product_id: productId }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    $card.fadeOut(300, function() {
+                        $(this).remove();
+                        if ($('.product-card').length === 0) {
+                            location.reload();
+                        }
+                    });
+                } else {
+                    alert('Error: ' + data.message);
+                    $card.css('opacity', '1');
+                }
+            },
+            error: function() {
+                alert('Something went wrong. Please try again.');
+                $card.css('opacity', '1');
+            }
+        });
+    }
+}
+
+// ========== DOM READY - Initialize page ==========
+$(document).ready(function() {
+    loadProducts();
+    
+    function loadProducts() {
+        var $grid = $('#products-grid');
+        $grid.html('<div class="loading-spinner">Loading products...</div>');
+        
+        $.ajax({
+            url: baseUrl + 'php/get-seller-products.php?seller_id=' + sellerId,
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                if (data.success && data.products && data.products.length > 0) {
+                    var filteredProducts = data.products.filter(function(product) {
+                        var matchesStatus = (statusFilter === 'all') || (product.status === statusFilter);
+                        var matchesSearch = !searchTerm || 
+                            product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            product.id.toString().includes(searchTerm);
+                        return matchesStatus && matchesSearch;
+                    });
+                    
+                    if (filteredProducts.length > 0) {
+                        displayProducts(filteredProducts);
+                    } else {
+                        $grid.html(`
+                            <div class="empty-products">
+                                <img src="${baseUrl}images/icons/product-catalog-svgrepo-com.svg" alt="No products">
+                                <h3>No Products Found</h3>
+                                <p>No products match your current filters.</p>
+                                <a href="?status=all" class="clear-btn">Clear Filters</a>
+                            </div>
+                        `);
+                    }
+                } else {
+                    $grid.html(`
+                        <div class="empty-products">
+                            <img src="${baseUrl}images/icons/product-catalog-svgrepo-com.svg" alt="No products">
+                            <h3>No Products Found</h3>
+                            <p>You haven't listed any products yet.</p>
+                            <a href="add-product.php" class="add-btn">Add Your First Product</a>
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                $('#products-grid').html('<div class="error-message">Error loading products. Please refresh the page.</div>');
+            }
+        });
+    }
+    
+    function displayProducts(products) {
+        var $grid = $('#products-grid');
+        $grid.empty();
+        
+        $.each(products, function(index, product) {
+            var imagePath = product.image;
+            if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                imagePath = baseUrl + imagePath;
+            }
+            
+            // Use escapeHtml from main.js (global)
+            var card = $('<div>').addClass('product-card').attr('data-product-id', product.id);
+            card.html(`
+                <div class="product-image">
+                    <img src="${imagePath}" alt="${escapeHtml(product.name)}">
+                    <div class="product-status-badge status-${product.status}">
+                        ${product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                    </div>
+                </div>
+                <div class="product-details">
+                    <h3 class="product-title">${escapeHtml(product.name)}</h3>
+                    <p class="product-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                    <p class="product-date">Listed: ${new Date(product.created_at).toLocaleDateString()}</p>
+                    <div class="product-actions">
+                        <a href="edit-product.php?id=${product.id}" class="action-btn edit-btn" title="Edit">
+                            <img src="${baseUrl}images/icons/edit-svgrepo-com.svg" alt="Edit">
+                            <span>Edit</span>
+                        </a>
+                        ${product.status === 'active' ? 
+                            `<a href="?action=suspend&id=${product.id}&status=${statusFilter}${searchTerm ? '&search=' + encodeURIComponent(searchTerm) : ''}" 
+                               class="action-btn suspend-btn" 
+                               title="Suspend"
+                               onclick="return confirm('Are you sure you want to suspend this product?');">
+                                <img src="${baseUrl}images/icons/hide-svgrepo-com.svg" alt="Suspend">
+                                <span>Suspend</span>
+                            </a>` : 
+                            `<a href="?action=activate&id=${product.id}&status=${statusFilter}${searchTerm ? '&search=' + encodeURIComponent(searchTerm) : ''}" 
+                               class="action-btn activate-btn" 
+                               title="Activate"
+                               onclick="return confirm('Are you sure you want to activate this product?');">
+                                <img src="${baseUrl}images/icons/show-svgrepo-com.svg" alt="Activate">
+                                <span>Activate</span>
+                            </a>`
+                        }
+                        <button type="button" class="action-btn delete-btn" title="Delete" onclick="deleteProduct(${product.id})">
+                            <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" alt="Delete">
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+            `);
+            $grid.append(card);
+        });
+    }
+});
+</script>

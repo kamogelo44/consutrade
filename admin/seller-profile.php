@@ -2,14 +2,13 @@
 /*
  * ConsuTrade - Seller Profile Page
  * Author: Kamogelo Phale
- * 
- * This page allows sellers to view and edit their profile information
- * from within the admin dashboard context
  */
 
 session_start();
+require_once dirname(__DIR__) . '/php/config.php';
+require_once dirname(__DIR__) . '/php/helpers.php';
 
-$baseUrl = "/www/consutrade/";
+$baseUrl = getBaseUrl();
 
 // Check if user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -23,31 +22,21 @@ if ($_SESSION['role'] !== 'seller') {
     exit;
 }
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/php/config.php';
-
 // Set current page for active sidebar link
 $current_page = 'profile';
 
 $user_id = $_SESSION['user_id'];
-$role = $_SESSION['role'];
 
-// Get user data
-$sql = "SELECT full_name, email, role, location, phone, created_at, id_verified, profile_image 
-        FROM users 
-        WHERE user_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$stmt->close();
+// Get user data using helper
+$user = getUserById($conn, $user_id);
 
-// Set profile image path
-if (!empty($user['profile_image']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $user['profile_image'])) {
-    $profile_image = $baseUrl . $user['profile_image'];
-} else {
-    $profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+if (!$user) {
+    header('Location: ' . $baseUrl . 'index.php');
+    exit;
 }
+
+// Set profile image path using helper
+$profile_image = getUserProfileImage($user['profile_image']);
 
 $conn->close();
 ?>
@@ -64,73 +53,8 @@ $conn->close();
 </head>
 <body class="seller-dashboard-page">
 
-<!-- Mobile Toggle Button for sidebar -->
-<button class="seller-mobile-toggle" id="sellerHamburger">
-    <span></span>
-    <span></span>
-    <span></span>
-</button>
+<?php include 'includes/seller-sidebar.php'; ?>
 
-<!-- Main Dashboard Wrapper -->
-<div class="seller-dashboard">
-    <!-- Sidebar -->
-    <aside class="seller-sidebar" id="sellerSideMenu">
-        <div class="seller-sidebar-header">
-            <div class="seller-sidebar-logo">
-                <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Consu<span>Trade</span></a>
-            </div>
-            <button class="seller-sidebar-close" id="sellerSidebarClose">
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-        
-        <nav class="seller-sidebar-nav">
-            <ul>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo $current_page === 'dashboard' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" width="20px" height="20px" alt="Dashboard" onerror="this.style.display='none'">
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/my-products.php" class="<?php echo $current_page === 'products' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="20px" height="20px" alt="Products" onerror="this.style.display='none'">
-                        <span>My Products</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="<?php echo $current_page === 'orders' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="20px" height="20px" alt="Orders" onerror="this.style.display='none'">
-                        <span>My Orders</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="<?php echo $baseUrl; ?>admin/add-product.php" class="<?php echo $current_page === 'add-product' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" width="20px" height="20px" alt="Add Product" onerror="this.style.display='none'">
-                        <span>Add Product</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        
-        <div class="seller-sidebar-footer">
-            <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="seller-sidebar-link <?php echo $current_page === 'profile' ? 'active' : ''; ?>">
-                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile" width="20px" height="20px" onerror="this.style.display='none'">
-                <span>My Profile</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>php/logout.php" class="seller-sidebar-link logout">
-                <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout" width="20px" height="20px" onerror="this.style.display='none'">
-                <span>Logout</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- Overlay for mobile -->
-    <div class="seller-menu-overlay" id="sellerMenuOverlay"></div>
-
-    <!-- Main Content -->
-    <main class="seller-main-content">
         <!-- Page Header -->
         <div class="dashboard-header">
             <h1>My Profile</h1>
@@ -161,7 +85,7 @@ $conn->close();
                             <?php else: ?>
                                 <span class="verification-badge not-verified">Not Verified</span>
                             <?php endif; ?>
-                            <span class="member-since">Member since <?php echo date('M Y', strtotime($user['created_at'])); ?></span>
+                            <span class="member-since">Member since <?php echo formatDate($user['created_at']); ?></span>
                         </div>
                         <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
                     </div>

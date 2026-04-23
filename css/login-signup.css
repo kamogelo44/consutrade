@@ -10,7 +10,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0);
-    z-index: 2000;
+    z-index: var(--z-modal);
     justify-content: center;
     align-items: center;
     transition: background-color 0.4s ease, visibility 0.4s;
@@ -27,12 +27,12 @@
 /* ========== MODAL CONTENT ========== */
 .modal-content {
     position: relative;
-    background-color: #ffffff;
-    border-radius: 20px;
+    background-color: var(--white);
+    border-radius: var(--radius-xl);
     width: 90%;
     max-width: 420px;
     padding: 28px 24px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-lg);
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease;
     max-height: 90vh;
@@ -45,13 +45,13 @@
 }
 
 .modal-content::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 4px;
+    background: var(--gray-lighter);
+    border-radius: var(--radius-sm);
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-    background: #FF6B00;
-    border-radius: 4px;
+    background: var(--primary-color);
+    border-radius: var(--radius-sm);
 }
 
 /* Login modal - slides in from LEFT */
@@ -77,17 +77,17 @@
 /* ========== CLOSE BUTTON ========== */
 .btn-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
     width: 32px;
     height: 32px;
     background: rgba(0, 0, 0, 0.05);
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     cursor: pointer;
     padding: 0;
     z-index: 10;
-    transition: all 0.2s ease;
+    transition: all var(--transition-fast);
 }
 
 .btn-close:hover {
@@ -103,7 +103,7 @@
     left: 50%;
     width: 16px;
     height: 2px;
-    background-color: #666;
+    background-color: var(--gray-medium);
     border-radius: 2px;
 }
 
@@ -117,48 +117,48 @@
 
 .btn-close:hover::before,
 .btn-close:hover::after {
-    background-color: #FF6B00;
+    background-color: var(--primary-color);
 }
 
 /* ========== MODAL HEADER ========== */
 .modal-header {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-xl);
 }
 
 .modal-header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1A1A1A;
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    color: var(--dark-bg);
     margin-bottom: 6px;
 }
 
 .modal-header h1 span {
-    color: #FF6B00;
+    color: var(--primary-color);
 }
 
 .modal-header p {
-    font-size: 13px;
-    color: #888;
+    font-size: var(--font-sm);
+    color: var(--gray-medium);
     margin-bottom: 0;
 }
 
-/* ========== ERROR CONTAINER ========== */
+/* ========== ERROR CONTAINER (Top banner) ========== */
 .error-container {
-    background-color: #ffebee;
-    border-left: 4px solid #f44336;
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin-bottom: 16px;
+    background-color: var(--error-light);
+    border-left: 4px solid var(--error);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    margin-bottom: var(--spacing-md);
     display: none;
     animation: shakeError 0.4s ease;
 }
 
 .error-container .error-message {
-    color: #c62828;
-    font-size: 12px;
+    color: var(--error);
+    font-size: var(--font-sm);
     margin: 0;
-    font-weight: 500;
+    font-weight: var(--font-medium);
 }
 
 @keyframes shakeError {
@@ -172,67 +172,100 @@
 .register-form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--spacing-md);
 }
 
-/* Input Groups */
+/* ========== INPUT GROUP - FIXED WIDTH ========== */
 .input-group {
-    margin-bottom: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
 }
 
 .input-group label {
     display: block;
-    font-size: 13px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 5px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    color: var(--gray-dark);
+    margin-bottom: 6px;
+    text-align: left;
 }
 
 .input-group input {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 11px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
     box-sizing: border-box;
-    transition: all 0.2s ease;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    background-color: var(--white);
+    height: 46px;
 }
 
 .input-group input:focus {
     outline: none;
-    border-color: #FF6B00;
+    border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
 }
 
 .input-group input::placeholder {
-    color: #bbb;
-    font-size: 13px;
+    color: var(--gray-light);
+    font-size: var(--font-sm);
 }
 
-/* Password wrapper with inline styles - keep consistent */
+/* ========== ERROR STATE - INPUT KEEPS FULL WIDTH ========== */
+.input-group.error input {
+    border-color: var(--error) !important;
+    background-color: var(--error-light);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.input-group.error label {
+    color: var(--error);
+    text-align: left;
+}
+
+/* Error text - Left aligned, below input */
+.error-text {
+    color: var(--error);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+    line-height: 1.4;
+    display: block;
+    margin-top: var(--spacing-xs);
+    text-align: left;
+}
+
+/* ========== PASSWORD FIELD WRAPPER ========== */
 .password-field-wrapper {
     position: relative;
+    width: 100%;
 }
 
 .password-field-wrapper input {
     width: 100%;
-    padding-right: 38px;
+    padding-right: 42px;
+    box-sizing: border-box;
+    height: 46px;
 }
 
 .password-toggle-btn {
     position: absolute;
-    right: 8px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px;
-    border-radius: 50%;
+    padding: 8px;
+    border-radius: var(--radius-round);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-fast);
 }
 
 .password-toggle-btn:hover {
@@ -243,67 +276,51 @@
     width: 18px;
     height: 18px;
     opacity: 0.6;
-    transition: opacity 0.2s;
+    transition: opacity var(--transition-fast);
 }
 
 .password-toggle-btn:hover img {
     opacity: 1;
 }
 
-/* Error States */
-.input-group.error input {
-    border-color: #f44336;
-    background-color: #fff5f5;
-}
-
-.input-group.error label {
-    color: #f44336;
-}
-
-.error-text {
-    color: #f44336;
-    font-size: 11px;
-    display: block;
-    margin-top: 4px;
-    font-weight: 500;
-}
-
 /* Forgot Password Link */
 .reset-pass {
     text-align: center;
-    margin: -2px 0 0 0;
+    margin: var(--spacing-xs) 0 0 0;
 }
 
 .reset-pass a {
-    font-size: 12px;
-    color: #FF6B00;
+    font-size: var(--font-sm);
+    color: var(--primary-color);
     text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s ease;
+    font-weight: var(--font-medium);
+    transition: color var(--transition-fast);
 }
 
 .reset-pass a:hover {
-    color: #e05f00;
+    color: var(--primary-dark);
     text-decoration: underline;
 }
 
 /* Submit Button */
 .submit-btn {
     width: 100%;
-    padding: 11px;
-    background-color: #FF6B00;
-    color: white;
+    padding: 12px;
+    background-color: var(--primary-color);
+    color: var(--white);
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+    font-weight: var(--font-semibold);
     cursor: pointer;
-    transition: all 0.2s ease;
-    margin-top: 6px;
+    transition: all var(--transition-fast);
+    margin-top: var(--spacing-sm);
+    height: 48px;
+    box-sizing: border-box;
 }
 
 .submit-btn:hover {
-    background-color: #e05f00;
+    background-color: var(--primary-dark);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
 }
@@ -312,20 +329,27 @@
     transform: translateY(0);
 }
 
+.submit-btn:disabled {
+    background-color: var(--gray-light);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 /* Register Link (inside login modal) */
 .register-link {
     text-align: center;
-    font-size: 13px;
-    color: #666;
-    margin-top: 6px;
-    padding-top: 12px;
-    border-top: 1px solid #eee;
+    font-size: var(--font-sm);
+    color: var(--gray-medium);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-light);
 }
 
 .register-link a {
-    color: #FF6B00;
+    color: var(--primary-color);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: var(--font-medium);
 }
 
 .register-link a:hover {
@@ -335,15 +359,15 @@
 /* Login Link (inside register modal) */
 .login-link {
     text-align: center;
-    font-size: 13px;
-    color: #666;
-    margin-top: 6px;
+    font-size: var(--font-sm);
+    color: var(--gray-medium);
+    margin-top: var(--spacing-sm);
 }
 
 .login-link a {
-    color: #FF6B00;
+    color: var(--primary-color);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: var(--font-medium);
 }
 
 .login-link a:hover {
@@ -353,39 +377,42 @@
 /* ========== REGISTER MODAL SPECIFIC ========== */
 /* Fieldset Styles */
 .form-fields {
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    padding: 14px;
-    margin: 0;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin: 0 0 var(--spacing-md) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
 }
 
 .form-fields legend {
-    font-weight: 600;
-    color: #333;
+    font-weight: var(--font-semibold);
+    color: var(--gray-dark);
     padding: 0 10px;
-    font-size: 13px;
+    font-size: var(--font-sm);
     width: auto;
 }
 
 /* User Type Radio Buttons */
 .user-type {
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    padding: 14px;
-    margin: 0;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
 }
 
 .user-type legend {
-    font-weight: 600;
-    color: #333;
+    font-weight: var(--font-semibold);
+    color: var(--gray-dark);
     padding: 0 10px;
-    font-size: 13px;
+    font-size: var(--font-sm);
 }
 
 .radio-buttons {
     display: flex;
-    gap: 12px;
-    margin-top: 6px;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
 }
 
 .radio-buttons input[type="radio"] {
@@ -398,23 +425,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    background-color: #f8f9fa;
-    padding: 8px 14px;
-    border: 2px solid #e5e5e5;
-    border-radius: 8px;
+    gap: var(--spacing-sm);
+    background-color: var(--gray-bg-light);
+    padding: 10px 14px;
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 13px;
-    font-weight: 500;
+    transition: all var(--transition-fast);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
     text-align: center;
     flex: 1;
 }
 
 .radio {
-    background-color: white;
-    border-color: #ddd;
-    color: #555;
+    background-color: var(--white);
+    border-color: var(--border-medium);
+    color: var(--gray-dark);
 }
 
 .radio img {
@@ -425,13 +452,13 @@
 
 .radio-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .radio:hover {
-    background-color: #FFF4E8;
-    border-color: #FF6B00;
-    color: #FF6B00;
+    background-color: var(--primary-fade);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 .radio:hover img {
@@ -439,22 +466,18 @@
 }
 
 .radio-buttons input[type="radio"]:checked + .radio {
-    background-color: #FFF4E8;
-    color: #FF6B00;
-    border-color: #FF6B00;
+    background-color: var(--primary-fade);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
 .radio-buttons input[type="radio"]:checked + .radio img {
     filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%);
 }
 
-/* Register form specific spacing */
-.register-form .input-group {
-    margin-bottom: 10px;
-}
-
-.register-form .input-group:last-child {
-    margin-bottom: 0;
+.user-type.error {
+    animation: shakeError 0.4s ease;
+    border-color: var(--error);
 }
 
 /* ========== RESPONSIVE STYLES ========== */
@@ -467,25 +490,40 @@
     }
     
     .modal-header h1 {
-        font-size: 22px;
+        font-size: var(--font-xl);
     }
     
     .modal-header p {
-        font-size: 12px;
+        font-size: var(--font-sm);
     }
     
     .form-fields,
     .user-type {
-        padding: 12px;
+        padding: var(--spacing-md);
     }
     
     .radio-buttons {
         flex-direction: column;
-        gap: 8px;
+        gap: var(--spacing-sm);
     }
     
     .radio-btn {
         padding: 8px 12px;
+    }
+    
+    .input-group input,
+    .password-field-wrapper input {
+        height: 44px;
+        padding: 10px 12px;
+    }
+    
+    .password-field-wrapper input {
+        padding-right: 40px;
+    }
+    
+    .submit-btn {
+        height: 44px;
+        padding: 10px;
     }
 }
 
@@ -497,11 +535,11 @@
     }
     
     .modal-header {
-        margin-bottom: 16px;
+        margin-bottom: var(--spacing-md);
     }
     
     .modal-header h1 {
-        font-size: 20px;
+        font-size: var(--font-lg);
     }
     
     .form-fields,
@@ -511,24 +549,27 @@
     
     .form-fields legend,
     .user-type legend {
-        font-size: 12px;
+        font-size: var(--font-sm);
     }
     
     .input-group label {
-        font-size: 12px;
+        font-size: var(--font-sm);
     }
     
-    .input-group input {
+    .input-group input,
+    .password-field-wrapper input {
         padding: 8px 10px;
-        font-size: 13px;
+        font-size: var(--font-sm);
+        height: 42px;
     }
     
     .submit-btn {
         padding: 10px;
+        height: 42px;
     }
     
     .radio-btn {
         padding: 7px 10px;
-        font-size: 12px;
+        font-size: var(--font-sm);
     }
 }

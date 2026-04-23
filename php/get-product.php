@@ -32,7 +32,7 @@ if (isset($_GET['id'])) {
     if ($product_id > 0) {
         $sql = "SELECT p.product_id, p.title, p.price, p.description, 
                 p.image_url, p.gallery_images, p.location, p.condition, p.category_id,
-                u.full_name as seller_name, u.user_id as seller_id,
+                u.full_name as seller_name, u.user_id as seller_id, u.profile_image as seller_profile_image,
                 u.id_verified as is_verified
                 FROM products p 
                 LEFT JOIN users u ON p.seller_id = u.user_id 
@@ -96,7 +96,8 @@ if (isset($_GET['id'])) {
                     'seller_id' => $row['seller_id'],
                     'is_verified' => $row['is_verified'] == 1,
                     'avg_rating' => $avg_rating,
-                    'review_count' => $review_count
+                    'review_count' => $review_count,
+                    'profile_image' => $row['seller_profile_image'] ?? null 
                 ];
                 $response['success'] = true;
             } else {
@@ -116,6 +117,7 @@ if (isset($_GET['id'])) {
 $conn->close();
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
 echo json_encode($response);
 exit;
 ?>

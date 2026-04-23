@@ -4,7 +4,6 @@
  * Author: Kamogelo Phale
  * 
  * Returns all active products for the listings page
- * 
  */
 
 require_once 'config.php';
@@ -16,13 +15,14 @@ $response = ['success' => false, 'products' => [], 'total_pages' => 1, 'current_
 
 // Get filter parameters
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 12;
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 12;
 $offset = ($page - 1) * $limit;
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 
-// Simple query without filters first to test
+// Query
 $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url, p.location, p.condition,
         u.full_name as seller_name, u.user_id as seller_id,
+        u.profile_image as profile_image,
         u.id_verified as is_verified
         FROM products p 
         JOIN users u ON p.seller_id = u.user_id 
@@ -52,12 +52,13 @@ while ($row = $result->fetch_assoc()) {
         'id' => $row['product_id'],
         'name' => $row['product_name'],
         'price' => (float)$row['price'],
-        'image' => $imagePath,
+        'image' => $row['image_url'] ?? 'images/default-product.png',
         'seller_name' => $row['seller_name'],
         'seller_id' => $row['seller_id'],
         'location' => $row['location'] ?? 'South Africa',
         'condition' => $row['condition'] ?? 'Good',
-        'is_verified' => $row['is_verified'] == 1
+        'is_verified' => $row['is_verified'] == 1,
+        'profile_image' => $row['profile_image'] ?? null
     ];
 }
 

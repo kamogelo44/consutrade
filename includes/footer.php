@@ -3,9 +3,9 @@
  * ConsuTrade - Site Footer Component
  * Author: Kamogelo Phale
  */
-
-if (!isset($baseUrl)) {
-    $baseUrl = "/www/consutrade/";
+// Close database connection if it exists
+if (isset($conn) && $conn) {
+    $conn->close();
 }
 ?>
 

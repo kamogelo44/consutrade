@@ -397,19 +397,24 @@
 }
 
 .seller-avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background-color: var(--primary-fade);
+    background-color: var(--gray-bg);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .seller-avatar img {
-    width: 18px;
-    height: 18px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    object-fit: cover;
+    object-position: center;
 }
 
 .seller-details {
@@ -903,13 +908,14 @@
     }
     
     .seller-avatar {
-        width: 24px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
     }
     
     .seller-avatar img {
-        width: 12px;
-        height: 12px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .seller-details .seller-name {
@@ -1011,8 +1017,9 @@
     }
     
     .seller-avatar img {
-        width: 14px;
-        height: 14px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .seller-details .seller-name {
@@ -1634,6 +1641,64 @@
     margin: 0;
 }
 
+/* ========== ERROR STATES ========== */
+.error-container {
+    text-align: center;
+    padding: 80px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.error-icon {
+    opacity: 0.5;
+    margin-bottom: 20px;
+}
+
+.error-title {
+    color: var(--error);
+    margin-bottom: 10px;
+    font-size: 24px;
+    font-weight: var(--font-bold);
+}
+
+.error-message-text {
+    color: var(--gray-medium);
+    margin-bottom: 20px;
+}
+
+.error-action-btn {
+    margin-top: 10px;
+    padding: 10px 24px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+}
+
+.error-action-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Own product button (disabled state) */
+.own-product-btn {
+    background-color: var(--gray-light);
+    color: var(--white);
+    cursor: not-allowed;
+    width: 100%;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: none;
+    font-weight: var(--font-medium);
+    opacity: 0.7;
+}
 /* ========== RESPONSIVE STYLES FOR PRODUCT DETAILS PAGE ========== */
 
 @media (max-width: 1024px) {

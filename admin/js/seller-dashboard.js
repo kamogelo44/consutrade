@@ -19,6 +19,12 @@ function editProduct(productId) {
 }
 
 function deleteProduct(productId) {
+    var $btn = $('.delete-btn[onclick*="deleteProduct(' + productId + ')"]');
+    
+    // Prevent multiple clicks
+    if ($btn.data('processing')) return;
+    $btn.data('processing', true);
+    
     if (confirm('Are you sure you want to delete this product?')) {
         $.ajax({
             url: '/www/consutrade/php/delete-product.php',
@@ -29,17 +35,82 @@ function deleteProduct(productId) {
             success: function(data) {
                 if (data.success) {
                     loadSellerProducts();
-                    alert('Product deleted successfully!');
                 } else {
-                    alert('Error deleting product: ' + data.message);
+                    alert('Error: ' + data.message);
+                }
+            },
+            complete: function() {
+                $btn.data('processing', false);
+            }
+        });
+    } else {
+        $btn.data('processing', false);
+    }
+}
+
+ function loadSellerProducts() {
+        var $grid = $('#listings-grid');
+        if (!$grid.length) return;
+        
+        $grid.html('<div class="loading-spinner">Loading your products...</div>');
+        
+        $.ajax({
+            url: '/www/consutrade/php/get-seller-products.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                if (data.success && data.products && data.products.length > 0) {
+                    displaySellerProducts(data.products);
+                } else {
+                    $grid.html(`
+                        <div class="empty-listings">
+                            <p>You haven't listed any products yet.</p>
+                            <button class="add-listing-btn" onclick="window.location.href='add-product.php'">+ Add Your First Product</button>
+                        </div>
+                    `);
                 }
             },
             error: function(xhr, status, error) {
-                console.log('Error:', error);
-                alert('Something went wrong');
+                console.log('Error loading products:', error);
+                $grid.html('<p class="error">Error loading products. Please refresh the page.</p>');
             }
         });
     }
+
+function displaySellerProducts(products) {
+    var $grid = $('#listings-grid');
+    $grid.empty();
+    
+    var fragment = document.createDocumentFragment();
+    
+    $.each(products, function(index, product) {
+        var imagePath = product.image;
+        if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+            imagePath = '/www/consutrade/' + imagePath;
+        }
+        
+        var card = $('<div>').addClass('listing-card');
+        card.html(`
+            <div class="listing-img">
+                <img src="${imagePath}" alt="${escapeHtml(product.name)}" 
+                     loading="lazy"
+                     onerror="this.src='/www/consutrade/images/default-product.png'">
+            </div>
+            <div class="listing-info">
+                <h3 class="listing-title">${escapeHtml(product.name)}</h3>
+                <p class="listing-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                <p class="listing-status ${product.status}">${product.status}</p>
+                <div class="listing-actions">
+                    <button class="edit-btn" onclick="editProduct(${product.id})">Edit</button>
+                    <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
+                </div>
+            </div>
+        `);
+        
+        fragment.appendChild(card[0]);
+    });
+    
+    $grid.append(fragment);
 }
 
 $(document).ready(function() {
@@ -109,64 +180,6 @@ $(document).ready(function() {
         });
     }
     
-    function loadSellerProducts() {
-        var $grid = $('#listings-grid');
-        if (!$grid.length) return;
-        
-        $grid.html('<div class="loading-spinner">Loading your products...</div>');
-        
-        $.ajax({
-            url: '/www/consutrade/php/get-seller-products.php',
-            type: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                if (data.success && data.products && data.products.length > 0) {
-                    displaySellerProducts(data.products);
-                } else {
-                    $grid.html(`
-                        <div class="empty-listings">
-                            <p>You haven't listed any products yet.</p>
-                            <button class="add-listing-btn" onclick="window.location.href='add-product.php'">+ Add Your First Product</button>
-                        </div>
-                    `);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.log('Error loading products:', error);
-                $grid.html('<p class="error">Error loading products. Please refresh the page.</p>');
-            }
-        });
-    }
-    
-    function displaySellerProducts(products) {
-        var $grid = $('#listings-grid');
-        $grid.empty();
-        
-        $.each(products, function(index, product) {
-            // Fix image path - prepend base URL if needed
-            var imagePath = product.image;
-            if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                imagePath = '/www/consutrade/' + imagePath;
-            }
-            
-            var card = $('<div>').addClass('listing-card');
-            card.html(`
-                <div class="listing-img">
-                    <img src="${imagePath}" alt="${escapeHtml(product.name)}" onerror="this.src='/www/consutrade/images/default-product.png'">
-                </div>
-                <div class="listing-info">
-                    <h3 class="listing-title">${escapeHtml(product.name)}</h3>
-                    <p class="listing-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                    <p class="listing-status ${product.status}">${product.status}</p>
-                    <div class="listing-actions">
-                        <button class="edit-btn" onclick="editProduct(${product.id})">Edit</button>
-                        <button class="delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
-                    </div>
-                </div>
-            `);
-            $grid.append(card);
-        });
-    }
     
     function loadRecentOrders() {
         var $ordersList = $('#recent-orders-list');
