@@ -6,32 +6,31 @@
  * This page displays all orders for the logged-in seller
  */
 
-session_start();
-require_once dirname(__DIR__) . '/php/config.php';
 require_once dirname(__DIR__) . '/php/helpers.php';
+
+// Check if seller is logged in
+if (!isSellerLoggedIn()) {
+    header('Location: login.php');
+    exit;
+}
+
+// Start seller session
+startSession('seller');
 
 $baseUrl = getBaseUrl();
 
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
-}
+// Get database connection
+require_once dirname(__DIR__) . '/php/config.php';
 
-// Check if user is a seller
-if ($_SESSION['role'] !== 'seller') {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
-}
-
-// Set current page for active sidebar link
-$current_page = 'orders';
+// Get user data using helper
+$user = getUserById($conn, $_SESSION['user_id']);
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
 // Get filter parameters
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build query with item count
+// Build query with item count and improved sorting
 $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
         u.full_name as buyer_name, u.email as buyer_email,
         (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.order_id) as item_count
@@ -56,7 +55,17 @@ if (!empty($search_term)) {
     $types .= "ss";
 }
 
-$sql .= " ORDER BY o.created_at DESC";
+// Improved sorting: pending first, then processing, shipped, completed, cancelled
+$sql .= " ORDER BY 
+            CASE o.status 
+                WHEN 'pending' THEN 1
+                WHEN 'processing' THEN 2
+                WHEN 'shipped' THEN 3
+                WHEN 'completed' THEN 4
+                WHEN 'cancelled' THEN 5
+                ELSE 6
+            END,
+            o.created_at DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param($types, ...$params);
@@ -77,13 +86,16 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade Seller</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-orders.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script>
+        var baseUrl = '<?php echo $baseUrl; ?>';
+    </script>
 </head>
 <body class="my-orders-page seller-dashboard-page">
 
-<?php include 'includes/seller-sidebar.php'; ?>
+<?php include 'includes/sidebar.php'; ?>
 
         <!-- Orders Content -->
         <div class="orders-container">
@@ -213,11 +225,9 @@ $conn->close();
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-<script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
 var baseUrl = '<?php echo $baseUrl; ?>';
-
-// NOTE: escapeHtml() is already defined in main.js - DO NOT REDEFINE
 
 function viewOrderDetails(orderId) {
     var modal = document.getElementById('order-modal');
@@ -226,14 +236,20 @@ function viewOrderDetails(orderId) {
     modal.classList.add('active');
     content.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
     
-    $.get(baseUrl + 'php/get-order-details.php?order_id=' + orderId, function(data) {
-        if (data.success) {
-            displayOrderDetails(data.order);
-        } else {
-            content.innerHTML = '<p class="error">Error loading order details.</p>';
+    $.ajax({
+        url: baseUrl + 'php/get-order-details.php?order_id=' + orderId,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.success && data.order) {
+                displayOrderDetails(data.order);
+            } else {
+                content.innerHTML = '<p class="error">Unable to load order details. Please try again.</p>';
+            }
+        },
+        error: function() {
+            content.innerHTML = '<p class="error">Error loading order details. Please refresh and try again.</p>';
         }
-    }).fail(function() {
-        content.innerHTML = '<p class="error">Error loading order details.</p>';
     });
 }
 
@@ -242,7 +258,8 @@ function displayOrderDetails(order) {
     var itemsHtml = '';
     
     if (order.items && order.items.length > 0) {
-        $.each(order.items, function(index, item) {
+        for (var i = 0; i < order.items.length; i++) {
+            var item = order.items[i];
             var imagePath = item.image_url;
             if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
                 imagePath = baseUrl + imagePath;
@@ -261,7 +278,7 @@ function displayOrderDetails(order) {
                     </div>
                 </div>
             `;
-        });
+        }
     }
     
     content.innerHTML = `
@@ -276,15 +293,15 @@ function displayOrderDetails(order) {
             </div>
             <div class="info-row">
                 <span class="info-label">Order Status:</span>
-                <span class="info-value status-${order.status}">${order.status.toUpperCase()}</span>
+                <span class="info-value status-${order.status}">${order.status ? order.status.toUpperCase() : 'UNKNOWN'}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Customer Name:</span>
-                <span class="info-value">${escapeHtml(order.buyer_name)}</span>
+                <span class="info-value">${escapeHtml(order.buyer_name || 'N/A')}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Customer Email:</span>
-                <span class="info-value">${escapeHtml(order.buyer_email)}</span>
+                <span class="info-value">${escapeHtml(order.buyer_email || 'N/A')}</span>
             </div>
             ${order.shipping_address ? `
             <div class="info-row">
@@ -296,21 +313,21 @@ function displayOrderDetails(order) {
         
         <h3>Order Items</h3>
         <div class="order-items-list">
-            ${itemsHtml}
+            ${itemsHtml || '<p class="no-items">No items found for this order.</p>'}
         </div>
         
         <div class="order-total-section">
             <div class="total-row">
                 <span>Subtotal:</span>
-                <span>R ${parseFloat(order.subtotal).toFixed(2)}</span>
+                <span>R ${parseFloat(order.subtotal || 0).toFixed(2)}</span>
             </div>
             <div class="total-row">
                 <span>Delivery Fee:</span>
-                <span>R ${parseFloat(order.delivery_fee).toFixed(2)}</span>
+                <span>R ${parseFloat(order.delivery_fee || 0).toFixed(2)}</span>
             </div>
             <div class="total-row grand-total">
                 <span>Total:</span>
-                <span>R ${parseFloat(order.total).toFixed(2)}</span>
+                <span>R ${parseFloat(order.total || 0).toFixed(2)}</span>
             </div>
         </div>
         
@@ -318,7 +335,7 @@ function displayOrderDetails(order) {
             ${order.status === 'pending' ? '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process Order</button>' : ''}
             ${order.status === 'processing' ? '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Mark as Shipped</button>' : ''}
             ${order.status === 'shipped' ? '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Mark as Completed</button>' : ''}
-            ${order.status === 'pending' || order.status === 'processing' ? '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>' : ''}
+            ${(order.status === 'pending' || order.status === 'processing') ? '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>' : ''}
         </div>
     `;
 }
@@ -331,7 +348,7 @@ function updateOrderStatus(orderId, newStatus) {
     
     if (confirm(confirmMsg)) {
         $.ajax({
-            url: baseUrl + 'php/update-order-status.php',
+            url: baseUrl + 'admin/php/update-order-status.php',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ order_id: orderId, status: newStatus }),
@@ -341,11 +358,11 @@ function updateOrderStatus(orderId, newStatus) {
                     alert('Order status updated successfully!');
                     location.reload();
                 } else {
-                    alert('Error updating order status: ' + data.message);
+                    alert('Error updating order status: ' + (data.message || 'Unknown error'));
                 }
             },
             error: function() {
-                alert('Something went wrong');
+                alert('Something went wrong. Please try again.');
             }
         });
     }
@@ -364,6 +381,14 @@ if (modal) {
             closeOrderModal();
         }
     });
+}
+
+// Escape HTML helper (fallback if main.js doesn't have it)
+function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 </body>

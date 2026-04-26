@@ -6,15 +6,13 @@
  * This page handles the checkout process and redirects to PayFast
  */
 
-session_start();
-
-require_once 'php/config.php';
-require_once "php/helpers.php";
+require_once 'php/helpers.php';
+startSession('user');
 
 $baseUrl = getBaseUrl();
 
 // Check if user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+if (!isUserLoggedIn()) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }

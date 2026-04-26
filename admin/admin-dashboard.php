@@ -6,18 +6,57 @@
  * Main admin dashboard page
  */
 
-require_once 'admin-header.php';
-?>
+require_once dirname(__DIR__) . '/php/helpers.php';
 
-<div class="dashboard-welcome">
-    <h1>Admin Dashboard</h1>
-    <p>Welcome back, <?php echo htmlspecialchars($_SESSION['full_name']); ?>! Here's what's happening with your marketplace today.</p>
+// isAdminLoggedIn() starts the session automatically
+if (!isAdminLoggedIn()) {
+    header('Location: login.php');
+    exit;
+}
+
+
+$baseUrl = getBaseUrl();
+
+// Get database connection
+require_once dirname(__DIR__) . '/php/config.php';
+
+// Get user data
+$user = getUserById($conn, $_SESSION['user_id']);
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
+$conn->close();
+
+// Set current page for active sidebar link
+$current_page = 'dashboard';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ConsuTrade</title>
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script>
+        var baseUrl = '<?php echo $baseUrl; ?>';
+    </script>
+</head>
+<body class="admin-dashboard-page">
+
+<?php include 'includes/sidebar.php'; ?>
+
+<!-- Main Content -->
+<div class="welcome-section">
+    <h2>Welcome back, <?php echo htmlspecialchars($user['full_name']); ?>!</h2>
+    <p>Here's what's happening with your marketplace today.</p>
 </div>
 
-<div class="admin-stats">
+
+<!-- Stats Section -->
+<div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon">
-            <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" width="32px" height="32px" alt="Users">
+            <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users" class="stat-icon-img">
         </div>
         <div class="stat-info">
             <h3>Total Users</h3>
@@ -26,7 +65,7 @@ require_once 'admin-header.php';
     </div>
     <div class="stat-card">
         <div class="stat-icon">
-            <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="32px" height="32px" alt="Products">
+            <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products" class="stat-icon-img">
         </div>
         <div class="stat-info">
             <h3>Total Products</h3>
@@ -35,7 +74,7 @@ require_once 'admin-header.php';
     </div>
     <div class="stat-card">
         <div class="stat-icon">
-            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="32px" height="32px" alt="Orders">
+            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders" class="stat-icon-img">
         </div>
         <div class="stat-info">
             <h3>Total Orders</h3>
@@ -44,7 +83,7 @@ require_once 'admin-header.php';
     </div>
     <div class="stat-card">
         <div class="stat-icon">
-            <img src="<?php echo $baseUrl; ?>images/icons/clock-svgrepo-com.svg" width="32px" height="32px" alt="Pending">
+            <img src="<?php echo $baseUrl; ?>images/icons/clock-svgrepo-com.svg" alt="Pending" class="stat-icon-img">
         </div>
         <div class="stat-info">
             <h3>Pending Orders</h3>
@@ -53,12 +92,16 @@ require_once 'admin-header.php';
     </div>
 </div>
 
-<!-- Recent Activity Section -->
-<div class="admin-recent">
-    <div class="recent-card">
-        <h2>Recent Users</h2>
-        <div class="recent-table-wrapper">
-            <table class="recent-table">
+<!-- Dashboard Sections -->
+<div class="dashboard-sections">
+    <!-- Recent Users Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Recent Users</h2>
+            <a href="users.php" class="view-all-link">View All →</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -68,19 +111,20 @@ require_once 'admin-header.php';
                     </tr>
                 </thead>
                 <tbody id="recent-users-table">
-                    <tr>
-                        <td colspan="4" style="text-align: center;">Loading...</td>
-                    </tr>
+                    <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
-        <a href="users.php" class="view-all-link">View All Users →</a>
     </div>
 
-    <div class="recent-card">
-        <h2>Recent Orders</h2>
-        <div class="recent-table-wrapper">
-            <table class="recent-table">
+    <!-- Recent Orders Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Recent Orders</h2>
+            <a href="all-orders.php" class="view-all-link">View All →</a>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Order #</th>
@@ -91,107 +135,76 @@ require_once 'admin-header.php';
                     </tr>
                 </thead>
                 <tbody id="recent-orders-table">
-                    <tr>
-                        <td colspan="5" style="text-align: center;">Loading...</td>
-                    </tr>
+                    <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
-        <a href="all-orders.php" class="view-all-link">View All Orders →</a>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Quick Actions</h2>
+        </div>
+        <div class="profile-shortcuts">
+            <a href="users.php" class="profile-shortcut-link">
+                <div class="profile-shortcut-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users">
+                </div>
+                <div class="profile-shortcut-info">
+                    <h3>Manage Users</h3>
+                    <p>View and manage all users</p>
+                </div>
+                <span class="profile-shortcut-arrow">→</span>
+            </a>
+            <a href="all-products.php" class="profile-shortcut-link">
+                <div class="profile-shortcut-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
+                </div>
+                <div class="profile-shortcut-info">
+                    <h3>All Products</h3>
+                    <p>Manage marketplace products</p>
+                </div>
+                <span class="profile-shortcut-arrow">→</span>
+            </a>
+            <a href="all-orders.php" class="profile-shortcut-link">
+                <div class="profile-shortcut-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders">
+                </div>
+                <div class="profile-shortcut-info">
+                    <h3>All Orders</h3>
+                    <p>Track and manage orders</p>
+                </div>
+                <span class="profile-shortcut-arrow">→</span>
+            </a>
+            <a href="admin-profile.php" class="profile-shortcut-link">
+                <div class="profile-shortcut-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile">
+                </div>
+                <div class="profile-shortcut-info">
+                    <h3>My Profile</h3>
+                    <p>Update your account settings</p>
+                </div>
+                <span class="profile-shortcut-arrow">→</span>
+            </a>
+            <a href="<?php echo $baseUrl; ?>admin/php/admin-logout.php" class="profile-shortcut-link logout-link">
+                <div class="profile-shortcut-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout">
+                </div>
+                <div class="profile-shortcut-info">
+                    <h3>Logout</h3>
+                    <p>Sign out of your account</p>
+                </div>
+                <span class="profile-shortcut-arrow">→</span>
+            </a>
+        </div>
     </div>
 </div>
 
-</main>
+</main> <!-- Close main tag opened in sidebar.php -->
+</div> <!-- Close dashboard div opened in sidebar.php -->
 
-<script src="<?php echo $baseUrl; ?>admin/js/admin.js"></script>
-<script>
-    // Load dashboard data when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        loadDashboardStats();
-        loadRecentUsers();
-        loadRecentOrders();
-    });
-
-    function loadDashboardStats() {
-        fetch('get-stats.php')
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    document.getElementById('totalUsers').textContent = data.total_users || 0;
-                    document.getElementById('totalProducts').textContent = data.total_products || 0;
-                    document.getElementById('totalOrders').textContent = data.total_orders || 0;
-                    document.getElementById('pendingOrders').textContent = data.pending_orders || 0;
-                }
-            })
-            .catch(function(error) {
-                console.log('Error loading stats:', error);
-            });
-    }
-
-    function loadRecentUsers() {
-        fetch('get-recent-users.php')
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                var tbody = document.getElementById('recent-users-table');
-                if (data.success && data.users.length > 0) {
-                    tbody.innerHTML = '';
-                    for (var i = 0; i < data.users.length; i++) {
-                        var user = data.users[i];
-                        var row = '<tr>' +
-                            '<td>' + escapeHtml(user.full_name) + '</td>' +
-                            '<td>' + escapeHtml(user.email) + '</td>' +
-                            '<td><span class="role-badge role-' + user.role + '">' + ucfirst(user.role) + '</span></td>' +
-                            '<td>' + user.created_at + '</td>' +
-                            '</tr>';
-                        tbody.innerHTML += row;
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No users found</td></tr>';
-                }
-            })
-            .catch(function(error) {
-                console.log('Error loading users:', error);
-            });
-    }
-
-    function loadRecentOrders() {
-        fetch('get-recent-orders.php')
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                var tbody = document.getElementById('recent-orders-table');
-                if (data.success && data.orders.length > 0) {
-                    tbody.innerHTML = '';
-                    for (var i = 0; i < data.orders.length; i++) {
-                        var order = data.orders[i];
-                        var row = '<tr>' +
-                            '<td>#' + order.order_id + '</td>' +
-                            '<td>' + escapeHtml(order.buyer_name) + '</td>' +
-                            '<td>R ' + parseFloat(order.total_price).toFixed(2) + '</td>' +
-                            '<td><span class="status-badge status-' + order.status + '">' + ucfirst(order.status) + '</span></td>' +
-                            '<td>' + order.created_at + '</td>' +
-                            '</tr>';
-                        tbody.innerHTML += row;
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No orders found</td></tr>';
-                }
-            })
-            .catch(function(error) {
-                console.log('Error loading orders:', error);
-            });
-    }
-
-    function ucfirst(str) {
-        if (!str) return '';
-        return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        var div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-</script>
+<script src="<?php echo $baseUrl; ?>js/main.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 </body>
 </html>

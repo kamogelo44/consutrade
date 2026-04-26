@@ -6,9 +6,199 @@
  * Centralized helper functions to avoid duplication
  */
 
+// ========== SESSION CONFIGURATION ==========
+// Set session cookie parameters BEFORE any session starts
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_only_cookies', 1);
+ini_set('session.cookie_path', '/');
+ini_set('session.cookie_domain', '');
+ini_set('session.cookie_lifetime', 0);
+ini_set('session.gc_maxlifetime', 7200);
+
 // Get base URL
 function getBaseUrl() {
     return "/www/consutrade/";
+}
+
+/**
+ * Start the appropriate session based on context
+ * Only call this ONCE at the beginning of each page
+ * 
+ * @param string $context 'user' for main website, 'admin' for admin dashboard, 'seller' for seller dashboard
+ */
+function startSession($context = 'user') {
+    // Only set session name if no session is active yet
+    if (session_status() === PHP_SESSION_NONE) {
+        if ($context === 'admin') {
+            session_name('CONSUTRADE_ADMIN_SESSION');
+        } elseif ($context === 'seller') {
+            session_name('CONSUTRADE_SELLER_SESSION');
+        } else {
+            session_name('CONSUTRADE_USER_SESSION');
+        }
+        session_start();
+    }
+}
+
+/**
+ * Get current session name without starting a new session
+ * 
+ * @return string|null Current session name or null
+ */
+function getCurrentSessionName() {
+    return session_name() ?: null;
+}
+
+/**
+ * Destroy session based on context
+ * 
+ * @param string $context 'user' for main website, 'admin' for admin dashboard, 'seller' for seller dashboard
+ */
+function destroySession($context = 'user') {
+    // Set session name before starting
+    if ($context === 'admin') {
+        session_name('CONSUTRADE_ADMIN_SESSION');
+    } elseif ($context === 'seller') {
+        session_name('CONSUTRADE_SELLER_SESSION');
+    } else {
+        session_name('CONSUTRADE_USER_SESSION');
+    }
+    
+    // Start session if not already active
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $_SESSION = array();
+    
+    if (isset($_COOKIE[session_name()])) {
+        setcookie(session_name(), '', time() - 3600, '/');
+    }
+    
+    session_destroy();
+}
+
+/**
+ * Check if user is logged in (main website - ONLY buyers)
+ * 
+ * @return bool
+ */
+function isUserLoggedIn() {
+    // Check if we're in the correct session context
+    if (session_status() === PHP_SESSION_ACTIVE && session_name() !== 'CONSUTRADE_USER_SESSION') {
+        return false;
+    }
+    
+    // Only start session if not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_name('CONSUTRADE_USER_SESSION');
+        session_start();
+    }
+    
+    return isset($_SESSION['logged_in']) && 
+           $_SESSION['logged_in'] === true && 
+           isset($_SESSION['role']) && 
+           $_SESSION['role'] === 'buyer';
+}
+
+/**
+ * Check if admin is logged in to dashboard
+ * 
+ * @return bool
+ */
+function isAdminLoggedIn() {
+    // Check if we're in the correct session context
+    if (session_status() === PHP_SESSION_ACTIVE && session_name() !== 'CONSUTRADE_ADMIN_SESSION') {
+        return false;
+    }
+    
+    // Only start session if not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_name('CONSUTRADE_ADMIN_SESSION');
+        session_start();
+    }
+    
+    return isset($_SESSION['logged_in']) && 
+           $_SESSION['logged_in'] === true && 
+           isset($_SESSION['role']) && 
+           $_SESSION['role'] === 'admin';
+}
+
+/**
+ * Check if seller is logged in to dashboard
+ * 
+ * @return bool
+ */
+function isSellerLoggedIn() {
+    // Check if we're in the correct session context
+    if (session_status() === PHP_SESSION_ACTIVE && session_name() !== 'CONSUTRADE_SELLER_SESSION') {
+        return false;
+    }
+    
+    // Only start session if not already started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_name('CONSUTRADE_SELLER_SESSION');
+        session_start();
+    }
+    
+    return isset($_SESSION['logged_in']) && 
+           $_SESSION['logged_in'] === true && 
+           isset($_SESSION['role']) && 
+           $_SESSION['role'] === 'seller';
+}
+
+/**
+ * Get current user session data (main website)
+ * 
+ * @return array|null
+ */
+function getCurrentUser() {
+    if (!isUserLoggedIn()) {
+        return null;
+    }
+    
+    return [
+        'user_id' => $_SESSION['user_id'] ?? null,
+        'full_name' => $_SESSION['full_name'] ?? null,
+        'email' => $_SESSION['email'] ?? null,
+        'role' => $_SESSION['role'] ?? null
+    ];
+}
+
+/**
+ * Get current admin session data
+ * 
+ * @return array|null
+ */
+function getCurrentAdmin() {
+    if (!isAdminLoggedIn()) {
+        return null;
+    }
+    
+    return [
+        'user_id' => $_SESSION['user_id'] ?? null,
+        'full_name' => $_SESSION['full_name'] ?? null,
+        'email' => $_SESSION['email'] ?? null,
+        'role' => $_SESSION['role'] ?? null
+    ];
+}
+
+/**
+ * Get current seller session data
+ * 
+ * @return array|null
+ */
+function getCurrentSeller() {
+    if (!isSellerLoggedIn()) {
+        return null;
+    }
+    
+    return [
+        'user_id' => $_SESSION['user_id'] ?? null,
+        'full_name' => $_SESSION['full_name'] ?? null,
+        'email' => $_SESSION['email'] ?? null,
+        'role' => $_SESSION['role'] ?? null
+    ];
 }
 
 /**
@@ -162,7 +352,6 @@ function convertToWebP($file, $seller_id, $product_title) {
     }
     
     $success = imagewebp($image, $destination, 80);
-    // No imagedestroy() needed - PHP handles it automatically
     
     if ($success) {
         return 'uploads/products/' . $filename;
@@ -213,20 +402,15 @@ function getProductImageUrl($image_path) {
 }
 
 /**
- * Authenticate user and start session
+ * Authenticate user and start session (Main website - buyers only)
  * 
  * @param mysqli $conn Database connection
  * @param string $email User email
  * @param string $password User password
- * @param string|null $required_role Optional role restriction ('admin' or null for non-admin)
  * @return array|false User data on success, false on failure
  */
-function authenticateUser($conn, $email, $password, $required_role = null) {
-    if ($required_role === 'admin') {
-        $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'admin'";
-    } else {
-        $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role != 'admin'";
-    }
+function authenticateUser($conn, $email, $password) {
+    $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'buyer'";
     
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('s', $email);
@@ -248,15 +432,116 @@ function authenticateUser($conn, $email, $password, $required_role = null) {
 }
 
 /**
- * Start user session after successful authentication
+ * Authenticate admin for dashboard login
+ * 
+ * @param mysqli $conn Database connection
+ * @param string $email User email
+ * @param string $password User password
+ * @return array|false User data on success, false on failure
+ */
+function authenticateAdmin($conn, $email, $password) {
+    $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'admin'";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+        
+        if (password_verify($password, $user['password'])) {
+            $stmt->close();
+            return $user;
+        }
+    }
+    
+    $stmt->close();
+    return false;
+}
+
+/**
+ * Authenticate seller for dashboard login
+ * 
+ * @param mysqli $conn Database connection
+ * @param string $email User email
+ * @param string $password User password
+ * @return array|false User data on success, false on failure
+ */
+function authenticateSeller($conn, $email, $password) {
+    $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'seller'";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+        
+        if (password_verify($password, $user['password'])) {
+            $stmt->close();
+            return $user;
+        }
+    }
+    
+    $stmt->close();
+    return false;
+}
+
+/**
+ * Start user session after successful authentication (Main website)
  * 
  * @param array $user User data from authenticateUser()
  */
 function startUserSession($user) {
+    startSession('user');
     $_SESSION['user_id'] = $user['user_id'];
     $_SESSION['full_name'] = $user['full_name'];
     $_SESSION['email'] = $user['email'];
     $_SESSION['role'] = $user['role'];
     $_SESSION['logged_in'] = true;
+}
+
+/**
+ * Start admin session after successful authentication
+ * 
+ * @param array $user User data from authenticateAdmin()
+ */
+function startAdminSession($user) {
+    // Close any existing session first
+    if (session_status() !== PHP_SESSION_NONE) {
+        session_write_close();
+    }
+    
+    session_name('CONSUTRADE_ADMIN_SESSION');
+    session_start();
+    $_SESSION['user_id'] = $user['user_id'];
+    $_SESSION['full_name'] = $user['full_name'];
+    $_SESSION['email'] = $user['email'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['logged_in'] = true;
+    session_write_close();
+}
+
+/**
+ * Start seller session after successful authentication
+ * 
+ * @param array $user User data from authenticateSeller()
+ */
+function startSellerSession($user) {
+    // Close any existing session first
+    if (session_status() !== PHP_SESSION_NONE) {
+        session_write_close();
+    }
+    
+    session_name('CONSUTRADE_SELLER_SESSION');
+    session_start();
+    $_SESSION['user_id'] = $user['user_id'];
+    $_SESSION['full_name'] = $user['full_name'];
+    $_SESSION['email'] = $user['email'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['logged_in'] = true;
+    session_write_close();
 }
 ?>

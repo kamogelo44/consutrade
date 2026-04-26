@@ -1,24 +1,15 @@
 <?php
 /*
- * ConsuTrade - Admin Login
+ * ConsuTrade - Admin/Seller Login
  * Author: Kamogelo Phale
- * 
- * Separate login page for admin access only
  */
 
+// No session start here yet - we'll start after successful login
 require_once dirname(__DIR__) . '/php/helpers.php';
 
-session_start();
-
 $baseUrl = getBaseUrl();
-
-// If already logged in as admin, redirect to dashboard
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-    header('Location: admin-dashboard.php');
-    exit();
-}
-
 $error = '';
+$role_type = '';
 
 // Process login form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,40 +17,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $email = trim($_POST['email']);
     $password = $_POST['password'];
+    $role_type = $_POST['role_type'] ?? 'admin';
     
     if (empty($email) || empty($password)) {
         $error = 'Please enter both email and password';
     } else {
-        // Query only for admin users
-        $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'admin'";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('s', $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 1) {
-            $user = $result->fetch_assoc();
-            
-            if (password_verify($password, $user['password'])) {
-                session_regenerate_id(true);
-                
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['full_name'] = $user['full_name'];
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['logged_in'] = true;
-                $_SESSION['admin_logged_in'] = true;
-                
+        if ($role_type === 'admin') {
+            $user = authenticateAdmin($conn, $email, $password);
+            if ($user) {
+                startAdminSession($user);
                 header('Location: admin-dashboard.php');
                 exit();
             } else {
-                $error = 'Invalid email or password';
+                $error = 'Invalid email or password.';
             }
         } else {
-            $error = 'Invalid email or password. Admin access only.';
+            $user = authenticateSeller($conn, $email, $password);
+            if ($user) {
+                startSellerSession($user);
+                header('Location: seller-dashboard.php');
+                exit();
+            } else {
+                $error = 'Invalid email or password.';
+            }
         }
         
-        $stmt->close();
         $conn->close();
     }
 }
@@ -69,8 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - ConsuTrade</title>
+    <title>Dashboard Login - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin-login.css">
 </head>
 <body class="admin-login-body">
@@ -78,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="admin-login-box">
             <div class="admin-login-header">
                 <h1>Consu<span>Trade</span></h1>
-                <p>Administrator Access Only</p>
+                <p>Dashboard Access</p>
             </div>
             
             <?php if ($error): ?>
@@ -89,25 +72,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <form action="" method="post" class="admin-login-form">
                 <div class="input-group">
+                    <label for="role_type">Login As</label>
+                    <select id="role_type" name="role_type" required>
+                        <option value="admin" <?php echo $role_type === 'admin' ? 'selected' : ''; ?>>Administrator</option>
+                        <option value="seller" <?php echo $role_type === 'seller' ? 'selected' : ''; ?>>Seller</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="admin@consutrade.com" required autofocus>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" value="<?php echo htmlspecialchars($email ?? ''); ?>" required autocomplete="email" autofocus>
                 </div>
                 
                 <div class="input-group password-group">
                     <label for="password">Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <div class="password-field-wrapper">
+                        <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
                         <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
-                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="20" height="20" alt="Show password">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18" alt="Show password">
                         </button>
                     </div>
                 </div>
                 
-                <button type="submit" class="admin-login-btn">Login to Admin Panel</button>
+                <button type="submit" class="admin-login-btn">Login to Dashboard</button>
             </form>
         </div>
     </div>
     
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 </body>
 </html>

@@ -4,11 +4,6 @@
  * Author: Kamogelo Phale
  */
 
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 require_once dirname(__DIR__) . '/php/helpers.php';
 
 // Base URL for the site
@@ -17,34 +12,37 @@ $baseUrl = getBaseUrl();
 // Get current page for active link highlighting
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// Check if user is logged in
-$is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+// Check if user is logged in (main website - ONLY buyers)
+$is_logged_in = isUserLoggedIn();
 
-// Get user role for sell link handling
-$user_role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
-
-// Get user's full name or default
-$user_name = isset($_SESSION['full_name']) ? $_SESSION['full_name'] : 'User';
-
-// Get user profile image (without closing connection)
+// Get user role
+$user_role = null;
+$user_name = 'User';
 $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
-if ($is_logged_in && isset($_SESSION['user_id'])) {
-    // Only include config if connection doesn't exist
+
+if ($is_logged_in) {
+    $user = getCurrentUser();
+    $user_role = $user['role'] ?? null;
+    $user_name = $user['full_name'] ?? 'User';
+    
+    // Get profile image
     if (!isset($conn) || !$conn) {
         require_once dirname(__DIR__) . '/php/config.php';
     }
-    $user = getUserById($conn, $_SESSION['user_id']);
-    if ($user && !empty($user['profile_image'])) {
-        $user_profile_image = getUserProfileImage($user['profile_image']);
+    $user_data = getUserById($conn, $user['user_id']);
+    if ($user_data && !empty($user_data['profile_image'])) {
+        $user_profile_image = getUserProfileImage($user_data['profile_image']);
     }
 }
 
 // Get cart count
 $cart_count = 0;
 if ($is_logged_in && isset($_SESSION['user_id'])) {
-    // Use a separate connection for cart or get from session
     $cart_count = isset($_SESSION['cart_count']) ? $_SESSION['cart_count'] : 0;
 }
+
+// Show Sell link for guests only
+$show_sell_link = !$is_logged_in;
 ?>
 
 <header class="site-header">
@@ -72,7 +70,9 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
             <ul>
                 <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
                 <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>">Products</a></li>
-                <li><a href="<?php echo ($user_role === 'seller') ? $baseUrl . 'admin/seller-dashboard.php' : $baseUrl . 'sell.php'; ?>" id="sell-link">Sell</a></li>
+                <?php if ($show_sell_link): ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link">Sell</a></li>
+                <?php endif; ?>
                 <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>">About</a></li>
                 <li><a href="<?php echo $baseUrl; ?>contact.php" class="<?php echo $current_page == 'contact.php' ? 'active' : ''; ?>">Contact</a></li>
             </ul>
@@ -159,7 +159,9 @@ if ($is_logged_in && isset($_SESSION['user_id'])) {
         <ul class="mobile-nav-links">
             <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
             <li><a href="<?php echo $baseUrl; ?>product-listings.php">Products</a></li>
-            <li><a href="<?php echo ($user_role === 'seller') ? $baseUrl . 'admin/seller-dashboard.php' : $baseUrl . 'sell.php'; ?>" id="sell-link-mobile">Sell</a></li>
+            <?php if ($show_sell_link): ?>
+                <li><a href="<?php echo $baseUrl; ?>sell.php" id="sell-link-mobile">Sell</a></li>
+            <?php endif; ?>
             <li><a href="<?php echo $baseUrl; ?>about.php">About</a></li>
             <li><a href="<?php echo $baseUrl; ?>contact.php">Contact</a></li>
             <li>

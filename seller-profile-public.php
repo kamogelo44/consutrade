@@ -34,7 +34,6 @@ if (!$seller) {
 // Set profile image path using helper
 $profile_image = getUserProfileImage($seller['profile_image']);
 
-$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">

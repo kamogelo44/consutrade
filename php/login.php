@@ -1,10 +1,10 @@
 <?php
 /*
- * ConsuTrade - User Login
+ * ConsuTrade - User Login (Main Website)
  * Author: Kamogelo Phale
  */
 
-session_start();
+require_once 'helpers.php'; 
 require_once 'config.php';
 
 // Only process if form was submitted
@@ -24,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     if (empty($errors)) {
-        // Allow both buyer and seller to login (excluding admin)
-        $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role != 'admin'";
+        // Simple query - just check buyer role
+        $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'buyer'";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('s', $email);
         $stmt->execute();
@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $user = $result->fetch_assoc();
             
             if (password_verify($password, $user['password'])) {
-                session_regenerate_id(true);
+                // Start session (config already set)
+                startSession('user');
                 
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['full_name'] = $user['full_name'];
@@ -43,33 +44,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['logged_in'] = true;
                 
+                // Save session
+                session_write_close();
+                
                 $_SESSION['flash'] = 'Welcome back, ' . $user['full_name'] . '!';
                 
-                if ($user['role'] === 'seller') {
-                    header('Location: /www/consutrade/admin/seller-dashboard.php');
-                } else {
-                    header('Location: /www/consutrade/index.php');
-                }
+                header('Location: /www/consutrade/index.php');
                 exit;
             } else {
-                // SINGLE GENERAL ERROR - Don't specify field
-                $errors['general'] = 'Invalid email or password. Please try again.';
+                $errors['general'] = 'Invalid email or password.';
             }
         } else {
-            // SINGLE GENERAL ERROR - Don't specify field
-            $errors['general'] = 'Invalid email or password. Please try again.';
+            $errors['general'] = 'Invalid email or password.';
         }
         
         $stmt->close();
+        $conn->close();
     }
     
     if (!empty($errors)) {
+        startSession('user');
         $_SESSION['login_errors'] = $errors;
         $_SESSION['login_email'] = $email;
+        session_write_close();
         header('Location: /www/consutrade/index.php');
         exit;
     }
-    
-    $conn->close();
 }
 ?>

@@ -6,29 +6,36 @@
  * This page allows sellers to edit their existing products
  */
 
-session_start();
+require_once dirname(__DIR__) . '/php/helpers.php';
 
-$baseUrl = "/www/consutrade/";
-
-// Check if user is logged in and is a seller
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'seller') {
-    header('Location: ' . $baseUrl . 'index.php');
+// Check if seller is logged in
+if (!isSellerLoggedIn()) {
+    header('Location: login.php');
     exit;
 }
+
+// Start seller session
+startSession('seller');
+
+$baseUrl = getBaseUrl();
 
 // Get product ID from URL
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
-    header('Location: ' . $baseUrl . 'admin/my-products.php');
+    header('Location: my-products.php');
     exit;
 }
 
+// Get database connection
 require_once dirname(__DIR__) . '/php/config.php';
-require_once dirname(__DIR__) . '/php/helpers.php';
 
 $seller_id = $_SESSION['user_id'];
 $error_message = '';
+
+// Get user data for profile image (for sidebar)
+$user = getUserById($conn, $seller_id);
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
 // Get product data
 $sql = "SELECT product_id, title, description, price, category_id, `condition`, location, image_url, status
@@ -41,7 +48,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    header('Location: ' . $baseUrl . 'admin/my-products.php');
+    header('Location: my-products.php');
     exit;
 }
 
@@ -104,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($update_stmt->execute()) {
             $_SESSION['flash'] = 'Product updated successfully!';
-            header('Location: ' . $baseUrl . 'admin/my-products.php');
+            header('Location: my-products.php');
             exit;
         } else {
             $errors[] = 'Database error: ' . $conn->error;
@@ -129,13 +136,25 @@ $current_page = 'products';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product - ConsuTrade Seller</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/add-product.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script>
+        var baseUrl = '<?php echo $baseUrl; ?>';
+    </script>
 </head>
 <body class="edit-product-page seller-dashboard-page">
+    
+    <?php include 'includes/sidebar.php'; ?>
 
-<?php include 'includes/seller-sidebar.php'; ?>
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb-nav">
+            <a href="seller-dashboard.php">Dashboard</a>
+            <span class="separator">›</span>
+            <a href="my-products.php">My Products</a>
+            <span class="separator">›</span>
+            <span class="current">Edit Product</span>
+        </div>
 
         <!-- Edit Product Content -->
         <div class="add-product-container">
@@ -319,7 +338,7 @@ $current_page = 'products';
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-<script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
 $(document).ready(function() {
     // Main image preview

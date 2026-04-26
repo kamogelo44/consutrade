@@ -13,7 +13,6 @@
     z-index: var(--z-modal);
     justify-content: center;
     align-items: center;
-    transition: background-color 0.4s ease, visibility 0.4s;
     visibility: hidden;
     pointer-events: none;
 }
@@ -33,8 +32,6 @@
     max-width: 420px;
     padding: 28px 24px;
     box-shadow: var(--shadow-lg);
-    opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
     max-height: 90vh;
     overflow-y: auto;
 }
@@ -54,26 +51,6 @@
     border-radius: var(--radius-sm);
 }
 
-/* Login modal - slides in from LEFT */
-#login-modal .modal-content {
-    transform: translateX(-40px);
-}
-
-#login-modal.active .modal-content {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-/* Register modal - slides in from RIGHT */
-#register-modal .modal-content {
-    transform: translateX(40px);
-}
-
-#register-modal.active .modal-content {
-    opacity: 1;
-    transform: translateX(0);
-}
-
 /* ========== CLOSE BUTTON ========== */
 .btn-close {
     position: absolute;
@@ -88,6 +65,9 @@
     padding: 0;
     z-index: 10;
     transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-close:hover {
@@ -148,23 +128,15 @@
     background-color: var(--error-light);
     border-left: 4px solid var(--error);
     border-radius: var(--radius-md);
-    padding: 10px 12px;
+    padding: 8px 12px;
     margin-bottom: var(--spacing-md);
-    display: none;
     animation: shakeError 0.4s ease;
-}
-
-.error-container .error-message {
+    display: none;
     color: var(--error);
     font-size: var(--font-sm);
-    margin: 0;
     font-weight: var(--font-medium);
-}
-
-@keyframes shakeError {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
+    line-height: 1.4;
+    word-break: break-word; 
 }
 
 /* ========== FORM STYLES ========== */
@@ -173,9 +145,10 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
 }
 
-/* ========== INPUT GROUP - FIXED WIDTH ========== */
+/* ========== INPUT GROUP ========== */
 .input-group {
     position: relative;
     display: flex;
@@ -215,7 +188,7 @@
     font-size: var(--font-sm);
 }
 
-/* ========== ERROR STATE - INPUT KEEPS FULL WIDTH ========== */
+/* ========== ERROR STATE ========== */
 .input-group.error input {
     border-color: var(--error) !important;
     background-color: var(--error-light);
@@ -228,7 +201,6 @@
     text-align: left;
 }
 
-/* Error text - Left aligned, below input */
 .error-text {
     color: var(--error);
     font-size: var(--font-xs);
@@ -375,7 +347,6 @@
 }
 
 /* ========== REGISTER MODAL SPECIFIC ========== */
-/* Fieldset Styles */
 .form-fields {
     border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
@@ -394,7 +365,6 @@
     width: auto;
 }
 
-/* User Type Radio Buttons */
 .user-type {
     border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
@@ -480,6 +450,13 @@
     border-color: var(--error);
 }
 
+/* ========== ANIMATIONS ========== */
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
 /* ========== RESPONSIVE STYLES ========== */
 @media (max-width: 768px) {
     .modal-content {
@@ -525,6 +502,7 @@
         height: 44px;
         padding: 10px;
     }
+    
 }
 
 @media (max-width: 480px) {
@@ -571,5 +549,9 @@
     .radio-btn {
         padding: 7px 10px;
         font-size: var(--font-sm);
+    }
+    
+    .error-container .error-message {
+        font-size: var(--font-xs);
     }
 }

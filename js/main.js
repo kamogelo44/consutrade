@@ -11,6 +11,7 @@
  * - User dropdown menus (desktop + mobile)
  * - Sell link behavior for logged-in buyers
  * - Active navigation link highlighting
+ * - Error message clearing on input
  */
 
 // Base URL for all fetch requests
@@ -32,6 +33,25 @@ function togglePassword(fieldId, button) {
     }
 }
 
+// ========== ERROR CLEARING FUNCTIONS ==========
+function clearLoginErrors() {
+    $('#login-error-container').hide().empty();
+    $('#login-form .input-group').removeClass('error');
+    $('#login-form .error-text').remove();
+}
+
+function clearRegisterErrors() {
+    $('#register-error-container').hide().empty();
+    $('#register-form .input-group').removeClass('error');
+    $('#register-form .error-text').remove();
+}
+
+function clearModalErrors($modal) {
+    $modal.find('.error-container').hide().empty();
+    $modal.find('.input-group').removeClass('error');
+    $modal.find('.error-text').remove();
+}
+
 // ========== GLOBAL CART FUNCTIONS ==========
 function addToCart(productId, productName, productPrice) {
     $.ajax({
@@ -46,15 +66,26 @@ function addToCart(productId, productName, productPrice) {
         success: function(data) {
             if (data.success) {
                 updateCartCount();
-                alert(data.message || 'Item added to cart!');
+                // Optional: Show success toast instead of alert
+                showSuccessToast(data.message || 'Item added to cart!');
             } else {
-                alert(data.message || 'Error adding item to cart');
+                showErrorToast(data.message || 'Error adding item to cart');
             }
         },
         error: function() {
-            alert('Something went wrong');
+            showErrorToast('Something went wrong');
         }
     });
+}
+
+// Optional: Toast notifications (more user-friendly than alerts)
+function showSuccessToast(message) {
+    // You can implement a nice toast notification here
+    alert(message); // Fallback to alert for now
+}
+
+function showErrorToast(message) {
+    alert(message);
 }
 
 function updateCartItem(productId, quantity) {
@@ -73,7 +104,7 @@ function updateCartItem(productId, quantity) {
             }
         },
         error: function() {
-            alert('Something went wrong');
+            showErrorToast('Something went wrong');
         }
     });
 }
@@ -93,11 +124,11 @@ function removeFromCart(productId) {
                 updateCartCount();
                 location.reload();
             } else {
-                alert(data.message || 'Error removing item from cart');
+                showErrorToast(data.message || 'Error removing item from cart');
             }
         },
         error: function() {
-            alert('Something went wrong');
+            showErrorToast('Something went wrong');
         }
     });
 }
@@ -227,6 +258,86 @@ function escapeHtml(text) {
     return $('<div>').text(text).html();
 }
 
+// ========== GLOBAL MODAL FUNCTIONS ==========
+
+function openModal($modal) {
+    if (!$modal.length) return;
+    
+    var $content = $modal.find('.modal-content');
+    
+    // Clear any existing errors when opening modal
+    clearModalErrors($modal);
+    
+    // Remove any lingering animation classes
+    $content.removeClass('animate-in animate-out');
+    
+    // Show the modal
+    $modal.css('visibility', 'visible');
+    $modal.addClass('active');
+    
+    $modal[0].offsetHeight;
+    
+    // Now add the animation
+    $content.addClass('animate-in');
+    $('body').css('overflow', 'hidden');
+    
+    // Clean up animation class after it completes
+    setTimeout(function() {
+        $content.removeClass('animate-in');
+    }, 350);
+}
+
+function closeModal($modal) {
+    if (!$modal.length) return;
+    
+    var $content = $modal.find('.modal-content');
+    
+    // Clear errors when closing modal
+    clearModalErrors($modal);
+    
+    // Remove animate-in if present
+    $content.removeClass('animate-in');
+    
+    // Force reflow
+    $modal[0].offsetHeight;
+    
+    // Add animate-out
+    $content.addClass('animate-out');
+    
+    // Hide modal after animation completes
+    setTimeout(function() {
+        $modal.removeClass('active');
+        $modal.css('visibility', 'hidden');
+        $content.removeClass('animate-out');
+        $('body').css('overflow', '');
+    }, 280);
+}
+
+// ========== CLEAR ERRORS ON INPUT ==========
+function initErrorClearingOnInput() {
+    // Login form - clear errors when user starts typing
+    $('#login-email, #login-password').on('input', function() {
+        clearLoginErrors();
+    });
+    
+    // Register form - clear errors when user starts typing in any field
+    $('#register-full-name, #register-email, #register-phone, #register-password, #register-confirm-password').on('input', function() {
+        clearRegisterErrors();
+        // Also clear the specific field's error highlighting
+        $(this).closest('.input-group').removeClass('error');
+        $(this).closest('.input-group').find('.error-text').remove();
+    });
+    
+    // Clear errors when switching between login/register via the switch links
+    $('#switch-to-register').on('click', function() {
+        clearLoginErrors();
+    });
+    
+    $('#switch-to-login').on('click', function() {
+        clearRegisterErrors();
+    });
+}
+
 // Document Ready
 $(document).ready(function() { 
     // ========== MOBILE MENU TOGGLE ==========
@@ -308,26 +419,15 @@ $(document).ready(function() {
     // ========== MODAL CONTROLS ==========
     var $registerModal = $('#register-modal');
     var $loginModal = $('#login-modal');
+    var $deleteModal = $('#delete-modal');
     var $registerBtns = $('#registerBtn, #mobile-register-btn');
     var $loginBtns = $('#loginBtn, #mobile-login-btn');
-    var $registerClose = $('#register-modal .btn-close');
-    var $loginClose = $('#login-modal .btn-close');
+    var $registerClose = $('#register-modal .btn-close, #register-modal .modal-close');
+    var $loginClose = $('#login-modal .btn-close, #login-modal .modal-close');
+    var $deleteClose = $('#delete-modal .btn-close, #delete-modal .modal-close, #delete-modal .delete-cancel-btn');
     var $switchToRegister = $('#switch-to-register');
     var $switchToLogin = $('#switch-to-login');
 
-    function openModal($modal) {
-        if ($modal.length) {
-            $modal.addClass('active');
-            $('body').css('overflow', 'hidden');
-        }
-    }
-
-    function closeModal($modal) {
-        if ($modal.length) {
-            $modal.removeClass('active');
-            $('body').css('overflow', '');
-        }
-    }
 
     // Register buttons
     if ($registerBtns.length) {
@@ -339,7 +439,7 @@ $(document).ready(function() {
             openModal($registerModal);
         });
     }
-    
+
     // Login buttons
     if ($loginBtns.length) {
         $loginBtns.on('click', function(e) {
@@ -350,51 +450,67 @@ $(document).ready(function() {
             openModal($loginModal);
         });
     }
-    
+
     // Close buttons
     if ($registerClose.length) {
         $registerClose.on('click', function() { 
             closeModal($registerModal); 
         });
     }
-    
+
     if ($loginClose.length) {
         $loginClose.on('click', function() { 
             closeModal($loginModal); 
         });
     }
-    
+
+    if ($deleteClose.length) {
+        $deleteClose.on('click', function() { 
+            closeModal($deleteModal); 
+        });
+    }
+
     // Close modal when clicking outside
     $registerModal.on('click', function(e) {
         if ($(e.target).is($registerModal)) {
             closeModal($registerModal);
         }
     });
-    
+
     $loginModal.on('click', function(e) {
         if ($(e.target).is($loginModal)) {
             closeModal($loginModal);
         }
     });
 
-    // Switch between modals
+    if ($deleteModal.length) {
+        $deleteModal.on('click', function(e) {
+            if ($(e.target).is($deleteModal)) {
+                closeModal($deleteModal);
+            }
+        });
+    }
+
+    // Switch between modals - clear errors when switching
     if ($switchToRegister.length) {
         $switchToRegister.on('click', function(e) {
             e.preventDefault();
+            clearLoginErrors(); // Clear login errors before switching
             closeModal($loginModal);
             setTimeout(function() { 
                 openModal($registerModal); 
-            }, 400);
+            }, 300);
         });
     }
 
     if ($switchToLogin.length) {
         $switchToLogin.on('click', function(e) {
             e.preventDefault();
+            clearRegisterErrors(); // Clear register errors before switching
             closeModal($registerModal);
             setTimeout(function() { 
                 openModal($loginModal); 
-            }, 400);
+            }, 300);
         });
     }
     
@@ -419,41 +535,6 @@ $(document).ready(function() {
             }
         });
     }
-    
-    // ========== SELL LINK HANDLING ==========
-    var $sellLink = $('#sell-link');
-    var $sellLinkMobile = $('#sell-link-mobile');
-
-    function handleSellLink(e) {
-        if (typeof isLoggedIn !== 'undefined' && isLoggedIn === true) {
-            if (typeof currentUserRole !== 'undefined' && currentUserRole === 'buyer') {
-                e.preventDefault();
-                var userConfirmed = confirm('You are currently registered as a buyer.\n\nWould you like to upgrade to a seller account? This will allow you to list and sell products on ConsuTrade.');
-                
-                if (userConfirmed) {
-                    window.location.href = baseUrl + 'php/upgrade-to-seller.php';
-                }
-            }
-        }
-    }
-
-    if ($sellLink.length) {
-        $sellLink.on('click', handleSellLink);
-    }
-
-    if ($sellLinkMobile.length) {
-        $sellLinkMobile.on('click', handleSellLink);
-    }
-    
-    // ========== UPGRADE BANNER BUTTON ==========
-    $('#upgrade-to-seller-btn').on('click', function(e) {
-        e.preventDefault();
-        var userConfirmed = confirm('Are you sure you want to upgrade to a seller account?\n\nYou will be able to list and sell your products on ConsuTrade.');
-        
-        if (userConfirmed) {
-            window.location.href = baseUrl + 'php/upgrade-to-seller.php';
-        }
-    });
     
     // ========== AUTO-CLOSE MODAL ON SUCCESS ==========
     var $flashMessage = $('.flash');
@@ -519,6 +600,9 @@ $(document).ready(function() {
     }
 
     setActiveLink();
+    
+    // ========== INITIALIZE ERROR CLEARING ON INPUT ==========
+    initErrorClearingOnInput();
     
     // Run these when page loads
     updateCartCount();

@@ -3,118 +3,91 @@
 
 /* ========== HAMBURGER TO X ANIMATION ========== */
 @keyframes hamburgerToX {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(135deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(135deg); }
 }
 
 @keyframes xToHamburger {
-    0% {
-        transform: rotate(135deg);
-    }
-    100% {
-        transform: rotate(0deg);
-    }
+    0% { transform: rotate(135deg); }
+    100% { transform: rotate(0deg); }
 }
 
 /* ========== SIDE MENU CLOSE BUTTON ANIMATIONS ========== */
 @keyframes fadeInScale {
-    0% {
-        opacity: 0;
-        transform: scale(0.5) rotate(-90deg);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1) rotate(0deg);
-    }
+    0% { opacity: 0; transform: scale(0.5) rotate(-90deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
 @keyframes fadeOutScale {
-    0% {
-        opacity: 1;
-        transform: scale(1) rotate(0deg);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(0.5) rotate(90deg);
-    }
+    0% { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(0.5) rotate(90deg); }
 }
 
 /* ========== MOBILE MENU SLIDE ANIMATIONS ========== */
 @keyframes slideInLeft {
-    from {
-        left: -100%;
-    }
-    to {
-        left: 0;
-    }
+    from { left: -100%; }
+    to { left: 0; }
 }
 
 @keyframes slideOutLeft {
-    from {
-        left: 0;
-    }
-    to {
-        left: -100%;
-    }
+    from { left: 0; }
+    to { left: -100%; }
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 
 /* ========== MOBILE SEARCH SLIDE DOWN ========== */
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* ========== MODAL SLIDE ANIMATIONS ========== */
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-80px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+/* ========== MODAL ANIMATION CLASSES ========== */
+/* All modals start hidden when animation classes aren't applied */
+.modal:not(.active) .modal-content {
+    opacity: 0;
 }
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(80px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+/* Generic fade in/out for any modal */
+.modal.active .modal-content.animate-in {
+    animation: modalFadeIn 0.3s ease forwards;
 }
 
+.modal.active .modal-content.animate-out {
+    animation: modalFadeOut 0.25s ease forwards;
+}
+
+/* Login modal - slides in from LEFT */
+#login-modal.active .modal-content.animate-in {
+    animation: modalSlideInLeft 0.3s ease forwards;
+}
+
+/* Register modal - slides in from RIGHT */
+#register-modal.active .modal-content.animate-in {
+    animation: modalSlideInRight 0.3s ease forwards;
+}
+
+/* Delete modal - slides UP */
+#delete-modal.active .modal-content.animate-in {
+    animation: modalSlideUp 0.3s ease forwards;
+}
+
+/* All modals fade out the same way */
+#login-modal .modal-content.animate-out,
+#register-modal .modal-content.animate-out,
+#delete-modal .modal-content.animate-out {
+    animation: modalFadeOut 0.25s ease forwards;
+}
+
+/* ========== SHAKE ERROR ANIMATION ========== */
 @keyframes shakeError {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-4px); }
@@ -123,23 +96,39 @@
 
 /* ========== CARD HOVER ANIMATIONS ========== */
 @keyframes cardHover {
-    from {
-        transform: translateY(0);
-    }
-    to {
-        transform: translateY(-5px);
-    }
+    from { transform: translateY(0); }
+    to { transform: translateY(-5px); }
 }
 
 /* ========== BUTTON PULSE ANIMATION ========== */
 @keyframes buttonPulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* ========== MODAL FADE IN/OUT KEYFRAMES ========== */
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes modalFadeOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes modalSlideInLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes modalSlideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }

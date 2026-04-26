@@ -1,7 +1,8 @@
 <?php 
-session_start(); 
+require_once 'php/helpers.php';
+startSession('user');
 
-$baseUrl = "/www/consutrade/";
+$baseUrl = getBaseUrl();
 
 // Get product ID from URL
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;

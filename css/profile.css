@@ -2,7 +2,8 @@
 /* Author: Kamogelo Phale */
 
 .profile-container {
-    max-width: 1200px;
+    max-width: 1400px;
+    width: 100%;
     margin: 0 auto;
     padding: var(--spacing-xl);
 }
@@ -24,14 +25,7 @@
     position: relative;
     width: 120px;
     height: 120px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-md);
     flex-shrink: 0;
-    overflow: visible;
 }
 
 .profile-user-avatar img {
@@ -41,43 +35,35 @@
     object-fit: cover;
     background-color: var(--white);
     padding: 4px;
+    box-shadow: var(--shadow-md);
 }
 
-.stat-divider {
-    height: 1px;
-    background-color: var(--border-light);
-    margin: 8px 0;
-}
-
-/* Camera upload button - positioned at bottom right */
-.avatar-upload-btn {
+/* Camera upload button */
+.profile-user-avatar .avatar-upload-btn {
     position: absolute;
     bottom: 5px;
     right: 5px;
     width: 36px;
     height: 36px;
-    background-color: var(--primary-color);
+    background-color: var(--white);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
-    border: 3px solid var(--white);
-    z-index: 2;
+    border: 2px solid var(--primary-color);
     box-shadow: var(--shadow-sm);
 }
 
-.avatar-upload-btn:hover {
-    background-color: var(--primary-dark);
+.profile-user-avatar .avatar-upload-btn:hover {
     transform: scale(1.1);
+    background-color: var(--primary-fade);
 }
 
-.avatar-upload-btn img {
+.profile-user-avatar .avatar-upload-btn img {
     width: 18px;
     height: 18px;
-    filter: brightness(0) invert(1);
-    margin: 0;
 }
 
 .profile-user-info {
@@ -97,6 +83,12 @@
     flex-wrap: wrap;
 }
 
+.stat-divider {
+    height: 1px;
+    background-color: var(--border-light);
+    margin: 8px 0;
+}
+
 .role-badge {
     display: inline-block;
     padding: 6px 14px;
@@ -105,31 +97,8 @@
     font-weight: 600;
 }
 
-.role-badge.role-seller {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: var(--white);
-}
-
 .role-badge.role-buyer {
     background-color: rgba(255, 255, 255, 0.2);
-    color: var(--white);
-}
-
-.verification-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: var(--radius-round);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.verification-badge.verified {
-    background-color: var(--success);
-    color: var(--white);
-}
-
-.verification-badge.not-verified {
-    background-color: var(--warning);
     color: var(--white);
 }
 
@@ -336,109 +305,265 @@
     color: var(--primary-color);
 }
 
-/* ========== SELLER DASHBOARD LINKS ========== */
-.seller-dashboard-links {
-    background-color: var(--white);
+/* ========== DANGER ZONE ========== */
+.danger-zone {
+    margin-top: var(--spacing-2xl);
+    border-top: 2px solid var(--error);
+    padding-top: var(--spacing-xl);
+}
+
+.danger-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--error-light);
     border-radius: var(--radius-lg);
-    padding: 28px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
+    padding: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
 }
 
-.seller-dashboard-links h3 {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid var(--primary-color);
-    color: var(--dark-bg);
-}
-
-.seller-links-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-}
-
-.seller-link-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background-color: var(--gray-bg-light);
-    border-radius: var(--radius-md);
-    text-decoration: none;
-    transition: all var(--transition-fast);
-    border: 1px solid transparent;
-}
-
-.seller-link-card:hover {
-    background-color: var(--primary-fade);
-    transform: translateX(6px);
-    border-color: var(--primary-light);
-}
-
-.seller-link-icon {
-    width: 48px;
-    height: 48px;
-    background-color: var(--white);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: var(--shadow-sm);
-}
-
-.seller-link-icon img {
-    width: 24px;
-    height: 24px;
-    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
-}
-
-.seller-link-info {
+.danger-info {
     flex: 1;
 }
 
-.seller-link-info h4 {
-    font-size: 16px;
-    font-weight: 600;
+.danger-info h4 {
+    font-size: var(--font-md);
+    font-weight: var(--font-bold);
     color: var(--dark-bg);
-    margin-bottom: 4px;
+    margin-bottom: var(--spacing-xs);
 }
 
-.seller-link-info p {
-    font-size: 12px;
-    color: var(--gray-medium);
+.danger-info p {
+    font-size: var(--font-sm);
+    color: var(--gray-dark);
     margin: 0;
 }
 
-.seller-link-arrow {
-    font-size: 20px;
-    color: var(--gray-light);
+.delete-account-btn {
+    background-color: transparent;
+    border: 2px solid var(--error);
+    color: var(--error);
+    padding: 10px 24px;
+    border-radius: var(--radius-md);
+    font-weight: var(--font-medium);
+    cursor: pointer;
     transition: all var(--transition-fast);
-    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-.seller-link-card:hover .seller-link-arrow {
-    transform: translateX(4px);
-    color: var(--primary-color);
+.delete-account-btn:hover {
+    background-color: var(--error);
+    color: var(--white);
+}
+
+/* ========== DELETE MODAL (only unique styles) ========== */
+#delete-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+#delete-modal.active {
+    display: flex;
+}
+
+#delete-modal .modal-content {
+    max-width: 520px;
+    width: 90%;
+}
+
+#delete-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+#delete-modal .modal-header h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+    color: var(--dark-bg);
+}
+
+/* Use the same close button style as login-signup modals */
+#delete-modal .btn-close {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: var(--radius-round);
+    cursor: pointer;
+    padding: 0;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#delete-modal .btn-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: rotate(90deg);
+}
+
+#delete-modal .btn-close::before,
+#delete-modal .btn-close::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 2px;
+    background-color: var(--gray-medium);
+    border-radius: 2px;
+}
+
+#delete-modal .btn-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+#delete-modal .btn-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+#delete-modal .btn-close:hover::before,
+#delete-modal .btn-close:hover::after {
+    background-color: var(--primary-color);
+}
+
+#delete-account-form {
+    padding: 28px;
+}
+
+#delete-account-form p {
+    margin-bottom: 20px;
+    color: var(--gray-dark);
+    font-size: var(--font-md);
+    line-height: 1.5;
+}
+
+#delete-account-form .warning-text {
+    color: var(--error);
+    background-color: var(--error-light);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: var(--font-md);
+}
+
+#delete-account-form .input-group {
+    margin-bottom: 24px;
+}
+
+#delete-account-form .input-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: var(--font-medium);
+    color: var(--gray-dark);
+    font-size: var(--font-md);
+}
+
+#delete-account-form .password-field-wrapper input {
+    width: 100%;
+    padding: 14px 16px;
+    padding-right: 48px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-base);
+    height: 52px;
+    box-sizing: border-box;
+}
+
+#delete-account-form .password-toggle-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#delete-account-form .form-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+    margin-top: 28px;
+}
+
+#delete-account-form .delete-cancel-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    padding: 12px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: var(--font-md);
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+}
+
+#delete-account-form .delete-cancel-btn:hover {
+    background-color: var(--gray-bg);
+    border-color: var(--gray-medium);
+}
+
+#delete-account-form .delete-confirm-btn {
+    background-color: var(--error);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: var(--font-md);
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+}
+
+#delete-account-form .delete-confirm-btn:hover {
+    background-color: #c62828;
+    transform: translateY(-1px);
 }
 
 /* ========== RESPONSIVE STYLES ========== */
 
-/* Tablet */
-@media (max-width: 992px) {
+/* Desktop Large */
+@media (min-width: 1400px) {
+    .profile-container {
+        max-width: 1600px;
+    }
+    .profile-content {
+        gap: 40px;
+    }
+}
+
+/* Desktop Medium */
+@media (max-width: 1200px) {
     .profile-container {
         max-width: 95%;
         padding: var(--spacing-lg);
     }
-    
+}
+
+/* Tablet */
+@media (max-width: 992px) {
+    .profile-container {
+        padding: var(--spacing-lg);
+    }
     .profile-user-header {
         padding: 28px 32px;
         gap: 24px;
     }
-    
     .profile-user-avatar {
         width: 100px;
         height: 100px;
@@ -450,65 +575,61 @@
     .profile-container {
         padding: var(--spacing-md);
     }
-    
     .profile-user-header {
         flex-direction: column;
         text-align: center;
         padding: 28px 20px;
         gap: 20px;
     }
-    
     .profile-user-meta {
         justify-content: center;
     }
-    
     .profile-user-info h1 {
         font-size: 24px;
     }
-    
     .profile-content {
         flex-direction: column;
         gap: 24px;
     }
-    
-    .profile-stats-card,
-    .profile-edit-card {
+    .profile-stats-card, .profile-edit-card {
         padding: 20px;
     }
-    
     .stat-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 6px;
     }
-    
     .stat-label {
         width: 100%;
     }
-    
     .stat-value {
         text-align: left;
         max-width: 100%;
     }
-    
     .form-actions {
         flex-direction: column;
     }
-    
-    .save-btn,
-    .change-password-btn {
+    .save-btn, .change-password-btn {
         width: 100%;
         text-align: center;
         padding: 12px 20px;
     }
-    
-    .seller-links-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
+    .danger-card {
+        flex-direction: column;
+        text-align: center;
     }
-    
-    .seller-link-card {
-        padding: 14px 16px;
+    .delete-account-btn {
+        width: 100%;
+    }
+    .profile-user-avatar .avatar-upload-btn {
+        width: 30px;
+        height: 30px;
+        bottom: 3px;
+        right: 3px;
+    }
+    .profile-user-avatar .avatar-upload-btn img {
+        width: 14px;
+        height: 14px;
     }
 }
 
@@ -517,115 +638,63 @@
     .profile-container {
         padding: var(--spacing-sm);
     }
-    
     .profile-user-header {
         padding: 20px 16px;
     }
-    
     .profile-user-avatar {
         width: 80px;
         height: 80px;
     }
-    
-    .avatar-upload-btn {
-        width: 28px;
-        height: 28px;
-        bottom: 3px;
-        right: 3px;
-        border-width: 2px;
-    }
-    
-    .avatar-upload-btn img {
-        width: 14px;
-        height: 14px;
-    }
-    
     .profile-user-info h1 {
         font-size: 20px;
     }
-    
-    .role-badge,
-    .verification-badge {
+    .role-badge {
         padding: 4px 10px;
         font-size: 11px;
     }
-    
     .member-since {
         font-size: 11px;
     }
-    
-    .profile-stats-card h3,
-    .profile-edit-card h3,
-    .seller-dashboard-links h3 {
+    .profile-stats-card h3, .profile-edit-card h3 {
         font-size: 18px;
     }
-    
-    .stat-label,
-    .stat-value {
+    .stat-label, .stat-value {
         font-size: 13px;
     }
-    
     .form-group label {
         font-size: 13px;
     }
-    
     .form-group input {
         padding: 10px 14px;
         font-size: 13px;
     }
-    
-    .seller-link-icon {
-        width: 40px;
-        height: 40px;
+    .profile-user-avatar .avatar-upload-btn {
+        width: 28px;
+        height: 28px;
+        border-width: 2px;
     }
-    
-    .seller-link-icon img {
-        width: 20px;
-        height: 20px;
-    }
-    
-    .seller-link-info h4 {
-        font-size: 14px;
-    }
-    
-    .seller-link-info p {
-        font-size: 11px;
+    .profile-user-avatar .avatar-upload-btn img {
+        width: 12px;
+        height: 12px;
     }
 }
 
 /* Small Mobile */
 @media (max-width: 360px) {
+    .profile-container {
+        padding: var(--spacing-xs);
+    }
     .profile-user-header {
         padding: 16px 12px;
     }
-    
     .profile-user-avatar {
         width: 70px;
         height: 70px;
     }
-    
     .profile-user-info h1 {
         font-size: 18px;
     }
-    
-    .profile-stats-card,
-    .profile-edit-card,
-    .seller-dashboard-links {
+    .profile-stats-card, .profile-edit-card {
         padding: 16px;
-    }
-    
-    .seller-link-card {
-        padding: 12px;
-        gap: 12px;
-    }
-    
-    .seller-link-icon {
-        width: 36px;
-        height: 36px;
-    }
-    
-    .seller-link-icon img {
-        width: 18px;
-        height: 18px;
     }
 }

@@ -722,3 +722,105 @@ footer {
         flex-direction: column;
     }
 }
+
+/* ========== BREADCRUMB NAVIGATION ========== */
+.breadcrumb {
+    margin: 30px 0 20px 30px;
+    padding: 12px 20px;
+    font-size: var(--font-md);
+    background-color: var(--gray-bg-light);
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+    color: var(--primary-color);
+    transition: color var(--transition-fast);
+    font-weight: var(--font-medium);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.breadcrumb a:hover {
+    background-color: var(--primary-fade);
+    text-decoration: underline;
+}
+
+.breadcrumb span {
+    color: var(--gray-medium);
+    font-weight: var(--font-normal);
+}
+
+.breadcrumb .current-page {
+    color: var(--dark-bg);
+    font-weight: var(--font-semibold);
+    background-color: var(--primary-fade);
+    padding: 4px 12px;
+    border-radius: var(--radius-round);
+}
+
+.breadcrumb-separator {
+    color: var(--gray-light);
+    font-size: var(--font-md);
+    margin: 0 4px;
+}
+
+/* Simple breadcrumb for sub-pages (no background) */
+.breadcrumb-nav {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-sm) 0;
+    font-size: var(--font-sm);
+    color: var(--gray-medium);
+}
+
+.breadcrumb-nav a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.breadcrumb-nav a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+.breadcrumb-nav .separator {
+    margin: 0 var(--spacing-xs);
+    color: var(--gray-light);
+}
+
+.breadcrumb-nav .current {
+    color: var(--gray-dark);
+    font-weight: var(--font-medium);
+}
+
+/* Responsive breadcrumb */
+@media (max-width: 768px) {
+    .breadcrumb {
+        margin: 20px 15px;
+        padding: 10px 15px;
+        font-size: var(--font-sm);
+        width: calc(100% - 30px);
+    }
+    
+    .breadcrumb a {
+        padding: 3px 6px;
+    }
+    
+    .breadcrumb .current-page {
+        padding: 3px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .breadcrumb {
+        margin: 15px 12px;
+        padding: 8px 12px;
+        font-size: var(--font-xs);
+        width: calc(100% - 24px);
+    }
+}

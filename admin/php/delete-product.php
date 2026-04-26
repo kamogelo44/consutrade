@@ -6,19 +6,21 @@
  * Deletes a product (soft delete by setting status to 'deleted')
  */
 
-session_start();
-require_once 'config.php';
-require_once 'helpers.php';  // Add this line
+require_once dirname(__DIR__) . '/../php/config.php';
+require_once dirname(__DIR__) . '/../php/helpers.php';
 
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'seller') {
+// Check if seller is logged in using helper
+if (!isSellerLoggedIn()) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
 }
+
+startSession('seller');
 
 $input = json_decode(file_get_contents('php://input'), true);
 $product_id = (int)($input['product_id'] ?? 0);

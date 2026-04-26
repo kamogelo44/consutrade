@@ -4,26 +4,21 @@
  * Author: Kamogelo Phale
  */
 
-session_start();
-require_once dirname(__DIR__) . '/php/config.php';
 require_once dirname(__DIR__) . '/php/helpers.php';
+
+// Check if seller is logged in
+if (!isSellerLoggedIn()) {
+    header('Location: login.php');
+    exit;
+}
+
+// Start seller session
+startSession('seller');
 
 $baseUrl = getBaseUrl();
 
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
-}
-
-// Check if user is a seller
-if ($_SESSION['role'] !== 'seller') {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
-}
-
-// Set current page for active sidebar link
-$current_page = 'profile';
+// Get database connection
+require_once dirname(__DIR__) . '/php/config.php';
 
 $user_id = $_SESSION['user_id'];
 
@@ -47,13 +42,16 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seller Profile - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-profile.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script>
+        var baseUrl = '<?php echo $baseUrl; ?>';
+    </script>
 </head>
 <body class="seller-dashboard-page">
 
-<?php include 'includes/seller-sidebar.php'; ?>
+<?php include 'includes/sidebar.php'; ?>
 
         <!-- Page Header -->
         <div class="dashboard-header">
@@ -186,7 +184,7 @@ $conn->close();
             <div class="quick-actions-section">
                 <h3>Quick Actions</h3>
                 <div class="quick-actions-grid">
-                    <a href="<?php echo $baseUrl; ?>admin/add-product.php" class="quick-action-card">
+                    <a href="add-product.php" class="quick-action-card">
                         <div class="quick-action-icon">
                             <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add Product">
                         </div>
@@ -196,7 +194,7 @@ $conn->close();
                         </div>
                         <span class="quick-action-arrow">→</span>
                     </a>
-                    <a href="<?php echo $baseUrl; ?>admin/my-products.php" class="quick-action-card">
+                    <a href="my-products.php" class="quick-action-card">
                         <div class="quick-action-icon">
                             <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="My Products">
                         </div>
@@ -206,7 +204,7 @@ $conn->close();
                         </div>
                         <span class="quick-action-arrow">→</span>
                     </a>
-                    <a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="quick-action-card">
+                    <a href="my-orders.php" class="quick-action-card">
                         <div class="quick-action-icon">
                             <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="My Orders">
                         </div>
@@ -223,9 +221,8 @@ $conn->close();
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
-var baseUrl = '<?php echo $baseUrl; ?>';
-
 $(document).ready(function() {
     // Show flash message
     function showMessage(message, isError) {

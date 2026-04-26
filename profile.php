@@ -1,9 +1,9 @@
 <?php
 /*
- * ConsuTrade - User Profile Page
+ * ConsuTrade - User Profile Page (Buyer)
  * Author: Kamogelo Phale
  * 
- * This page allows users to view and edit their profile information
+ * This page allows buyers to view and edit their profile information
  */
 
 session_start();
@@ -22,20 +22,22 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 
-// Get user data
-$sql = "SELECT full_name, email, role, location, phone, created_at, id_verified, profile_image 
-        FROM users 
-        WHERE user_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$stmt->close();
+// Redirect sellers to their own profile page
+if ($role === 'seller') {
+    header('Location: ' . $baseUrl . 'admin/seller-profile.php');
+    exit;
+}
 
-// Set profile image path - using helper
+// Get user data using helper
+$user = getUserById($conn, $user_id);
+
+if (!$user) {
+    header('Location: ' . $baseUrl . 'index.php');
+    exit;
+}
+
+// Set profile image path using helper
 $profile_image = getUserProfileImage($user['profile_image'] ?? null);
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,6 +51,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/profile.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/products.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 <body>
@@ -56,6 +59,13 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 <?php include 'includes/header.php'; ?>
 
 <main class="profile-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb">
+        <a href="<?php echo $baseUrl; ?>index.php">Home</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="current-page">My Profile</span>
+    </div>
+
     <!-- User Profile Header -->
     <div class="profile-user-header">
         <div class="profile-user-avatar">
@@ -67,17 +77,10 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         <div class="profile-user-info">
             <h1><?php echo htmlspecialchars($user['full_name']); ?></h1>
             <div class="profile-user-meta">
-                <span class="role-badge role-<?php echo $user['role']; ?>">
-                    <?php echo ucfirst($user['role']); ?>
+                <span class="role-badge role-buyer">
+                    Buyer
                 </span>
-                <?php if ($user['role'] === 'seller'): ?>
-                    <?php if ($user['id_verified'] == 1): ?>
-                        <span class="verification-badge verified">Verified Seller</span>
-                    <?php else: ?>
-                        <span class="verification-badge not-verified">Not Verified</span>
-                    <?php endif; ?>
-                <?php endif; ?>
-                <span class="member-since">Member since <?php echo date('M Y', strtotime($user['created_at'])); ?></span>
+                <span class="member-since">Member since <?php echo formatDate($user['created_at']); ?></span>
             </div>
         </div>
     </div>
@@ -95,7 +98,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <div class="profile-content">
         <!-- Left Column - Profile Stats -->
         <div class="profile-stats-card">
-            <h3><?php echo $role === 'seller' ? 'Seller Statistics' : 'Buyer Statistics'; ?></h3>
+            <h3>Buyer Statistics</h3>
             <div class="stats-list">
                 <div class="stat-row">
                     <span class="stat-label">Email Address</span>
@@ -116,43 +119,23 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                 </div>
                 <?php endif; ?>
                 
-                <?php if ($role === 'seller'): ?>
-                    <div class="stat-divider"></div>
-                    <div class="stat-row">
-                        <span class="stat-label">Products Listed</span>
-                        <span class="stat-value highlight" id="stat-products">-</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Orders Completed</span>
-                        <span class="stat-value highlight" id="stat-sales">-</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Total Revenue</span>
-                        <span class="stat-value highlight" id="stat-revenue">-</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Seller Rating</span>
-                        <span class="stat-value highlight" id="stat-rating">-</span>
-                    </div>
-                <?php else: ?>
-                    <div class="stat-divider"></div>
-                    <div class="stat-row">
-                        <span class="stat-label">Orders Placed</span>
-                        <span class="stat-value highlight" id="stat-orders">-</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Total Spent</span>
-                        <span class="stat-value highlight" id="stat-spent">-</span>
-                    </div>
-                    <div class="stat-row" id="pending-row" style="display: none;">
-                        <span class="stat-label">Pending Orders</span>
-                        <span class="stat-value highlight" style="color: var(--warning);" id="stat-pending">-</span>
-                    </div>
-                    <div class="stat-row" id="reviews-row" style="display: none;">
-                        <span class="stat-label">Reviews Written</span>
-                        <span class="stat-value" id="stat-reviews">-</span>
-                    </div>
-                <?php endif; ?>
+                <div class="stat-divider"></div>
+                <div class="stat-row">
+                    <span class="stat-label">Orders Placed</span>
+                    <span class="stat-value highlight" id="stat-orders">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Spent</span>
+                    <span class="stat-value highlight" id="stat-spent">-</span>
+                </div>
+                <div class="stat-row" id="pending-row" style="display: none;">
+                    <span class="stat-label">Pending Orders</span>
+                    <span class="stat-value highlight" style="color: var(--warning);" id="stat-pending">-</span>
+                </div>
+                <div class="stat-row" id="reviews-row" style="display: none;">
+                    <span class="stat-label">Reviews Written</span>
+                    <span class="stat-value" id="stat-reviews">-</span>
+                </div>
             </div>
         </div>
 
@@ -177,14 +160,6 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                     <small>Optional but recommended for order updates</small>
                 </div>
                 
-                <?php if ($user['role'] === 'seller'): ?>
-                <div class="form-group">
-                    <label for="location">Location (City, Province)</label>
-                    <input type="text" id="location" name="location" value="<?php echo htmlspecialchars($user['location'] ?? ''); ?>" placeholder="e.g., Johannesburg, Gauteng">
-                    <small>Your location helps buyers find your products</small>
-                </div>
-                <?php endif; ?>
-                
                 <div class="form-actions">
                     <button type="submit" class="save-btn">Save Changes</button>
                     <a href="<?php echo $baseUrl; ?>change-password.php" class="change-password-btn">Change Password</a>
@@ -193,63 +168,59 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         </div>
     </div>
     
-    <?php if ($user['role'] === 'seller'): ?>
-    <!-- Seller Dashboard Links -->
-    <div class="seller-dashboard-links">
-        <h3>Seller Dashboard</h3>
-        <div class="seller-links-grid">
-            <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="seller-link-card">
-                <div class="seller-link-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard">
-                </div>
-                <div class="seller-link-info">
-                    <h4>Dashboard</h4>
-                    <p>View your sales overview</p>
-                </div>
-                <span class="seller-link-arrow">→</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>admin/my-products.php" class="seller-link-card">
-                <div class="seller-link-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
-                </div>
-                <div class="seller-link-info">
-                    <h4>My Products</h4>
-                    <p>Manage your product listings</p>
-                </div>
-                <span class="seller-link-arrow">→</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="seller-link-card">
-                <div class="seller-link-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders">
-                </div>
-                <div class="seller-link-info">
-                    <h4>My Orders</h4>
-                    <p>Track and manage orders</p>
-                </div>
-                <span class="seller-link-arrow">→</span>
-            </a>
-            <a href="<?php echo $baseUrl; ?>admin/add-product.php" class="seller-link-card">
-                <div class="seller-link-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add Product">
-                </div>
-                <div class="seller-link-info">
-                    <h4>Add Product</h4>
-                    <p>List a new product for sale</p>
-                </div>
-                <span class="seller-link-arrow">→</span>
-            </a>
+    <!-- Danger Zone - Delete Account -->
+    <div class="danger-zone">
+        <div class="danger-card">
+            <div class="danger-info">
+                <h4>Delete Account</h4>
+                <p>Once you delete your account, there is no going back. All your data will be permanently removed.</p>
+            </div>
+            <button class="delete-account-btn" onclick="showDeleteModal()">Delete Account</button>
         </div>
     </div>
-    <?php endif; ?>
+
+    <!-- Delete Account Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1>Delete Account</h1>
+                <button class="btn-close" onclick="closeDeleteModal()"></button>
+            </div>
+            <form id="delete-account-form">
+                <p>Are you sure you want to delete your account?</p>
+                <p class="warning-text">This action cannot be undone. All your data will be permanently removed.</p>
+                <div class="input-group">
+                    <label for="delete-password">Enter your password to confirm</label>
+                    <div class="password-field-wrapper">
+                        <input type="password" id="delete-password" name="password" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('delete-password', this)">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
+                        </button>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="delete-cancel-btn" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="submit" class="delete-confirm-btn">Confirm Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </main>
 
 <script>
 var baseUrl = '<?php echo $baseUrl; ?>';
-var userRole = '<?php echo $role; ?>';
+
+function showDeleteModal() {
+    openModal($('#delete-modal'));
+}
+
+function closeDeleteModal() {
+    closeModal($('#delete-modal'));
+}
 
 $(document).ready(function() {
     // Show flash message
-    function showMessage(message, isError = false) {
+    function showMessage(message, isError) {
         if (isError) {
             $('#error-message').text(message).show();
             setTimeout(function() {
@@ -263,7 +234,7 @@ $(document).ready(function() {
         }
     }
     
-    // Load user statistics via AJAX
+    // Load buyer statistics via AJAX
     function loadUserStats() {
         $.ajax({
             url: baseUrl + 'php/get-user-stats.php',
@@ -271,48 +242,27 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(data) {
                 if (data.success) {
-                    updateStatsDisplay(data.stats);
-                } else {
-                    console.log('Failed to load stats');
+                    updateStatsDisplay(data);
                 }
             },
             error: function() {
-                console.log('Error loading stats');
-                // Set fallback values
-                if (userRole === 'seller') {
-                    $('#stat-products').text('0');
-                    $('#stat-sales').text('0');
-                    $('#stat-revenue').text('R 0.00');
-                    $('#stat-rating').text('No reviews yet');
-                } else {
-                    $('#stat-orders').text('0');
-                    $('#stat-spent').text('R 0.00');
-                }
+                $('#stat-orders').text('0');
+                $('#stat-spent').text('R 0.00');
             }
         });
     }
     
     function updateStatsDisplay(stats) {
-        if (userRole === 'seller') {
-            $('#stat-products').text(stats.total_products || 0);
-            $('#stat-sales').text(stats.total_sales || 0);
-            $('#stat-revenue').text('R ' + (stats.total_revenue || 0).toFixed(2));
-            if (stats.total_reviews > 0) {
-                $('#stat-rating').html(stats.avg_rating + ' / 5 <span style="font-size: 12px; color: var(--gray-light);">(' + stats.total_reviews + ' reviews)</span>');
-            } else {
-                $('#stat-rating').html('No reviews yet');
-            }
-        } else {
-            $('#stat-orders').text(stats.total_orders || 0);
-            $('#stat-spent').text('R ' + (stats.total_spent || 0).toFixed(2));
-            if (stats.pending_orders > 0) {
-                $('#stat-pending').text(stats.pending_orders);
-                $('#pending-row').show();
-            }
-            if (stats.reviews_written > 0) {
-                $('#stat-reviews').text(stats.reviews_written);
-                $('#reviews-row').show();
-            }
+        $('#stat-orders').text(stats.total_orders || 0);
+        $('#stat-spent').text('R ' + (stats.total_spent || 0).toFixed(2));
+        
+        if (stats.pending_orders > 0) {
+            $('#stat-pending').text(stats.pending_orders);
+            $('#pending-row').show();
+        }
+        if (stats.reviews_written > 0) {
+            $('#stat-reviews').text(stats.reviews_written);
+            $('#reviews-row').show();
         }
     }
     
@@ -339,7 +289,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: function(data) {
                     if (data.success) {
-                        showMessage(data.message);
+                        showMessage(data.message, false);
                     } else {
                         showMessage(data.message, true);
                         location.reload();
@@ -374,7 +324,7 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(data) {
                 if (data.success) {
-                    showMessage(data.message);
+                    showMessage(data.message, false);
                     var newName = $('#full_name').val();
                     $('.profile-user-info h1').text(newName);
                 } else {
@@ -385,6 +335,39 @@ $(document).ready(function() {
                 showMessage('Error updating profile. Please try again.', true);
             }
         });
+    });
+    
+    // Delete account form submission
+    $('#delete-account-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var password = $('#delete-password').val();
+        
+        if (!password) {
+            alert('Please enter your password');
+            return;
+        }
+        
+        if (confirm('WARNING: This will permanently delete your account and all your data. Are you absolutely sure?')) {
+            $.ajax({
+                url: baseUrl + 'php/delete-account.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ password: password }),
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        alert('Your account has been deleted. You will be redirected to the homepage.');
+                        window.location.href = baseUrl;
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                },
+                error: function() {
+                    alert('Something went wrong. Please try again.');
+                }
+            });
+        }
     });
     
     // Load stats when page loads

@@ -3,15 +3,16 @@
  * ConsuTrade - PayFast ITN (Instant Transaction Notification) Handler
  * Author: Kamogelo Phale
  * 
- * This file handles PayFast payment confirmations
+ * This file handles PayFast payment confirmations and updates order status
  */
 
 require_once 'config.php';
+require_once 'helpers.php';
 
 // PayFast Sandbox settings
 $payfast_url = 'https://sandbox.payfast.co.za/eng/query/validate';
-$merchant_id = '10047996';
-$merchant_key = 'f6r9pv9pnq6so';
+$merchant_id = PAYFAST_MERCHANT_ID;
+$merchant_key = PAYFAST_MERCHANT_KEY;
 
 // Get all POST data from PayFast
 $pfData = $_POST;
@@ -57,77 +58,67 @@ curl_close($pfCurl);
 $pfValid = ($validSignature && strpos($pfResponse, 'VERIFIED') !== false);
 $payment_status = $pfData['payment_status'] ?? '';
 $m_payment_id = $pfData['m_payment_id'] ?? '';
-$amount = $pfData['amount'] ?? 0;
+$amount = (float)($pfData['amount'] ?? 0);
 
-// Parse order ID from m_payment_id (format: timestamp_userid)
+// Parse order ID from m_payment_id (format: orderId_userId)
 $parts = explode('_', $m_payment_id);
+$order_id = (int)($parts[0] ?? 0);
 $user_id = (int)($parts[1] ?? 0);
-$order_timestamp = $parts[0] ?? time();
 
-if ($pfValid && $payment_status === 'COMPLETE' && $user_id > 0) {
+if ($pfValid && $payment_status === 'COMPLETE' && $order_id > 0 && $user_id > 0) {
     try {
-        // Start transaction
         $conn->begin_transaction();
         
-        // Get cart items for this user
-        $cart_sql = "SELECT c.product_id, c.quantity, p.price, p.seller_id, p.title 
-                     FROM cart c 
-                     JOIN products p ON c.product_id = p.product_id 
-                     WHERE c.user_id = ?";
-        $cart_stmt = $conn->prepare($cart_sql);
-        $cart_stmt->bind_param('i', $user_id);
-        $cart_stmt->execute();
-        $cart_result = $cart_stmt->get_result();
+        // Check if order exists and belongs to this user
+        $check_sql = "SELECT order_id, status, total_price FROM orders WHERE order_id = ? AND buyer_id = ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param('ii', $order_id, $user_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
         
-        $cart_items = [];
-        while ($item = $cart_result->fetch_assoc()) {
-            $cart_items[] = $item;
-        }
-        
-        if (count($cart_items) > 0) {
-            // For each cart item, create a separate order (since your table has product_id directly)
-            $order_sql = "INSERT INTO orders (buyer_id, seller_id, product_id, quantity, total_price, status, created_at) 
-                          VALUES (?, ?, ?, ?, ?, 'pending', NOW())";
-            $order_stmt = $conn->prepare($order_sql);
+        if ($check_result->num_rows > 0) {
+            $order = $check_result->fetch_assoc();
             
-            foreach ($cart_items as $item) {
-                $item_total = $item['price'] * $item['quantity'];
-                $order_stmt->bind_param('iiidd', $user_id, $item['seller_id'], $item['product_id'], $item['quantity'], $item_total);
-                $order_stmt->execute();
+            // Verify amount matches
+            if (abs($order['total_price'] - $amount) < 0.01) {
+                // Update order status to 'processing' (payment confirmed)
+                $update_sql = "UPDATE orders SET status = 'processing', payment_id = ? WHERE order_id = ?";
+                $update_stmt = $conn->prepare($update_sql);
+                $update_stmt->bind_param('si', $m_payment_id, $order_id);
+                $update_stmt->execute();
+                $update_stmt->close();
+                
+                error_log("PayFast: Order #$order_id updated to 'processing' for user $user_id");
+            } else {
+                error_log("PayFast: Amount mismatch for order #$order_id - Expected: {$order['total_price']}, Received: $amount");
             }
-            
-            $order_stmt->close();
-            
-            // Clear user's cart from database
-            $clear_sql = "DELETE FROM cart WHERE user_id = ?";
-            $clear_stmt = $conn->prepare($clear_sql);
-            $clear_stmt->bind_param('i', $user_id);
-            $clear_stmt->execute();
-            $clear_stmt->close();
-            
-            // Update session cart count
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            $_SESSION['cart_count'] = 0;
-            session_write_close();
-            
-            error_log("PayFast: " . count($cart_items) . " orders created for user $user_id");
         } else {
-            error_log("PayFast: Cart is empty for user $user_id");
+            error_log("PayFast: Order #$order_id not found for user $user_id");
         }
+        $check_stmt->close();
         
-        $cart_stmt->close();
+        // Clear user's cart after successful payment
+        $clear_sql = "DELETE FROM cart WHERE user_id = ?";
+        $clear_stmt = $conn->prepare($clear_sql);
+        $clear_stmt->bind_param('i', $user_id);
+        $clear_stmt->execute();
+        $clear_stmt->close();
         
-        // Commit transaction
+        // Update session cart count if session exists
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['cart_count'] = 0;
+        session_write_close();
+        
         $conn->commit();
         
     } catch (Exception $e) {
         $conn->rollback();
-        error_log("PayFast order creation failed: " . $e->getMessage());
+        error_log("PayFast order update failed: " . $e->getMessage());
     }
 } else {
-    error_log("PayFast payment failed or invalid");
+    error_log("PayFast payment validation failed. Valid: $pfValid, Status: $payment_status");
 }
 
 $conn->close();

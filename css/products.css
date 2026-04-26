@@ -1174,79 +1174,6 @@
     width: 100%;
 }
 
-/* ========== BREADCRUMB NAVIGATION ========== */
-.breadcrumb {
-    margin: 30px 0 20px 30px;
-    padding: 12px 20px;
-    font-size: var(--font-md);
-    background-color: var(--gray-bg-light);
-    border-radius: var(--radius-md);
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.breadcrumb a {
-    text-decoration: none;
-    color: var(--primary-color);
-    transition: color var(--transition-fast);
-    font-weight: var(--font-medium);
-    padding: 4px 8px;
-    border-radius: var(--radius-sm);
-}
-
-.breadcrumb a:hover {
-    background-color: var(--primary-fade);
-    text-decoration: underline;
-}
-
-.breadcrumb span {
-    color: var(--gray-medium);
-    font-weight: var(--font-normal);
-}
-
-.breadcrumb .current-page {
-    color: var(--dark-bg);
-    font-weight: var(--font-semibold);
-    background-color: var(--primary-fade);
-    padding: 4px 12px;
-    border-radius: var(--radius-round);
-}
-
-/* Breadcrumb separator */
-.breadcrumb-separator {
-    color: var(--gray-light);
-    font-size: var(--font-md);
-    margin: 0 4px;
-}
-
-/* Responsive breadcrumb */
-@media (max-width: 768px) {
-    .breadcrumb {
-        margin: 20px 15px;
-        padding: 10px 15px;
-        font-size: var(--font-sm);
-        width: calc(100% - 30px);
-    }
-    
-    .breadcrumb a {
-        padding: 3px 6px;
-    }
-    
-    .breadcrumb .current-page {
-        padding: 3px 8px;
-    }
-}
-
-@media (max-width: 480px) {
-    .breadcrumb {
-        margin: 15px 12px;
-        padding: 8px 12px;
-        font-size: var(--font-xs);
-        width: calc(100% - 24px);
-    }
-}
 /* Top items - product images and info */
 .top-items {
     display: flex;
@@ -1642,7 +1569,7 @@
 }
 
 /* ========== ERROR STATES ========== */
-.error-container {
+.product-error-container {
     text-align: center;
     padding: 80px 20px;
     max-width: 500px;
@@ -1652,24 +1579,24 @@
     box-shadow: var(--shadow-sm);
 }
 
-.error-icon {
+.product-error-icon {
     opacity: 0.5;
     margin-bottom: 20px;
 }
 
-.error-title {
+.product-error-title {
     color: var(--error);
     margin-bottom: 10px;
     font-size: 24px;
     font-weight: var(--font-bold);
 }
 
-.error-message-text {
+.product-error-message-text {
     color: var(--gray-medium);
     margin-bottom: 20px;
 }
 
-.error-action-btn {
+.product-error-action-btn {
     margin-top: 10px;
     padding: 10px 24px;
     background-color: var(--primary-color);
@@ -1681,7 +1608,7 @@
     transition: all var(--transition-fast);
 }
 
-.error-action-btn:hover {
+.product-error-action-btn:hover {
     background-color: var(--primary-dark);
     transform: translateY(-2px);
     box-shadow: var(--shadow-sm);

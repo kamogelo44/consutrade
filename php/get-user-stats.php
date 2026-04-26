@@ -4,21 +4,19 @@
  * Author: Kamogelo Phale
  */
 
-session_start();
-require_once __DIR__ . '/config.php';
-
+// Don't use helpers - just check the session that's already active
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
 
-// ========== ADD THIS PUBLIC VIEW LOGIC FIRST ==========
-// Check if we're viewing a specific seller profile (public view)
+require_once __DIR__ . '/config.php';
+
+// ========== PUBLIC VIEW LOGIC (no login required) ==========
 $view_seller_id = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
 
 if ($view_seller_id > 0) {
-    // Get stats for the viewed seller (no login required)
+    // Get stats for the viewed seller (public view)
     $user_id = $view_seller_id;
     
-    // Get total products
     $product_sql = "SELECT COUNT(*) as count FROM products WHERE seller_id = ? AND status != 'deleted'";
     $product_stmt = $conn->prepare($product_sql);
     $product_stmt->bind_param('i', $user_id);
@@ -27,7 +25,6 @@ if ($view_seller_id > 0) {
     $total_products = (int)$product_result->fetch_assoc()['count'];
     $product_stmt->close();
     
-    // Get completed orders count for seller
     $sales_sql = "SELECT COUNT(*) as count FROM orders WHERE seller_id = ? AND status = 'completed'";
     $sales_stmt = $conn->prepare($sales_sql);
     $sales_stmt->bind_param('i', $user_id);
@@ -36,7 +33,6 @@ if ($view_seller_id > 0) {
     $total_sales = (int)$sales_result->fetch_assoc()['count'];
     $sales_stmt->close();
     
-    // Get reviews
     $review_sql = "SELECT COUNT(*) as count, AVG(rating) as avg FROM reviews WHERE seller_id = ?";
     $review_stmt = $conn->prepare($review_sql);
     $review_stmt->bind_param('i', $user_id);
@@ -46,6 +42,8 @@ if ($view_seller_id > 0) {
     $total_reviews = (int)($review_data['count'] ?? 0);
     $avg_rating = round($review_data['avg'] ?? 0, 1);
     $review_stmt->close();
+    
+    $conn->close();
     
     echo json_encode([
         'success' => true,
@@ -60,30 +58,40 @@ if ($view_seller_id > 0) {
     ]);
     exit;
 }
-// ========== END PUBLIC VIEW LOGIC ==========
 
-// Initialize response for logged-in users
-$response = [
-    'success' => false,
-    'total_products' => 0,
-    'total_sales' => 0,
-    'total_revenue' => 0,
-    'total_reviews' => 0,
-    'avg_rating' => 0,
-    'pending_orders' => 0,
-    'total_orders' => 0,
-    'total_earnings' => 0
-];
+// ========== AUTHENTICATED USERS ==========
+// Check if a session already exists (from dashboard or main site)
+if (session_status() === PHP_SESSION_NONE) {
+    // Try to find which session is active by checking cookies
+    if (isset($_COOKIE['CONSUTRADE_ADMIN_SESSION'])) {
+        session_name('CONSUTRADE_ADMIN_SESSION');
+        session_start();
+        $role = $_SESSION['role'] ?? null;
+    } elseif (isset($_COOKIE['CONSUTRADE_SELLER_SESSION'])) {
+        session_name('CONSUTRADE_SELLER_SESSION');
+        session_start();
+        $role = $_SESSION['role'] ?? null;
+    } elseif (isset($_COOKIE['CONSUTRADE_USER_SESSION'])) {
+        session_name('CONSUTRADE_USER_SESSION');
+        session_start();
+        $role = $_SESSION['role'] ?? null;
+    } else {
+        echo json_encode(['success' => false, 'message' => 'No active session']);
+        $conn->close();
+        exit;
+    }
+}
 
-// Check authentication for logged-in users
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    echo json_encode($response);
+$user_id = $_SESSION['user_id'] ?? 0;
+$role = $_SESSION['role'] ?? null;
+
+if (!$user_id || !$role) {
+    echo json_encode(['success' => false, 'message' => 'Invalid session']);
+    $conn->close();
     exit;
 }
 
-// Rest of your existing code for logged-in users...
-$user_id = $_SESSION['user_id'];
-$role = $_SESSION['role'];
+$response = ['success' => false];
 
 if ($role === 'seller') {
     // Total products
@@ -114,8 +122,7 @@ if ($role === 'seller') {
     $total_orders = (int)($sales_data['total_orders'] ?? 0);
     $sales_stmt->close();
     
-    // Reviews - FIXED: Use correct column names for your table
-    // Your table has: review_id, buyer_id, seller_id, order_id, rating, comment, created_at
+    // Reviews
     $review_sql = "SELECT COUNT(*) as count, AVG(rating) as avg FROM reviews WHERE seller_id = ?";
     $review_stmt = $conn->prepare($review_sql);
     if ($review_stmt) {
@@ -158,7 +165,6 @@ if ($role === 'seller') {
     $orders_data = $orders_result->fetch_assoc();
     $orders_stmt->close();
     
-    // Reviews written by buyer - FIXED: Use correct table name
     $review_sql = "SELECT COUNT(*) as count FROM reviews WHERE buyer_id = ?";
     $review_stmt = $conn->prepare($review_sql);
     $review_stmt->bind_param('i', $user_id);
@@ -205,18 +211,6 @@ if ($role === 'seller') {
         'total_orders' => $total_orders,
         'pending_orders' => $pending_orders,
         'total_earnings' => $total_earnings
-    ];
-} else {
-    $response = [
-        'success' => true,
-        'total_products' => 0,
-        'total_sales' => 0,
-        'total_revenue' => 0,
-        'total_reviews' => 0,
-        'avg_rating' => 0,
-        'pending_orders' => 0,
-        'total_orders' => 0,
-        'total_earnings' => 0
     ];
 }
 

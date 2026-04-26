@@ -4,8 +4,10 @@
  * Author: Kamogelo Phale
  */
 
-session_start();
-$baseUrl = "/www/consutrade/";
+require_once 'php/helpers.php';
+startSession('user');
+
+$baseUrl = getBaseUrl();
 ?>
 <!DOCTYPE html>
 <html lang="en">

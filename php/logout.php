@@ -1,23 +1,14 @@
 <?php
 /*
- * ConsuTrade - Logout
+ * ConsuTrade - Logout (Main Website)
  * Author: Kamogelo Phale
  *
- * Destroys session and redirects to homepage
+ * Destroys main website session and redirects to homepage
  */
 
-session_start();
+require_once 'helpers.php';
 
-// Destroy all session data
-$_SESSION = array();
-
-// Delete session cookie
-if (isset($_COOKIE[session_name()])) {
-    setcookie(session_name(), '', time() - 3600, '/');
-}
-
-// Destroy the session
-session_destroy();
+destroySession('user');
 
 // Redirect to homepage
 header('Location: ../index.php');

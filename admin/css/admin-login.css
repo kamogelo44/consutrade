@@ -1,7 +1,7 @@
 /* 
  * ConsuTrade - Admin Login Styles
  * Author: Kamogelo Phale
- * Uses variables from main style.css
+ * Uses variables from main style.css and shared modal/login styles from login-signup.css
  */
 
 /* Admin Login Page Body */
@@ -11,6 +11,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding-top: 0; /* Override body padding since there's no header */
 }
 
 /* Login Container */
@@ -20,24 +21,25 @@
     padding: var(--spacing-xl);
 }
 
-/* Login Box */
+/* Login Box - reuses .modal-content base but with different context */
 .admin-login-box {
     background: var(--white);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xl);
     padding: 40px;
 }
 
-/* Login Header */
+/* Login Header - same pattern as .modal-header */
 .admin-login-header {
     text-align: center;
     margin-bottom: var(--spacing-xl);
 }
 
 .admin-login-header h1 {
-    font-size: var(--font-3xl);
-    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
     color: var(--dark-bg);
+    margin-bottom: 6px;
 }
 
 .admin-login-header h1 span {
@@ -45,66 +47,35 @@
 }
 
 .admin-login-header p {
+    font-size: var(--font-sm);
     color: var(--gray-medium);
-    font-size: var(--font-md);
 }
 
-/* Error Message */
+/* Error Message - reuses .error-container pattern from login-signup.css */
 .admin-login-error {
     background-color: var(--error-light);
-    color: var(--error);
-    padding: var(--spacing-md);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--spacing-xl);
-    font-size: var(--font-md);
-    text-align: center;
     border-left: 4px solid var(--error);
-}
-
-/* Login Form */
-.admin-login-form .input-group {
-    margin-bottom: var(--spacing-xl);
-}
-
-.admin-login-form label {
-    display: block;
-    margin-bottom: var(--spacing-sm);
-    font-weight: var(--font-medium);
-    color: var(--gray-dark);
-    font-size: var(--font-md);
-}
-
-.admin-login-form input[type="email"],
-.admin-login-form input[type="password"] {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
-    font-size: var(--font-md);
-    transition: border-color var(--transition-fast);
-    box-sizing: border-box;
+    padding: 10px 12px;
+    margin-bottom: var(--spacing-md);
+    color: var(--error);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    text-align: left;
+}
+
+/* Login Form - uses .input-group from login-signup.css */
+.admin-login-form .input-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Override only what's different from shared styles */
+.admin-login-form input {
     height: 48px;
 }
 
-.admin-login-form input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-}
-
-/* Password Wrapper */
-.password-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-.password-wrapper input {
-    width: 100%;
-    padding-right: 45px;
-    box-sizing: border-box;
-}
-
-.toggle-password {
+/* Password toggle - same as .password-toggle-btn in login-signup.css */
+.admin-login-form .toggle-password {
     position: absolute;
     right: 12px;
     top: 50%;
@@ -112,23 +83,30 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 8px;
+    border-radius: var(--radius-round);
     display: flex;
     align-items: center;
+    justify-content: center;
+    transition: background-color var(--transition-fast);
 }
 
-.toggle-password img {
-    width: 20px;
-    height: 20px;
+.admin-login-form .toggle-password:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.admin-login-form .toggle-password img {
+    width: 18px;
+    height: 18px;
     opacity: 0.6;
     transition: opacity var(--transition-fast);
 }
 
-.toggle-password:hover img {
+.admin-login-form .toggle-password:hover img {
     opacity: 1;
 }
 
-/* Login Button */
+/* Login Button - same as .submit-btn pattern */
 .admin-login-btn {
     width: 100%;
     padding: 12px;
@@ -136,16 +114,18 @@
     color: var(--white);
     border: none;
     border-radius: var(--radius-md);
-    font-size: var(--font-base);
+    font-size: var(--font-md);
     font-weight: var(--font-semibold);
     cursor: pointer;
-    transition: all var(--transition-normal);
+    transition: all var(--transition-fast);
+    margin-top: var(--spacing-sm);
     height: 48px;
+    box-sizing: border-box;
 }
 
 .admin-login-btn:hover {
     background-color: var(--primary-dark);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
 }
 
@@ -156,19 +136,18 @@
 /* Responsive */
 @media (max-width: 480px) {
     .admin-login-container {
-        padding: var(--spacing-xl) var(--spacing-md);
+        padding: var(--spacing-lg) var(--spacing-md);
     }
     
     .admin-login-box {
-        padding: var(--spacing-xl);
+        padding: 28px 24px;
     }
     
     .admin-login-header h1 {
-        font-size: var(--font-2xl);
+        font-size: var(--font-xl);
     }
     
-    .admin-login-form input[type="email"],
-    .admin-login-form input[type="password"],
+    .admin-login-form input,
     .admin-login-btn {
         height: 44px;
     }

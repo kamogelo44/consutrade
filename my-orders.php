@@ -54,7 +54,26 @@ if (!empty($search_term)) {
     $types .= "ss";
 }
 
-$sql .= " ORDER BY o.created_at DESC";
+$sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
+        u.full_name as seller_name, u.user_id as seller_id,
+        (SELECT GROUP_CONCAT(DISTINCT p.title SEPARATOR ', ') 
+         FROM order_items oi 
+         JOIN products p ON oi.product_id = p.product_id 
+         WHERE oi.order_id = o.order_id) as product_names,
+        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+        FROM orders o
+        JOIN users u ON o.seller_id = u.user_id
+        WHERE o.buyer_id = ?
+        ORDER BY 
+            CASE o.status 
+                WHEN 'pending' THEN 1
+                WHEN 'processing' THEN 2
+                WHEN 'shipped' THEN 3
+                WHEN 'completed' THEN 4
+                WHEN 'cancelled' THEN 5
+                ELSE 6
+            END,
+            o.created_at DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param($types, ...$params);
@@ -79,6 +98,7 @@ $stmt->close();
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/my-orders.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/products.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 <body class="my-orders-page">
@@ -87,6 +107,15 @@ $stmt->close();
 
 <main>
     <div class="orders-container">
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb">
+            <a href="<?php echo $baseUrl; ?>index.php">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="current-page">My Orders</span>
+        </div>
+
         <!-- Page Header -->
         <div class="page-header">
             <h1>My Orders</h1>

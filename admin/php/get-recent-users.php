@@ -1,19 +1,14 @@
 <?php
-/*
- * ConsuTrade - Get Recent Users
- * Author: Kamogelo Phale
- * 
- * Returns JSON data for recent users
- */
+require_once dirname(__DIR__) . '/../php/config.php';
+require_once dirname(__DIR__) . '/../php/helpers.php';
 
-session_start();
-require_once '../php/config.php';
-
-// Check if user is logged in and is admin
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'admin') {
+// Check if admin is logged in
+if (!isAdminLoggedIn()) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit();
 }
+
+startSession('admin');
 
 $response = ['success' => true, 'users' => []];
 

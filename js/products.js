@@ -265,7 +265,7 @@ function showError(message) {
     if (!$container.length) return;
     
     $container.html(`
-        <div class="error-container">
+        <div class="product-error-container">
             <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Error" class="error-icon">
             <h2 class="error-title">Oops!</h2>
             <p class="error-message-text">${escapeHtml(message)}</p>

@@ -1,7 +1,11 @@
 <?php
-session_start();
-
 require_once 'php/helpers.php';
+
+startSession('user');
+// Debug - check session after returning from login
+error_log('=== INDEX PAGE ===');
+error_log('Session ID: ' . session_id());
+error_log('Session data: ' . print_r($_SESSION, true));
 
 $baseUrl = getBaseUrl();
 
@@ -44,86 +48,14 @@ unset($_SESSION['flash']);
     <link rel="preload" as="style" href="css/header.css">
     <link rel="preload" as="style" href="css/animations.css">
     
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/products.css">
+    <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/login-signup.css">
+    <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/footer.css">
     
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    
-    <?php if (!empty($registerErrors)): ?>
-    <script>
-    $(document).ready(function() {
-        var modal = document.getElementById('register-modal');
-        if (modal) {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        <?php if (!empty($registerFormData['full_name'])): ?>
-        var fullnameInput = document.getElementById('register-full-name');
-        if (fullnameInput) fullnameInput.value = <?php echo json_encode($registerFormData['full_name']); ?>;
-        <?php endif; ?>
-        
-        <?php if (!empty($registerFormData['email'])): ?>
-        var emailInput = document.getElementById('register-email');
-        if (emailInput) emailInput.value = <?php echo json_encode($registerFormData['email']); ?>;
-        <?php endif; ?>
-        
-        <?php if (!empty($registerFormData['role']) && $registerFormData['role'] == 'seller'): ?>
-        var sellRadio = document.getElementById('seller');
-        if (sellRadio) sellRadio.checked = true;
-        <?php endif; ?>
-        
-        <?php foreach ($registerErrors as $field => $message): ?>
-        var errorEl = document.getElementById('<?php echo $field; ?>-error');
-        if (errorEl) {
-            errorEl.textContent = <?php echo json_encode($message); ?>;
-            var inputGroup = errorEl.closest('.input-group');
-            if (inputGroup) inputGroup.classList.add('error');
-        }
-        <?php endforeach; ?>
-        
-        var errorContainer = document.getElementById('register-error-container');
-        if (errorContainer) {
-            errorContainer.style.display = 'block';
-        }
-    });
-    </script>
-    <?php endif; ?>
-
-    <?php if (!empty($loginErrors)): ?>
-    <script>
-    $(document).ready(function() {
-        var modal = document.getElementById('login-modal');
-        if (modal) {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        var emailInput = document.getElementById('login-email');
-        if (emailInput) {
-            emailInput.value = <?php echo json_encode($loginEmail); ?>;
-        }
-        
-        <?php foreach ($loginErrors as $field => $message): ?>
-        var errorEl = document.createElement('small');
-        errorEl.className = 'error-text';
-        errorEl.style.color = '#f44336';
-        errorEl.style.display = 'block';
-        errorEl.style.marginTop = '6px';
-        errorEl.textContent = <?php echo json_encode($message); ?>;
-        
-        var inputGroup = document.querySelector('#login-modal .input-group:has(#login-<?php echo $field; ?>)');
-        if (inputGroup) {
-            inputGroup.classList.add('error');
-            inputGroup.appendChild(errorEl);
-        }
-        <?php endforeach; ?>
-    });
-    </script>
-    <?php endif; ?>
 </head>
 <body>
 
@@ -131,7 +63,7 @@ unset($_SESSION['flash']);
 
 <main class="content">
     <?php if ($flash): ?>
-    <div class="flash" style="background:#e6f4ea;border-left:4px solid #2e7d32;padding:12px 20px;margin:20px auto;max-width:1200px;font-size:14px;">
+    <div class="flash" style="background: var(--success-light); border-left: 4px solid var(--success); padding: 12px 20px; margin: 20px auto; max-width: 1200px; font-size: var(--font-md);">
         <?php echo htmlspecialchars($flash); ?>
     </div>
     <?php endif; ?>
@@ -220,59 +152,15 @@ unset($_SESSION['flash']);
     </section>
 </main>
 
+<?php include 'includes/footer.php'; ?>
+
 <script src="js/products.js"></script>
-<?php if (!empty($loginErrors)): ?>
-<script>
-$(document).ready(function() {
-    var modal = document.getElementById('login-modal');
-    if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    var emailInput = document.getElementById('login-email');
-    if (emailInput) {
-        emailInput.value = <?php echo json_encode($loginEmail); ?>;
-    }
-    
-    // Handle general error (top banner)
-    <?php if (isset($loginErrors['general'])): ?>
-    var errorContainer = document.getElementById('login-error-container');
-    if (errorContainer) {
-        errorContainer.style.display = 'block';
-        errorContainer.innerHTML = '<p class="error-message"><?php echo addslashes($loginErrors['general']); ?></p>';
-    }
-    <?php endif; ?>
-    
-    // Handle field-specific errors (NOT general)
-    <?php foreach ($loginErrors as $field => $message): ?>
-        <?php if ($field !== 'general'): ?>
-        var errorEl = document.createElement('small');
-        errorEl.className = 'error-text';
-        errorEl.textContent = <?php echo json_encode($message); ?>;
-        
-        var inputGroup = $('#login-<?php echo $field; ?>').closest('.input-group');
-        if (inputGroup.length) {
-            inputGroup.addClass('error');
-            inputGroup.find('.error-text').remove();
-            inputGroup.append(errorEl);
-        }
-        <?php endif; ?>
-    <?php endforeach; ?>
-});
-</script>
-<?php endif; ?>
 
 <?php if (!empty($registerErrors)): ?>
 <script>
 $(document).ready(function() {
-    var modal = document.getElementById('register-modal');
-    if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
+    openModal($('#register-modal'));
     
-    // Restore form data
     <?php if (!empty($registerFormData['full_name'])): ?>
     $('#register-full-name').val(<?php echo json_encode($registerFormData['full_name']); ?>);
     <?php endif; ?>
@@ -287,38 +175,74 @@ $(document).ready(function() {
     
     <?php if (!empty($registerFormData['role']) && $registerFormData['role'] == 'seller'): ?>
     $('#seller').prop('checked', true);
+    <?php endif; ?>
+    
+    <?php if (isset($registerErrors['general']) && !empty(trim($registerErrors['general']))): ?>
+    $('#register-error-container')
+        .show()
+        .text(<?php echo json_encode(trim($registerErrors['general'])); ?>);
     <?php else: ?>
-    $('#buyer').prop('checked', true);
+    $('#register-error-container').hide().empty();
     <?php endif; ?>
     
-    // Handle general error (top banner)
-    <?php if (isset($registerErrors['general'])): ?>
-    var errorContainer = document.getElementById('register-error-container');
-    if (errorContainer) {
-        errorContainer.style.display = 'block';
-        errorContainer.innerHTML = '<p class="error-message"><?php echo addslashes($registerErrors['general']); ?></p>';
-    }
-    <?php endif; ?>
-    
-    // Handle field-specific errors (NOT general)
     <?php foreach ($registerErrors as $field => $message): ?>
-        <?php if ($field !== 'general'): ?>
-        var errorEl = document.createElement('small');
-        errorEl.className = 'error-text';
-        errorEl.textContent = <?php echo json_encode($message); ?>;
-        
-        var inputField = $('#register-<?php echo $field; ?>');
-        if (inputField.length) {
-            var inputGroup = inputField.closest('.input-group');
-            inputGroup.addClass('error');
-            inputGroup.find('.error-text').remove();
-            inputGroup.append(errorEl);
-        }
+        <?php if ($field !== 'general' && !empty($message)): ?>
+        (function() {
+            var errorEl = document.createElement('small');
+            errorEl.className = 'error-text';
+            errorEl.textContent = <?php echo json_encode($message); ?>;
+            
+            var $inputField = $('#register-<?php echo $field; ?>');
+            if ($inputField.length) {
+                var $inputGroup = $inputField.closest('.input-group');
+                $inputGroup.addClass('error');
+                $inputGroup.find('.error-text').remove();
+                $inputGroup.append(errorEl);
+            }
+        })();
         <?php endif; ?>
     <?php endforeach; ?>
 });
 </script>
 <?php endif; ?>
+
+<?php if (!empty($loginErrors)): ?>
+<script>
+$(document).ready(function() {
+    openModal($('#login-modal'));
+    
+    <?php if (!empty($loginEmail)): ?>
+    $('#login-email').val(<?php echo json_encode($loginEmail); ?>);
+    <?php endif; ?>
+    
+    <?php if (isset($loginErrors['general']) && !empty(trim($loginErrors['general']))): ?>
+    $('#login-error-container')
+        .show()
+        .text(<?php echo json_encode(trim($loginErrors['general'])); ?>);
+    <?php else: ?>
+    $('#login-error-container').hide().empty();
+    <?php endif; ?>
+    
+    <?php foreach ($loginErrors as $field => $message): ?>
+        <?php if ($field !== 'general' && !empty($message)): ?>
+        (function() {
+            var errorEl = document.createElement('small');
+            errorEl.className = 'error-text';
+            errorEl.textContent = <?php echo json_encode($message); ?>;
+            
+            var $inputGroup = $('#login-<?php echo $field; ?>').closest('.input-group');
+            if ($inputGroup.length) {
+                $inputGroup.addClass('error');
+                $inputGroup.find('.error-text').remove();
+                $inputGroup.append(errorEl);
+            }
+        })();
+        <?php endif; ?>
+    <?php endforeach; ?>
+});
+</script>
+<?php endif; ?>
+
 <script>
 $(document).ready(function() {
     loadFeaturedProducts();
@@ -411,14 +335,8 @@ $(document).ready(function() {
             $grid.append($card);
         });
     }
-
-    function escapeHtml(text) {
-        if (!text) return '';
-        return $('<div>').text(text).html();
-    }
 });
 </script>
 
-<?php include 'includes/footer.php'; ?>
 </body>
 </html>

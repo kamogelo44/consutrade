@@ -6,18 +6,26 @@
  * Separate page for sellers to add new products with multiple images
  */
 
-session_start();
+require_once dirname(__DIR__) . '/php/helpers.php';
 
-$baseUrl = "/www/consutrade/";
-
-// Check if user is logged in and is a seller
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'seller') {
-    header('Location: ' . $baseUrl . 'index.php');
+// Check if seller is logged in
+if (!isSellerLoggedIn()) {
+    header('Location: login.php');
     exit;
 }
 
-// Set current page for active sidebar link
-$current_page = 'add-product';
+// Start seller session
+startSession('seller');
+
+$baseUrl = getBaseUrl();
+
+// Get database connection
+require_once dirname(__DIR__) . '/php/config.php';
+
+// Get user data using helper
+$user = getUserById($conn, $_SESSION['user_id']);
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,13 +34,26 @@ $current_page = 'add-product';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Product - ConsuTrade Seller</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/add-product.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script>
+        var baseUrl = '<?php echo $baseUrl; ?>';
+    </script>
 </head>
 <body class="add-product-page seller-dashboard-page">
+    
+    <?php include 'includes/sidebar.php'; ?>
 
-<?php include 'includes/seller-sidebar.php'; ?>
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb-nav">
+            <a href="seller-dashboard.php">Dashboard</a>
+            <span class="separator">›</span>
+            <a href="my-products.php">My Products</a>
+            <span class="separator">›</span>
+            <span class="current">Add New Product</span>
+        </div>
 
         <!-- Add Product Content -->
         <div class="add-product-container">
@@ -250,7 +271,7 @@ $current_page = 'add-product';
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-<script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
 $(document).ready(function() {
     // Update progress bar based on form completion

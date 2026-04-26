@@ -4,21 +4,25 @@
  * Author: Kamogelo Phale
  */
 
-session_start();
+require_once dirname(__DIR__) . '/php/helpers.php';
 
-$baseUrl = "/www/consutrade/";
-
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'seller') {
-    header('Location: ' . $baseUrl . 'index.php');
+// Check if seller is logged in
+if (!isSellerLoggedIn()) {
+    header('Location: login.php');
     exit;
 }
 
+// Start seller session
+startSession('seller');
+
+$baseUrl = getBaseUrl();
+
+// Get database connection
 require_once dirname(__DIR__) . '/php/config.php';
 
 $seller_id = $_SESSION['user_id'];
 $success_message = '';
 $error_message = '';
-$current_page = 'products';
 
 // Handle status update (activate/suspend)
 if (isset($_GET['action']) && isset($_GET['id'])) {
@@ -56,6 +60,10 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     $check_stmt->close();
 }
 
+//Get profile
+$user = getUserById($conn, $seller_id);
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
+
 // Get filter parameters
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -69,13 +77,16 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Products - ConsuTrade Seller</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-products.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script>
+        var baseUrl = '<?php echo $baseUrl; ?>';
+    </script>
 </head>
 <body class="my-products-page seller-dashboard-page">
 
-<?php include 'includes/seller-sidebar.php'; ?>
+<?php include 'includes/sidebar.php'; ?>
 
         <div class="products-container">
             <div class="page-header">
@@ -127,45 +138,12 @@ $conn->close();
 </div>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-<script src="<?php echo $baseUrl; ?>admin/js/seller-dashboard.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
 var baseUrl = '<?php echo $baseUrl; ?>';
 var sellerId = <?php echo $seller_id; ?>;
 var statusFilter = '<?php echo $status_filter; ?>';
 var searchTerm = '<?php echo addslashes($search_term); ?>';
-
-// ========== GLOBAL FUNCTIONS (accessible from onclick) ==========
-function confirmDeleteProduct(productId) {
-    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-        var $card = $('.product-card[data-product-id="' + productId + '"]');
-        $card.css('opacity', '0.5');
-        
-        $.ajax({
-            url: baseUrl + 'php/delete-product.php',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ product_id: productId }),
-            dataType: 'json',
-            success: function(data) {
-                if (data.success) {
-                    $card.fadeOut(300, function() {
-                        $(this).remove();
-                        if ($('.product-card').length === 0) {
-                            location.reload();
-                        }
-                    });
-                } else {
-                    alert('Error: ' + data.message);
-                    $card.css('opacity', '1');
-                }
-            },
-            error: function() {
-                alert('Something went wrong. Please try again.');
-                $card.css('opacity', '1');
-            }
-        });
-    }
-}
 
 // ========== DOM READY - Initialize page ==========
 $(document).ready(function() {
@@ -176,7 +154,7 @@ $(document).ready(function() {
         $grid.html('<div class="loading-spinner">Loading products...</div>');
         
         $.ajax({
-            url: baseUrl + 'php/get-seller-products.php?seller_id=' + sellerId,
+            url: baseUrl + 'admin/php/get-seller-products.php',
             type: 'GET',
             dataType: 'json',
             success: function(data) {
@@ -228,7 +206,6 @@ $(document).ready(function() {
                 imagePath = baseUrl + imagePath;
             }
             
-            // Use escapeHtml from main.js (global)
             var card = $('<div>').addClass('product-card').attr('data-product-id', product.id);
             card.html(`
                 <div class="product-image">

@@ -1,16 +1,23 @@
 <?php 
-session_start();
-// If user is already a seller, redirect to dashboard
-if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true && $_SESSION['role'] === 'seller') {
-    // Optional: Show a message before redirect
-    $_SESSION['flash'] = 'You are already a seller. Redirecting to your dashboard...';
-    header('Location: seller-dashboard.php');
+require_once 'php/helpers.php';
+startSession('user');
+
+$baseUrl = getBaseUrl();
+
+// If user is already logged in, redirect to appropriate page
+if (isUserLoggedIn()) {
+    // Buyer is logged in - they can't access sell page
+    header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-// If user is logged in as buyer, we'll show a special message on the page
-$isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
-$userRole = $isLoggedIn ? $_SESSION['role'] : null;
+// Check if seller is logged in (from dashboard)
+if (isSellerLoggedIn()) {
+    header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
+    exit;
+}
+
+// Only guests (not logged in) can see this page
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,7 +34,7 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
 </head>
 <body>
     <!--Header-->
-    <?php include 'includes/header.php'?>
+    <?php include 'includes/header.php'; ?>
 
     <main>
         <!-- Hero Section -->
@@ -41,14 +48,6 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
                 </div>
             </div>
         </section>
-
-        <!-- Show different message for logged-in buyers -->
-        <?php if ($isLoggedIn && $userRole === 'buyer'): ?>
-            <div class="upgrade-banner" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); padding: 15px 20px; text-align: center; color: white;">
-                <p>You're already a buyer on ConsuTrade! <strong>Upgrade to a seller account</strong> to start selling your products.</p>
-                <button id="upgrade-to-seller-btn" class="upgrade-btn" style="background: white; color: var(--primary-color); border: none; padding: 8px 20px; margin-left: 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Upgrade Now</button>
-            </div>
-        <?php endif; ?>
 
         <!-- Why Sell With Us Section -->
         <section class="why-sell">
@@ -140,7 +139,7 @@ $userRole = $isLoggedIn ? $_SESSION['role'] : null;
     </main>
 
     <!--Footer-->
-    <?php include 'includes/footer.php'?>
+    <?php include 'includes/footer.php'; ?>
 
     <script src="js/main.js"></script>
 </body>
