@@ -8,14 +8,79 @@
  * - Password show/hide
  * - Login/register modal popups
  * - Cart count updates
+ * - Cart display and management
  * - User dropdown menus (desktop + mobile)
  * - Sell link behavior for logged-in buyers
  * - Active navigation link highlighting
  * - Error message clearing on input
+ * - Toast notifications
  */
 
 // Base URL for all fetch requests
 var baseUrl = '/www/consutrade/';
+
+// ========== GLOBAL ESCAPE HTML FUNCTION ==========
+function escapeHtml(text) {
+    if (!text) return '';
+    return $('<div>').text(text).html();
+}
+
+// ========== TOAST NOTIFICATIONS ==========
+function showToast(message, type = 'success') {
+    // Remove any existing toast
+    $('.toast-notification').remove();
+    
+    var icon = '';
+    if (type === 'success') icon = '✓';
+    else if (type === 'error') icon = '✕';
+    else if (type === 'info') icon = 'ℹ';
+    else if (type === 'warning') icon = '⚠';
+    
+    var toast = $(`
+        <div class="toast-notification toast-${type}">
+            <div class="toast-icon">${icon}</div>
+            <div class="toast-message">${escapeHtml(message)}</div>
+        </div>
+    `);
+    
+    $('body').append(toast);
+    
+    // Click anywhere on toast to dismiss
+    toast.on('click', function(e) {
+        if (!$(e.target).hasClass('toast-close')) {
+            toast.addClass('hiding');
+            setTimeout(function() {
+                toast.remove();
+            }, 300);
+        }
+    });
+    
+    // Auto remove after 4 seconds
+    setTimeout(function() {
+        if (toast && toast.length) {
+            toast.addClass('hiding');
+            setTimeout(function() {
+                toast.remove();
+            }, 300);
+        }
+    }, 4000);
+}
+
+function showSuccessToast(message) {
+    showToast(message, 'success');
+}
+
+function showErrorToast(message) {
+    showToast(message, 'error');
+}
+
+function showInfoToast(message) {
+    showToast(message, 'info');
+}
+
+function showWarningToast(message) {
+    showToast(message, 'warning');
+}
 
 // ========== GLOBAL PASSWORD TOGGLE FUNCTION ==========
 function togglePassword(fieldId, button) {
@@ -66,41 +131,9 @@ function addToCart(productId, productName, productPrice) {
         success: function(data) {
             if (data.success) {
                 updateCartCount();
-                // Optional: Show success toast instead of alert
                 showSuccessToast(data.message || 'Item added to cart!');
             } else {
                 showErrorToast(data.message || 'Error adding item to cart');
-            }
-        },
-        error: function() {
-            showErrorToast('Something went wrong');
-        }
-    });
-}
-
-// Optional: Toast notifications (more user-friendly than alerts)
-function showSuccessToast(message) {
-    // You can implement a nice toast notification here
-    alert(message); // Fallback to alert for now
-}
-
-function showErrorToast(message) {
-    alert(message);
-}
-
-function updateCartItem(productId, quantity) {
-    $.ajax({
-        url: baseUrl + 'php/update-cart.php',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            product_id: productId,
-            quantity: quantity
-        }),
-        success: function(data) {
-            if (data.success) {
-                updateCartCount();
-                location.reload();
             }
         },
         error: function() {
@@ -122,7 +155,12 @@ function removeFromCart(productId) {
         success: function(data) {
             if (data.success) {
                 updateCartCount();
-                location.reload();
+                // Reload if on cart page, otherwise just update count
+                if (window.location.pathname.includes('cart.php')) {
+                    location.reload();
+                } else {
+                    showSuccessToast(data.message || 'Item removed from cart');
+                }
             } else {
                 showErrorToast(data.message || 'Error removing item from cart');
             }
@@ -150,16 +188,17 @@ function updateCartCount() {
 }
 
 function loadCart() {
-    if (window.location.pathname.includes('cart.php')) {
-        $.get(baseUrl + 'php/get-cart.php', function(data) {
-            if (data.success) {
-                displayCartItems(data);
-                updateOrderSummary(data);
-            }
-        }).fail(function() {
-            console.log('Error loading cart');
-        });
-    }
+    // Only run on cart page
+    if (!window.location.pathname.includes('cart.php')) return;
+    
+    $.get(baseUrl + 'php/get-cart.php', function(data) {
+        if (data.success) {
+            displayCartItems(data);
+            updateOrderSummary(data);
+        }
+    }).fail(function() {
+        console.log('Error loading cart');
+    });
 }
 
 function displayCartItems(cartData) {
@@ -170,18 +209,18 @@ function displayCartItems(cartData) {
     var $cartItemCount = $('#cart-item-count');
     
     if (!cartData.items || cartData.items.length === 0) {
-        $emptyCartDiv.css('display', 'flex');
-        $cartLayout.css('display', 'none');
-        $cartItemCount.text('0');
+        if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'flex');
+        if ($cartLayout.length) $cartLayout.css('display', 'none');
+        if ($cartItemCount.length) $cartItemCount.text('0');
         return;
     }
     
-    $emptyCartDiv.css('display', 'none');
-    $cartLayout.css('display', 'flex');
-    $cartItemCount.text(cartData.items.length);
+    if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'none');
+    if ($cartLayout.length) $cartLayout.css('display', 'flex');
+    if ($cartItemCount.length) $cartItemCount.text(cartData.items.length);
     
-    $desktopTableBody.empty();
-    $mobileContainer.empty();
+    if ($desktopTableBody.length) $desktopTableBody.empty();
+    if ($mobileContainer.length) $mobileContainer.empty();
     
     $.each(cartData.items, function(index, item) {
         var verifiedBadge = item.is_verified ? 
@@ -193,7 +232,7 @@ function displayCartItems(cartData) {
             imagePath = baseUrl + imagePath;
         }
         
-        // Desktop table row
+        // Desktop table row - MATCHING PHP STRUCTURE
         if ($desktopTableBody.length) {
             var row = $('<tr>').html(`
                 <td class="product-cell" data-label="Product">
@@ -205,57 +244,118 @@ function displayCartItems(cartData) {
                             <p class="prod-name">${escapeHtml(item.product_name)}</p>
                         </div>
                     </div>
-                </td>
+                  </td>
                 <td class="seller-cell" data-label="Seller">
                     <div class="seller-cart-info">
                         <p class="seller-name">${escapeHtml(item.seller_name)}</p>
-                        <div class="verification">
-                            ${verifiedBadge}
-                        </div>
+                        <div class="verification">${verifiedBadge}</div>
                     </div>
-                </td>
+                  </td>
                 <td class="price-cell" data-label="Price">R ${parseFloat(item.price).toFixed(2)}</td>
+                <td class="quantity-cell" data-label="Quantity">
+                    <div class="quantity-controls">
+                        <button class="qty-decrease" data-cart-id="${item.cart_id}">-</button>
+                        <input type="number" class="qty-input" value="${item.quantity}" min="1" max="${Math.min(99, item.stock_quantity || 99)}" data-cart-id="${item.cart_id}" style="width: 60px; text-align: center;">
+                        <button class="qty-increase" data-cart-id="${item.cart_id}">+</button>
+                    </div>
+                    ${item.quantity >= (item.stock_quantity || 99) && (item.stock_quantity || 0) > 0 ? `<small class="stock-warning">Max ${item.stock_quantity} available</small>` : ''}
+                  </td>
                 <td class="actions-cell" data-label="Actions">
-                    <button class="remove-btn" onclick="removeFromCart(${item.product_id})">Remove</button>
-                </td>
+                    <button class="remove-btn" data-product-id="${item.product_id}">
+                        <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove">
+                        Remove
+                    </button>
+                  </td>
             `);
             $desktopTableBody.append(row);
         }
         
-        // Mobile card
+        // Mobile card - MATCHING PHP STRUCTURE
         if ($mobileContainer.length) {
-            var card = $('<div>').addClass('mobile-cart-card').html(`
-                <div class="mobile-cart-img">
-                    <img src="${imagePath}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'">
+            var card = $('<div>').addClass('cart-card').html(`
+                <div class="cart-card-header">
+                    <img src="${imagePath}" alt="${escapeHtml(item.product_name)}" class="cart-card-img" onerror="this.src='${baseUrl}images/default-product.png'">
+                    <div>
+                        <h4>${escapeHtml(item.product_name)}</h4>
+                        <p class="seller-name">${escapeHtml(item.seller_name)}</p>
+                        ${verifiedBadge}
+                    </div>
                 </div>
-                <div class="mobile-cart-details">
-                    <h3 class="mobile-prod-name">${escapeHtml(item.product_name)}</h3>
-                </div>
-                <div class="mobile-cart-seller">
-                    <p class="seller-name">${escapeHtml(item.seller_name)}</p>
-                    ${verifiedBadge}
-                </div>
-                <div class="mobile-cart-price">
-                    <p class="price">R ${parseFloat(item.price).toFixed(2)}</p>
-                </div>
-                <div class="mobile-cart-actions">
-                    <button class="remove-btn" onclick="removeFromCart(${item.product_id})">Remove</button>
+                <div class="cart-card-body">
+                    <div class="cart-card-price">R ${parseFloat(item.price).toFixed(2)}</div>
+                    <div class="quantity-controls">
+                        <button class="qty-decrease" data-cart-id="${item.cart_id}">-</button>
+                        <input type="number" class="qty-input" value="${item.quantity}" min="1" max="${Math.min(99, item.stock_quantity || 99)}" data-cart-id="${item.cart_id}" style="width: 50px; text-align: center;">
+                        <button class="qty-increase" data-cart-id="${item.cart_id}">+</button>
+                    </div>
+                    <button class="remove-btn" data-product-id="${item.product_id}">
+                        <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove">
+                        Remove
+                    </button>
                 </div>
             `);
             $mobileContainer.append(card);
         }
     });
+    
+    // Re-attach event handlers for the newly added elements
+    attachCartEventHandlers();
+}
+
+function attachCartEventHandlers() {
+    // Quantity increase
+    $('.qty-increase').off('click').on('click', function() {
+        var cartId = $(this).data('cart-id');
+        var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
+        var currentVal = parseInt($input.val());
+        var maxVal = parseInt($input.attr('max'));
+        if (!isNaN(currentVal) && currentVal < maxVal) {
+            $input.val(currentVal + 1);
+            updateCartQuantity(cartId, currentVal + 1);
+        }
+    });
+    
+    // Quantity decrease
+    $('.qty-decrease').off('click').on('click', function() {
+        var cartId = $(this).data('cart-id');
+        var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
+        var currentVal = parseInt($input.val());
+        if (!isNaN(currentVal) && currentVal > 1) {
+            $input.val(currentVal - 1);
+            updateCartQuantity(cartId, currentVal - 1);
+        }
+    });
+    
+    // Manual quantity input
+    $('.qty-input').off('change').on('change', function() {
+        var cartId = $(this).data('cart-id');
+        var quantity = parseInt($(this).val());
+        var maxVal = parseInt($(this).attr('max'));
+        if (isNaN(quantity) || quantity < 1) {
+            quantity = 1;
+            $(this).val(1);
+        }
+        if (quantity > maxVal) {
+            quantity = maxVal;
+            $(this).val(maxVal);
+            alert('Only ' + maxVal + ' available in stock.');
+        }
+        updateCartQuantity(cartId, quantity);
+    });
+    
+    // Remove button
+    $('.remove-btn').off('click').on('click', function() {
+        var productId = $(this).data('product-id');
+        if (confirm('Remove this item from your cart?')) {
+            removeFromCart(productId);
+        }
+    });
 }
 
 function updateOrderSummary(cartData) {
-    $('.sub-total-val').text(cartData.subtotal);
-    $('.deliv-fee-val').text(cartData.delivery_fee);
-    $('.total-val').text(cartData.total);
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    return $('<div>').text(text).html();
+    if ($('.sub-total-val').length) $('.sub-total-val').text(cartData.subtotal);
+    if ($('.deliv-fee-val').length) $('.deliv-fee-val').text(cartData.delivery_fee);
+    if ($('.total-val').length) $('.total-val').text(cartData.total);
 }
 
 // ========== GLOBAL MODAL FUNCTIONS ==========
@@ -604,7 +704,7 @@ $(document).ready(function() {
     // ========== INITIALIZE ERROR CLEARING ON INPUT ==========
     initErrorClearingOnInput();
     
-    // Run these when page loads
+    // ========== RUN THESE WHEN PAGE LOADS ==========
     updateCartCount();
     loadCart();
 });

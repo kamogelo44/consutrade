@@ -1,34 +1,36 @@
 <?php
 /*
- * ConsuTrade - Get Order Details
+ * ConsuTrade - Get Order Details (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * Returns detailed order information for the logged-in user
  */
 
-session_start();
-require_once 'config.php';
-require_once 'helpers.php';
+require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'order' => null];
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+// Check if user is logged in using centralized auth
+if (!$is_logged_in) {
     echo json_encode($response);
     exit;
 }
 
 $order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
-$user_id = $_SESSION['user_id'];
-$role = $_SESSION['role'];
+$user_id = $current_user_id;
+$role = $current_user['role'];
 
 if ($order_id <= 0) {
     echo json_encode($response);
     exit;
 }
 
-// Get order basic info
+// Get order basic info based on role
 if ($role === 'seller') {
-    $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
+    $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
             u.full_name as buyer_name, u.email as buyer_email,
             u.phone as buyer_phone, u.location as buyer_location
             FROM orders o
@@ -38,7 +40,7 @@ if ($role === 'seller') {
     $stmt->bind_param('ii', $order_id, $user_id);
 } else {
     // Buyer role
-    $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
+    $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
             u.full_name as seller_name, u.email as seller_email,
             u.phone as seller_phone, u.location as seller_location
             FROM orders o
@@ -54,7 +56,6 @@ $result = $stmt->get_result();
 if ($result->num_rows === 0) {
     echo json_encode($response);
     $stmt->close();
-    $conn->close();
     exit;
 }
 
@@ -63,7 +64,7 @@ $stmt->close();
 
 // Get order items from order_items table
 $items_sql = "SELECT oi.product_id, oi.quantity, oi.price,
-              p.title as product_name, p.image_url
+              p.title as product_name, p.image_url, p.stock_quantity
               FROM order_items oi
               JOIN products p ON oi.product_id = p.product_id
               WHERE oi.order_id = ?";
@@ -74,21 +75,18 @@ $items_result = $items_stmt->get_result();
 
 $items = [];
 $subtotal = 0;
+
 while ($item = $items_result->fetch_assoc()) {
-    $imagePath = $item['image_url'] ?? '';
-    if (empty($imagePath)) {
-        $imagePath = '/www/consutrade/images/default-product.png';
-    } elseif (!str_starts_with($imagePath, 'http') && !str_starts_with($imagePath, '/')) {
-        $imagePath = '/www/consutrade/' . $imagePath;
-    }
+    // Use getProductImageUrl helper for consistent image paths
+    $imagePath = getProductImageUrl($item['image_url'] ?? null);
     
     $item_total = $item['price'] * $item['quantity'];
     $subtotal += $item_total;
     
     $items[] = [
-        'product_id' => $item['product_id'],
+        'product_id' => (int)$item['product_id'],
         'product_name' => $item['product_name'],
-        'quantity' => $item['quantity'],
+        'quantity' => (int)$item['quantity'],
         'price' => (float)$item['price'],
         'total' => $item_total,
         'image_url' => $imagePath
@@ -96,36 +94,36 @@ while ($item = $items_result->fetch_assoc()) {
 }
 $items_stmt->close();
 
-// Calculate delivery fee (sample logic - adjust as needed)
+// Calculate delivery fee (free over R500, otherwise R50)
 $delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
 $total = $subtotal + $delivery_fee;
 
+// Build response
 $response['success'] = true;
 $response['order'] = [
-    'order_id' => $order['order_id'],
+    'order_id' => (int)$order['order_id'],
     'total_price' => (float)$order['total_price'],
     'status' => $order['status'],
+    'payment_id' => $order['payment_id'] ?? null,
     'created_at' => date('d M Y, h:i A', strtotime($order['created_at'])),
-    'subtotal' => $subtotal,
-    'delivery_fee' => $delivery_fee,
-    'total' => $total,
+    'subtotal' => round($subtotal, 2),
+    'delivery_fee' => round($delivery_fee, 2),
+    'total' => round($total, 2),
     'items' => $items
 ];
 
 // Add role-specific fields
 if ($role === 'seller') {
-    $response['order']['buyer_name'] = $order['buyer_name'];
-    $response['order']['buyer_email'] = $order['buyer_email'];
-    $response['order']['buyer_phone'] = $order['buyer_phone'] ?? '';
-    $response['order']['shipping_address'] = $order['buyer_location'] ?? '';
+    $response['order']['other_party_name'] = $order['buyer_name'];
+    $response['order']['other_party_email'] = $order['buyer_email'];
+    $response['order']['other_party_phone'] = $order['buyer_phone'] ?? '';
+    $response['order']['shipping_address'] = $order['buyer_location'] ?? 'Not provided';
 } else {
-    $response['order']['seller_name'] = $order['seller_name'];
-    $response['order']['seller_email'] = $order['seller_email'];
-    $response['order']['seller_phone'] = $order['seller_phone'] ?? '';
-    $response['order']['shipping_address'] = $order['seller_location'] ?? '';
+    $response['order']['other_party_name'] = $order['seller_name'];
+    $response['order']['other_party_email'] = $order['seller_email'];
+    $response['order']['other_party_phone'] = $order['seller_phone'] ?? '';
+    $response['order']['shipping_address'] = $order['seller_location'] ?? 'Not provided';
 }
-
-$conn->close();
 
 echo json_encode($response);
 ?>

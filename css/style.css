@@ -310,6 +310,102 @@ footer {
     box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
 }
 
+/* ========== TOAST NOTIFICATION STYLES ========== */
+
+.toast-notification {
+    position: fixed !important;
+    top: 80px !important;
+    right: 20px !important;
+    bottom: auto !important;
+    left: auto !important;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-md);
+    font-weight: var(--font-medium);
+    z-index: 99999;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    max-width: 380px;
+    min-width: 280px;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.toast-notification:hover {
+    transform: translateX(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.toast-icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-round);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-bold);
+    font-size: var(--font-md);
+    flex-shrink: 0;
+}
+
+.toast-message {
+    flex: 1;
+    line-height: 1.4;
+}
+
+/* Toast color variants - solid colors */
+.toast-success {
+    background-color: var(--success);
+    color: var(--white);
+}
+
+.toast-error {
+    background-color: var(--error);
+    color: var(--white);
+}
+
+.toast-info {
+    background-color: var(--info);
+    color: var(--white);
+}
+
+.toast-warning {
+    background-color: var(--warning);
+    color: var(--white);
+}
+
+/* Mobile responsive toast */
+@media (max-width: 768px) {
+    .toast-notification {
+        top: 70px !important;
+        right: 16px !important;
+        left: auto !important;
+        max-width: calc(100% - 32px);
+        min-width: auto;
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-sm);
+    }
+    
+    .toast-icon {
+        width: 20px;
+        height: 20px;
+        font-size: var(--font-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .toast-notification {
+        top: 60px !important;
+        right: 12px !important;
+        left: auto !important;
+        max-width: calc(100% - 24px);
+        padding: 10px 16px;
+    }
+}
+
 /* ========== RESPONSIVE STYLES FOR HERO SECTION ========== */
 
 /* Desktop Large - 1200px and above */

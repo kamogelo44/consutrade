@@ -1,4 +1,3 @@
-
 /* ========== CART PAGE STYLES ========== */
 
 /*Empty Cart styles*/
@@ -47,7 +46,6 @@
     margin-bottom: 30px;
     width: 100%;
 }
-
 
 .cart-heading {
     font-size: var(--font-3xl);
@@ -127,7 +125,9 @@
     border-bottom: none;
 }
 
-/* Product column */
+/* ========== 5 COLUMN STYLES ========== */
+
+/* Product column (Column 1) */
 .product-cell {
     min-width: 320px;
     text-align: center;
@@ -161,7 +161,6 @@
     max-width: 220px;
 }
 
-/* Text styling */
 .cart-prod-info .prod-name {
     font-size: var(--font-base);
     font-weight: var(--font-bold);
@@ -169,22 +168,9 @@
     color: var(--dark-bg);
 }
 
-.cart-prod-info .prod-info {
-    font-size: var(--font-md);
-    font-weight: var(--font-normal);
-    color: var(--gray-medium);
-    margin-bottom: var(--spacing-xs);
-}
-
-.cart-prod-info .num-avail {
-    font-size: var(--font-md);
-    font-weight: var(--font-bold);
-    color: var(--primary-color);
-}
-
-/* Seller column */
+/* Seller column (Column 2) */
 .seller-cell {
-    min-width: 200px;
+    min-width: 180px;
     text-align: center;
 }
 
@@ -201,14 +187,105 @@
     color: var(--dark-bg);
 }
 
-.verification {
-    display: flex;
-    justify-content: center;
+/* Price column (Column 3) */
+.price-cell {
+    font-size: var(--font-lg);
+    font-weight: var(--font-bold);
+    color: var(--primary-color);
+    white-space: nowrap;
+    text-align: center;
+    min-width: 100px;
 }
 
-/* ========== VERIFIED & UNVERIFIED BADGE STYLES FOR CART ========== */
+/* Quantity column (Column 4) */
+.quantity-cell {
+    min-width: 150px;
+    text-align: center;
+}
 
-/* Verified Badge */
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.qty-btn {
+    width: 32px;
+    height: 32px;
+    background-color: var(--gray-bg);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: var(--font-bold);
+    color: var(--gray-dark);
+    transition: all var(--transition-fast);
+}
+
+.qty-btn:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--white);
+}
+
+.qty-input {
+    width: 55px;
+    height: 32px;
+    text-align: center;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-md);
+    font-weight: var(--font-medium);
+}
+
+.stock-warning {
+    display: block;
+    font-size: var(--font-xs);
+    color: var(--warning);
+    margin-top: 4px;
+}
+
+/* Actions column (Column 5) */
+.actions-cell {
+    white-space: nowrap;
+    text-align: center;
+    min-width: 100px;
+}
+
+.remove-btn {
+    background: transparent;
+    border: 1px solid var(--error);
+    color: var(--error);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-md);
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.remove-btn img {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) saturate(100%) invert(27%) sepia(94%) saturate(5701%) hue-rotate(353deg) brightness(91%) contrast(100%);
+}
+
+.remove-btn:hover {
+    background-color: var(--error);
+    color: var(--white);
+}
+
+.remove-btn:hover img {
+    filter: brightness(0) invert(1);
+}
+
+/* ========== VERIFIED & UNVERIFIED BADGE STYLES ========== */
+
 .verified-badge-cart {
     display: inline-flex;
     align-items: center;
@@ -234,7 +311,6 @@
     height: 14px;
 }
 
-/* Unverified Badge */
 .unverified-badge-cart {
     display: inline-flex;
     align-items: center;
@@ -258,48 +334,6 @@
 .unverified-badge-cart img {
     width: 14px;
     height: 14px;
-}
-
-/* Mobile cart verification badges */
-.mobile-cart-seller .verified-badge-cart,
-.mobile-cart-seller .unverified-badge-cart {
-    display: inline-flex;
-    margin-top: var(--spacing-sm);
-}
-
-/* Price column */
-.price-cell {
-    font-size: var(--font-lg);
-    font-weight: var(--font-bold);
-    color: var(--primary-color);
-    white-space: nowrap;
-    text-align: center;
-    min-width: 100px;
-}
-
-/* Actions column */
-.actions-cell {
-    white-space: nowrap;
-    text-align: center;
-    min-width: 110px;
-}
-
-.remove-btn {
-    background: transparent;
-    border: 1px solid var(--error);
-    color: var(--error);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: var(--font-md);
-    font-weight: var(--font-medium);
-    transition: all var(--transition-fast);
-    display: inline-block;
-}
-
-.remove-btn:hover {
-    background-color: var(--error);
-    color: var(--white);
 }
 
 /* ========== ORDER SUMMARY STYLES ========== */
@@ -352,7 +386,6 @@
     padding: 0 var(--spacing-sm);
 }
 
-/* Button styles */
 .checkout-btn {
     width: 100%;
     padding: 14px;
@@ -408,7 +441,6 @@
     filter: brightness(0) invert(1);
 }
 
-/* PayFast Security Badge */
 .security-badge .payfast-badge {
     display: flex;
     align-items: center;
@@ -428,7 +460,6 @@
 }
 
 /* ========== MOBILE CARD LAYOUT STYLES ========== */
-/* These appear only on mobile - horizontally centered */
 
 .mobile-cart-card {
     background-color: var(--white);
@@ -437,14 +468,12 @@
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
-    text-align: center;
 }
 
 .mobile-cart-card:last-child {
     margin-bottom: 0;
 }
 
-/* Centered image */
 .mobile-cart-img {
     display: flex;
     justify-content: center;
@@ -459,7 +488,6 @@
     background-color: var(--gray-bg);
 }
 
-/* Product details centered */
 .mobile-prod-name {
     font-size: var(--font-lg);
     font-weight: var(--font-bold);
@@ -468,38 +496,6 @@
     text-align: center;
 }
 
-.mobile-prod-info {
-    font-size: var(--font-md);
-    color: var(--gray-medium);
-    margin-bottom: var(--spacing-xs);
-    text-align: center;
-}
-
-.mobile-availability {
-    font-size: var(--font-md);
-    color: var(--gray-medium);
-    text-align: center;
-}
-
-.mobile-availability .num-avail {
-    font-weight: var(--font-bold);
-    color: var(--primary-color);
-}
-
-/* Section headings (distinct from content) */
-.mobile-section-heading {
-    font-size: var(--font-sm);
-    font-weight: var(--font-bold);
-    color: var(--gray-dark);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: var(--spacing-sm);
-    padding-bottom: var(--spacing-xs);
-    border-bottom: 1px solid var(--border-light);
-    display: inline-block;
-}
-
-/* Seller section with heading */
 .mobile-cart-seller {
     margin-top: var(--spacing-md);
     padding-top: var(--spacing-md);
@@ -514,68 +510,57 @@
     margin-bottom: var(--spacing-sm);
 }
 
-/* Verification badge centered */
-.mobile-cart-seller .verification {
+/* Mobile quantity controls */
+.mobile-cart-card .quantity-controls {
     display: flex;
-    justify-content: center;
     align-items: center;
-    margin-top: var(--spacing-xs);
+    justify-content: center;
+    gap: 12px;
+    margin: var(--spacing-md) 0;
+    padding: var(--spacing-sm) 0;
 }
 
-/* Price section with heading */
+.mobile-cart-card .qty-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+}
+
+.mobile-cart-card .qty-input {
+    width: 65px;
+    height: 36px;
+    font-size: var(--font-base);
+}
+
 .mobile-cart-price {
-    margin-top: var(--spacing-md);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--border-light);
     text-align: center;
-}
-
-.mobile-price-heading {
-    font-size: var(--font-sm);
-    font-weight: var(--font-bold);
-    color: var(--gray-dark);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: var(--spacing-sm);
-    display: block;
+    margin-bottom: var(--spacing-md);
 }
 
 .mobile-cart-price .price {
     font-size: var(--font-xl);
     font-weight: var(--font-bold);
     color: var(--primary-color);
-    display: block;
 }
 
-/* Actions section with heading */
 .mobile-cart-actions {
-    margin-top: var(--spacing-md);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--border-light);
     text-align: center;
 }
 
-.mobile-actions-heading {
-    font-size: var(--font-sm);
-    font-weight: var(--font-bold);
-    color: var(--gray-dark);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: var(--spacing-sm);
-    display: block;
+.mobile-cart-actions .remove-btn {
+    width: 100%;
+    max-width: 150px;
+    justify-content: center;
 }
 
-.mobile-cart-actions .remove-btn {
-    width: auto;
-    min-width: 120px;
-    padding: 8px 20px;
-    margin: 0 auto;
-    display: inline-block;
+/* Stock warning on mobile */
+.mobile-cart-card .stock-warning {
+    text-align: center;
+    margin-top: var(--spacing-sm);
 }
 
 /* ========== RESPONSIVE STYLES ========== */
 
-/* Tablet landscape - stack columns */
 @media (max-width: 992px) {
     .cart-layout {
         flex-direction: column;
@@ -601,7 +586,6 @@
     }
 }
 
-/* Mobile - switch to card layout */
 @media (max-width: 768px) {
     .cart-container {
         margin: var(--spacing-xl) auto;
@@ -616,17 +600,14 @@
         margin-bottom: var(--spacing-xl);
     }
     
-    /* Hide desktop table */
     .desktop-table {
         display: none;
     }
     
-    /* Show mobile cards */
     .mobile-cart-items {
         display: block;
     }
     
-    /* Center the right column container */
     .right-column {
         display: flex;
         justify-content: center;
@@ -639,17 +620,8 @@
         margin: 0 auto;
         position: static;
     }
-    
-    .checkout-btn {
-        padding: 12px;
-    }
-    
-    .cont-shopp-btn {
-        padding: 10px;
-    }
 }
 
-/* Small mobile - adjust order summary */
 @media (max-width: 480px) {
     .cart-container {
         padding: 0 12px;
@@ -657,10 +629,6 @@
     
     .cart-heading {
         font-size: var(--font-lg);
-    }
-    
-    .right-column {
-        padding: 0;
     }
     
     .order-sum-container {
@@ -690,7 +658,32 @@
         font-size: var(--font-sm);
     }
     
-    .security-badge {
-        font-size: 10px;
+    .mobile-cart-card {
+        padding: var(--spacing-md);
+    }
+    
+    .mobile-cart-img img {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .mobile-prod-name {
+        font-size: var(--font-base);
+    }
+    
+    .mobile-cart-price .price {
+        font-size: var(--font-lg);
+    }
+    
+    .mobile-cart-card .qty-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+    
+    .mobile-cart-card .qty-input {
+        width: 50px;
+        height: 30px;
+        font-size: var(--font-sm);
     }
 }

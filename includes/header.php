@@ -4,7 +4,8 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__) . '/php/helpers.php';
+// init.php is already included by the parent page
+// So we don't need to include it again
 
 // Base URL for the site
 $baseUrl = getBaseUrl();
@@ -12,36 +13,31 @@ $baseUrl = getBaseUrl();
 // Get current page for active link highlighting
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// Check if user is logged in (main website - ONLY buyers)
-$is_logged_in = isUserLoggedIn();
+// Use centralized auth functions
+$is_logged_in = isLoggedIn();
+$current_user = getCurrentUser();
 
-// Get user role
+// Get user data from centralized auth
 $user_role = null;
 $user_name = 'User';
 $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
 
-if ($is_logged_in) {
-    $user = getCurrentUser();
-    $user_role = $user['role'] ?? null;
-    $user_name = $user['full_name'] ?? 'User';
+if ($is_logged_in && $current_user) {
+    $user_role = $current_user['role'] ?? null;
+    $user_name = $current_user['full_name'] ?? 'User';
+    $user_id = $current_user['user_id'];
     
-    // Get profile image
-    if (!isset($conn) || !$conn) {
-        require_once dirname(__DIR__) . '/php/config.php';
-    }
-    $user_data = getUserById($conn, $user['user_id']);
+    // Get profile image from database
+    $user_data = getUserById($conn, $user_id);
     if ($user_data && !empty($user_data['profile_image'])) {
         $user_profile_image = getUserProfileImage($user_data['profile_image']);
     }
 }
 
-// Get cart count
-$cart_count = 0;
-if ($is_logged_in && isset($_SESSION['user_id'])) {
-    $cart_count = isset($_SESSION['cart_count']) ? $_SESSION['cart_count'] : 0;
-}
+// Get cart count from session (updated by auth.php)
+$cart_count = $_SESSION['cart_count'] ?? 0;
 
-// Show Sell link for guests only
+// Show Sell link for guests only (not logged in)
 $show_sell_link = !$is_logged_in;
 ?>
 

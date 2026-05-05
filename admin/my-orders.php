@@ -6,78 +6,23 @@
  * This page displays all orders for the logged-in seller
  */
 
-require_once dirname(__DIR__) . '/php/helpers.php';
+require_once dirname(__DIR__) . '/init.php';
 
-// Check if seller is logged in
-if (!isSellerLoggedIn()) {
+// Check if seller is logged in using centralized auth
+if (!$is_logged_in || $current_user['role'] !== 'seller') {
     header('Location: login.php');
     exit;
 }
 
-// Start seller session
-startSession('seller');
-
 $baseUrl = getBaseUrl();
-
-// Get database connection
-require_once dirname(__DIR__) . '/php/config.php';
-
-// Get user data using helper
-$user = getUserById($conn, $_SESSION['user_id']);
-$profile_image = getUserProfileImage($user['profile_image'] ?? null);
+$seller_id = $current_user_id;
 
 // Get filter parameters
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build query with item count and improved sorting
-$sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
-        u.full_name as buyer_name, u.email as buyer_email,
-        (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.order_id) as item_count
-        FROM orders o
-        JOIN users u ON o.buyer_id = u.user_id
-        WHERE o.seller_id = ?";
-
-$params = [$_SESSION['user_id']];
-$types = "i";
-
-if ($status_filter !== 'all') {
-    $sql .= " AND o.status = ?";
-    $params[] = $status_filter;
-    $types .= "s";
-}
-
-if (!empty($search_term)) {
-    $sql .= " AND (u.full_name LIKE ? OR o.order_id LIKE ?)";
-    $search_param = "%$search_term%";
-    $params[] = $search_param;
-    $params[] = $search_param;
-    $types .= "ss";
-}
-
-// Improved sorting: pending first, then processing, shipped, completed, cancelled
-$sql .= " ORDER BY 
-            CASE o.status 
-                WHEN 'pending' THEN 1
-                WHEN 'processing' THEN 2
-                WHEN 'shipped' THEN 3
-                WHEN 'completed' THEN 4
-                WHEN 'cancelled' THEN 5
-                ELSE 6
-            END,
-            o.created_at DESC";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param($types, ...$params);
-$stmt->execute();
-$result = $stmt->get_result();
-
-$orders = [];
-while ($row = $result->fetch_assoc()) {
-    $orders[] = $row;
-}
-$stmt->close();
-$conn->close();
+// Get orders using helper function
+$orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -85,6 +30,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade Seller</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-orders.css">
@@ -97,7 +43,8 @@ $conn->close();
 
 <?php include 'includes/sidebar.php'; ?>
 
-        <!-- Orders Content -->
+<main class="dashboard-main">
+    <div class="dashboard-content">
         <div class="orders-container">
             <!-- Page Header -->
             <div class="page-header">
@@ -208,8 +155,8 @@ $conn->close();
                 <?php endif; ?>
             </div>
         </div>
-    </main>
-</div>
+    </div>
+</main>
 
 <!-- Order Details Modal -->
 <div id="order-modal" class="order-modal">
@@ -227,6 +174,10 @@ $conn->close();
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
+/*
+ * ConsuTrade - My Orders Functionality (Seller)
+ * Author: Kamogelo Phale
+ */
 var baseUrl = '<?php echo $baseUrl; ?>';
 
 function viewOrderDetails(orderId) {
@@ -297,7 +248,7 @@ function displayOrderDetails(order) {
             </div>
             <div class="info-row">
                 <span class="info-label">Customer Name:</span>
-                <span class="info-value">${escapeHtml(order.buyer_name || 'N/A')}</span>
+                <span class="info-value">${escapeHtml(order.buyer_name || order.other_party_name || 'N/A')}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Customer Email:</span>
@@ -355,14 +306,16 @@ function updateOrderStatus(orderId, newStatus) {
             dataType: 'json',
             success: function(data) {
                 if (data.success) {
-                    alert('Order status updated successfully!');
-                    location.reload();
+                    showSuccessToast(data.message || 'Order status updated successfully!');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert('Error updating order status: ' + (data.message || 'Unknown error'));
+                    showErrorToast('Error: ' + (data.message || 'Unknown error'));
                 }
             },
             error: function() {
-                alert('Something went wrong. Please try again.');
+                showErrorToast('Something went wrong. Please try again.');
             }
         });
     }
@@ -381,14 +334,6 @@ if (modal) {
             closeOrderModal();
         }
     });
-}
-
-// Escape HTML helper (fallback if main.js doesn't have it)
-function escapeHtml(text) {
-    if (!text) return '';
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 </script>
 </body>

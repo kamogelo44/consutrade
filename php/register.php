@@ -2,14 +2,15 @@
 /*
  * ConsuTrade - User Registration
  * Author: Kamogelo Phale
+ * 
+ * Handles new user registration for buyers and sellers
  */
 
-require_once 'helpers.php';
-require_once 'config.php';
+require_once __DIR__ . '/../init.php';
 
 // If user is already logged in, redirect to homepage
-if (isUserLoggedIn()) {
-    header('Location: /www/consutrade/index.php');
+if ($is_logged_in) {
+    header('Location: ' . getBaseUrl() . 'index.php');
     exit;
 }
 
@@ -35,12 +36,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['full_name'] = 'Full name is required';
     } elseif (strlen($full_name) < 2) {
         $errors['full_name'] = 'Please enter your full name';
+    } elseif (strlen($full_name) > 100) {
+        $errors['full_name'] = 'Full name is too long';
     }
     
     if (empty($email)) {
         $errors['email'] = 'Email is required';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'Please enter a valid email address';
+    } elseif (strlen($email) > 255) {
+        $errors['email'] = 'Email address is too long';
     }
     
     if (empty($phone)) {
@@ -58,6 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['password'] = 'Password is required';
     } elseif (strlen($password) < 6) {
         $errors['password'] = 'Password must be at least 6 characters';
+    } elseif (strlen($password) > 255) {
+        $errors['password'] = 'Password is too long';
     }
     
     if ($password !== $confirm_password) {
@@ -83,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $check_stmt->close();
     }
     
-    // Check if phone already exists (optional - depends on your business logic)
+    // Check if phone already exists
     if (empty($errors) && !empty($clean_phone)) {
         $phone_sql = "SELECT user_id FROM users WHERE phone = ?";
         $phone_stmt = $conn->prepare($phone_sql);
@@ -97,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $phone_stmt->close();
     }
     
+    // If no errors, create the user
     if (empty($errors)) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
@@ -106,9 +114,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param('sssss', $full_name, $email, $clean_phone, $hashed_password, $role);
         
         if ($stmt->execute()) {
-            // Registration successful
-            $_SESSION['flash'] = 'Registration successful! Please login.';
-            header('Location: /www/consutrade/index.php');
+            // Registration successful - auto login the user
+            $user_id = $stmt->insert_id;
+            
+            // Use centralized login function
+            loginUser($user_id, $full_name, $email, $role);
+            
+            // Set flash message
+            $_SESSION['flash'] = 'Welcome to ConsuTrade, ' . $full_name . '!';
+            
+            // Redirect based on role
+            if ($role === 'seller') {
+                header('Location: ' . getBaseUrl() . 'admin/seller-dashboard.php');
+            } else {
+                header('Location: ' . getBaseUrl() . 'index.php');
+            }
             exit;
         } else {
             $errors['general'] = 'Registration failed. Please try again.';
@@ -116,12 +136,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->close();
     }
     
-    $conn->close();
-    
+    // If we have errors, store them and redirect back
     if (!empty($errors)) {
         $_SESSION['register_errors'] = $errors;
         $_SESSION['register_form_data'] = $_POST;
-        header('Location: /www/consutrade/index.php');
+        header('Location: ' . getBaseUrl() . 'index.php');
         exit;
     }
 }

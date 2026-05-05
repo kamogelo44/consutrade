@@ -1,81 +1,57 @@
 <?php
 /*
- * ConsuTrade - Get Seller Products
+ * ConsuTrade - Get Seller Products (AJAX)
  * Author: Kamogelo Phale
  * 
  * Returns products for the logged-in seller (their own dashboard)
  */
 
-require_once dirname(__DIR__) . '/../php/config.php';
-require_once dirname(__DIR__) . '/../php/helpers.php';
+require_once dirname(__DIR__) . '/../init.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
 
-$response = ['success' => false, 'products' => []];
-$baseUrl = getBaseUrl();
+$response = ['success' => false, 'products' => [], 'message' => ''];
 
-// Check if seller is logged in
-if (!isSellerLoggedIn()) {
+// Check if seller is logged in using centralized auth
+if (!$is_logged_in || $current_user['role'] !== 'seller') {
+    $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
 }
 
-startSession('seller');
+$seller_id = $current_user_id;
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 0;
+$status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
+$search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-$seller_id = $_SESSION['user_id'];
+// Get seller products using helper function
+$products = getSellerProducts($conn, $seller_id, $status_filter, $search_term, $limit);
 
-// Get seller info for the logged-in user
-$user_sql = "SELECT full_name, profile_image, id_verified FROM users WHERE user_id = ?";
-$user_stmt = $conn->prepare($user_sql);
-$user_stmt->bind_param('i', $seller_id);
-$user_stmt->execute();
-$user_result = $user_stmt->get_result();
-$user_info = $user_result->fetch_assoc();
-$user_stmt->close();
+// Get seller info for additional data
+$user_info = getUserById($conn, $seller_id);
 
-$sql = "SELECT product_id, title as product_name, price, image_url, status, created_at
-        FROM products 
-        WHERE seller_id = ? AND status != 'deleted'
-        ORDER BY created_at DESC";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $seller_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-while ($row = $result->fetch_assoc()) {
-    // Image path
-    $imagePath = $row['image_url'];
-    
-    // Check if the image file actually exists
-    if (!empty($imagePath)) {
-        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
-        if (file_exists($fullPath)) {
-            $imagePath = $baseUrl . $imagePath;
-        } else {
-            $imagePath = $baseUrl . 'images/default-product.png';
-        }
-    } else {
-        $imagePath = $baseUrl . 'images/default-product.png';
-    }
-    
-    $response['products'][] = [
-        'id' => $row['product_id'],
-        'name' => $row['product_name'],
-        'price' => (float)$row['price'],
-        'image' => $imagePath,
-        'status' => $row['status'],
-        'created_at' => $row['created_at'],
+// Format products for response
+$formatted_products = [];
+foreach ($products as $product) {
+    $formatted_products[] = [
+        'id' => $product['id'],
+        'name' => $product['title'],
+        'price' => $product['price'],
+        'image' => getProductImageUrl($product['image']),
+        'status' => $product['status'],
+        'stock_quantity' => $product['stock_quantity'],
+        'created_at' => date('d M Y', strtotime($product['created_at'])),
         'seller_name' => $user_info['full_name'] ?? 'You',
         'profile_image' => $user_info['profile_image'] ?? null,
-        'is_verified' => (bool)($user_info['id_verified'] ?? false)
+        'is_verified' => (bool)($user_info['id_verified'] ?? false),
+        'category_name' => $product['category_name'] ?? 'General'
     ];
 }
 
 $response['success'] = true;
-$stmt->close();
-$conn->close();
+$response['products'] = $formatted_products;
+$response['total'] = count($formatted_products);
 
 echo json_encode($response);
-exit;
 ?>

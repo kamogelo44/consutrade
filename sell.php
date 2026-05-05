@@ -1,19 +1,30 @@
-<?php 
-require_once 'php/helpers.php';
-startSession('user');
+<?php
+/*
+ * ConsuTrade - Start Selling Page
+ * Author: Kamogelo Phale
+ * 
+ * Landing page for potential sellers to learn about selling on ConsuTrade
+ */
+
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// If user is already logged in, redirect to appropriate page
-if (isUserLoggedIn()) {
-    // Buyer is logged in - they can't access sell page
+// If user is already logged in as buyer, redirect to home (buyers can't access sell page)
+if ($is_logged_in && $current_user['role'] === 'buyer') {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-// Check if seller is logged in (from dashboard)
-if (isSellerLoggedIn()) {
+// If seller is logged in, redirect to seller dashboard
+if ($is_logged_in && $current_user['role'] === 'seller') {
     header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
+    exit;
+}
+
+// If admin is logged in, redirect to admin dashboard
+if ($is_logged_in && $current_user['role'] === 'admin') {
+    header('Location: ' . $baseUrl . 'admin/admin-dashboard.php');
     exit;
 }
 
@@ -24,8 +35,11 @@ if (isSellerLoggedIn()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConsuTrade - Start Selling in South Africa</title>
+    <title>Start Selling in South Africa - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
+    <meta name="description" content="Join ConsuTrade and start selling your products to buyers across South Africa. Free to join, secure payments via PayFast.">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/login-signup.css">
     <link rel="stylesheet" href="css/sell.css">
     <link rel="stylesheet" href="css/products.css">
@@ -54,17 +68,17 @@ if (isSellerLoggedIn()) {
             <h2 class="section-heading">Why Sell With Us</h2>
             <div class="why-sell-container">
                 <div class="why-sell-card">
-                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="Free to join" class="why-sell-icon">
+                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="Free to join" class="why-sell-icon" loading="lazy">
                     <h3>Free to Join</h3>
                     <p>No upfront costs. Create your seller account for free and start listing products immediately.</p>
                 </div>
                 <div class="why-sell-card">
-                    <img src="images/icons/verified-svgrepo-com.svg" width="48px" height="48px" alt="Verified badge" class="why-sell-icon">
+                    <img src="images/icons/verified-svgrepo-com.svg" width="48px" height="48px" alt="Verified badge" class="why-sell-icon" loading="lazy">
                     <h3>Verified Badge</h3>
                     <p>Get a verified seller badge after completing your profile, building trust with buyers.</p>
                 </div>
                 <div class="why-sell-card">
-                    <img src="images/icons/delivery-svgrepo-com.svg" width="48px" height="48px" alt="Reach buyers" class="why-sell-icon">
+                    <img src="images/icons/delivery-svgrepo-com.svg" width="48px" height="48px" alt="Reach buyers" class="why-sell-icon" loading="lazy">
                     <h3>Reach Buyers</h3>
                     <p>Connect with thousands of active buyers looking for products across South Africa.</p>
                 </div>
@@ -95,7 +109,7 @@ if (isSellerLoggedIn()) {
                     <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
                     <h2>Get Paid</h2>
                     <p>Receive payments securely with 
-                        <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank">
+                        <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank" rel="noopener noreferrer">
                             <img src="images/icons/Payfast logo.svg" alt="PayFast icon" width="60" height="20" loading="lazy">
                         </a>
                     </p>
@@ -109,19 +123,19 @@ if (isSellerLoggedIn()) {
                 <h2 class="section-heading">What You Need to Get Started</h2>
                 <div class="requirements-list">
                     <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/valid-document-svgrepo-com.svg" width="32px" height="32px" alt="SA ID document"></span>
+                        <span class="requirement-icon"><img src="images/icons/valid-document-svgrepo-com.svg" width="32px" height="32px" alt="SA ID document" loading="lazy"></span>
                         <p>Valid SA ID number</p>
                     </div>
                     <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/phone-number.svg" width="32px" height="32px" alt="Phone Number"></span>
+                        <span class="requirement-icon"><img src="images/icons/phone-number.svg" width="32px" height="32px" alt="Phone Number" loading="lazy"></span>
                         <p>Phone number</p>
                     </div>
                     <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/Payfast logo.svg" width="32px" height="32px" alt="PayFast Logo"></span>
+                        <span class="requirement-icon"><img src="images/icons/Payfast logo.svg" width="32px" height="32px" alt="PayFast Logo" loading="lazy"></span>
                         <p>PayFast account <span class="requirement-note">(free to create)</span></p>
                     </div>
                     <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/photos-filled-svgrepo-com.svg" width="32px" height="32px" alt="Product Photos"></span>
+                        <span class="requirement-icon"><img src="images/icons/photos-filled-svgrepo-com.svg" width="32px" height="32px" alt="Product Photos" loading="lazy"></span>
                         <p>Product photos</p>
                     </div>
                 </div>
@@ -142,5 +156,29 @@ if (isSellerLoggedIn()) {
     <?php include 'includes/footer.php'; ?>
 
     <script src="js/main.js"></script>
+    <script>
+    /*
+     * ConsuTrade - Sell Page Functionality
+     */
+    $(document).ready(function() {
+        // Register button - open registration modal with seller role selected
+        $('#seller-register-btn, #create-seller-btn').on('click', function(e) {
+            e.preventDefault();
+            // Open registration modal
+            openModal($('#register-modal'));
+            // Pre-select seller role
+            $('#seller').prop('checked', true);
+            // Clear any existing errors
+            clearRegisterErrors();
+        });
+        
+        // Login button - open login modal
+        $('#seller-login-btn').on('click', function(e) {
+            e.preventDefault();
+            openModal($('#login-modal'));
+            clearLoginErrors();
+        });
+    });
+    </script>
 </body>
 </html>

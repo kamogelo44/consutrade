@@ -1,12 +1,14 @@
 <?php
-require_once 'php/helpers.php';
+/*
+ * ConsuTrade - Homepage
+ * Author: Kamogelo Phale
+ * 
+ * Main landing page displaying featured products and site information
+ */
 
-startSession('user');
-// Debug - check session after returning from login
-error_log('=== INDEX PAGE ===');
-error_log('Session ID: ' . session_id());
-error_log('Session data: ' . print_r($_SESSION, true));
+require_once __DIR__ . '/init.php';
 
+// No need to call startSession() - init.php already did it via initAuth()
 $baseUrl = getBaseUrl();
 
 // Read register errors
@@ -33,6 +35,7 @@ unset($_SESSION['flash']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
     <meta name="description" content="Buy and sell products from local South African traders. Secure payments with PayFast.">
+    <meta name="author" content="Kamogelo Phale">
     
     <!-- Preconnect for external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -158,6 +161,10 @@ unset($_SESSION['flash']);
 
 <?php if (!empty($registerErrors)): ?>
 <script>
+/*
+ * ConsuTrade - Registration Error Handling
+ * Author: Kamogelo Phale
+ */
 $(document).ready(function() {
     openModal($('#register-modal'));
     
@@ -208,6 +215,10 @@ $(document).ready(function() {
 
 <?php if (!empty($loginErrors)): ?>
 <script>
+/*
+ * ConsuTrade - Login Error Handling
+ * Author: Kamogelo Phale
+ */
 $(document).ready(function() {
     openModal($('#login-modal'));
     
@@ -244,6 +255,9 @@ $(document).ready(function() {
 <?php endif; ?>
 
 <script>
+/*
+ * Featured Products Loader
+ */
 $(document).ready(function() {
     loadFeaturedProducts();
 

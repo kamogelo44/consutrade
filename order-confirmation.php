@@ -6,14 +6,12 @@
  * This page shows after successful payment
  */
 
-require_once 'php/helpers.php';
-
-startSession('user');
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// Check if user is logged in
-if (!isUserLoggedIn()) {
+// Check if user is logged in using centralized auth
+if (!$is_logged_in) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
@@ -33,6 +31,7 @@ if ($order_id == 0 && isset($_GET['m_payment_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Confirmation - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
@@ -69,8 +68,12 @@ if ($order_id == 0 && isset($_GET['m_payment_id'])) {
 <?php include 'includes/footer.php'; ?>
 
 <script>
-// Update cart count to 0 after successful order
+/*
+ * ConsuTrade - Order Confirmation Functionality
+ * Author: Kamogelo Phale
+ */
 $(document).ready(function() {
+    // Update cart count to 0 after successful order
     updateCartCount();
 });
 </script>

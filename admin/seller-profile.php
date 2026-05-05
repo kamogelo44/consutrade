@@ -2,25 +2,20 @@
 /*
  * ConsuTrade - Seller Profile Page
  * Author: Kamogelo Phale
+ * 
+ * Allows sellers to view and edit their profile information
  */
 
-require_once dirname(__DIR__) . '/php/helpers.php';
+require_once dirname(__DIR__) . '/init.php';
 
-// Check if seller is logged in
-if (!isSellerLoggedIn()) {
+// Check if seller is logged in using centralized auth
+if (!$is_logged_in || $current_user['role'] !== 'seller') {
     header('Location: login.php');
     exit;
 }
 
-// Start seller session
-startSession('seller');
-
 $baseUrl = getBaseUrl();
-
-// Get database connection
-require_once dirname(__DIR__) . '/php/config.php';
-
-$user_id = $_SESSION['user_id'];
+$user_id = $current_user_id;
 
 // Get user data using helper
 $user = getUserById($conn, $user_id);
@@ -31,9 +26,7 @@ if (!$user) {
 }
 
 // Set profile image path using helper
-$profile_image = getUserProfileImage($user['profile_image']);
-
-$conn->close();
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,6 +34,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seller Profile - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/seller-profile.css">
@@ -53,6 +47,9 @@ $conn->close();
 
 <?php include 'includes/sidebar.php'; ?>
 
+<!-- Main Content -->
+<main class="dashboard-main">
+    <div class="dashboard-content">
         <!-- Page Header -->
         <div class="dashboard-header">
             <h1>My Profile</h1>
@@ -217,12 +214,16 @@ $conn->close();
                 </div>
             </div>
         </div>
-    </main>
-</div>
+    </div>
+</main>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
+/*
+ * ConsuTrade - Seller Profile Functionality
+ * Author: Kamogelo Phale
+ */
 $(document).ready(function() {
     // Show flash message
     function showMessage(message, isError) {

@@ -6,14 +6,14 @@
  * Wipes the whole cart after someone checks out
  */
 
-session_start();
-require_once 'config.php';
+require_once __DIR__ . '/../init.php';
+startSession('user');
 
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+if (!isUserLoggedIn()) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
@@ -21,13 +21,11 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 $user_id = $_SESSION['user_id'];
 
-// Clear cart from database
-$sql = "DELETE FROM cart WHERE user_id = ?";
-$stmt = $conn->prepare($sql);
+// Clear cart from database using direct query (simple enough, no helper needed)
+$stmt = $conn->prepare("DELETE FROM cart WHERE user_id = ?");
 $stmt->bind_param('i', $user_id);
 
 if ($stmt->execute()) {
-    // Also clear session cart count
     $_SESSION['cart_count'] = 0;
     $response['success'] = true;
     $response['message'] = 'Cart cleared successfully';
@@ -36,7 +34,5 @@ if ($stmt->execute()) {
 }
 
 $stmt->close();
-$conn->close();
-
 echo json_encode($response);
 ?>

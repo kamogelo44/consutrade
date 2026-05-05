@@ -7,10 +7,7 @@
  * Accessible via: seller-profile-public.php?seller_id=123
  */
 
-session_start();
-
-require_once 'php/config.php';
-require_once 'php/helpers.php';
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
@@ -41,6 +38,7 @@ $profile_image = getUserProfileImage($seller['profile_image']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($seller['full_name']); ?> - Seller Profile | ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
@@ -120,10 +118,15 @@ $profile_image = getUserProfileImage($seller['profile_image']);
 </main>
 
 <script>
+/*
+ * ConsuTrade - Public Seller Profile Functionality
+ * Author: Kamogelo Phale
+ */
 var baseUrl = '<?php echo $baseUrl; ?>';
 var sellerId = <?php echo $seller_id; ?>;
-var currentUserId = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0; ?>;
-var currentUserRole = '<?php echo isset($_SESSION['role']) ? $_SESSION['role'] : ''; ?>';
+var currentUserId = <?php echo $current_user_id ?: 0; ?>;
+var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
+var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 
 $(document).ready(function() {
     loadSellerStats();

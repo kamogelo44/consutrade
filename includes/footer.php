@@ -1,14 +1,10 @@
-<?php
-/*
+
+ <!--
+ *
  * ConsuTrade - Site Footer Component
  * Author: Kamogelo Phale
- */
-// Close database connection if it exists
-if (isset($conn) && $conn) {
-    $conn->close();
-}
-?>
-
+ *
+-->
 <footer class="site-footer">
     <div class="footer-container">
         <div class="footer-section">

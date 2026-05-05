@@ -2,17 +2,18 @@
 /*
  * ConsuTrade - Database Configuration
  * Author: Kamogelo Phale
- *
  */
 
 // Base URL for the site
-$baseUrl = "/www/consutrade/";
+function getBaseUrl() {
+    return "/www/consutrade/";
+}
 
 // Database credentials
-$host = 'localhost';
-$db_name = 'consutrade';
-$username = 'root';
-$password = '';
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'consutrade');
+define('DB_USER', 'root');
+define('DB_PASS', '');
 
 // PayFast Credentials
 define('PAYFAST_MERCHANT_ID', '10047996');
@@ -28,11 +29,27 @@ if (PAYFAST_SANDBOX) {
     define('PAYFAST_VALIDATE_URL', 'https://www.payfast.co.za/eng/query/validate');
 }
 
-$conn = new mysqli($host, $username, $password, $db_name);
-
-if ($conn->connect_error) {
-    die('Database connection failed: ' . $conn->connect_error);
+/**
+ * Get database connection (Singleton pattern)
+ * 
+ * @return mysqli Database connection object
+ */
+function getDBConnection() {
+    static $connection = null;
+    
+    if ($connection === null) {
+        $connection = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        
+        if ($connection->connect_error) {
+            die('Database connection failed: ' . $connection->connect_error);
+        }
+        
+        $connection->set_charset('utf8mb4');
+    }
+    
+    return $connection;
 }
 
-$conn->set_charset('utf8mb4');
+// Create global connection for backward compatibility
+$conn = getDBConnection();
 ?>

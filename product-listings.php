@@ -1,6 +1,12 @@
 <?php
-require_once 'php/helpers.php';
-startSession('user');
+/*
+ * ConsuTrade - Product Listings Page
+ * Author: Kamogelo Phale
+ * 
+ * Displays all products with filtering and sorting options
+ */
+
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 ?>
@@ -10,6 +16,7 @@ $baseUrl = getBaseUrl();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop Products - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/login-signup.css">
@@ -144,5 +151,14 @@ $baseUrl = getBaseUrl();
 
 <script src="js/products.js"></script>
 <?php include 'includes/footer.php'; ?>
+
+<script>
+// Pass session data to JavaScript using centralized auth variables
+var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+var currentUserId = <?php echo $current_user_id ?: 0; ?>;
+var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
+var baseUrl = '<?php echo $baseUrl; ?>';
+</script>
+
 </body>
 </html>

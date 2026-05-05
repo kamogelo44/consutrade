@@ -3,24 +3,41 @@
  * Author: Kamogelo Phale
  * 
  * Handles both Admin and Seller dashboards
- * All AJAX endpoints now point to admin/php/
+ * Centralized functions to avoid duplication across files
  */
 
 // ========== GLOBAL VARIABLES ==========
 var baseUrl = baseUrl || '';
 
-// ========== GLOBAL FUNCTIONS (defined before document ready) ==========
-
-function editProduct(productId) {
-    if (productId) {
-        window.location.href = baseUrl + 'admin/edit-product.php?id=' + productId;
+// ========== TOAST NOTIFICATIONS (reuse from main.js if available) ==========
+function showToast(message, type) {
+    if (typeof window.showSuccessToast === 'function') {
+        if (type === 'success') showSuccessToast(message);
+        else if (type === 'error') showErrorToast(message);
+        else showInfoToast(message);
+    } else {
+        alert(message);
     }
 }
 
-function deleteProduct(productId) {
+// ========== PRODUCT FUNCTIONS (global for reuse) ==========
+
+/**
+ * Edit product - redirect to edit page
+ */
+window.editProduct = function(productId) {
+    if (productId) {
+        window.location.href = baseUrl + 'admin/edit-product.php?id=' + productId;
+    }
+};
+
+/**
+ * Delete product with confirmation
+ */
+window.deleteProduct = function(productId) {
     if (!productId) return;
     
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
         var $btn = $('.delete-btn[data-id="' + productId + '"]');
         $btn.prop('disabled', true).text('Deleting...');
         
@@ -32,38 +49,79 @@ function deleteProduct(productId) {
             dataType: 'json',
             success: function(data) {
                 if (data.success) {
+                    showToast('Product deleted successfully', 'success');
                     if (typeof window.loadSellerProducts === 'function') {
                         window.loadSellerProducts();
                     } else {
                         location.reload();
                     }
                 } else {
-                    alert('Error: ' + data.message);
+                    showToast('Error: ' + data.message, 'error');
                     $btn.prop('disabled', false).text('Delete');
                 }
             },
             error: function() {
-                alert('Something went wrong. Please try again.');
+                showToast('Something went wrong. Please try again.', 'error');
                 $btn.prop('disabled', false).text('Delete');
             }
         });
     }
-}
+};
 
-// ========== SELLER PRODUCTS FUNCTION (global for reload) ==========
-window.loadSellerProducts = function() {
+/**
+ * View order details
+ */
+window.viewOrder = function(orderId) {
+    if (orderId) {
+        window.location.href = baseUrl + 'admin/my-orders.php?view=' + orderId;
+    }
+};
+
+/**
+ * Update order status
+ */
+window.updateOrderStatus = function(orderId, newStatus) {
+    $.ajax({
+        url: baseUrl + 'admin/php/update-order-status.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ order_id: orderId, status: newStatus }),
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('Error: ' + data.message, 'error');
+            }
+        },
+        error: function() {
+            showToast('Something went wrong', 'error');
+        }
+    });
+};
+
+// ========== SELLER PRODUCTS FUNCTION ==========
+window.loadSellerProducts = function(limit = null) {
     var $grid = $('#listings-grid, #products-grid');
     if (!$grid.length) return;
     
     $grid.html('<div class="loading-spinner">Loading your products...</div>');
     
+    var url = baseUrl + 'admin/php/get-seller-products.php';
+    if (limit) {
+        url += '?limit=' + limit;
+    }
+    
     $.ajax({
-        url: baseUrl + 'admin/php/get-seller-products.php',
+        url: url,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success && data.products && data.products.length) {
-                displayProducts($grid, data.products);
+                displaySellerProducts($grid, data.products);
             } else {
                 var emptyHtml = '<div class="empty-listings">' +
                     '<p>You haven\'t listed any products yet.</p>' +
@@ -78,24 +136,36 @@ window.loadSellerProducts = function() {
     });
 };
 
-function displayProducts($grid, products) {
+/**
+ * Display seller products in grid
+ */
+function displaySellerProducts($grid, products) {
     $grid.empty();
     
     $.each(products, function(i, product) {
-        var imagePath = product.image;
+        var imagePath = product.image || product.image_url;
         if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/') && !imagePath.startsWith(baseUrl)) {
             imagePath = baseUrl + imagePath;
+        }
+        
+        var stockBadge = '';
+        if (product.stock_quantity <= 0) {
+            stockBadge = '<span class="stock-badge out-of-stock">Out of Stock</span>';
+        } else if (product.stock_quantity <= 5) {
+            stockBadge = '<span class="stock-badge low-stock">Only ' + product.stock_quantity + ' left</span>';
+        } else {
+            stockBadge = '<span class="stock-badge in-stock">In Stock (' + product.stock_quantity + ')</span>';
         }
         
         var card = $('<div>').addClass('listing-card product-card').attr('data-product-id', product.id);
         card.html(
             '<div class="listing-img product-image">' +
-            '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(product.name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+            '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(product.name || product.title) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
             '</div>' +
             '<div class="listing-info product-details">' +
-            '<h3 class="listing-title product-title">' + escapeHtml(product.name) + '</h3>' +
+            '<h3 class="listing-title product-title">' + escapeHtml(product.name || product.title) + '</h3>' +
             '<p class="listing-price product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
-            '<p class="listing-status ' + product.status + '">' + product.status + '</p>' +
+            stockBadge +
             '<div class="listing-actions product-actions">' +
             '<button class="edit-btn" onclick="editProduct(' + product.id + ')">Edit</button>' +
             '<button class="delete-btn" onclick="deleteProduct(' + product.id + ')">Delete</button>' +
@@ -131,10 +201,18 @@ function loadAdminStats() {
         success: function(data) {
             if (data.success) {
                 setText('totalUsers', data.total_users || 0);
+                setText('totalBuyers', data.total_buyers || 0);
+                setText('totalSellers', data.total_sellers || 0);
                 setText('totalProducts', data.total_products || 0);
+                setText('activeProducts', data.active_products || 0);
                 setText('totalOrders', data.total_orders || 0);
                 setText('pendingOrders', data.pending_orders || 0);
+                setText('completedOrders', data.completed_orders || 0);
+                setText('totalEarnings', 'R ' + (data.total_earnings || 0).toFixed(2));
             }
+        },
+        error: function() {
+            console.log('Error loading admin stats');
         }
     });
 }
@@ -152,7 +230,7 @@ function loadRecentUsers() {
                 $tbody.empty();
                 $.each(data.users, function(i, user) {
                     $tbody.append(
-                        '<table>' +
+                        '<tr>' +
                         '<td>' + escapeHtml(user.full_name) + '</td>' +
                         '<td>' + escapeHtml(user.email) + '</td>' +
                         '<td><span class="role-badge role-' + user.role + '">' + capitalizeFirst(user.role) + '</span></td>' +
@@ -170,24 +248,31 @@ function loadRecentUsers() {
     });
 }
 
-function loadRecentOrders() {
+function loadRecentOrders(limit = 5) {
     var $tbody = $('#recent-orders-table');
     if (!$tbody.length) return;
     
     $.ajax({
-        url: baseUrl + 'admin/php/get-recent-orders.php',
+        url: baseUrl + 'admin/php/get-recent-orders.php?limit=' + limit,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success && data.orders && data.orders.length) {
                 $tbody.empty();
                 $.each(data.orders, function(i, order) {
+                    var statusClass = '';
+                    if (order.status === 'pending') statusClass = 'status-pending';
+                    else if (order.status === 'processing') statusClass = 'status-processing';
+                    else if (order.status === 'shipped') statusClass = 'status-shipped';
+                    else if (order.status === 'completed') statusClass = 'status-completed';
+                    else if (order.status === 'cancelled') statusClass = 'status-cancelled';
+                    
                     $tbody.append(
-                        '<tr>' +
-                        '<td>#' + order.order_id + '</td>' +
+                        '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
+                        '<td>#' + order.id + '</td>' +
                         '<td>' + escapeHtml(order.buyer_name) + '</td>' +
-                        '<td>R ' + parseFloat(order.total_price).toFixed(2) + '</td>' +
-                        '<td><span class="status-badge status-' + order.status + '">' + capitalizeFirst(order.status) + '</span></td>' +
+                        '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
+                        '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
                         '<td>' + escapeHtml(order.created_at) + '</td>' +
                         '</tr>'
                     );
@@ -213,28 +298,48 @@ function loadSellerStats() {
                 setText('stat-earnings', 'R ' + parseFloat(data.total_earnings || 0).toFixed(2));
                 setText('stat-products', data.total_products || 0);
                 setText('stat-pending', data.pending_orders || 0);
+                setText('stat-completed', data.completed_orders || 0);
+                setText('stat-shipped', data.shipped_orders || 0);
+                setText('stat-processing', data.processing_orders || 0);
+                setText('stat-rating', data.avg_rating ? data.avg_rating + ' / 5' : 'No reviews yet');
             }
+        },
+        error: function() {
+            console.log('Error loading seller stats');
         }
     });
 }
 
-function loadSellerRecentOrders() {
+function loadSellerRecentOrders(limit = 5) {
     var $ordersList = $('#recent-orders-list');
     if (!$ordersList.length) return;
     
     $.ajax({
-        url: baseUrl + 'admin/php/get-seller-recent-orders.php',
+        url: baseUrl + 'admin/php/get-seller-recent-orders.php?limit=' + limit,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success && data.orders && data.orders.length) {
                 $ordersList.empty();
                 $.each(data.orders, function(i, order) {
+                    var statusClass = '';
+                    if (order.status === 'pending') statusClass = 'status-pending';
+                    else if (order.status === 'processing') statusClass = 'status-processing';
+                    else if (order.status === 'shipped') statusClass = 'status-shipped';
+                    else if (order.status === 'completed') statusClass = 'status-completed';
+                    else if (order.status === 'cancelled') statusClass = 'status-cancelled';
+                    
                     $ordersList.append(
-                        '<div class="order-item">' +
-                        '<p class="order-id">Order #' + order.id + '</p>' +
-                        '<p class="order-amount">R ' + parseFloat(order.total).toFixed(2) + '</p>' +
-                        '<p class="order-status ' + order.status + '">' + order.status + '</p>' +
+                        '<div class="order-item" onclick="viewOrder(' + order.id + ')">' +
+                        '<div class="order-info">' +
+                        '<span class="order-number">#' + order.id + '</span>' +
+                        '<span class="order-status ' + statusClass + '">' + capitalizeFirst(order.status) + '</span>' +
+                        '</div>' +
+                        '<div class="order-details">' +
+                        '<span class="order-buyer">' + escapeHtml(order.buyer_name) + '</span>' +
+                        '<span class="order-total">R ' + parseFloat(order.total).toFixed(2) + '</span>' +
+                        '<span class="order-date">' + order.created_at + '</span>' +
+                        '</div>' +
                         '</div>'
                     );
                 });
@@ -256,8 +361,66 @@ function loadAdminDashboard() {
 
 function loadSellerDashboard() {
     loadSellerStats();
-    window.loadSellerProducts();
-    loadSellerRecentOrders();
+    window.loadSellerProducts(4);
+    loadSellerRecentOrders(5);
+}
+
+// ========== RECENT ORDERS FOR SELLER PAGE ==========
+function loadAllSellerOrders(page = 1, status = 'all', search = '') {
+    var $tbody = $('#orders-table-body');
+    if (!$tbody.length) return;
+    
+    $tbody.html('<tr><td colspan="7" style="text-align: center;">Loading orders...</td></tr>');
+    
+    $.ajax({
+        url: baseUrl + 'admin/php/get-seller-orders.php',
+        type: 'GET',
+        dataType: 'json',
+        data: { page: page, status: status, search: search },
+        success: function(data) {
+            if (data.success && data.orders && data.orders.length) {
+                $tbody.empty();
+                $.each(data.orders, function(i, order) {
+                    var statusClass = '';
+                    if (order.status === 'pending') statusClass = 'status-pending';
+                    else if (order.status === 'processing') statusClass = 'status-processing';
+                    else if (order.status === 'shipped') statusClass = 'status-shipped';
+                    else if (order.status === 'completed') statusClass = 'status-completed';
+                    else if (order.status === 'cancelled') statusClass = 'status-cancelled';
+                    
+                    var actionButtons = '';
+                    if (order.status === 'pending') {
+                        actionButtons = '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.id + ', \'processing\')">Process</button>';
+                    } else if (order.status === 'processing') {
+                        actionButtons = '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.id + ', \'shipped\')">Mark Shipped</button>';
+                    } else if (order.status === 'shipped') {
+                        actionButtons = '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.id + ', \'completed\')">Complete</button>';
+                    } else if (order.status === 'completed') {
+                        actionButtons = '<span class="completed-label">Completed</span>';
+                    } else if (order.status === 'cancelled') {
+                        actionButtons = '<span class="cancelled-label">Cancelled</span>';
+                    }
+                    
+                    $tbody.append(
+                        '<tr>' +
+                        '<td>#' + order.id + '</td>' +
+                        '<td>' + escapeHtml(order.buyer_name) + '</td>' +
+                        '<td>' + order.items_count + '</td>' +
+                        '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
+                        '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
+                        '<td>' + order.created_at + '</td>' +
+                        '<td class="action-buttons">' + actionButtons + '</td>' +
+                        '</tr>'
+                    );
+                });
+            } else {
+                $tbody.html('<tr><td colspan="7" style="text-align: center;">No orders found</td></tr>');
+            }
+        },
+        error: function() {
+            $tbody.html('<tr><td colspan="7" style="text-align: center;">Error loading orders</td></tr>');
+        }
+    });
 }
 
 // ========== MOBILE SIDEBAR TOGGLE ==========
@@ -283,16 +446,10 @@ function initMobileSidebar(prefix) {
         $('body').removeClass(prefix + '-menu-open').css('overflow', '');
     }
     
-    // Hamburger opens sidebar
     $hamburger.on('click', openSidebar);
-    
-    // Close button (X) closes sidebar
     if ($closeBtn.length) $closeBtn.on('click', closeSidebar);
-    
-    // Overlay closes sidebar
     if ($overlay.length) $overlay.on('click', closeSidebar);
     
-    // Close sidebar when clicking a link on mobile
     $('.' + prefix + '-sidebar-nav a, .' + prefix + '-sidebar-link').on('click', function() {
         if ($(window).width() <= 768) {
             closeSidebar();
@@ -320,6 +477,31 @@ function initUserDropdown() {
     });
 }
 
+// ========== ORDER STATUS UPDATE FUNCTIONS ==========
+window.processOrder = function(orderId) {
+    if (confirm('Process this order?')) {
+        updateOrderStatus(orderId, 'processing');
+    }
+};
+
+window.shipOrder = function(orderId) {
+    if (confirm('Mark this order as shipped?')) {
+        updateOrderStatus(orderId, 'shipped');
+    }
+};
+
+window.completeOrder = function(orderId) {
+    if (confirm('Mark this order as completed?')) {
+        updateOrderStatus(orderId, 'completed');
+    }
+};
+
+window.cancelOrder = function(orderId) {
+    if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+        updateOrderStatus(orderId, 'cancelled');
+    }
+};
+
 // ========== DOCUMENT READY ==========
 $(document).ready(function() {
     initMobileSidebar('admin');
@@ -327,11 +509,16 @@ $(document).ready(function() {
     initUserDropdown();
     
     // Check which dashboard we're on and load appropriate data
-    if ($('#totalUsers').length) {
+    if ($('#totalUsers').length || $('#recent-users-table').length) {
         loadAdminDashboard();
     }
     
     if ($('#stat-products').length || $('#listings-grid').length) {
         loadSellerDashboard();
+    }
+    
+    // For orders page
+    if ($('#orders-table-body').length) {
+        loadAllSellerOrders();
     }
 });

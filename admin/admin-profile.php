@@ -6,19 +6,17 @@
  * This page allows admin users to view and edit their profile information
  */
 
-session_start();
+require_once dirname(__DIR__) . '/init.php';
 
-$baseUrl = "/www/consutrade/";
+$baseUrl = getBaseUrl();
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'admin') {
+// Check if user is logged in and is admin using centralized auth
+if (!$is_logged_in || $current_user['role'] !== 'admin') {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-require_once dirname(__DIR__) . '/php/config.php';
-
-$user_id = $_SESSION['user_id'];
+$user_id = $current_user_id;
 $success_message = '';
 $error_message = '';
 
@@ -27,30 +25,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $full_name = trim($_POST['full_name']);
     $phone = trim($_POST['phone']);
     
-    $update_sql = "UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?";
-    $update_stmt = $conn->prepare($update_sql);
-    $update_stmt->bind_param('ssi', $full_name, $phone, $user_id);
-    
-    if ($update_stmt->execute()) {
-        $_SESSION['full_name'] = $full_name;
-        $success_message = 'Profile updated successfully!';
+    // Clean phone number
+    $clean_phone = !empty($phone) ? preg_replace('/[^0-9]/', '', $phone) : '';
+    if (!empty($clean_phone) && !preg_match('/^0[0-9]{9,10}$/', $clean_phone)) {
+        $error_message = 'Please enter a valid South African phone number (e.g., 0712345678)';
     } else {
-        $error_message = 'Failed to update profile. Please try again.';
+        $update_sql = "UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?";
+        $update_stmt = $conn->prepare($update_sql);
+        $update_stmt->bind_param('ssi', $full_name, $clean_phone, $user_id);
+        
+        if ($update_stmt->execute()) {
+            $_SESSION['full_name'] = $full_name;
+            $success_message = 'Profile updated successfully!';
+        } else {
+            $error_message = 'Failed to update profile. Please try again.';
+        }
+        $update_stmt->close();
     }
-    $update_stmt->close();
 }
 
-// Get user data
-$sql = "SELECT full_name, email, role, phone, created_at 
-        FROM users 
-        WHERE user_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$stmt->close();
-$conn->close();
+// Get user data using helper
+$user = getUserById($conn, $user_id);
+
+if (!$user) {
+    header('Location: ' . $baseUrl . 'index.php');
+    exit;
+}
 
 // Set active state for sidebar
 $active_profile = 'active';
@@ -61,6 +61,7 @@ $active_profile = 'active';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Profile - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin-header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin-profile.css">
@@ -87,7 +88,7 @@ $active_profile = 'active';
                 <!-- Left Column - Profile Info -->
                 <div class="admin-profile-left">
                     <div class="admin-profile-avatar">
-                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile Avatar">
+                        <img src="<?php echo getUserProfileImage($user['profile_image'] ?? null); ?>" alt="Profile Avatar">
                         <h2><?php echo htmlspecialchars($user['full_name']); ?></h2>
                         <span class="admin-role-badge">Administrator</span>
                     </div>
@@ -95,7 +96,7 @@ $active_profile = 'active';
                     <div class="admin-profile-stats">
                         <div class="stat-item">
                             <span class="stat-label">Member Since</span>
-                            <span class="stat-value"><?php echo date('M Y', strtotime($user['created_at'])); ?></span>
+                            <span class="stat-value"><?php echo formatDate($user['created_at']); ?></span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Email</span>
@@ -107,6 +108,10 @@ $active_profile = 'active';
                             <span class="stat-value"><?php echo htmlspecialchars($user['phone']); ?></span>
                         </div>
                         <?php endif; ?>
+                        <div class="stat-item">
+                            <span class="stat-label">Role</span>
+                            <span class="stat-value"><?php echo ucfirst($user['role']); ?></span>
+                        </div>
                     </div>
                 </div>
 
@@ -129,6 +134,7 @@ $active_profile = 'active';
                         <div class="form-group">
                             <label for="phone">Phone Number (Optional)</label>
                             <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="e.g., 071 234 5678">
+                            <small>Optional but recommended for contact</small>
                         </div>
                         
                         <div class="form-actions">
@@ -156,7 +162,7 @@ $active_profile = 'active';
                         <span>All Orders</span>
                     </a>
                     <a href="admin-dashboard.php" class="quick-link-card">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="24px" height="24px" alt="Dashboard">
+                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" width="24px" height="24px" alt="Dashboard">
                         <span>Dashboard</span>
                     </a>
                 </div>
@@ -164,6 +170,7 @@ $active_profile = 'active';
         </div>
     </main>
 
+    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <script src="<?php echo $baseUrl; ?>admin/js/admin.js"></script>
 </body>
 </html>

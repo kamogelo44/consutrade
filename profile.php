@@ -6,27 +6,23 @@
  * This page allows buyers to view and edit their profile information
  */
 
-session_start();
-
-require_once 'php/config.php';
-require_once 'php/helpers.php';
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+// Check if user is logged in using centralized auth
+if (!$is_logged_in) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
-$role = $_SESSION['role'];
-
 // Redirect sellers to their own profile page
-if ($role === 'seller') {
+if ($current_user['role'] === 'seller') {
     header('Location: ' . $baseUrl . 'admin/seller-profile.php');
     exit;
 }
+
+$user_id = $current_user_id;
 
 // Get user data using helper
 $user = getUserById($conn, $user_id);
@@ -45,6 +41,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
@@ -208,7 +205,12 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 </main>
 
 <script>
+/*
+ * ConsuTrade - Profile Page Functionality
+ * Author: Kamogelo Phale
+ */
 var baseUrl = '<?php echo $baseUrl; ?>';
+var currentUserId = <?php echo $current_user_id; ?>;
 
 function showDeleteModal() {
     openModal($('#delete-modal'));

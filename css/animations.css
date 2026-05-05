@@ -132,3 +132,37 @@
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* ========== TOAST NOTIFICATION ANIMATIONS ========== */
+/* Author: Kamogelo Phale */
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Toast animation classes */
+.toast-notification {
+    animation: slideInRight 0.3s ease forwards;
+}
+
+.toast-notification.hiding {
+    animation: slideOutRight 0.3s ease forwards;
+}

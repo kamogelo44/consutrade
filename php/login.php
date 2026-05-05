@@ -2,10 +2,11 @@
 /*
  * ConsuTrade - User Login (Main Website)
  * Author: Kamogelo Phale
+ * 
+ * Handles user authentication for buyers on the main website
  */
 
-require_once 'helpers.php'; 
-require_once 'config.php';
+require_once __DIR__ . '/../init.php';
 
 // Only process if form was submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -24,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     if (empty($errors)) {
-        // Simple query - just check buyer role
+        // Query - check buyer role only (main website)
         $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'buyer'";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('s', $email);
@@ -35,21 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $user = $result->fetch_assoc();
             
             if (password_verify($password, $user['password'])) {
-                // Start session (config already set)
-                startSession('user');
+                // Use centralized login function from auth.php
+                loginUser($user['user_id'], $user['full_name'], $user['email'], $user['role']);
                 
-                $_SESSION['user_id'] = $user['user_id'];
-                $_SESSION['full_name'] = $user['full_name'];
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['logged_in'] = true;
-                
-                // Save session
-                session_write_close();
-                
+                // Set flash message
                 $_SESSION['flash'] = 'Welcome back, ' . $user['full_name'] . '!';
                 
-                header('Location: /www/consutrade/index.php');
+                // Redirect to home page
+                header('Location: ' . getBaseUrl() . 'index.php');
                 exit;
             } else {
                 $errors['general'] = 'Invalid email or password.';
@@ -59,15 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         $stmt->close();
-        $conn->close();
     }
     
+    // If we have errors, store them and redirect back
     if (!empty($errors)) {
-        startSession('user');
         $_SESSION['login_errors'] = $errors;
         $_SESSION['login_email'] = $email;
-        session_write_close();
-        header('Location: /www/consutrade/index.php');
+        
+        // Redirect back to where the user came from
+        $redirect = $_SERVER['HTTP_REFERER'] ?? getBaseUrl() . 'index.php';
+        header('Location: ' . $redirect);
         exit;
     }
 }

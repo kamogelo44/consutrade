@@ -1,6 +1,12 @@
 <?php 
-require_once 'php/helpers.php';
-startSession('user');
+/*
+ * ConsuTrade - Product Details Page
+ * Author: Kamogelo Phale
+ * 
+ * Displays detailed information about a specific product
+ */
+
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
@@ -18,6 +24,7 @@ if ($product_id <= 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/products.css">
     <link rel="stylesheet" href="css/login-signup.css">
@@ -42,10 +49,10 @@ if ($product_id <= 0) {
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
     
     <script>
-    // Pass PHP session data to JavaScript
-    var isLoggedIn = <?php echo isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true ? 'true' : 'false'; ?>;
-    var currentUserId = <?php echo $_SESSION['user_id'] ?? 0; ?>;
-    var currentUserRole = '<?php echo $_SESSION['role'] ?? ""; ?>';
+    // Pass session data to JavaScript using centralized auth variables
+    var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+    var currentUserId = <?php echo $current_user_id ?: 0; ?>;
+    var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
     var baseUrl = '<?php echo $baseUrl; ?>';
     var productId = <?php echo $product_id; ?>;
     

@@ -1,16 +1,12 @@
 <?php
 /*
- * ConsuTrade - Logout (Main Website)
+ * ConsuTrade - Logout Handler
  * Author: Kamogelo Phale
- *
- * Destroys main website session and redirects to homepage
  */
 
-require_once 'helpers.php';
+require_once __DIR__ . '/../init.php';
 
-destroySession('user');
-
-// Redirect to homepage
+logoutUser();
 header('Location: ../index.php');
 exit;
 ?>

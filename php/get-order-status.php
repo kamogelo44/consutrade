@@ -1,65 +1,67 @@
 <?php
 /*
- * ConsuTrade - Update Order Status
+ * ConsuTrade - Get Order Status (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * Returns the current status of an order
  */
 
-session_start();
-require_once 'config.php';
+require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache, must-revalidate');
 
-$response = ['success' => false, 'message' => ''];
+$response = ['success' => false, 'status' => null, 'message' => ''];
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'seller') {
+// Check if user is logged in
+if (!$is_logged_in) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-$order_id = isset($input['order_id']) ? (int)$input['order_id'] : 0;
-$new_status = isset($input['status']) ? $input['status'] : '';
-$seller_id = $_SESSION['user_id'];
+$order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
+$user_id = $current_user_id;
+$role = $current_user['role'];
 
-$allowed_statuses = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
-
-if ($order_id <= 0 || !in_array($new_status, $allowed_statuses)) {
-    $response['message'] = 'Invalid request';
+if ($order_id <= 0) {
+    $response['message'] = 'Invalid order ID';
     echo json_encode($response);
     exit;
 }
 
-// Verify order belongs to this seller
-$check_sql = "SELECT order_id FROM orders WHERE order_id = ? AND seller_id = ?";
-$check_stmt = $conn->prepare($check_sql);
-$check_stmt->bind_param('ii', $order_id, $seller_id);
-$check_stmt->execute();
-$check_result = $check_stmt->get_result();
-
-if ($check_result->num_rows === 0) {
-    $response['message'] = 'Order not found';
-    echo json_encode($response);
-    $check_stmt->close();
-    $conn->close();
-    exit;
-}
-$check_stmt->close();
-
-// Update order status
-$update_sql = "UPDATE orders SET status = ? WHERE order_id = ? AND seller_id = ?";
-$update_stmt = $conn->prepare($update_sql);
-$update_stmt->bind_param('sii', $new_status, $order_id, $seller_id);
-
-if ($update_stmt->execute()) {
-    $response['success'] = true;
-    $response['message'] = 'Order status updated successfully';
+// Get order status based on role (buyer or seller can view)
+if ($role === 'seller') {
+    $sql = "SELECT status, created_at FROM orders WHERE order_id = ? AND seller_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ii', $order_id, $user_id);
 } else {
-    $response['message'] = 'Failed to update order status';
+    $sql = "SELECT status, created_at FROM orders WHERE order_id = ? AND buyer_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ii', $order_id, $user_id);
 }
 
-$update_stmt->close();
-$conn->close();
+$stmt->execute();
+$result = $stmt->get_result();
 
+if ($row = $result->fetch_assoc()) {
+    $response['success'] = true;
+    $response['status'] = $row['status'];
+    $response['created_at'] = date('d M Y, h:i A', strtotime($row['created_at']));
+    
+    // Add status description
+    $status_descriptions = [
+        'pending' => 'Your order is pending confirmation',
+        'processing' => 'Your order is being processed',
+        'shipped' => 'Your order has been shipped',
+        'completed' => 'Your order has been completed',
+        'cancelled' => 'Your order has been cancelled'
+    ];
+    $response['status_description'] = $status_descriptions[$row['status']] ?? 'Status unknown';
+} else {
+    $response['message'] = 'Order not found';
+}
+
+$stmt->close();
 echo json_encode($response);
 ?>

@@ -2,25 +2,20 @@
 /*
  * ConsuTrade - My Products (Seller)
  * Author: Kamogelo Phale
+ * 
+ * Displays all products for the logged-in seller with management options
  */
 
-require_once dirname(__DIR__) . '/php/helpers.php';
+require_once dirname(__DIR__) . '/init.php';
 
-// Check if seller is logged in
-if (!isSellerLoggedIn()) {
+// Check if seller is logged in using centralized auth
+if (!$is_logged_in || $current_user['role'] !== 'seller') {
     header('Location: login.php');
     exit;
 }
 
-// Start seller session
-startSession('seller');
-
 $baseUrl = getBaseUrl();
-
-// Get database connection
-require_once dirname(__DIR__) . '/php/config.php';
-
-$seller_id = $_SESSION['user_id'];
+$seller_id = $current_user_id;
 $success_message = '';
 $error_message = '';
 
@@ -29,46 +24,21 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     $product_id = (int)$_GET['id'];
     $action = $_GET['action'];
     
-    $check_sql = "SELECT product_id, status FROM products WHERE product_id = ? AND seller_id = ? AND status != 'deleted'";
-    $check_stmt = $conn->prepare($check_sql);
-    $check_stmt->bind_param('ii', $product_id, $seller_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
+    $result = updateProductStatus($conn, $product_id, $seller_id, $action);
     
-    if ($check_result->num_rows > 0) {
-        $product_data = $check_result->fetch_assoc();
-        $new_status = ($action === 'activate') ? 'active' : 'suspended';
-        
-        if (($action === 'activate' && $product_data['status'] === 'active') ||
-            ($action === 'suspend' && $product_data['status'] === 'suspended')) {
-            $error_message = ($action === 'activate') ? 'Product is already active.' : 'Product is already suspended.';
-        } else {
-            $status_sql = "UPDATE products SET status = ? WHERE product_id = ? AND seller_id = ?";
-            $status_stmt = $conn->prepare($status_sql);
-            $status_stmt->bind_param('sii', $new_status, $product_id, $seller_id);
-            
-            if ($status_stmt->execute()) {
-                $success_message = ($action === 'activate') ? 'Product activated successfully!' : 'Product suspended successfully!';
-            } else {
-                $error_message = 'Failed to update product status.';
-            }
-            $status_stmt->close();
-        }
+    if ($result['success']) {
+        $success_message = $result['message'];
     } else {
-        $error_message = 'Product not found or does not belong to you.';
+        $error_message = $result['message'];
     }
-    $check_stmt->close();
 }
-
-//Get profile
-$user = getUserById($conn, $seller_id);
-$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
 // Get filter parameters
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-$conn->close();
+// Get products using helper function
+$products = getSellerProducts($conn, $seller_id, $status_filter, $search_term);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -76,18 +46,23 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Products - ConsuTrade Seller</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-products.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <script>
         var baseUrl = '<?php echo $baseUrl; ?>';
+        var statusFilter = '<?php echo $status_filter; ?>';
+        var searchTerm = '<?php echo addslashes($search_term); ?>';
     </script>
 </head>
 <body class="my-products-page seller-dashboard-page">
 
 <?php include 'includes/sidebar.php'; ?>
 
+<main class="dashboard-main">
+    <div class="dashboard-content">
         <div class="products-container">
             <div class="page-header">
                 <h1>My Products</h1>
@@ -131,123 +106,99 @@ $conn->close();
             </div>
 
             <div class="products-grid" id="products-grid">
-                <div class="loading-spinner">Loading products...</div>
+                <?php if (empty($products)): ?>
+                    <div class="empty-products">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="No products">
+                        <h3>No Products Found</h3>
+                        <p><?php echo !empty($search_term) ? 'No products match your search criteria.' : 'You haven\'t listed any products yet.'; ?></p>
+                        <?php if (!empty($search_term)): ?>
+                            <a href="?status=<?php echo $status_filter; ?>" class="clear-btn">Clear Search</a>
+                        <?php else: ?>
+                            <a href="add-product.php" class="add-btn">Add Your First Product</a>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($products as $product): ?>
+                        <div class="product-card" data-product-id="<?php echo $product['id']; ?>">
+                            <div class="product-image">
+                                <img src="<?php echo getProductImageUrl($product['image']); ?>" alt="<?php echo htmlspecialchars($product['title']); ?>" onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
+                                <div class="product-status-badge status-<?php echo $product['status']; ?>">
+                                    <?php echo ucfirst($product['status']); ?>
+                                </div>
+                            </div>
+                            <div class="product-details">
+                                <h3 class="product-title"><?php echo htmlspecialchars($product['title']); ?></h3>
+                                <p class="product-price">R <?php echo number_format($product['price'], 2); ?></p>
+                                <p class="product-stock">Stock: <?php echo $product['stock_quantity']; ?></p>
+                                <p class="product-date">Listed: <?php echo date('d M Y', strtotime($product['created_at'])); ?></p>
+                                <div class="product-actions">
+                                    <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="action-btn edit-btn" title="Edit">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/edit-svgrepo-com.svg" alt="Edit">
+                                        <span>Edit</span>
+                                    </a>
+                                    <?php if ($product['status'] === 'active'): ?>
+                                        <a href="?action=suspend&id=<?php echo $product['id']; ?>&status=<?php echo $status_filter; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>" 
+                                           class="action-btn suspend-btn" 
+                                           title="Suspend"
+                                           onclick="return confirm('Are you sure you want to suspend this product?');">
+                                            <img src="<?php echo $baseUrl; ?>images/icons/hide-svgrepo-com.svg" alt="Suspend">
+                                            <span>Suspend</span>
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="?action=activate&id=<?php echo $product['id']; ?>&status=<?php echo $status_filter; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?>" 
+                                           class="action-btn activate-btn" 
+                                           title="Activate"
+                                           onclick="return confirm('Are you sure you want to activate this product?');">
+                                            <img src="<?php echo $baseUrl; ?>images/icons/show-svgrepo-com.svg" alt="Activate">
+                                            <span>Activate</span>
+                                        </a>
+                                    <?php endif; ?>
+                                    <button type="button" class="action-btn delete-btn" title="Delete" onclick="deleteProductFromList(<?php echo $product['id']; ?>)">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" alt="Delete">
+                                        <span>Delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
-    </main>
-</div>
+    </div>
+</main>
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
-var baseUrl = '<?php echo $baseUrl; ?>';
-var sellerId = <?php echo $seller_id; ?>;
-var statusFilter = '<?php echo $status_filter; ?>';
-var searchTerm = '<?php echo addslashes($search_term); ?>';
-
-// ========== DOM READY - Initialize page ==========
-$(document).ready(function() {
-    loadProducts();
-    
-    function loadProducts() {
-        var $grid = $('#products-grid');
-        $grid.html('<div class="loading-spinner">Loading products...</div>');
-        
+/*
+ * ConsuTrade - My Products Functionality
+ * Author: Kamogelo Phale
+ */
+function deleteProductFromList(productId) {
+    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
         $.ajax({
-            url: baseUrl + 'admin/php/get-seller-products.php',
-            type: 'GET',
+            url: baseUrl + 'admin/php/delete-product.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ product_id: productId }),
             dataType: 'json',
             success: function(data) {
-                if (data.success && data.products && data.products.length > 0) {
-                    var filteredProducts = data.products.filter(function(product) {
-                        var matchesStatus = (statusFilter === 'all') || (product.status === statusFilter);
-                        var matchesSearch = !searchTerm || 
-                            product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            product.id.toString().includes(searchTerm);
-                        return matchesStatus && matchesSearch;
-                    });
-                    
-                    if (filteredProducts.length > 0) {
-                        displayProducts(filteredProducts);
-                    } else {
-                        $grid.html(`
-                            <div class="empty-products">
-                                <img src="${baseUrl}images/icons/product-catalog-svgrepo-com.svg" alt="No products">
-                                <h3>No Products Found</h3>
-                                <p>No products match your current filters.</p>
-                                <a href="?status=all" class="clear-btn">Clear Filters</a>
-                            </div>
-                        `);
-                    }
+                if (data.success) {
+                    showSuccessToast(data.message);
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    $grid.html(`
-                        <div class="empty-products">
-                            <img src="${baseUrl}images/icons/product-catalog-svgrepo-com.svg" alt="No products">
-                            <h3>No Products Found</h3>
-                            <p>You haven't listed any products yet.</p>
-                            <a href="add-product.php" class="add-btn">Add Your First Product</a>
-                        </div>
-                    `);
+                    showErrorToast('Error: ' + data.message);
                 }
             },
             error: function() {
-                $('#products-grid').html('<div class="error-message">Error loading products. Please refresh the page.</div>');
+                showErrorToast('Something went wrong');
             }
         });
     }
-    
-    function displayProducts(products) {
-        var $grid = $('#products-grid');
-        $grid.empty();
-        
-        $.each(products, function(index, product) {
-            var imagePath = product.image;
-            if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                imagePath = baseUrl + imagePath;
-            }
-            
-            var card = $('<div>').addClass('product-card').attr('data-product-id', product.id);
-            card.html(`
-                <div class="product-image">
-                    <img src="${imagePath}" alt="${escapeHtml(product.name)}">
-                    <div class="product-status-badge status-${product.status}">
-                        ${product.status.charAt(0).toUpperCase() + product.status.slice(1)}
-                    </div>
-                </div>
-                <div class="product-details">
-                    <h3 class="product-title">${escapeHtml(product.name)}</h3>
-                    <p class="product-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                    <p class="product-date">Listed: ${new Date(product.created_at).toLocaleDateString()}</p>
-                    <div class="product-actions">
-                        <a href="edit-product.php?id=${product.id}" class="action-btn edit-btn" title="Edit">
-                            <img src="${baseUrl}images/icons/edit-svgrepo-com.svg" alt="Edit">
-                            <span>Edit</span>
-                        </a>
-                        ${product.status === 'active' ? 
-                            `<a href="?action=suspend&id=${product.id}&status=${statusFilter}${searchTerm ? '&search=' + encodeURIComponent(searchTerm) : ''}" 
-                               class="action-btn suspend-btn" 
-                               title="Suspend"
-                               onclick="return confirm('Are you sure you want to suspend this product?');">
-                                <img src="${baseUrl}images/icons/hide-svgrepo-com.svg" alt="Suspend">
-                                <span>Suspend</span>
-                            </a>` : 
-                            `<a href="?action=activate&id=${product.id}&status=${statusFilter}${searchTerm ? '&search=' + encodeURIComponent(searchTerm) : ''}" 
-                               class="action-btn activate-btn" 
-                               title="Activate"
-                               onclick="return confirm('Are you sure you want to activate this product?');">
-                                <img src="${baseUrl}images/icons/show-svgrepo-com.svg" alt="Activate">
-                                <span>Activate</span>
-                            </a>`
-                        }
-                        <button type="button" class="action-btn delete-btn" title="Delete" onclick="deleteProduct(${product.id})">
-                            <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" alt="Delete">
-                            <span>Delete</span>
-                        </button>
-                    </div>
-                </div>
-            `);
-            $grid.append(card);
-        });
-    }
-});
+}
 </script>
+
+</body>
+</html>

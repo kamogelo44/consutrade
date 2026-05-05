@@ -6,48 +6,20 @@
  * This page handles the checkout process and redirects to PayFast
  */
 
-require_once 'php/helpers.php';
-startSession('user');
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// Check if user is logged in
-if (!isUserLoggedIn()) {
+// Check if user is logged in using centralized auth
+if (!$is_logged_in) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = $current_user_id;
 
-// Get cart items
-$cart_sql = "SELECT c.cart_id, c.product_id, c.quantity, 
-             p.title as product_name, p.price, p.image_url,
-             u.full_name as seller_name, u.user_id as seller_id
-             FROM cart c
-             JOIN products p ON c.product_id = p.product_id
-             JOIN users u ON p.seller_id = u.user_id
-             WHERE c.user_id = ?";
-
-$cart_stmt = $conn->prepare($cart_sql);
-$cart_stmt->bind_param('i', $user_id);
-$cart_stmt->execute();
-$cart_result = $cart_stmt->get_result();
-
-$cart_items = [];
-$subtotal = 0;
-$seller_ids = [];
-
-while ($row = $cart_result->fetch_assoc()) {
-    $item_total = $row['price'] * $row['quantity'];
-    $subtotal += $item_total;
-    $cart_items[] = $row;
-    
-    if (!in_array($row['seller_id'], $seller_ids)) {
-        $seller_ids[] = $row['seller_id'];
-    }
-}
-
-$cart_stmt->close();
+// Get cart items using helper function
+$cart_items = getCartItems($conn, $user_id);
 
 // If cart is empty, redirect to shop
 if (empty($cart_items)) {
@@ -55,64 +27,41 @@ if (empty($cart_items)) {
     exit;
 }
 
-// Calculate totals
-$delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
-$total = $subtotal + $delivery_fee;
+// ========== STOCK VERIFICATION ==========
+$stock_errors = verifyCartStock($conn, $cart_items);
 
-// Get user info for PayFast
-$user_sql = "SELECT full_name, email, phone FROM users WHERE user_id = ?";
-$user_stmt = $conn->prepare($user_sql);
-$user_stmt->bind_param('i', $user_id);
-$user_stmt->execute();
-$user_result = $user_stmt->get_result();
-$user = $user_result->fetch_assoc();
-$user_stmt->close();
-
-// Create orders in database BEFORE redirecting to PayFast
-$order_ids = [];
-$payment_id = time() . '_' . $user_id;
-
-foreach ($seller_ids as $seller_id) {
-    // Calculate this seller's subtotal
-    $seller_subtotal = 0;
-    foreach ($cart_items as $item) {
-        if ($item['seller_id'] == $seller_id) {
-            $seller_subtotal += $item['price'] * $item['quantity'];
-        }
-    }
-    
-    // Calculate delivery fee for this seller
-    $seller_delivery = ($seller_subtotal > 0 && $seller_subtotal < 500) ? 50 : 0;
-    $seller_total = $seller_subtotal + $seller_delivery;
-    
-    // Insert order
-    $order_sql = "INSERT INTO orders (buyer_id, seller_id, total_price, status, payment_id, created_at) 
-                  VALUES (?, ?, ?, 'pending', ?, NOW())";
-    $order_stmt = $conn->prepare($order_sql);
-    $order_stmt->bind_param('iids', $user_id, $seller_id, $seller_total, $payment_id);
-    
-    if ($order_stmt->execute()) {
-        $order_id = $order_stmt->insert_id;
-        $order_ids[] = $order_id;
-        
-        // Insert order items
-        foreach ($cart_items as $item) {
-            if ($item['seller_id'] == $seller_id) {
-                $item_sql = "INSERT INTO order_items (order_id, product_id, quantity, price) 
-                             VALUES (?, ?, ?, ?)";
-                $item_stmt = $conn->prepare($item_sql);
-                $item_stmt->bind_param('iiid', $order_id, $item['product_id'], $item['quantity'], $item['price']);
-                $item_stmt->execute();
-                $item_stmt->close();
-            }
-        }
-    }
-    $order_stmt->close();
+if (!empty($stock_errors)) {
+    $_SESSION['checkout_errors'] = $stock_errors;
+    header('Location: ' . $baseUrl . 'cart.php');
+    exit;
 }
 
-// Use the first order ID for the payment reference
-$primary_order_id = !empty($order_ids) ? $order_ids[0] : 0;
-$payment_reference = $primary_order_id . '_' . $user_id;
+// Calculate totals using helper function
+$totals = calculateCartTotals($cart_items);
+$subtotal = $totals['subtotal'];
+$delivery_fee = $totals['delivery_fee'];
+$total = $totals['total'];
+
+// Process checkout (creates orders, clears cart)
+$checkout_result = processCheckout($conn, $user_id, $cart_items);
+
+if (!$checkout_result['success']) {
+    $_SESSION['checkout_errors'] = $checkout_result['errors'];
+    header('Location: ' . $baseUrl . 'cart.php');
+    exit;
+}
+
+// Get user info for PayFast
+$user = getUserCheckoutInfo($conn, $user_id);
+
+// Prepare PayFast data
+$payfast_data = preparePayFastData([
+    'payment_id' => $checkout_result['payment_id'],
+    'primary_order_id' => $checkout_result['primary_order_id'],
+    'total' => $total,
+    'buyer_name' => $user['full_name'],
+    'buyer_email' => $user['email']
+], $baseUrl);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -120,6 +69,7 @@ $payment_reference = $primary_order_id . '_' . $user_id;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
@@ -141,7 +91,7 @@ $payment_reference = $primary_order_id . '_' . $user_id;
             <?php foreach ($cart_items as $item): ?>
                 <div class="checkout-item">
                     <div class="item-info">
-                        <span class="item-name"><?php echo htmlspecialchars($item['product_name']); ?></span>
+                        <span class="item-name"><?php echo htmlspecialchars($item['title']); ?></span>
                         <span class="item-quantity">x<?php echo $item['quantity']; ?></span>
                     </div>
                     <div class="item-price">R <?php echo number_format($item['price'] * $item['quantity'], 2); ?></div>
@@ -177,19 +127,19 @@ $payment_reference = $primary_order_id . '_' . $user_id;
             
             <!-- PayFast Payment Form -->
             <form action="<?php echo PAYFAST_PROCESS_URL; ?>" method="post" id="payfast-form">
-                <input type="hidden" name="merchant_id" value="<?php echo PAYFAST_MERCHANT_ID; ?>">
-                <input type="hidden" name="merchant_key" value="<?php echo PAYFAST_MERCHANT_KEY; ?>">
-                <input type="hidden" name="return_url" value="<?php echo getAbsoluteUrl('order-confirmation.php'); ?>">
-                <input type="hidden" name="cancel_url" value="<?php echo getAbsoluteUrl('cart.php'); ?>">
-                <input type="hidden" name="notify_url" value="<?php echo getAbsoluteUrl('php/payfast-notify.php'); ?>">
+                <input type="hidden" name="merchant_id" value="<?php echo $payfast_data['merchant_id']; ?>">
+                <input type="hidden" name="merchant_key" value="<?php echo $payfast_data['merchant_key']; ?>">
+                <input type="hidden" name="return_url" value="<?php echo $payfast_data['return_url']; ?>">
+                <input type="hidden" name="cancel_url" value="<?php echo $payfast_data['cancel_url']; ?>">
+                <input type="hidden" name="notify_url" value="<?php echo $payfast_data['notify_url']; ?>">
                 
-                <input type="hidden" name="m_payment_id" value="<?php echo $payment_reference; ?>">
-                <input type="hidden" name="amount" value="<?php echo number_format($total, 2, '.', ''); ?>">
-                <input type="hidden" name="item_name" value="ConsuTrade Order #<?php echo $primary_order_id; ?>">
-                <input type="hidden" name="item_description" value="Order from ConsuTrade">
+                <input type="hidden" name="m_payment_id" value="<?php echo $payfast_data['m_payment_id']; ?>">
+                <input type="hidden" name="amount" value="<?php echo $payfast_data['amount']; ?>">
+                <input type="hidden" name="item_name" value="<?php echo $payfast_data['item_name']; ?>">
+                <input type="hidden" name="item_description" value="<?php echo $payfast_data['item_description']; ?>">
                 
-                <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($user['full_name']); ?>">
-                <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($user['email']); ?>">
+                <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($payfast_data['name_first']); ?>">
+                <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($payfast_data['email_address']); ?>">
                 <?php if (!empty($user['phone'])): ?>
                 <input type="hidden" name="cell_number" value="<?php echo htmlspecialchars($user['phone']); ?>">
                 <?php endif; ?>

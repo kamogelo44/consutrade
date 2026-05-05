@@ -6,13 +6,15 @@
  * This page displays search results from the header search bar
  */
 
-session_start();
-require_once 'php/helpers.php';
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// Get search query from URL
+// Get search query from URL and sanitize properly
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
+$search_query = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8'); // Sanitize for HTML output
+// For JavaScript, we need a separate safe version
+$search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = 12;
 $offset = ($page - 1) * $limit;
@@ -23,6 +25,7 @@ $offset = ($page - 1) * $limit;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Results - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <meta name="description" content="Search results for products on ConsuTrade">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
@@ -43,7 +46,7 @@ $offset = ($page - 1) * $limit;
         <span class="breadcrumb-separator">></span>
         <a href="product-listings.php">Products</a>
         <span class="breadcrumb-separator">></span>
-        <span class="current-page">Search: <?php echo htmlspecialchars($search_query); ?></span>
+        <span class="current-page">Search: <?php echo $search_query; ?></span>
     </div>
 
     <div class="listings-body">
@@ -56,7 +59,7 @@ $offset = ($page - 1) * $limit;
         <!-- Filter sidebar -->
         <aside class="filter-sidebar" id="filterSidebar">
             <form id="filterForm" method="GET" action="search-results.php">
-                <input type="hidden" name="search" value="<?php echo htmlspecialchars($search_query); ?>">
+                <input type="hidden" name="search" value="<?php echo $search_query; ?>">
                 
                 <fieldset class="filter-fields">
                     <legend class="filter-title">Filter Results</legend>
@@ -138,7 +141,7 @@ $offset = ($page - 1) * $limit;
         <!-- Products Grid Section -->
         <section class="listings-products">
             <div class="listings-header">
-                <h1>Search Results for "<?php echo htmlspecialchars($search_query); ?>"</h1>
+                <h1>Search Results for "<?php echo $search_query; ?>"</h1>
                 <div class="sort-options">
                     <label for="sortBy">Sort by:</label>
                     <select id="sortBy">
@@ -161,17 +164,31 @@ $offset = ($page - 1) * $limit;
 </main>
 
 <?php include 'includes/footer.php'; ?>
-
+<script src="<?php echo $baseUrl; ?>js/products.js"></script>
 <script>
-var searchQuery = '<?php echo addslashes($search_query); ?>';
-var currentPage = 1;
-var currentSort = 'newest';
-var currentFilters = {
+/*
+ * Search Results Functionality
+ * 
+ * Note: displayProducts(), escapeHtml(), getSellerAvatar(), and addToCart() 
+ * are already defined in products.js and main.js
+ */
+
+// Use JSON.stringify for safe JavaScript string
+var searchQuery = <?php echo json_encode($search_query_js, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+currentPage = 1;
+currentSort = 'newest';
+currentFilters = {
     categories: [],
     price_range: '',
     location: ''
 };
-var totalPages = 1;
+totalPages = 1;
+var baseUrl = <?php echo json_encode($baseUrl); ?>;
+
+// Make sure auth variables are available for the product display
+var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+var currentUserId = <?php echo $current_user_id ?: 0; ?>;
+var currentUserRole = <?php echo json_encode($current_user ? $current_user['role'] : ''); ?>;
 
 $(document).ready(function() {
     loadSearchResults();
@@ -179,12 +196,10 @@ $(document).ready(function() {
 });
 
 function setupEventListeners() {
-    // Mobile filter button toggle
     $('#mobileFilterBtn').on('click', function() {
         $('#filterSidebar').toggleClass('active');
     });
 
-    // Filter form submission
     $('#filterForm').on('submit', function(e) {
         e.preventDefault();
         collectFilters();
@@ -195,7 +210,6 @@ function setupEventListeners() {
         }
     });
 
-    // Reset filters button
     $('#resetFilters').on('click', function() {
         $('#filterForm')[0].reset();
         currentFilters = { categories: [], price_range: '', location: '' };
@@ -203,7 +217,6 @@ function setupEventListeners() {
         loadSearchResults();
     });
 
-    // Sort options change
     $('#sortBy').on('change', function() {
         currentSort = $(this).val();
         currentPage = 1;
@@ -248,7 +261,13 @@ function loadSearchResults() {
     
     $.get(baseUrl + 'php/search-products.php?' + params.toString(), function(data) {
         if (data.success && data.products && data.products.length > 0) {
-            displayProducts(data.products);
+            // REUSE the displayProducts function from products.js
+            if (typeof displayProducts === 'function') {
+                displayProducts(data.products);
+            } else {
+                console.error('displayProducts function not found');
+                $('#products-grid').html('<p class="error">Error displaying products.</p>');
+            }
             totalPages = data.total_pages || 1;
             displayPagination();
         } else {
@@ -264,70 +283,6 @@ function loadSearchResults() {
         }
     }).fail(function() {
         $('#products-grid').html('<p class="error">Error loading search results. Please try again.</p>');
-    });
-}
-
-function displayProducts(products) {
-    var $grid = $('#products-grid');
-    $grid.empty();
-    
-    $.each(products, function(index, product) {
-        var verifiedBadge = product.is_verified ? 
-            '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14" alt="Verified"><span>Verified Seller</span></div>' : 
-            '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14" alt="Not Verified"><span>Unverified</span></div>';
-        
-        var conditionClass = '';
-        var conditionText = product.condition || 'Good';
-        if (conditionText === 'New') conditionClass = 'new';
-        else if (conditionText === 'Like New') conditionClass = 'like-new';
-        else if (conditionText === 'Good') conditionClass = 'good';
-        else if (conditionText === 'Fair') conditionClass = 'fair';
-        
-        var imagePath = product.image;
-        if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-            imagePath = baseUrl + imagePath;
-        }
-        
-        var $card = $('<div>').addClass('prod-card').css('cursor', 'pointer');
-        $card.on('click', function() {
-            window.location.href = baseUrl + 'product-details.php?id=' + product.id;
-        });
-        
-        $card.html(`
-            <div class="img-container">
-                <img src="${imagePath}" alt="${escapeHtml(product.name)}" 
-                    width="280" height="280" 
-                    onerror="this.src='${baseUrl}images/default-product.png'"
-                    loading="lazy">
-                <div class="condition-badge ${conditionClass}">${conditionText}</div>
-            </div>
-            <div class="prod-info-container">
-                <h3 class="prod-name">${escapeHtml(product.name)}</h3>
-                <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                <div class="seller-info">
-                    <div class="seller-avatar">
-                        <img src="${baseUrl}images/icons/profile-svgrepo-com.svg" alt="Seller">
-                    </div>
-                    <div class="seller-details">
-                        <p class="seller-name">${escapeHtml(product.seller_name)}</p>
-                        <p class="location">
-                            <img src="${baseUrl}images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location">
-                            ${escapeHtml(product.location)}
-                        </p>
-                    </div>
-                    ${verifiedBadge}
-                </div>
-                <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                    <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart" width="16" height="16">
-                    Add to Cart
-                </button>
-                <div class="payment-badge">
-                    <span>Secure payment via</span>
-                    <img src="${baseUrl}images/icons/Payfast logo.svg" alt="PayFast" width="40" height="16">
-                </div>
-            </div>
-        `);
-        $grid.append($card);
     });
 }
 
@@ -365,11 +320,6 @@ function goToPage(page) {
     currentPage = page;
     loadSearchResults();
     $('html, body').animate({ scrollTop: 0 }, 'smooth');
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    return $('<div>').text(text).html();
 }
 </script>
 

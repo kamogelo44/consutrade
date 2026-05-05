@@ -1,20 +1,19 @@
 <?php
 /*
- * ConsuTrade - Remove from Cart
+ * ConsuTrade - Remove from Cart (AJAX)
  * Author: Kamogelo Phale
  * 
  * Removes a product from the user's cart
  */
 
-session_start();
-require_once 'config.php';
+require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
+// Check if user is logged in using centralized auth
+if (!$is_logged_in) {
     $response['message'] = 'Please login to remove items';
     echo json_encode($response);
     exit;
@@ -22,7 +21,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $input = json_decode(file_get_contents('php://input'), true);
 $product_id = isset($input['product_id']) ? (int)$input['product_id'] : 0;
-$user_id = $_SESSION['user_id'];
+$user_id = $current_user_id;
 
 if ($product_id <= 0) {
     $response['message'] = 'Invalid product';
@@ -30,21 +29,16 @@ if ($product_id <= 0) {
     exit;
 }
 
-// Delete item from cart
-$sql = "DELETE FROM cart WHERE user_id = ? AND product_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('ii', $user_id, $product_id);
+// Use the helper function to remove item by product_id
+$result = removeCartItemByProductId($conn, $product_id, $user_id);
 
-if ($stmt->execute()) {
+if ($result) {
+    updateCartCount(); // Updates $_SESSION['cart_count']
     $response['success'] = true;
     $response['message'] = 'Item removed from cart';
 } else {
     $response['message'] = 'Failed to remove item';
 }
 
-$stmt->close();
-$conn->close();
-
 echo json_encode($response);
-exit;
 ?>

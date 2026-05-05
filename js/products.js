@@ -7,7 +7,7 @@
  * - Filtering and sorting products
  * - Pagination
  * - Product card interactions
- * - Product details page
+ * - Product details page with stock awareness
  */
 
 // Base URL for all fetch requests
@@ -140,20 +140,30 @@ function displayProducts(products) {
         else if (conditionText === 'Good') conditionClass = 'good';
         else if (conditionText === 'Fair') conditionClass = 'fair';
         
-        var imagePath = product.image;
+        // FIXED: Use image_url, fallback to image
+        var imagePath = product.image_url || product.image;
         if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
             imagePath = baseUrl + imagePath;
         }
         
         var isOwnProduct = (typeof currentUserRole !== 'undefined' && currentUserRole === 'seller' && product.seller_id == currentUserId);
         var addToCartButton = '';
+        
+        // Stock availability check
+        var stockQuantity = product.stock_quantity || 1;
+        var isOutOfStock = stockQuantity <= 0;
+        var stockBadge = isOutOfStock ? 
+            '<div class="out-of-stock-badge-card">Out of Stock</div>' : 
+            (stockQuantity <= 5 ? '<div class="low-stock-badge-card">Only ' + stockQuantity + ' left!</div>' : '');
 
-        if (!isOwnProduct) {
+        if (!isOwnProduct && !isOutOfStock) {
             addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', ' + product.price + ')">' +
                 '<img src="' + baseUrl + 'images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">' +
                 'Add to Cart' +
                 '</button>';
-        } else {
+        } else if (isOutOfStock) {
+            addToCartButton = '<button class="out-of-stock-btn" disabled>Out of Stock</button>';
+        } else if (isOwnProduct) {
             addToCartButton = '<button class="own-product-btn" disabled>Your Product</button>';
         }
         
@@ -169,6 +179,7 @@ function displayProducts(products) {
                     onerror="this.src='${baseUrl}images/default-product.png'"
                     loading="lazy">
                 <div class="condition-badge ${conditionClass}">${conditionText}</div>
+                ${stockBadge}
             </div>
             <div class="prod-info-container">
                 <h3 class="prod-name">${escapeHtml(product.name)}</h3>
@@ -278,7 +289,8 @@ function displayProductDetails(product) {
     var $container = $('#product-details-container');
     if (!$container.length) return;
     
-    var mainImage = product.image;
+    // FIXED: Use image_url, fallback to image
+    var mainImage = product.image_url || product.image;
     if (mainImage && !mainImage.startsWith('http') && !mainImage.startsWith('/')) {
         mainImage = baseUrl + mainImage;
     }
@@ -328,7 +340,21 @@ function displayProductDetails(product) {
     var isOwnProduct = (typeof currentUserRole !== 'undefined' && currentUserRole === 'seller' && product.seller_id == currentUserId);
     var actionButtonsHtml = '';
     
-    if (!isOwnProduct) {
+    // Stock information
+    var stockQuantity = product.stock_quantity || 1;
+    var isOutOfStock = stockQuantity <= 0;
+    
+    // Stock status display
+    var stockStatusHtml = '';
+    if (isOutOfStock) {
+        stockStatusHtml = '<div class="stock-status out-of-stock"><span>❌ Out of Stock</span></div>';
+    } else if (stockQuantity <= 5) {
+        stockStatusHtml = '<div class="stock-status low-stock"><span>⚠️ Only ' + stockQuantity + ' left in stock!</span></div>';
+    } else {
+        stockStatusHtml = '<div class="stock-status in-stock"><span>✓ In Stock (' + stockQuantity + ' available)</span></div>';
+    }
+    
+    if (!isOwnProduct && !isOutOfStock) {
         actionButtonsHtml = `
             <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
                 <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart">
@@ -336,6 +362,8 @@ function displayProductDetails(product) {
             </button>
             <button class="buy-btn" onclick="buyNow(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">Buy Now</button>
         `;
+    } else if (isOutOfStock) {
+        actionButtonsHtml = `<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>`;
     } else {
         actionButtonsHtml = `<div class="own-product-message"><p>You cannot purchase your own product.</p></div>`;
     }
@@ -366,6 +394,7 @@ function displayProductDetails(product) {
                     <div class="cat-badge">
                         <p class="cat-name">${escapeHtml(product.category_name || 'General')}</p>
                     </div>
+                    ${stockStatusHtml}
                 </div>
                 
                 <div class="description">
@@ -406,7 +435,7 @@ function displayProductDetails(product) {
         <div class="actions">
             <div class="actions-card">
                 <div class="avail">
-                    <p><span class="num-avail">In Stock</span></p>
+                    ${stockStatusHtml}
                 </div>
                 <div class="action-btns">
                     ${actionButtonsHtml}
@@ -452,9 +481,4 @@ function displayProductDetails(product) {
 function buyNow(productId, productName, productPrice) {
     addToCart(productId, productName, productPrice);
     window.location.href = baseUrl + 'checkout.php';
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    return $('<div>').text(text).html();
 }

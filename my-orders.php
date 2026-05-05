@@ -6,85 +6,22 @@
  * This page displays all orders for the logged-in buyer
  */
 
-session_start();
-require_once 'php/config.php';
-require_once 'php/helpers.php';
+require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// Check if user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+// Check if user is logged in using centralized auth
+if (!$is_logged_in) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
-
-$user_id = $_SESSION['user_id'];
-$role = $_SESSION['role'];
 
 // Get filter parameters
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Query using order_items table
-$sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
-        u.full_name as seller_name, u.user_id as seller_id,
-        (SELECT GROUP_CONCAT(DISTINCT p.title SEPARATOR ', ') 
-         FROM order_items oi 
-         JOIN products p ON oi.product_id = p.product_id 
-         WHERE oi.order_id = o.order_id) as product_names,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
-        FROM orders o
-        JOIN users u ON o.seller_id = u.user_id
-        WHERE o.buyer_id = ?";
-
-$params = [$user_id];
-$types = "i";
-
-if ($status_filter !== 'all') {
-    $sql .= " AND o.status = ?";
-    $params[] = $status_filter;
-    $types .= "s";
-}
-
-if (!empty($search_term)) {
-    $sql .= " AND (u.full_name LIKE ? OR o.order_id LIKE ?)";
-    $search_param = "%$search_term%";
-    $params[] = $search_param;
-    $params[] = $search_param;
-    $types .= "ss";
-}
-
-$sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
-        u.full_name as seller_name, u.user_id as seller_id,
-        (SELECT GROUP_CONCAT(DISTINCT p.title SEPARATOR ', ') 
-         FROM order_items oi 
-         JOIN products p ON oi.product_id = p.product_id 
-         WHERE oi.order_id = o.order_id) as product_names,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
-        FROM orders o
-        JOIN users u ON o.seller_id = u.user_id
-        WHERE o.buyer_id = ?
-        ORDER BY 
-            CASE o.status 
-                WHEN 'pending' THEN 1
-                WHEN 'processing' THEN 2
-                WHEN 'shipped' THEN 3
-                WHEN 'completed' THEN 4
-                WHEN 'cancelled' THEN 5
-                ELSE 6
-            END,
-            o.created_at DESC";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param($types, ...$params);
-$stmt->execute();
-$result = $stmt->get_result();
-
-$orders = [];
-while ($row = $result->fetch_assoc()) {
-    $orders[] = $row;
-}
-$stmt->close();
+// Get orders using helper function
+$orders = getBuyerOrders($conn, $current_user_id, $status_filter, $search_term);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -92,6 +29,7 @@ $stmt->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
@@ -183,16 +121,16 @@ $stmt->close();
                         </div>
                         
                         <div class="order-footer">
-                            <button class="view-details-btn" onclick="viewOrderDetails(<?php echo $order['order_id']; ?>)">
+                            <button class="view-details-btn" data-order-id="<?php echo $order['order_id']; ?>">
                                 View Details
                             </button>
                             <?php if ($order['status'] === 'pending'): ?>
-                                <button class="cancel-btn" onclick="cancelOrder(<?php echo $order['order_id']; ?>)">
+                                <button class="cancel-btn" data-order-id="<?php echo $order['order_id']; ?>">
                                     Cancel Order
                                 </button>
                             <?php endif; ?>
                             <?php if ($order['status'] === 'completed'): ?>
-                                <button class="review-btn" onclick="leaveReview(<?php echo $order['order_id']; ?>, <?php echo $order['seller_id']; ?>, '<?php echo addslashes($order['seller_name']); ?>')">
+                                <button class="review-btn" data-order-id="<?php echo $order['order_id']; ?>" data-seller-id="<?php echo $order['seller_id']; ?>" data-seller-name="<?php echo htmlspecialchars($order['seller_name']); ?>">
                                     Leave Review
                                 </button>
                             <?php endif; ?>
@@ -220,7 +158,7 @@ $stmt->close();
     <div class="order-modal-content">
         <div class="order-modal-header">
             <h2>Order Details</h2>
-            <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
+            <button class="order-modal-close">&times;</button>
         </div>
         <div id="order-details-content" class="order-details-content">
             <div class="loading-spinner">Loading order details...</div>
@@ -233,7 +171,7 @@ $stmt->close();
     <div class="review-modal-content">
         <div class="review-modal-header">
             <h2>Review Seller</h2>
-            <button class="review-modal-close" onclick="closeReviewModal()">&times;</button>
+            <button class="review-modal-close">&times;</button>
         </div>
         <div class="review-form-container">
             <p class="review-info">Rate your experience with <strong id="seller-name"></strong></p>
@@ -267,32 +205,123 @@ $stmt->close();
 <?php include 'includes/footer.php'; ?>
 
 <script>
+/*
+ * ConsuTrade - My Orders Functionality
+ * Author: Kamogelo Phale
+ */
 var baseUrl = '<?php echo $baseUrl; ?>';
-var currentOrderId = null;
-var currentSellerId = null;
+var currentUserId = <?php echo $current_user_id; ?>;
+var currentUserRole = '<?php echo $current_user['role']; ?>';
+var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 
-// NOTE: escapeHtml() is already defined in main.js - DO NOT REDEFINE
+$(document).ready(function() {
+    // View order details
+    $('.view-details-btn').on('click', function() {
+        var orderId = $(this).data('order-id');
+        viewOrderDetails(orderId);
+    });
+    
+    // Cancel order
+    $('.cancel-btn').on('click', function() {
+        var orderId = $(this).data('order-id');
+        cancelOrder(orderId);
+    });
+    
+    // Leave review
+    $('.review-btn').on('click', function() {
+        var orderId = $(this).data('order-id');
+        var sellerId = $(this).data('seller-id');
+        var sellerName = $(this).data('seller-name');
+        leaveReview(orderId, sellerId, sellerName);
+    });
+    
+    // Close modals
+    $('.order-modal-close, .review-modal-close').on('click', function() {
+        closeOrderModal();
+        closeReviewModal();
+    });
+    
+    // Click outside to close
+    $(window).on('click', function(e) {
+        if ($(e.target).is('#order-modal')) {
+            closeOrderModal();
+        }
+        if ($(e.target).is('#review-modal')) {
+            closeReviewModal();
+        }
+    });
+    
+    // Rating stars
+    $('.rating-stars .star').on('click', function() {
+        var rating = $(this).data('rating');
+        $('#review-rating').val(rating);
+        
+        $('.rating-stars .star').each(function(index) {
+            if (index < rating) {
+                $(this).addClass('active');
+            } else {
+                $(this).removeClass('active');
+            }
+        });
+    });
+    
+    // Review form submission
+    $('#review-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var rating = $('#review-rating').val();
+        if (rating == 0) {
+            showErrorToast('Please select a rating');
+            return;
+        }
+        
+        var reviewData = {
+            order_id: $('#review-order-id').val(),
+            seller_id: $('#review-seller-id').val(),
+            rating: rating,
+            comment: $('#review-comment').val()
+        };
+        
+        $.ajax({
+            url: baseUrl + 'php/submit-review.php',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(reviewData),
+            success: function(data) {
+                if (data.success) {
+                    showSuccessToast('Thank you for your review!');
+                    closeReviewModal();
+                } else {
+                    showErrorToast('Error submitting review: ' + data.message);
+                }
+            },
+            error: function() {
+                showErrorToast('Something went wrong');
+            }
+        });
+    });
+});
 
 function viewOrderDetails(orderId) {
-    var modal = document.getElementById('order-modal');
-    var content = document.getElementById('order-details-content');
+    var $modal = $('#order-modal');
+    var $content = $('#order-details-content');
     
-    modal.classList.add('active');
-    content.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
+    $modal.addClass('active');
+    $content.html('<div class="loading-spinner">Loading order details...</div>');
     
     $.get(baseUrl + 'php/get-order-details.php?order_id=' + orderId, function(data) {
         if (data.success) {
             displayOrderDetails(data.order);
         } else {
-            content.innerHTML = '<p class="error">Error loading order details.</p>';
+            $content.html('<p class="error">Error loading order details.</p>');
         }
     }).fail(function() {
-        content.innerHTML = '<p class="error">Error loading order details.</p>';
+        $content.html('<p class="error">Error loading order details.</p>');
     });
 }
 
 function displayOrderDetails(order) {
-    var content = document.getElementById('order-details-content');
+    var $content = $('#order-details-content');
     
     var itemsHtml = '';
     if (order.items && order.items.length > 0) {
@@ -318,7 +347,7 @@ function displayOrderDetails(order) {
         });
     }
     
-    content.innerHTML = `
+    $content.html(`
         <div class="order-info-section">
             <div class="info-row">
                 <span class="info-label">Order Number:</span>
@@ -333,8 +362,8 @@ function displayOrderDetails(order) {
                 <span class="info-value status-${order.status}">${order.status.toUpperCase()}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Seller:</span>
-                <span class="info-value">${escapeHtml(order.seller_name)}</span>
+                <span class="info-label">${currentUserRole === 'buyer' ? 'Seller' : 'Buyer'}:</span>
+                <span class="info-value">${escapeHtml(order.other_party_name)}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Shipping Address:</span>
@@ -361,7 +390,7 @@ function displayOrderDetails(order) {
                 <span>R ${parseFloat(order.total).toFixed(2)}</span>
             </div>
         </div>
-    `;
+    `);
 }
 
 function cancelOrder(orderId) {
@@ -373,35 +402,34 @@ function cancelOrder(orderId) {
             data: JSON.stringify({ order_id: orderId }),
             success: function(data) {
                 if (data.success) {
-                    alert('Order cancelled successfully!');
-                    location.reload();
+                    showSuccessToast('Order cancelled successfully!');
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert('Error cancelling order: ' + data.message);
+                    showErrorToast('Error cancelling order: ' + data.message);
                 }
             },
             error: function() {
-                alert('Something went wrong');
+                showErrorToast('Something went wrong');
             }
         });
     }
 }
 
 function leaveReview(orderId, sellerId, sellerName) {
-    currentOrderId = orderId;
-    currentSellerId = sellerId;
-    
-    document.getElementById('review-order-id').value = orderId;
-    document.getElementById('review-seller-id').value = sellerId;
-    document.getElementById('seller-name').textContent = sellerName;
-    document.getElementById('review-modal').classList.add('active');
+    $('#review-order-id').val(orderId);
+    $('#review-seller-id').val(sellerId);
+    $('#seller-name').text(sellerName);
+    $('#review-modal').addClass('active');
 }
 
 function closeOrderModal() {
-    document.getElementById('order-modal').classList.remove('active');
+    $('#order-modal').removeClass('active');
 }
 
 function closeReviewModal() {
-    document.getElementById('review-modal').classList.remove('active');
+    $('#review-modal').removeClass('active');
     resetRatingStars();
 }
 
@@ -409,77 +437,7 @@ function resetRatingStars() {
     $('#review-rating').val(0);
     $('.rating-stars .star').removeClass('active');
 }
-
-// Rating stars functionality
-$(document).ready(function() {
-    $('.rating-stars .star').on('click', function() {
-        var rating = $(this).data('rating');
-        $('#review-rating').val(rating);
-        
-        $('.rating-stars .star').each(function(index) {
-            if (index < rating) {
-                $(this).addClass('active');
-            } else {
-                $(this).removeClass('active');
-            }
-        });
-    });
-    
-    // Review form submission
-    $('#review-form').on('submit', function(e) {
-        e.preventDefault();
-        
-        var rating = $('#review-rating').val();
-        if (rating == 0) {
-            alert('Please select a rating');
-            return;
-        }
-        
-        var reviewData = {
-            order_id: $('#review-order-id').val(),
-            seller_id: $('#review-seller-id').val(),
-            rating: rating,
-            comment: $('#review-comment').val()
-        };
-        
-        $.ajax({
-            url: baseUrl + 'php/submit-review.php',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(reviewData),
-            success: function(data) {
-                if (data.success) {
-                    alert('Thank you for your review!');
-                    closeReviewModal();
-                } else {
-                    alert('Error submitting review: ' + data.message);
-                }
-            },
-            error: function() {
-                alert('Something went wrong');
-            }
-        });
-    });
-});
-
-// Close modal when clicking outside
-var modal = document.getElementById('order-modal');
-if (modal) {
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeOrderModal();
-        }
-    });
-}
-
-var reviewModal = document.getElementById('review-modal');
-if (reviewModal) {
-    reviewModal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeReviewModal();
-        }
-    });
-}
 </script>
+
 </body>
 </html>

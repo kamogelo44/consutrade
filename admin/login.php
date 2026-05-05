@@ -2,19 +2,29 @@
 /*
  * ConsuTrade - Admin/Seller Login
  * Author: Kamogelo Phale
+ * 
+ * Login page for administrators and sellers to access dashboards
  */
 
-// No session start here yet - we'll start after successful login
-require_once dirname(__DIR__) . '/php/helpers.php';
+require_once dirname(__DIR__) . '/init.php';
 
 $baseUrl = getBaseUrl();
 $error = '';
 $role_type = '';
 
+// If already logged in as admin or seller, redirect to appropriate dashboard
+if ($is_logged_in) {
+    if ($current_user['role'] === 'admin') {
+        header('Location: admin-dashboard.php');
+        exit;
+    } elseif ($current_user['role'] === 'seller') {
+        header('Location: seller-dashboard.php');
+        exit;
+    }
+}
+
 // Process login form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once dirname(__DIR__) . '/php/config.php';
-    
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $role_type = $_POST['role_type'] ?? 'admin';
@@ -23,26 +33,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please enter both email and password';
     } else {
         if ($role_type === 'admin') {
-            $user = authenticateAdmin($conn, $email, $password);
-            if ($user) {
-                startAdminSession($user);
-                header('Location: admin-dashboard.php');
-                exit();
+            // Authenticate admin
+            $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'admin'";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('s', $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 1) {
+                $user = $result->fetch_assoc();
+                if (password_verify($password, $user['password'])) {
+                    // Use centralized login function
+                    loginUser($user['user_id'], $user['full_name'], $user['email'], $user['role']);
+                    header('Location: admin-dashboard.php');
+                    exit;
+                } else {
+                    $error = 'Invalid email or password.';
+                }
             } else {
                 $error = 'Invalid email or password.';
             }
+            $stmt->close();
         } else {
-            $user = authenticateSeller($conn, $email, $password);
-            if ($user) {
-                startSellerSession($user);
-                header('Location: seller-dashboard.php');
-                exit();
+            // Authenticate seller
+            $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'seller'";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('s', $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 1) {
+                $user = $result->fetch_assoc();
+                if (password_verify($password, $user['password'])) {
+                    // Use centralized login function
+                    loginUser($user['user_id'], $user['full_name'], $user['email'], $user['role']);
+                    header('Location: seller-dashboard.php');
+                    exit;
+                } else {
+                    $error = 'Invalid email or password.';
+                }
             } else {
                 $error = 'Invalid email or password.';
             }
+            $stmt->close();
         }
-        
-        $conn->close();
     }
 }
 ?>
@@ -52,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Login - ConsuTrade</title>
+    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin-login.css">
@@ -81,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="input-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" value="<?php echo htmlspecialchars($email ?? ''); ?>" required autocomplete="email" autofocus>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required autocomplete="email" autofocus>
                 </div>
                 
                 <div class="input-group password-group">
