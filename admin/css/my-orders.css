@@ -236,6 +236,10 @@
     height: 16px;
 }
 
+.customer-details #cart {
+    filter: invert(0%) sepia(100%) saturate(36%) hue-rotate(293deg) brightness(103%) contrast(101%);
+}
+
 .order-amount {
     text-align: right;
     flex: 1;

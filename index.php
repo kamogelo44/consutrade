@@ -165,7 +165,7 @@ unset($_SESSION['flash']);
  * ConsuTrade - Registration Error Handling
  * Author: Kamogelo Phale
  */
-$(document).ready(function() {
+$(function() {
     openModal($('#register-modal'));
     
     <?php if (!empty($registerFormData['full_name'])): ?>
@@ -219,7 +219,7 @@ $(document).ready(function() {
  * ConsuTrade - Login Error Handling
  * Author: Kamogelo Phale
  */
-$(document).ready(function() {
+$(function() {
     openModal($('#login-modal'));
     
     <?php if (!empty($loginEmail)): ?>
@@ -258,7 +258,7 @@ $(document).ready(function() {
 /*
  * Featured Products Loader
  */
-$(document).ready(function() {
+$(function() {
     loadFeaturedProducts();
 
     function loadFeaturedProducts() {

@@ -9,13 +9,13 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Check if seller is logged in using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'seller') {
+if (!isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
 }
 
 $baseUrl = getBaseUrl();
-$user_id = $current_user_id;
+$user_id = getCurrentSeller()['user_id'] ?? 0;
 
 // Get user data using helper
 $user = getUserById($conn, $user_id);

@@ -11,8 +11,8 @@ require_once dirname(__DIR__) . '/init.php';
 $baseUrl = getBaseUrl();
 
 // Check if user is logged in and is admin using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'admin') {
-    header('Location: ' . $baseUrl . 'index.php');
+if (!isAdminLoggedIn()) {
+    header('Location: login.php');
     exit;
 }
 

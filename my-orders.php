@@ -35,7 +35,7 @@ $orders = getBuyerOrders($conn, $current_user_id, $status_filter, $search_term);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/my-orders.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/products.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
@@ -214,7 +214,7 @@ var currentUserId = <?php echo $current_user_id; ?>;
 var currentUserRole = '<?php echo $current_user['role']; ?>';
 var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 
-$(document).ready(function() {
+$(function() {
     // View order details
     $('.view-details-btn').on('click', function() {
         var orderId = $(this).data('order-id');

@@ -9,7 +9,7 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Check if admin is logged in using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'admin') {
+if (!isAdminLoggedIn()) {
     header('Location: login.php');
     exit;
 }
@@ -97,7 +97,7 @@ var currentPage = 1;
 var currentRole = 'all';
 var currentSearch = '';
 
-$(document).ready(function() {
+$(function() {
     loadUsers();
     
     $('#role-filter').on('change', function() {

@@ -9,7 +9,7 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Check if seller is logged in using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'seller') {
+if (!isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
 }
@@ -324,7 +324,7 @@ $current_page = 'products';
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
     <script>
-    $(document).ready(function() {
+    $(function() {
         // Main image preview
         $('#main-image').on('change', function(e) {
             var file = this.files[0];

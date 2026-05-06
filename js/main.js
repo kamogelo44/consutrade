@@ -439,7 +439,7 @@ function initErrorClearingOnInput() {
 }
 
 // Document Ready
-$(document).ready(function() { 
+$(function() { 
     // ========== MOBILE MENU TOGGLE ==========
     var $mainToggle = $('#mobileMenuToggle');
     var $sideClose = $('#sideMenuClose');

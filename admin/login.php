@@ -13,14 +13,12 @@ $error = '';
 $role_type = '';
 
 // If already logged in as admin or seller, redirect to appropriate dashboard
-if ($is_logged_in) {
-    if ($current_user['role'] === 'admin') {
-        header('Location: admin-dashboard.php');
-        exit;
-    } elseif ($current_user['role'] === 'seller') {
-        header('Location: seller-dashboard.php');
-        exit;
-    }
+if (isAdminLoggedIn()) {
+    header('Location: admin-dashboard.php');
+    exit;
+} elseif (isSellerLoggedIn()) {
+    header('Location: seller-dashboard.php');
+    exit;
 }
 
 // Process login form
@@ -43,8 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result->num_rows === 1) {
                 $user = $result->fetch_assoc();
                 if (password_verify($password, $user['password'])) {
-                    // Use centralized login function
-                    loginUser($user['user_id'], $user['full_name'], $user['email'], $user['role']);
+                    // Clear any existing session first
+                    if (session_status() === PHP_SESSION_ACTIVE) {
+                        session_destroy();
+                    }
+                    // Use admin-specific login function
+                    loginAdmin($user['user_id'], $user['full_name'], $user['email'], $user['role']);
                     header('Location: admin-dashboard.php');
                     exit;
                 } else {
@@ -65,8 +67,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result->num_rows === 1) {
                 $user = $result->fetch_assoc();
                 if (password_verify($password, $user['password'])) {
-                    // Use centralized login function
-                    loginUser($user['user_id'], $user['full_name'], $user['email'], $user['role']);
+                    // Clear any existing session first
+                    if (session_status() === PHP_SESSION_ACTIVE) {
+                        session_destroy();
+                    }
+                    // Use seller-specific login function
+                    loginSeller($user['user_id'], $user['full_name'], $user['email'], $user['role']);
                     header('Location: seller-dashboard.php');
                     exit;
                 } else {

@@ -9,11 +9,10 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Check if seller is logged in
-if (!$is_logged_in || $current_user['role'] !== 'seller') {
-    header('Location: ' . getBaseUrl() . 'admin/login.php');
+if (!isSellerLoggedIn()) {
+    header('Location: login.php');
     exit;
 }
-
 $baseUrl = getBaseUrl();
 
 // Get user data using helper
@@ -226,7 +225,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
-$(document).ready(function() {
+$(function() {
     function updateProgress() {
         var fields = ['#product-title', '#product-category', '#product-price', '#product-stock', '#product-description'];
         var filled = 0;

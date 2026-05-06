@@ -9,7 +9,7 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Check if seller is logged in using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'seller') {
+if (!isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
 }

@@ -9,7 +9,7 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Check if seller is logged in using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'seller') {
+if (!isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
 }
@@ -103,7 +103,7 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
                                         <span><?php echo htmlspecialchars($order['buyer_email']); ?></span>
                                     </div>
                                     <div class="customer-details">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="20px" height="20px" alt="Items">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" id="cart" width="20px" height="20px" alt="Items">
                                         <span><?php echo $order['item_count']; ?> item(s)</span>
                                     </div>
                                 </div>

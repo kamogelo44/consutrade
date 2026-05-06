@@ -56,7 +56,7 @@ if ($product_id <= 0) {
     var baseUrl = '<?php echo $baseUrl; ?>';
     var productId = <?php echo $product_id; ?>;
     
-    $(document).ready(function() {
+    $(function() {
         if (productId > 0 && typeof loadProductDetails === 'function') {
             loadProductDetails(productId);
         } else if (productId > 0) {

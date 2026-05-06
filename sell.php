@@ -160,7 +160,7 @@ if ($is_logged_in && $current_user['role'] === 'admin') {
     /*
      * ConsuTrade - Sell Page Functionality
      */
-    $(document).ready(function() {
+    $(function() {
         // Register button - open registration modal with seller role selected
         $('#seller-register-btn, #create-seller-btn').on('click', function(e) {
             e.preventDefault();

@@ -9,7 +9,7 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Check if seller is logged in using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'seller') {
+if (!isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
 }
@@ -20,7 +20,7 @@ $user_id = $current_user_id;
 // Get user data using helper
 $user = getUserById($conn, $user_id);
 
-if (!$user) {
+if (!isSellerLoggedIn()) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
@@ -224,7 +224,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
  * ConsuTrade - Seller Profile Functionality
  * Author: Kamogelo Phale
  */
-$(document).ready(function() {
+$(function() {
     // Show flash message
     function showMessage(message, isError) {
         if (isError) {

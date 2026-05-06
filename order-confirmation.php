@@ -36,7 +36,7 @@ if ($order_id == 0 && isset($_GET['m_payment_id'])) {
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/confirmation.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
 </head>
 <body>
 
@@ -72,7 +72,7 @@ if ($order_id == 0 && isset($_GET['m_payment_id'])) {
  * ConsuTrade - Order Confirmation Functionality
  * Author: Kamogelo Phale
  */
-$(document).ready(function() {
+$(function() {
     // Update cart count to 0 after successful order
     updateCartCount();
 });

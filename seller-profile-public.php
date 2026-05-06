@@ -128,7 +128,7 @@ var currentUserId = <?php echo $current_user_id ?: 0; ?>;
 var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
 var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 
-$(document).ready(function() {
+$(function() {
     loadSellerStats();
     loadSellerProducts();
     

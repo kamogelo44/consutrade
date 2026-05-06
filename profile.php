@@ -46,7 +46,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/profile.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/products.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
@@ -220,7 +220,7 @@ function closeDeleteModal() {
     closeModal($('#delete-modal'));
 }
 
-$(document).ready(function() {
+$(function() {
     // Show flash message
     function showMessage(message, isError) {
         if (isError) {

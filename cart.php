@@ -31,7 +31,7 @@ if ($is_logged_in && $current_user_id) {
     <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">

@@ -503,7 +503,7 @@ window.cancelOrder = function(orderId) {
 };
 
 // ========== DOCUMENT READY ==========
-$(document).ready(function() {
+$(function() {
     initMobileSidebar('admin');
     initMobileSidebar('seller');
     initUserDropdown();

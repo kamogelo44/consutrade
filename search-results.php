@@ -190,7 +190,7 @@ var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 var currentUserId = <?php echo $current_user_id ?: 0; ?>;
 var currentUserRole = <?php echo json_encode($current_user ? $current_user['role'] : ''); ?>;
 
-$(document).ready(function() {
+$(function() {
     loadSearchResults();
     setupEventListeners();
 });

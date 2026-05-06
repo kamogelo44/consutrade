@@ -13,30 +13,19 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_domain', '');
     ini_set('session.cookie_lifetime', 0);
     ini_set('session.gc_maxlifetime', 7200);
-    
-    // Set consistent session name for main website
-    session_name('CONSUTRADE_USER_SESSION');
 }
 
-// Load config first
+// Load required files
 require_once __DIR__ . '/php/config.php';
-
-// Load auth (handles session start)
+require_once __DIR__ . '/php/helpers.php';
 require_once __DIR__ . '/php/auth.php';
 
-// Load helpers
-require_once __DIR__ . '/php/helpers.php';
+// Auto-detect and start appropriate session
+$session_data = initAppSession();
 
-// Initialize authentication (starts session if needed)
-initAuth();
-
-// Make current user available globally
-$current_user = getCurrentUser();
-$is_logged_in = isLoggedIn();
-$current_user_id = getCurrentUserId();
-
-// Update cart count in session if logged in
-if ($is_logged_in) {
-    updateCartCount();
-}
+// Make variables available globally
+$current_user = $session_data['current_user'];
+$is_logged_in = $session_data['is_logged_in'];
+$current_user_id = $session_data['current_user_id'];
+$baseUrl = getBaseUrl();
 ?>

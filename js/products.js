@@ -31,7 +31,7 @@ let currentSort = 'newest';
 let totalPages = 1;
 
 // Initialize product listings when page loads
-$(document).ready(function() {
+$(function() {
     // Only run if we're on a page with products grid
     if ($('#products-grid').length) {
         loadProducts();
@@ -46,6 +46,7 @@ $(document).ready(function() {
         }
     }
 });
+
 
 // ========== PRODUCT LISTINGS FUNCTIONS ==========
 

@@ -74,7 +74,7 @@ $payfast_data = preparePayFastData([
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/checkout.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
 </head>
 <body>
 
