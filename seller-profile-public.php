@@ -39,14 +39,10 @@ $profile_image = getUserProfileImage($seller['profile_image']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($seller['full_name']); ?> - Seller Profile | ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/products.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/seller-profile-public.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
+    
+    <!-- Master Stylesheet (includes all CSS) -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    
 </head>
 <body>
 

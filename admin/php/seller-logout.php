@@ -11,7 +11,7 @@ require_once dirname(__DIR__) . '/../init.php';
 // Use centralized logout function
 logoutUser();
 
-// Redirect to seller login page
-header('Location: ../login.php');
+// Redirect to login page
+header('Location: login.php');
 exit;
 ?>

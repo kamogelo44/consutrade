@@ -21,12 +21,12 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? 'admin-dashboard.php' : 'sel
 ?>
 
 <div class="<?php echo $role_class; ?>-sidebar" id="<?php echo $role_class; ?>SideMenu">
-    <!-- Sidebar Header - Logo on left, Close button (X) on right -->
+    <!-- Sidebar Header -->
     <div class="<?php echo $role_class; ?>-sidebar-header">
         <div class="<?php echo $role_class; ?>-sidebar-logo">
             <a href="<?php echo $dashboard_home; ?>">Consu<span>Trade</span></a>
         </div>
-        <!-- Close button (X) - only visible on mobile to close sidebar -->
+        <!-- Close button (X) - mobile only -->
         <button class="<?php echo $role_class; ?>-sidebar-close" id="<?php echo $role_class; ?>SidebarClose">
             <span></span><span></span>
         </button>
@@ -109,13 +109,10 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? 'admin-dashboard.php' : 'sel
     </div>
 </div>
 
-<!-- Mobile Toggle Button (Hamburger) - Opens sidebar -->
+<!-- Mobile Toggle Button (Hamburger) -->
 <button class="<?php echo $role_class; ?>-mobile-toggle" id="<?php echo $role_class; ?>Hamburger">
     <span></span><span></span><span></span>
 </button>
 
-<!-- Menu Overlay - Dims background when sidebar is open -->
+<!-- Menu Overlay -->
 <div class="<?php echo $role_class; ?>-menu-overlay" id="<?php echo $role_class; ?>MenuOverlay"></div>
-
-<!-- Main Content Container -->
-<main class="<?php echo $role_class; ?>-main-content">

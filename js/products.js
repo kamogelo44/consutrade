@@ -287,101 +287,68 @@ function showError(message) {
 }
 
 function displayProductDetails(product) {
-    var $container = $('#product-details-container');
+    var $container = $('#product-details-content');
     if (!$container.length) return;
     
-    // FIXED: Use image_url, fallback to image
-    var mainImage = product.image_url || product.image;
-    if (mainImage && !mainImage.startsWith('http') && !mainImage.startsWith('/')) {
-        mainImage = baseUrl + mainImage;
-    }
+    // Get main image (use image_url from product)
+    var mainImage = product.image_url || baseUrl + 'images/default-product.png';
     
-    var galleryImages = [];
-    if (product.gallery_images) {
-        try {
-            galleryImages = JSON.parse(product.gallery_images);
-        } catch(e) {
-            galleryImages = [];
-        }
-    }
+    // Get gallery images (array from API)
+    var galleryImages = product.gallery_images || [];
+    var allImages = [mainImage, ...galleryImages];
     
-    var allImages = [mainImage];
-    for (var i = 0; i < galleryImages.length; i++) {
-        var thumbPath = galleryImages[i];
-        if (thumbPath && !thumbPath.startsWith('http') && !thumbPath.startsWith('/')) {
-            thumbPath = baseUrl + thumbPath;
-        }
-        allImages.push(thumbPath);
-    }
-    
+    // Build gallery HTML (first 4 images)
     var galleryHtml = '';
-    for (var i = 0; i < 4; i++) {
-        var thumbPath = allImages[i] || baseUrl + 'images/default-product.png';
+    for (var i = 0; i < Math.min(allImages.length, 4); i++) {
         var activeClass = (i === 0) ? 'active' : '';
         galleryHtml += `
-            <div class="small-img ${activeClass}" data-image-index="${i}" data-image-path="${thumbPath}">
-                <img src="${thumbPath}" alt="Product thumbnail" onerror="this.src='${baseUrl}images/default-product.png'">
+            <div class="small-img ${activeClass}" data-image-index="${i}" data-image-path="${allImages[i]}">
+                <img src="${allImages[i]}" alt="Product thumbnail" onerror="this.src='${baseUrl}images/default-product.png'">
             </div>
         `;
     }
     
-    var verificationBadge = product.is_verified ? 
-        '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20" alt="verification"><p>Verified Seller</p></div>' : 
-        '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20" alt="not-verified"><p>Not Verified Seller</p></div>';
+    // Stock status
+    var stockHtml = '';
+    var isOutOfStock = product.stock_quantity <= 0;
+    if (isOutOfStock) {
+        stockHtml = '<div class="stock-status out-of-stock"><span>❌ Out of Stock</span></div>';
+    } else if (product.stock_quantity <= 5) {
+        stockHtml = '<div class="stock-status low-stock"><span>⚠️ Only ' + product.stock_quantity + ' left!</span></div>';
+    } else {
+        stockHtml = '<div class="stock-status in-stock"><span>✓ In Stock (' + product.stock_quantity + ' available)</span></div>';
+    }
     
-    var rating = product.avg_rating || 0;
+    // Stars rating
     var starsHtml = '';
     for (var i = 1; i <= 5; i++) {
-        starsHtml += (i <= rating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
+        starsHtml += (i <= product.avg_rating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
     }
     
-    var conditionHtml = (product.condition && product.condition !== '') ? `<p class="sub-head">Condition: <span class="condition">${escapeHtml(product.condition)}</span></p>` : '';
-    var locationHtml = (product.location) ? `<p class="sub-head">Location: <span class="city">${escapeHtml(product.location)}</span></p>` : '';
-    
-    var isOwnProduct = (typeof currentUserRole !== 'undefined' && currentUserRole === 'seller' && product.seller_id == currentUserId);
+    // Action buttons
     var actionButtonsHtml = '';
-    
-    // Stock information
-    var stockQuantity = product.stock_quantity || 1;
-    var isOutOfStock = stockQuantity <= 0;
-    
-    // Stock status display
-    var stockStatusHtml = '';
-    if (isOutOfStock) {
-        stockStatusHtml = '<div class="stock-status out-of-stock"><span>❌ Out of Stock</span></div>';
-    } else if (stockQuantity <= 5) {
-        stockStatusHtml = '<div class="stock-status low-stock"><span>⚠️ Only ' + stockQuantity + ' left in stock!</span></div>';
-    } else {
-        stockStatusHtml = '<div class="stock-status in-stock"><span>✓ In Stock (' + stockQuantity + ' available)</span></div>';
-    }
-    
-    if (!isOwnProduct && !isOutOfStock) {
+    if (!isOutOfStock) {
         actionButtonsHtml = `
             <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart">
-                Add to Cart
+                <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart"> Add to Cart
             </button>
             <button class="buy-btn" onclick="buyNow(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">Buy Now</button>
         `;
-    } else if (isOutOfStock) {
-        actionButtonsHtml = `<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>`;
     } else {
-        actionButtonsHtml = `<div class="own-product-message"><p>You cannot purchase your own product.</p></div>`;
+        actionButtonsHtml = '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
     }
     
     $container.html(`
         <div class="breadcrumb">
-            <a href="${baseUrl}index.php">Home</a>
-            <span> > </span>
-            <a href="${baseUrl}product-listings.php">Product Listings</a>
-            <span> > </span>
+            <a href="${baseUrl}index.php">Home</a> > 
+            <a href="${baseUrl}product-listings.php">Products</a> > 
             <span>${escapeHtml(product.name)}</span>
         </div>
         
         <div class="top-items">
             <div class="product-imgs">
-                <div class="main-img" id="main-image-container">
-                    <img src="${mainImage}" alt="${escapeHtml(product.name)}" onerror="this.src='${baseUrl}images/default-product.png'" id="main-product-image">
+                <div class="main-img">
+                    <img src="${mainImage}" alt="${escapeHtml(product.name)}" id="main-product-image" onerror="this.src='${baseUrl}images/default-product.png'">
                 </div>
                 <div class="smaller-imgs" id="gallery-container">
                     ${galleryHtml}
@@ -389,23 +356,19 @@ function displayProductDetails(product) {
             </div>
             
             <div class="product-info">
-                <div class="price-desc">
-                    <h1 class="details-prod-name">${escapeHtml(product.name)}</h1>
-                    <p class="details-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                    <div class="cat-badge">
-                        <p class="cat-name">${escapeHtml(product.category_name || 'General')}</p>
-                    </div>
-                    ${stockStatusHtml}
+                <h1 class="details-prod-name">${escapeHtml(product.name)}</h1>
+                <p class="details-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                <div class="cat-badge">
+                    <span class="cat-name">${escapeHtml(product.category_name)}</span>
                 </div>
-                
+                ${stockHtml}
                 <div class="description">
                     <p class="sub-head">Description</p>
                     <p class="des">${escapeHtml(product.description || 'No description available.')}</p>
                 </div>
-                
                 <div class="con-loc">
-                    ${conditionHtml}
-                    ${locationHtml}
+                    ${product.condition ? `<p><strong>Condition:</strong> ${escapeHtml(product.condition)}</p>` : ''}
+                    ${product.location ? `<p><strong>Location:</strong> ${escapeHtml(product.location)}</p>` : ''}
                 </div>
             </div>
         </div>
@@ -414,18 +377,19 @@ function displayProductDetails(product) {
             <div class="rev-container">
                 <div class="seller-profile">
                     <div class="profile-pic">
-                        <img src="${getSellerAvatar(product.profile_image)}" width="40" height="40" alt="${escapeHtml(product.seller_name)}" 
-                            onerror="this.src='${baseUrl}images/icons/profile-svgrepo-com.svg'">
+                        <img src="${product.seller_profile_image || baseUrl + 'images/icons/profile-svgrepo-com.svg'}" width="40" height="40" alt="${escapeHtml(product.seller_name)}">
                     </div>
                     <p class="seller-name">${escapeHtml(product.seller_name)}</p>
                 </div>
                 <div class="verification">
-                    ${verificationBadge}
+                    ${product.is_verified ? 
+                        '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20"><p>Verified Seller</p></div>' : 
+                        '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20"><p>Not Verified</p></div>'}
                 </div>
                 <div class="star-reviews">
                     <h1>Seller Reviews</h1>
                     ${starsHtml}
-                    <p id="output">Rating: ${rating}/5 (${product.review_count || 0} reviews)</p>
+                    <p>Rating: ${product.avg_rating}/5 (${product.review_count || 0} reviews)</p>
                 </div>
                 <button class="view-profile" onclick="window.location.href='${baseUrl}seller-profile-public.php?seller_id=${product.seller_id}'">
                     View Seller Profile
@@ -435,47 +399,24 @@ function displayProductDetails(product) {
 
         <div class="actions">
             <div class="actions-card">
-                <div class="avail">
-                    ${stockStatusHtml}
-                </div>
+                ${stockHtml}
                 <div class="action-btns">
                     ${actionButtonsHtml}
                 </div>
                 <div class="payfast-badge">
-                    <img src="${baseUrl}images/icons/Payfast logo.svg" alt="PayFast" width="80">
+                    <img src="${baseUrl}images/icons/Payfast logo.svg" alt="PayFast">
                     <span>Secure payments by PayFast</span>
                 </div>
             </div>
         </div>
     `);
     
-    // Attach click handler for gallery thumbnails
+    // Gallery click handler
     $('.small-img').on('click', function() {
-        var $this = $(this);
-        var imagePath = $this.data('image-path');
-        var $mainImage = $('#main-product-image');
-        
-        if ($mainImage.length && imagePath) {
-            $mainImage.css('opacity', '0.5');
-            $mainImage.attr('src', imagePath);
-            $mainImage.off('load error').on('load', function() {
-                $(this).css('opacity', '1');
-            }).on('error', function() {
-                $(this).attr('src', baseUrl + 'images/default-product.png').css('opacity', '1');
-            });
-        }
-        
+        var imagePath = $(this).data('image-path');
+        $('#main-product-image').attr('src', imagePath);
         $('.small-img').removeClass('active');
-        $this.addClass('active');
-    });
-    
-    $('.star').on('click', function() {
-        if (typeof isLoggedIn !== 'undefined' && isLoggedIn) {
-            window.location.href = baseUrl + 'my-orders.php';
-        } else {
-            alert('Please login to leave a review');
-            window.location.href = baseUrl + 'index.php';
-        }
+        $(this).addClass('active');
     });
 }
 

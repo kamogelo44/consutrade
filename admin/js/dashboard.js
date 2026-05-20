@@ -3,44 +3,217 @@
  * Author: Kamogelo Phale
  * 
  * Handles both Admin and Seller dashboards
- * Centralized functions to avoid duplication across files
+ * Includes shared modal functions for order details
  */
 
 // ========== GLOBAL VARIABLES ==========
 var baseUrl = baseUrl || '';
 
-// ========== TOAST NOTIFICATIONS (reuse from main.js if available) ==========
-function showToast(message, type) {
-    if (typeof window.showSuccessToast === 'function') {
-        if (type === 'success') showSuccessToast(message);
-        else if (type === 'error') showErrorToast(message);
-        else showInfoToast(message);
-    } else {
-        alert(message);
+// ========== HELPER FUNCTIONS ==========
+function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+
+function capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// ========== STATUS CLASS HELPER ==========
+function getStatusClass(status) {
+    switch(status) {
+        case 'pending': return 'status-pending';
+        case 'processing': return 'status-processing';
+        case 'shipped': return 'status-shipped';
+        case 'completed': return 'status-completed';
+        case 'cancelled': return 'status-cancelled';
+        default: return '';
     }
 }
 
-// ========== PRODUCT FUNCTIONS (global for reuse) ==========
+// ========== SHARED MODAL FUNCTIONS ==========
+// These work for both my-orders.php and all-orders.php
 
-/**
- * Edit product - redirect to edit page
- */
+function openOrderModal(orderId) {
+    var modal = document.getElementById('orderModal');
+    var body = document.getElementById('orderModalBody');
+    var footer = document.getElementById('orderModalFooter');
+    
+    if (!modal) return;
+    
+    modal.classList.add('active');
+    body.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
+    footer.innerHTML = ''; // Clear footer, will be populated by display function
+    
+    $.ajax({
+        url: baseUrl + 'php/get-order-details.php?order_id=' + orderId,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.success && data.order) {
+                displayOrderDetailsInModal(data.order);
+            } else {
+                body.innerHTML = '<p class="error" style="color: var(--error); text-align: center;">Unable to load order details.</p>';
+                footer.innerHTML = '';
+            }
+        },
+        error: function() {
+            body.innerHTML = '<p class="error" style="color: var(--error); text-align: center;">Error loading order details.</p>';
+            footer.innerHTML = '';
+        }
+    });
+}
+
+function displayOrderDetailsInModal(order) {
+    var body = document.getElementById('orderModalBody');
+    var footer = document.getElementById('orderModalFooter');
+    var isAdmin = window.location.pathname.includes('all-orders.php');
+    
+    var itemsHtml = '';
+    if (order.items && order.items.length > 0) {
+        for (var i = 0; i < order.items.length; i++) {
+            var item = order.items[i];
+            var imagePath = item.image_url;
+            if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                imagePath = baseUrl + imagePath;
+            }
+            itemsHtml += `
+                <div class="order-item">
+                    <div class="order-item-img">
+                        <img src="${imagePath || baseUrl + 'images/default-product.png'}" onerror="this.src='${baseUrl}images/default-product.png'">
+                    </div>
+                    <div class="order-item-details">
+                        <h4>${escapeHtml(item.product_name)}</h4>
+                        <p>Quantity: ${item.quantity}</p>
+                    </div>
+                    <div class="order-item-price">R ${parseFloat(item.price).toFixed(2)}</div>
+                </div>
+            `;
+        }
+    }
+    
+    body.innerHTML = `
+        <div class="order-info-section">
+            <div class="info-row">
+                <span class="info-label">Order Number:</span>
+                <span class="info-value">#${order.order_id}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Order Date:</span>
+                <span class="info-value">${order.created_at}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Order Status:</span>
+                <span class="info-value status-${order.status}">${order.status ? order.status.toUpperCase() : 'UNKNOWN'}</span>
+            </div>
+            ${isAdmin ? `
+                <div class="info-row">
+                    <span class="info-label">Customer:</span>
+                    <span class="info-value">${escapeHtml(order.buyer_name || order.other_party_name || 'N/A')}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Seller:</span>
+                    <span class="info-value">${escapeHtml(order.seller_name || order.other_party_name || 'N/A')}</span>
+                </div>
+            ` : `
+                <div class="info-row">
+                    <span class="info-label">Customer Name:</span>
+                    <span class="info-value">${escapeHtml(order.buyer_name || order.other_party_name || 'N/A')}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Customer Email:</span>
+                    <span class="info-value">${escapeHtml(order.buyer_email || 'N/A')}</span>
+                </div>
+            `}
+            ${order.shipping_address ? `
+            <div class="info-row">
+                <span class="info-label">Shipping Address:</span>
+                <span class="info-value">${escapeHtml(order.shipping_address)}</span>
+            </div>
+            ` : ''}
+        </div>
+        
+        <h4>Order Items</h4>
+        <div class="order-items-list">
+            ${itemsHtml || '<p class="no-items">No items found.</p>'}
+        </div>
+        
+        <div class="order-total-section">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span>R ${parseFloat(order.subtotal || 0).toFixed(2)}</span>
+            </div>
+            <div class="total-row">
+                <span>Delivery Fee:</span>
+                <span>R ${parseFloat(order.delivery_fee || 0).toFixed(2)}</span>
+            </div>
+            <div class="total-row grand-total">
+                <span>Total:</span>
+                <span>R ${parseFloat(order.total || 0).toFixed(2)}</span>
+            </div>
+        </div>
+    `;
+    
+    // Add action buttons only - NO duplicate close button (X button handles closing)
+    var actionButtons = '';
+    if (order.status === 'pending') {
+        actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
+    } else if (order.status === 'processing') {
+        actionButtons = '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\'); closeOrderModal();">Mark as Shipped</button>';
+    } else if (order.status === 'shipped') {
+        actionButtons = '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\'); closeOrderModal();">Mark as Completed</button>';
+    }
+    if (order.status === 'pending' || order.status === 'processing') {
+        actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
+    }
+    
+    footer.innerHTML = actionButtons;
+}
+
+function closeOrderModal() {
+    var modal = document.getElementById('orderModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// Close modal when clicking outside
+$(document).on('click', '#orderModal', function(e) {
+    if (e.target === this) closeOrderModal();
+});
+
+// Handle sidebar close when modal opens
+function initModalSidebarHandler() {
+    var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
+    var $sideMenu = $('#' + prefix + 'SideMenu');
+    
+    $(document).on('click', '.view-details-btn, .view-btn, [data-modal-open]', function() {
+        if ($sideMenu.hasClass('active')) {
+            $sideMenu.data('was-open', true);
+            $sideMenu.removeClass('active');
+            $('#' + prefix + 'MenuOverlay').removeClass('active');
+        }
+    });
+    
+    $(document).on('click', '.modal-close', function() {
+        if ($sideMenu.data('was-open') === true) {
+            $sideMenu.addClass('active');
+            $('#' + prefix + 'MenuOverlay').addClass('active');
+            $sideMenu.removeData('was-open');
+        }
+    });
+}
+
+// ========== PRODUCT FUNCTIONS ==========
 window.editProduct = function(productId) {
     if (productId) {
         window.location.href = baseUrl + 'admin/edit-product.php?id=' + productId;
     }
 };
 
-/**
- * Delete product with confirmation
- */
 window.deleteProduct = function(productId) {
     if (!productId) return;
     
     if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-        var $btn = $('.delete-btn[data-id="' + productId + '"]');
-        $btn.prop('disabled', true).text('Deleting...');
-        
         $.ajax({
             url: baseUrl + 'admin/php/delete-product.php',
             type: 'POST',
@@ -49,71 +222,90 @@ window.deleteProduct = function(productId) {
             dataType: 'json',
             success: function(data) {
                 if (data.success) {
-                    showToast('Product deleted successfully', 'success');
+                    if (typeof showSuccessToast === 'function') {
+                        showSuccessToast('Product deleted successfully');
+                    }
                     if (typeof window.loadSellerProducts === 'function') {
                         window.loadSellerProducts();
                     } else {
                         location.reload();
                     }
                 } else {
-                    showToast('Error: ' + data.message, 'error');
-                    $btn.prop('disabled', false).text('Delete');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('Error: ' + data.message);
+                    }
                 }
             },
             error: function() {
-                showToast('Something went wrong. Please try again.', 'error');
-                $btn.prop('disabled', false).text('Delete');
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('Something went wrong. Please try again.');
+                }
             }
         });
     }
 };
 
-/**
- * View order details
- */
 window.viewOrder = function(orderId) {
     if (orderId) {
-        window.location.href = baseUrl + 'admin/my-orders.php?view=' + orderId;
+        var path = window.location.pathname;
+        if (path.includes('all-orders.php') || path.includes('admin-dashboard.php')) {
+            window.location.href = baseUrl + 'admin/all-orders.php?view=' + orderId;
+        } else {
+            window.location.href = baseUrl + 'admin/my-orders.php?view=' + orderId;
+        }
     }
 };
 
-/**
- * Update order status
- */
 window.updateOrderStatus = function(orderId, newStatus) {
-    $.ajax({
-        url: baseUrl + 'admin/php/update-order-status.php',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ order_id: orderId, status: newStatus }),
-        dataType: 'json',
-        success: function(data) {
-            if (data.success) {
-                showToast(data.message, 'success');
-                setTimeout(function() {
-                    location.reload();
-                }, 1500);
-            } else {
-                showToast('Error: ' + data.message, 'error');
+    var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
+    if (newStatus === 'cancelled') {
+        confirmMsg = 'Are you sure you want to cancel this order? This action cannot be undone.';
+    }
+    
+    if (confirm(confirmMsg)) {
+        $.ajax({
+            url: baseUrl + 'admin/php/update-order-status.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ order_id: orderId, status: newStatus }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    if (typeof showSuccessToast === 'function') {
+                        showSuccessToast(data.message || 'Order status updated successfully!');
+                    }
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('Error: ' + (data.message || 'Unknown error'));
+                    }
+                }
+            },
+            error: function() {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('Something went wrong. Please try again.');
+                }
             }
-        },
-        error: function() {
-            showToast('Something went wrong', 'error');
-        }
-    });
+        });
+    }
 };
 
+window.processOrder = function(orderId) { updateOrderStatus(orderId, 'processing'); };
+window.shipOrder = function(orderId) { updateOrderStatus(orderId, 'shipped'); };
+window.completeOrder = function(orderId) { updateOrderStatus(orderId, 'completed'); };
+window.cancelOrder = function(orderId) { updateOrderStatus(orderId, 'cancelled'); };
+
 // ========== SELLER PRODUCTS FUNCTION ==========
-window.loadSellerProducts = function(limit = null) {
+window.loadSellerProducts = function(limit) {
     var $grid = $('#listings-grid, #products-grid');
     if (!$grid.length) return;
     
     $grid.html('<div class="loading-spinner">Loading your products...</div>');
     
     var url = baseUrl + 'admin/php/get-seller-products.php';
-    if (limit) {
-        url += '?limit=' + limit;
-    }
+    if (limit) url += '?limit=' + limit;
     
     $.ajax({
         url: url,
@@ -123,11 +315,7 @@ window.loadSellerProducts = function(limit = null) {
             if (data.success && data.products && data.products.length) {
                 displaySellerProducts($grid, data.products);
             } else {
-                var emptyHtml = '<div class="empty-listings">' +
-                    '<p>You haven\'t listed any products yet.</p>' +
-                    '<button class="add-listing-btn" onclick="window.location.href=\'' + baseUrl + 'admin/add-product.php\'">+ Add Your First Product</button>' +
-                    '</div>';
-                $grid.html(emptyHtml);
+                $grid.html('<div class="empty-listings"><p>You haven\'t listed any products yet.</p><button class="add-listing-btn" onclick="window.location.href=\'' + baseUrl + 'admin/add-product.php\'">+ Add Your First Product</button></div>');
             }
         },
         error: function() {
@@ -136,14 +324,11 @@ window.loadSellerProducts = function(limit = null) {
     });
 };
 
-/**
- * Display seller products in grid
- */
 function displaySellerProducts($grid, products) {
     $grid.empty();
     
     $.each(products, function(i, product) {
-        var imagePath = product.image || product.image_url;
+        var imagePath = product.display_image || product.image || product.image_url;
         if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/') && !imagePath.startsWith(baseUrl)) {
             imagePath = baseUrl + imagePath;
         }
@@ -153,17 +338,17 @@ function displaySellerProducts($grid, products) {
             stockBadge = '<span class="stock-badge out-of-stock">Out of Stock</span>';
         } else if (product.stock_quantity <= 5) {
             stockBadge = '<span class="stock-badge low-stock">Only ' + product.stock_quantity + ' left</span>';
-        } else {
-            stockBadge = '<span class="stock-badge in-stock">In Stock (' + product.stock_quantity + ')</span>';
         }
         
-        var card = $('<div>').addClass('listing-card product-card').attr('data-product-id', product.id);
+        var productTitle = product.title || product.name;
+        
+        var card = $('<div>').addClass('listing-card product-card');
         card.html(
             '<div class="listing-img product-image">' +
-            '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(product.name || product.title) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+            '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(productTitle) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
             '</div>' +
             '<div class="listing-info product-details">' +
-            '<h3 class="listing-title product-title">' + escapeHtml(product.name || product.title) + '</h3>' +
+            '<h3 class="listing-title product-title">' + escapeHtml(productTitle) + '</h3>' +
             '<p class="listing-price product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
             stockBadge +
             '<div class="listing-actions product-actions">' +
@@ -176,22 +361,6 @@ function displaySellerProducts($grid, products) {
     });
 }
 
-// ========== HELPER FUNCTIONS ==========
-function escapeHtml(text) {
-    if (!text) return '';
-    return $('<div>').text(text).html();
-}
-
-function capitalizeFirst(str) {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function setText(id, value) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = value;
-}
-
 // ========== ADMIN DASHBOARD FUNCTIONS ==========
 function loadAdminStats() {
     $.ajax({
@@ -200,15 +369,10 @@ function loadAdminStats() {
         dataType: 'json',
         success: function(data) {
             if (data.success) {
+                setText('totalRevenue', 'R ' + (data.total_earnings || 0).toFixed(2));
                 setText('totalUsers', data.total_users || 0);
-                setText('totalBuyers', data.total_buyers || 0);
-                setText('totalSellers', data.total_sellers || 0);
                 setText('totalProducts', data.total_products || 0);
-                setText('activeProducts', data.active_products || 0);
-                setText('totalOrders', data.total_orders || 0);
                 setText('pendingOrders', data.pending_orders || 0);
-                setText('completedOrders', data.completed_orders || 0);
-                setText('totalEarnings', 'R ' + (data.total_earnings || 0).toFixed(2));
             }
         },
         error: function() {
@@ -229,26 +393,28 @@ function loadRecentUsers() {
             if (data.success && data.users && data.users.length) {
                 $tbody.empty();
                 $.each(data.users, function(i, user) {
+                    var roleClass = user.role === 'admin' ? 'role-admin' : (user.role === 'seller' ? 'role-seller' : 'role-buyer');
                     $tbody.append(
                         '<tr>' +
                         '<td>' + escapeHtml(user.full_name) + '</td>' +
                         '<td>' + escapeHtml(user.email) + '</td>' +
-                        '<td><span class="role-badge role-' + user.role + '">' + capitalizeFirst(user.role) + '</span></td>' +
+                        '<td><span class="role-badge ' + roleClass + '">' + capitalizeFirst(user.role) + '</span></td>' +
                         '<td>' + escapeHtml(user.created_at) + '</td>' +
                         '</tr>'
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="4" style="text-align: center;">No users found</td></tr>');
+                $tbody.html('<tr><td colspan="4" class="loading-cell">No users found</td</tr>');
             }
         },
         error: function() {
-            $tbody.html('<tr><td colspan="4" style="text-align: center;">Error loading users</td></tr>');
+            $tbody.html('<tr><td colspan="4" class="loading-cell">Error loading users</td</tr>');
         }
     });
 }
 
-function loadRecentOrders(limit = 5) {
+function loadRecentOrders(limit) {
+    limit = limit || 5;
     var $tbody = $('#recent-orders-table');
     if (!$tbody.length) return;
     
@@ -260,13 +426,7 @@ function loadRecentOrders(limit = 5) {
             if (data.success && data.orders && data.orders.length) {
                 $tbody.empty();
                 $.each(data.orders, function(i, order) {
-                    var statusClass = '';
-                    if (order.status === 'pending') statusClass = 'status-pending';
-                    else if (order.status === 'processing') statusClass = 'status-processing';
-                    else if (order.status === 'shipped') statusClass = 'status-shipped';
-                    else if (order.status === 'completed') statusClass = 'status-completed';
-                    else if (order.status === 'cancelled') statusClass = 'status-cancelled';
-                    
+                    var statusClass = getStatusClass(order.status);
                     $tbody.append(
                         '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
                         '<td>#' + order.id + '</td>' +
@@ -278,13 +438,19 @@ function loadRecentOrders(limit = 5) {
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="5" style="text-align: center;">No orders found</td></tr>');
+                $tbody.html('<tr><td colspan="5" class="loading-cell">No orders found</td</tr>');
             }
         },
         error: function() {
-            $tbody.html('<tr><td colspan="5" style="text-align: center;">Error loading orders</td></tr>');
+            $tbody.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td</tr>');
         }
     });
+}
+
+function loadAdminDashboard() {
+    loadAdminStats();
+    loadRecentUsers();
+    loadRecentOrders(5);
 }
 
 // ========== SELLER DASHBOARD FUNCTIONS ==========
@@ -298,10 +464,6 @@ function loadSellerStats() {
                 setText('stat-earnings', 'R ' + parseFloat(data.total_earnings || 0).toFixed(2));
                 setText('stat-products', data.total_products || 0);
                 setText('stat-pending', data.pending_orders || 0);
-                setText('stat-completed', data.completed_orders || 0);
-                setText('stat-shipped', data.shipped_orders || 0);
-                setText('stat-processing', data.processing_orders || 0);
-                setText('stat-rating', data.avg_rating ? data.avg_rating + ' / 5' : 'No reviews yet');
             }
         },
         error: function() {
@@ -310,7 +472,8 @@ function loadSellerStats() {
     });
 }
 
-function loadSellerRecentOrders(limit = 5) {
+function loadSellerRecentOrders(limit) {
+    limit = limit || 5;
     var $ordersList = $('#recent-orders-list');
     if (!$ordersList.length) return;
     
@@ -322,13 +485,7 @@ function loadSellerRecentOrders(limit = 5) {
             if (data.success && data.orders && data.orders.length) {
                 $ordersList.empty();
                 $.each(data.orders, function(i, order) {
-                    var statusClass = '';
-                    if (order.status === 'pending') statusClass = 'status-pending';
-                    else if (order.status === 'processing') statusClass = 'status-processing';
-                    else if (order.status === 'shipped') statusClass = 'status-shipped';
-                    else if (order.status === 'completed') statusClass = 'status-completed';
-                    else if (order.status === 'cancelled') statusClass = 'status-cancelled';
-                    
+                    var statusClass = getStatusClass(order.status);
                     $ordersList.append(
                         '<div class="order-item" onclick="viewOrder(' + order.id + ')">' +
                         '<div class="order-info">' +
@@ -336,7 +493,6 @@ function loadSellerRecentOrders(limit = 5) {
                         '<span class="order-status ' + statusClass + '">' + capitalizeFirst(order.status) + '</span>' +
                         '</div>' +
                         '<div class="order-details">' +
-                        '<span class="order-buyer">' + escapeHtml(order.buyer_name) + '</span>' +
                         '<span class="order-total">R ' + parseFloat(order.total).toFixed(2) + '</span>' +
                         '<span class="order-date">' + order.created_at + '</span>' +
                         '</div>' +
@@ -353,74 +509,12 @@ function loadSellerRecentOrders(limit = 5) {
     });
 }
 
-function loadAdminDashboard() {
-    loadAdminStats();
-    loadRecentUsers();
-    loadRecentOrders();
-}
-
 function loadSellerDashboard() {
     loadSellerStats();
-    window.loadSellerProducts(4);
+    if (typeof window.loadSellerProducts === 'function') {
+        window.loadSellerProducts(4);
+    }
     loadSellerRecentOrders(5);
-}
-
-// ========== RECENT ORDERS FOR SELLER PAGE ==========
-function loadAllSellerOrders(page = 1, status = 'all', search = '') {
-    var $tbody = $('#orders-table-body');
-    if (!$tbody.length) return;
-    
-    $tbody.html('<tr><td colspan="7" style="text-align: center;">Loading orders...</td></tr>');
-    
-    $.ajax({
-        url: baseUrl + 'admin/php/get-seller-orders.php',
-        type: 'GET',
-        dataType: 'json',
-        data: { page: page, status: status, search: search },
-        success: function(data) {
-            if (data.success && data.orders && data.orders.length) {
-                $tbody.empty();
-                $.each(data.orders, function(i, order) {
-                    var statusClass = '';
-                    if (order.status === 'pending') statusClass = 'status-pending';
-                    else if (order.status === 'processing') statusClass = 'status-processing';
-                    else if (order.status === 'shipped') statusClass = 'status-shipped';
-                    else if (order.status === 'completed') statusClass = 'status-completed';
-                    else if (order.status === 'cancelled') statusClass = 'status-cancelled';
-                    
-                    var actionButtons = '';
-                    if (order.status === 'pending') {
-                        actionButtons = '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.id + ', \'processing\')">Process</button>';
-                    } else if (order.status === 'processing') {
-                        actionButtons = '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.id + ', \'shipped\')">Mark Shipped</button>';
-                    } else if (order.status === 'shipped') {
-                        actionButtons = '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.id + ', \'completed\')">Complete</button>';
-                    } else if (order.status === 'completed') {
-                        actionButtons = '<span class="completed-label">Completed</span>';
-                    } else if (order.status === 'cancelled') {
-                        actionButtons = '<span class="cancelled-label">Cancelled</span>';
-                    }
-                    
-                    $tbody.append(
-                        '<tr>' +
-                        '<td>#' + order.id + '</td>' +
-                        '<td>' + escapeHtml(order.buyer_name) + '</td>' +
-                        '<td>' + order.items_count + '</td>' +
-                        '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
-                        '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
-                        '<td>' + order.created_at + '</td>' +
-                        '<td class="action-buttons">' + actionButtons + '</td>' +
-                        '</tr>'
-                    );
-                });
-            } else {
-                $tbody.html('<tr><td colspan="7" style="text-align: center;">No orders found</td></tr>');
-            }
-        },
-        error: function() {
-            $tbody.html('<tr><td colspan="7" style="text-align: center;">Error loading orders</td></tr>');
-        }
-    });
 }
 
 // ========== MOBILE SIDEBAR TOGGLE ==========
@@ -436,14 +530,14 @@ function initMobileSidebar(prefix) {
         $sideMenu.addClass('active');
         if ($overlay.length) $overlay.addClass('active');
         $hamburger.css('opacity', '0').css('visibility', 'hidden');
-        $('body').addClass(prefix + '-menu-open').css('overflow', 'hidden');
+        $('body').css('overflow', 'hidden');
     }
     
     function closeSidebar() {
         $sideMenu.removeClass('active');
         if ($overlay.length) $overlay.removeClass('active');
         $hamburger.css('opacity', '1').css('visibility', 'visible');
-        $('body').removeClass(prefix + '-menu-open').css('overflow', '');
+        $('body').css('overflow', '');
     }
     
     $hamburger.on('click', openSidebar);
@@ -451,74 +545,21 @@ function initMobileSidebar(prefix) {
     if ($overlay.length) $overlay.on('click', closeSidebar);
     
     $('.' + prefix + '-sidebar-nav a, .' + prefix + '-sidebar-link').on('click', function() {
-        if ($(window).width() <= 768) {
-            closeSidebar();
-        }
+        if ($(window).width() <= 1024) closeSidebar();
     });
 }
-
-// ========== USER DROPDOWN TOGGLE ==========
-function initUserDropdown() {
-    var $userInfo = $('#adminUserInfo, #sellerUserInfo');
-    var $dropdownMenu = $('#adminDropdownMenu, #sellerDropdownMenu');
-    
-    if (!$userInfo.length || !$dropdownMenu.length) return;
-    
-    $userInfo.on('click', function(e) {
-        e.stopPropagation();
-        $dropdownMenu.toggleClass('show');
-    });
-    
-    $(document).on('click', function(e) {
-        if (!$userInfo.is(e.target) && !$dropdownMenu.is(e.target) && 
-            !$userInfo.has(e.target).length && !$dropdownMenu.has(e.target).length) {
-            $dropdownMenu.removeClass('show');
-        }
-    });
-}
-
-// ========== ORDER STATUS UPDATE FUNCTIONS ==========
-window.processOrder = function(orderId) {
-    if (confirm('Process this order?')) {
-        updateOrderStatus(orderId, 'processing');
-    }
-};
-
-window.shipOrder = function(orderId) {
-    if (confirm('Mark this order as shipped?')) {
-        updateOrderStatus(orderId, 'shipped');
-    }
-};
-
-window.completeOrder = function(orderId) {
-    if (confirm('Mark this order as completed?')) {
-        updateOrderStatus(orderId, 'completed');
-    }
-};
-
-window.cancelOrder = function(orderId) {
-    if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
-        updateOrderStatus(orderId, 'cancelled');
-    }
-};
 
 // ========== DOCUMENT READY ==========
 $(function() {
     initMobileSidebar('admin');
     initMobileSidebar('seller');
-    initUserDropdown();
+    initModalSidebarHandler();
     
-    // Check which dashboard we're on and load appropriate data
     if ($('#totalUsers').length || $('#recent-users-table').length) {
         loadAdminDashboard();
     }
     
     if ($('#stat-products').length || $('#listings-grid').length) {
         loadSellerDashboard();
-    }
-    
-    // For orders page
-    if ($('#orders-table-body').length) {
-        loadAllSellerOrders();
     }
 });

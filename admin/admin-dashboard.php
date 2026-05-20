@@ -1,14 +1,6 @@
 <?php
-/*
- * ConsuTrade - Admin Dashboard
- * Author: Kamogelo Phale
- * 
- * Main admin dashboard page showing marketplace statistics
- */
-
 require_once dirname(__DIR__) . '/init.php';
 
-// Check if admin is logged in using centralized auth
 if (!isAdminLoggedIn()) {
     header('Location: login.php');
     exit;
@@ -16,13 +8,8 @@ if (!isAdminLoggedIn()) {
 
 $baseUrl = getBaseUrl();
 $user_id = $current_user_id;
-
-// Get user data
 $user = getUserById($conn, $user_id);
 $profile_image = getUserProfileImage($user['profile_image'] ?? null);
-
-// Set current page for active sidebar link
-$current_page = 'dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,109 +17,64 @@ $current_page = 'dashboard';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - ConsuTrade</title>
-    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar-clean.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
+    <script>var baseUrl = '<?php echo $baseUrl; ?>';</script>
 </head>
-<body class="admin-dashboard-page">
+<body style="margin:0;background:var(--gray-bg);">
 
 <?php include 'includes/sidebar.php'; ?>
 
-<main class="dashboard-main">
+<main class="admin-main-content">
     <div class="dashboard-content">
-        <!-- Welcome Section -->
         <div class="welcome-section">
-            <h2>Welcome back, <?php echo htmlspecialchars($user['full_name']); ?>!</h2>
+            <h1>Welcome back, <?php echo htmlspecialchars($user['full_name']); ?>!</h1>
             <p>Here's what's happening with your marketplace today.</p>
         </div>
 
-        <!-- Stats Section -->
         <div class="stats-grid">
+            <!-- Stats cards use shared CSS classes -->
             <div class="stat-card">
-                <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users" class="stat-icon-img">
-                </div>
-                <div class="stat-info">
-                    <h3>Total Users</h3>
-                    <p class="stat-number" id="totalUsers">--</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products" class="stat-icon-img">
-                </div>
-                <div class="stat-info">
-                    <h3>Total Products</h3>
-                    <p class="stat-number" id="totalProducts">--</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders" class="stat-icon-img">
-                </div>
-                <div class="stat-info">
-                    <h3>Total Orders</h3>
-                    <p class="stat-number" id="totalOrders">--</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/clock-svgrepo-com.svg" alt="Pending" class="stat-icon-img">
-                </div>
-                <div class="stat-info">
-                    <h3>Pending Orders</h3>
-                    <p class="stat-number pending" id="pendingOrders">--</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats Row 2 -->
-        <div class="stats-grid" style="margin-top: 20px;">
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/money-total-line-svgrepo-com.svg" alt="Revenue" class="stat-icon-img">
-                </div>
                 <div class="stat-info">
                     <h3>Total Revenue</h3>
                     <p class="stat-number" id="totalRevenue">R0.00</p>
                 </div>
-            </div>
-            <div class="stat-card">
                 <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Sellers" class="stat-icon-img">
-                </div>
-                <div class="stat-info">
-                    <h3>Total Sellers</h3>
-                    <p class="stat-number" id="totalSellers">--</p>
+                    <img src="<?php echo $baseUrl; ?>images/icons/money-total-line-svgrepo-com.svg" alt="Revenue">
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Completed" class="stat-icon-img">
-                </div>
                 <div class="stat-info">
-                    <h3>Completed Orders</h3>
-                    <p class="stat-number" id="completedOrders">--</p>
+                    <h3>Total Users</h3>
+                    <p class="stat-number" id="totalUsers">--</p>
+                </div>
+                <div class="stat-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users">
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Active Products" class="stat-icon-img">
-                </div>
                 <div class="stat-info">
-                    <h3>Active Products</h3>
-                    <p class="stat-number" id="activeProducts">--</p>
+                    <h3>Total Products</h3>
+                    <p class="stat-number" id="totalProducts">--</p>
+                </div>
+                <div class="stat-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Pending Orders</h3>
+                    <p class="stat-number pending" id="pendingOrders">--</p>
+                </div>
+                <div class="stat-icon">
+                    <img src="<?php echo $baseUrl; ?>images/icons/clock-svgrepo-com.svg" alt="Pending">
                 </div>
             </div>
         </div>
 
-        <!-- Dashboard Sections -->
-        <div class="dashboard-sections">
-            <!-- Recent Users Section -->
+        <div class="dashboard-grid">
             <div class="section-card">
                 <div class="section-header">
                     <h2>Recent Users</h2>
@@ -141,21 +83,15 @@ $current_page = 'dashboard';
                 <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Joined</th>
-                            </tr>
+                            <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
                         </thead>
                         <tbody id="recent-users-table">
-                            <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                            <tr><td colspan="4" class="loading-cell">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Recent Orders Section -->
             <div class="section-card">
                 <div class="section-header">
                     <h2>Recent Orders</h2>
@@ -164,77 +100,12 @@ $current_page = 'dashboard';
                 <div class="table-wrapper">
                     <table class="data-table">
                         <thead>
-                            <tr>
-                                <th>Order #</th>
-                                <th>Customer</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
+                            <tr><th>Order #</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
                         </thead>
                         <tbody id="recent-orders-table">
-                            <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                            <tr><td colspan="5" class="loading-cell">Loading...</td></tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <!-- Quick Actions Section -->
-            <div class="section-card">
-                <div class="section-header">
-                    <h2>Quick Actions</h2>
-                </div>
-                <div class="profile-shortcuts">
-                    <a href="users.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>Manage Users</h3>
-                            <p>View and manage all users</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="all-products.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>All Products</h3>
-                            <p>Manage marketplace products</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="all-orders.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>All Orders</h3>
-                            <p>Track and manage orders</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="admin-profile.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>My Profile</h3>
-                            <p>Update your account settings</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="<?php echo $baseUrl; ?>admin/php/admin-logout.php" class="profile-shortcut-link logout-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>Logout</h3>
-                            <p>Sign out of your account</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
                 </div>
             </div>
         </div>
@@ -243,5 +114,27 @@ $current_page = 'dashboard';
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
+<script>
+// Close sidebar when modal opens, reopen when modal closes
+$(document).on('click', '[data-modal-open], .view-details-btn, .process-btn, .ship-btn, .complete-btn, .cancel-btn, .delete-btn, .edit-btn', function() {
+    var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
+    var $sideMenu = $('#' + prefix + 'SideMenu');
+    if ($sideMenu.hasClass('active')) {
+        $sideMenu.data('was-open', true);
+        $sideMenu.removeClass('active');
+        $('#' + prefix + 'MenuOverlay').removeClass('active');
+    }
+});
+
+$(document).on('click', '.modal-close, .btn-close, .order-modal-close', function() {
+    var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
+    var $sideMenu = $('#' + prefix + 'SideMenu');
+    if ($sideMenu.data('was-open') === true) {
+        $sideMenu.addClass('active');
+        $('#' + prefix + 'MenuOverlay').addClass('active');
+        $sideMenu.removeData('was-open');
+    }
+});
+</script>
 </body>
 </html>

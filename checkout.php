@@ -70,11 +70,9 @@ $payfast_data = preparePayFastData([
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
+    
+    <!-- Master Stylesheet (includes all CSS) -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
 </head>
 <body>
 

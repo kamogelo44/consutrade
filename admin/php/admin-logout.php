@@ -12,6 +12,6 @@ require_once dirname(__DIR__) . '/../init.php';
 logoutUser();
 
 // Redirect to admin login page
-header('Location: ../login.php');
+header('Location: login.php');
 exit;
 ?>

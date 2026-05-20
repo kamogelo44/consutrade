@@ -6,15 +6,14 @@
  * Returns recent orders for admin dashboard
  */
 
-require_once dirname(__DIR__) . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
-header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'orders' => [], 'message' => ''];
 
-// Check if admin is logged in using centralized auth
-if (!$is_logged_in || $current_user['role'] !== 'admin') {
+// Check if admin is logged in
+if (!isAdminLoggedIn()) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
@@ -43,7 +42,9 @@ $result = $stmt->get_result();
 $orders = [];
 while ($row = $result->fetch_assoc()) {
     $orders[] = [
+        'id' => (int)$row['order_id'],  // Changed from order_id to id for dashboard.js
         'order_id' => (int)$row['order_id'],
+        'total' => (float)$row['total_price'],  // Changed from total_price to total for dashboard.js
         'total_price' => (float)$row['total_price'],
         'status' => $row['status'],
         'created_at' => $row['created_at'],

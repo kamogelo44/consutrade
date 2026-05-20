@@ -3,12 +3,11 @@
  * ConsuTrade - Edit Product Page
  * Author: Kamogelo Phale
  * 
- * This page allows sellers to edit their existing products
+ * Sellers can edit products and manage gallery images
  */
 
 require_once dirname(__DIR__) . '/init.php';
 
-// Check if seller is logged in using centralized auth
 if (!isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
@@ -16,8 +15,6 @@ if (!isSellerLoggedIn()) {
 
 $baseUrl = getBaseUrl();
 $seller_id = $current_user_id;
-
-// Get product ID from URL
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
@@ -25,333 +22,228 @@ if ($product_id <= 0) {
     exit;
 }
 
-// Get user data for profile image (for sidebar)
-$user = getUserById($conn, $seller_id);
-$profile_image = getUserProfileImage($user['profile_image'] ?? null);
-
-// Get product data using helper
+// Get product data
 $product = getProductForEdit($conn, $product_id, $seller_id);
-
 if (!$product) {
     header('Location: my-products.php');
     exit;
 }
 
-$error_message = '';
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = trim($_POST['title'] ?? '');
-    $category_id = (int)($_POST['category_id'] ?? 0);
-    $price = (float)($_POST['price'] ?? 0);
-    $stock_quantity = (int)($_POST['stock_quantity'] ?? 1);
-    $description = trim($_POST['description'] ?? '');
-    $condition = !empty($_POST['condition']) ? trim($_POST['condition']) : NULL;
-    $location = trim($_POST['location'] ?? '');
-    
-    $errors = [];
-    
-    // Validate inputs
-    if (empty($title)) {
-        $errors[] = 'Product title is required';
-    }
-    
-    if ($category_id <= 0) {
-        $errors[] = 'Please select a category';
-    }
-    
-    if ($price <= 0) {
-        $errors[] = 'Please enter a valid price';
-    }
-    
-    if ($stock_quantity < 1) {
-        $errors[] = 'Stock quantity must be at least 1';
-    }
-    
-    if (empty($description)) {
-        $errors[] = 'Product description is required';
-    }
-    
-    // Handle image upload if new image is provided
-    $image_path = $product['image'];
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $new_image_path = convertToWebP($_FILES['image'], $seller_id, $title, 'main');
-        if ($new_image_path) {
-            // Delete old image if exists
-            if (!empty($product['image'])) {
-                deleteProductImage($product['image']);
-            }
-            $image_path = $new_image_path;
-        } else {
-            $errors[] = 'Failed to process image. Please try again.';
-        }
-    }
-    
-    // Update database if no errors
-    if (empty($errors)) {
-        $update_data = [
-            'title' => $title,
-            'description' => $description,
-            'price' => $price,
-            'stock_quantity' => $stock_quantity,
-            'condition' => $condition,
-            'location' => $location,
-            'category_id' => $category_id
-        ];
-        
-        $result = updateSellerProduct($conn, $product_id, $seller_id, $update_data);
-        
-        // Also update image separately if changed
-        if ($image_path !== $product['image']) {
-            $img_sql = "UPDATE products SET image_url = ? WHERE product_id = ? AND seller_id = ?";
-            $img_stmt = $conn->prepare($img_sql);
-            $img_stmt->bind_param('sii', $image_path, $product_id, $seller_id);
-            $img_stmt->execute();
-            $img_stmt->close();
-        }
-        
-        if ($result['success']) {
-            $_SESSION['flash'] = $result['message'];
-            header('Location: my-products.php');
-            exit;
-        } else {
-            $errors[] = $result['message'];
-        }
-    }
-    
-    if (!empty($errors)) {
-        $error_message = implode('<br>', $errors);
-    }
+// Get gallery images from product_images table
+$gallery_images = [];
+$gallery_stmt = $conn->prepare("SELECT image_id, image_url, is_primary, sort_order FROM product_images WHERE product_id = ? ORDER BY sort_order ASC");
+$gallery_stmt->bind_param('i', $product_id);
+$gallery_stmt->execute();
+$gallery_result = $gallery_stmt->get_result();
+while ($img = $gallery_result->fetch_assoc()) {
+    $gallery_images[] = $img;
 }
+$gallery_stmt->close();
 
-// Set current page for active sidebar link
-$current_page = 'products';
+$user = getUserById($conn, $seller_id);
+$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Product - ConsuTrade Seller</title>
-    <meta name="author" content="Kamogelo Phale">
+    <title>Edit Product - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/add-product.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar-clean.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/modal.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
-</head>
-<body class="edit-product-page seller-dashboard-page">
-    
-    <?php include 'includes/sidebar.php'; ?>
-
-    <main class="dashboard-main">
-        <div class="dashboard-content">
-            <!-- Breadcrumb Navigation -->
-            <div class="breadcrumb-nav">
-                <a href="seller-dashboard.php">Dashboard</a>
-                <span class="separator">›</span>
-                <a href="my-products.php">My Products</a>
-                <span class="separator">›</span>
-                <span class="current">Edit Product</span>
-            </div>
-
-            <!-- Edit Product Content -->
-            <div class="add-product-container">
-                <div class="add-product-header">
-                    <h1>Edit Product</h1>
-                    <p>Update your product information</p>
-                </div>
-
-                <!-- Flash Messages -->
-                <?php if (isset($_SESSION['flash'])): ?>
-                    <div class="success-message"><?php echo $_SESSION['flash']; unset($_SESSION['flash']); ?></div>
-                <?php endif; ?>
-                
-                <?php if ($error_message): ?>
-                    <div class="error-message"><?php echo $error_message; ?></div>
-                <?php endif; ?>
-
-                <div class="add-product-layout">
-                    <!-- Left Column: Tips & Progress -->
-                    <div class="left-column tips-column">
-                        <div class="tips-card">
-                            <h3>
-                                <img src="<?php echo $baseUrl; ?>images/icons/valid-document-svgrepo-com.svg" width="24px" height="24px" alt="Tips" class="icon">
-                                Listing Tips
-                            </h3>
-                            <ul class="tips-list">
-                                <li><img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="check"> Use clear, high-quality photos</li>
-                                <li><img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="check"> Write detailed product descriptions</li>
-                                <li><img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="check"> Price competitively</li>
-                                <li><img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="check"> Include product condition</li>
-                                <li><img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="check"> Set accurate stock quantity</li>
-                            </ul>
-                        </div>
-
-                        <div class="help-card">
-                            <h3>
-                                <img src="<?php echo $baseUrl; ?>images/icons/phone-number.svg" width="24px" height="24px" alt="Help">
-                                Need Help?
-                            </h3>
-                            <p>Contact our seller support:</p>
-                            <p><a href="mailto:seller@consutrade.co.za">seller@consutrade.co.za</a></p>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Product Form -->
-                    <div class="right-column form-column">
-                        <form id="edit-product-form" action="" method="post" enctype="multipart/form-data">
-                            <!-- Basic Information -->
-                            <fieldset class="form-section">
-                                <legend>Basic Information</legend>
-                                
-                                <div class="form-group">
-                                    <label for="product-title">Product Title</label>
-                                    <input type="text" id="product-title" name="title" required 
-                                           value="<?php echo htmlspecialchars($product['title']); ?>"
-                                           placeholder="e.g., Handmade Leather Bag">
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="product-category">Category</label>
-                                    <select id="product-category" name="category_id" required>
-                                        <option value="">Select Category</option>
-                                        <option value="1" <?php echo $product['category_id'] == 1 ? 'selected' : ''; ?>>Clothing & Accessories</option>
-                                        <option value="2" <?php echo $product['category_id'] == 2 ? 'selected' : ''; ?>>Electronics</option>
-                                        <option value="3" <?php echo $product['category_id'] == 3 ? 'selected' : ''; ?>>Food and Drinks</option>
-                                        <option value="4" <?php echo $product['category_id'] == 4 ? 'selected' : ''; ?>>Furniture</option>
-                                        <option value="5" <?php echo $product['category_id'] == 5 ? 'selected' : ''; ?>>Home & Garden</option>
-                                        <option value="6" <?php echo $product['category_id'] == 6 ? 'selected' : ''; ?>>Beauty & Health</option>
-                                        <option value="7" <?php echo $product['category_id'] == 7 ? 'selected' : ''; ?>>Other</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group half">
-                                        <label for="product-price">Price (R)</label>
-                                        <input type="number" id="product-price" name="price" step="0.01" required 
-                                               value="<?php echo $product['price']; ?>"
-                                               placeholder="0.00">
-                                    </div>
-                                    <div class="form-group half">
-                                        <label for="product-stock">Stock Quantity</label>
-                                        <input type="number" id="product-stock" name="stock_quantity" 
-                                               value="<?php echo $product['stock_quantity']; ?>" 
-                                               min="1" max="999" required>
-                                        <small>How many units do you have available?</small>
-                                    </div>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group half">
-                                        <label for="product-condition">Condition (if applicable)</label>
-                                        <select id="product-condition" name="condition">
-                                            <option value="">Not Applicable</option>
-                                            <option value="New" <?php echo $product['condition'] == 'New' ? 'selected' : ''; ?>>Brand New</option>
-                                            <option value="Like New" <?php echo $product['condition'] == 'Like New' ? 'selected' : ''; ?>>Like New</option>
-                                            <option value="Good" <?php echo $product['condition'] == 'Good' ? 'selected' : ''; ?>>Good</option>
-                                            <option value="Fair" <?php echo $product['condition'] == 'Fair' ? 'selected' : ''; ?>>Fair</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group half">
-                                        <label for="product-location">Location</label>
-                                        <input type="text" id="product-location" name="location" 
-                                               value="<?php echo htmlspecialchars($product['location'] ?? ''); ?>"
-                                               placeholder="e.g., Johannesburg, Soweto">
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="product-description">Description</label>
-                                    <textarea id="product-description" name="description" rows="5" 
-                                              placeholder="Describe your product in detail..."><?php echo htmlspecialchars($product['description']); ?></textarea>
-                                </div>
-                            </fieldset>
-
-                            <!-- Images Section -->
-                            <fieldset class="form-section">
-                                <legend>
-                                    <img src="<?php echo $baseUrl; ?>images/icons/photos-filled-svgrepo-com.svg" width="20px" height="20px" alt="Images">
-                                    Product Images
-                                </legend>
-                                
-                                <!-- Current Image Display -->
-                                <?php if (!empty($product['image'])): ?>
-                                    <div class="form-group">
-                                        <label>Current Image</label>
-                                        <div class="current-image">
-                                            <img src="<?php echo getProductImageUrl($product['image']); ?>" alt="Current product image" style="max-width: 200px; border-radius: 8px;">
-                                            <p style="font-size: 12px; color: #666; margin-top: 8px;">Leave empty to keep current image</p>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <!-- New Image Upload -->
-                                <div class="form-group">
-                                    <label>Change Image (Optional)</label>
-                                    <div class="image-upload-container" id="main-image-container">
-                                        <input type="file" id="main-image" name="image" accept="image/*" style="display: none;">
-                                        <div class="image-preview" id="main-image-preview">
-                                            <div class="upload-placeholder">
-                                                <img src="<?php echo $baseUrl; ?>images/icons/camera-svgrepo-com.svg" width="48px" height="48px" alt="Upload">
-                                                <p>Click to upload new image</p>
-                                                <small>Recommended: 800x800px, max 2MB</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </fieldset>
-
-                            <div class="form-actions">
-                                <button type="button" class="cancel-btn" onclick="window.location.href='my-products.php'">
-                                    <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" width="16px" height="16px" alt="Cancel">
-                                    Cancel
-                                </button>
-                                <button type="submit" class="submit-btn">
-                                    <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="Save">
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
-    <script>
-    $(function() {
-        // Main image preview
-        $('#main-image').on('change', function(e) {
-            var file = this.files[0];
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(event) {
-                    $('#main-image-preview').html('<img src="' + event.target.result + '" alt="Product preview" style="max-width: 100%; max-height: 200px; object-fit: contain;">');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                // Restore placeholder if no file selected
-                $('#main-image-preview').html(`
-                    <div class="upload-placeholder">
-                        <img src="${baseUrl}images/icons/camera-svgrepo-com.svg" width="48px" height="48px" alt="Upload">
-                        <p>Click to upload new image</p>
-                        <small>Recommended: 800x800px, max 2MB</small>
+    <script>var baseUrl = '<?php echo $baseUrl; ?>';</script>
+    <style>
+        .form-container { max-width: 800px; margin: 0 auto; background: var(--white); border-radius: var(--radius-lg); padding: var(--spacing-xl); border: 1px solid var(--border-light); }
+        .form-group { margin-bottom: var(--spacing-lg); }
+        .form-group label { display: block; font-weight: var(--font-semibold); margin-bottom: var(--spacing-sm); color: var(--dark-bg); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: var(--font-md); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); }
+        .btn-submit { background: var(--primary-color); color: var(--white); padding: 12px 24px; border: none; border-radius: var(--radius-md); cursor: pointer; }
+        .btn-cancel { background: var(--gray-bg-light); color: var(--gray-dark); padding: 12px 24px; border: 1px solid var(--border-light); border-radius: var(--radius-md); text-decoration: none; margin-left: var(--spacing-sm); }
+        .current-image { margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--gray-bg-light); border-radius: var(--radius-md); }
+        .current-image img { max-width: 150px; border-radius: var(--radius-md); }
+        .gallery-section { margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-light); }
+        .gallery-grid { display: flex; gap: var(--spacing-md); flex-wrap: wrap; margin-top: var(--spacing-md); }
+        .gallery-item { position: relative; width: 100px; height: 100px; border: 1px solid var(--border-light); border-radius: var(--radius-md); overflow: hidden; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .gallery-item .remove-btn { position: absolute; top: 4px; right: 4px; background: var(--error); color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; cursor: pointer; font-size: 12px; line-height: 18px; text-decoration: none; }
+        .gallery-item .primary-badge { position: absolute; bottom: 4px; left: 4px; background: var(--primary-color); color: white; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 10px; }
+        .error-msg { background: var(--error-light); color: var(--error); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); }
+        .success-msg { background: var(--success-light); color: var(--success); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .form-container { margin: 0 var(--spacing-md); padding: var(--spacing-lg); }
+            .form-row { grid-template-columns: 1fr; gap: var(--spacing-sm); }
+        }
+        @media (max-width: 768px) {
+            .form-container { margin: 0 var(--spacing-sm); padding: var(--spacing-md); }
+            .gallery-grid { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<?php include 'includes/sidebar.php'; ?>
+
+<main class="admin-main-content">
+    <div class="dashboard-content">
+        <h1 style="margin-bottom: var(--spacing-md); font-size: var(--font-2xl); font-weight: var(--font-bold)">Edit Product</h1>
+        <p style="margin-bottom: var(--spacing-lg); color: var(--gray-medium)">Update your product information</p>
+
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="error-msg"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="success-msg"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+        <?php endif; ?>
+
+        <div class="form-container">
+            <form action="<?php echo $baseUrl; ?>php/edit-product-handler.php" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+                
+                <div class="form-group">
+                    <label>Product Title *</label>
+                    <input type="text" name="title" required value="<?php echo htmlspecialchars($product['title']); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select name="category_id" required>
+                        <option value="">Select Category</option>
+                        <option value="1" <?php echo $product['category_id'] == 1 ? 'selected' : ''; ?>>Clothing & Accessories</option>
+                        <option value="2" <?php echo $product['category_id'] == 2 ? 'selected' : ''; ?>>Electronics</option>
+                        <option value="3" <?php echo $product['category_id'] == 3 ? 'selected' : ''; ?>>Food and Drinks</option>
+                        <option value="4" <?php echo $product['category_id'] == 4 ? 'selected' : ''; ?>>Furniture</option>
+                        <option value="5" <?php echo $product['category_id'] == 5 ? 'selected' : ''; ?>>Home & Garden</option>
+                        <option value="6" <?php echo $product['category_id'] == 6 ? 'selected' : ''; ?>>Beauty & Health</option>
+                        <option value="7" <?php echo $product['category_id'] == 7 ? 'selected' : ''; ?>>Other</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price (R) *</label>
+                        <input type="number" name="price" step="0.01" required value="<?php echo $product['price']; ?>">
                     </div>
-                `);
+                    <div class="form-group">
+                        <label>Stock Quantity *</label>
+                        <input type="number" name="stock_quantity" min="1" required value="<?php echo $product['stock_quantity']; ?>">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Condition</label>
+                        <select name="condition">
+                            <option value="">Not Applicable</option>
+                            <option value="New" <?php echo ($product['condition'] ?? '') == 'New' ? 'selected' : ''; ?>>Brand New</option>
+                            <option value="Like New" <?php echo ($product['condition'] ?? '') == 'Like New' ? 'selected' : ''; ?>>Like New</option>
+                            <option value="Good" <?php echo ($product['condition'] ?? '') == 'Good' ? 'selected' : ''; ?>>Good</option>
+                            <option value="Fair" <?php echo ($product['condition'] ?? '') == 'Fair' ? 'selected' : ''; ?>>Fair</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" name="location" value="<?php echo htmlspecialchars($product['location'] ?? ''); ?>" placeholder="e.g., Johannesburg">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea name="description" rows="5" required><?php echo htmlspecialchars($product['description']); ?></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Change Main Image (Optional)</label>
+                    <input type="file" name="main_image" accept="image/*">
+                    <?php if (!empty($product['image_url'])): ?>
+                        <div class="current-image">
+                            <img src="<?php echo getProductImageUrl($product['image_url']); ?>" alt="Current main image">
+                            <p style="font-size: var(--font-sm); color: var(--gray-medium); margin-top: var(--spacing-sm)">Leave empty to keep current image</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Gallery Images Section -->
+                <div class="gallery-section">
+                    <label>Product Gallery Images</label>
+                    <div class="gallery-grid" id="existing-gallery">
+                        <?php foreach ($gallery_images as $img): ?>
+                            <div class="gallery-item" data-image-id="<?php echo $img['image_id']; ?>">
+                                <img src="<?php echo getProductImageUrl($img['image_url']); ?>" alt="Gallery image">
+                                <a href="javascript:void(0)" class="remove-btn" onclick="removeGalleryImage(<?php echo $img['image_id']; ?>, <?php echo $product_id; ?>)">×</a>
+                                <?php if ($img['is_primary']): ?>
+                                    <span class="primary-badge">Primary</span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: var(--spacing-md)">
+                        <label>Add More Images (Optional)</label>
+                        <input type="file" name="new_gallery_images[]" accept="image/*" multiple>
+                        <small style="color: var(--gray-medium)">You can select multiple images at once</small>
+                        <div id="new-gallery-preview" class="gallery-grid" style="margin-top: var(--spacing-md)"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: var(--spacing-xl); display: flex; gap: var(--spacing-sm)">
+                    <button type="submit" class="btn-submit">Save Changes</button>
+                    <a href="my-products.php" class="btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+// Preview new gallery images
+$('input[name="new_gallery_images[]"]').on('change', function(e) {
+    const preview = $('#new-gallery-preview');
+    preview.empty();
+    const files = this.files;
+    
+    for (let i = 0; i < files.length; i++) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            preview.append(`
+                <div class="gallery-item">
+                    <img src="${event.target.result}" alt="Preview">
+                </div>
+            `);
+        };
+        reader.readAsDataURL(files[i]);
+    }
+});
+
+function removeGalleryImage(imageId, productId) {
+    if (confirm('Remove this image from the gallery?')) {
+        $.ajax({
+            url: baseUrl + 'admin/php/remove-gallery-image.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ image_id: imageId, product_id: productId }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    $('.gallery-item[data-image-id="' + imageId + '"]').remove();
+                    showSuccessToast('Image removed');
+                } else {
+                    showErrorToast('Error: ' + data.message);
+                }
+            },
+            error: function() {
+                showErrorToast('Something went wrong');
             }
         });
-        
-        // Make main image container clickable
-        $('#main-image-container').on('click', function() {
-            $('#main-image').click();
-        });
-    });
-    </script>
+    }
+}
+</script>
 
 </body>
 </html>

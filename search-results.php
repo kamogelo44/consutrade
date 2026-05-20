@@ -27,13 +27,10 @@ $offset = ($page - 1) * $limit;
     <title>Search Results - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
     <meta name="description" content="Search results for products on ConsuTrade">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/products.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    
+    <!-- Master Stylesheet (includes all CSS) -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    
 </head>
 <body>
 
@@ -164,7 +161,7 @@ $offset = ($page - 1) * $limit;
 </main>
 
 <?php include 'includes/footer.php'; ?>
-<script src="<?php echo $baseUrl; ?>js/products.js"></script>
+
 <script>
 /*
  * Search Results Functionality

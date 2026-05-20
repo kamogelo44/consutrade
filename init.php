@@ -1,7 +1,7 @@
 <?php
 /*
  * ConsuTrade - Application Initialization
- * Include this at the top of EVERY page
+ * Included in every page
  * Author: Kamogelo Phale
  */
 

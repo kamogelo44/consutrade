@@ -1,0 +1,220 @@
+/* ========== TABLE STYLES ========== */
+/* For Users, All Products, All Orders pages */
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.page-title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    color: var(--dark-bg);
+}
+
+/* Search and Filter Bar */
+.search-filter-bar {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.search-box input {
+    flex: 1;
+    padding: 10px var(--spacing-md);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+}
+
+.search-box button {
+    padding: 10px var(--spacing-lg);
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.search-box button:hover {
+    background: var(--primary-dark);
+}
+
+.filter-box select {
+    padding: 10px var(--spacing-md);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+    background: var(--white);
+    cursor: pointer;
+}
+
+/* Data Table Container */
+.data-table-container {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    overflow-x: auto;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Data Table */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.data-table th {
+    background: var(--gray-bg-light);
+    font-weight: var(--font-semibold);
+    color: var(--gray-dark);
+    font-size: var(--font-sm);
+    position: sticky;
+    top: 0;
+}
+
+.data-table tr:hover td {
+    background: var(--gray-bg-light);
+}
+
+/* Action Buttons in Table */
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.action-btn {
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    border: none;
+}
+
+.action-btn.view {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.action-btn.edit {
+    background: var(--primary-fade);
+    color: var(--primary-color);
+}
+
+.action-btn.delete {
+    background: var(--error-light);
+    color: var(--error);
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-xl);
+    flex-wrap: wrap;
+}
+
+.pagination a,
+.pagination span {
+    padding: 8px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--gray-dark);
+    transition: all var(--transition-fast);
+}
+
+.pagination a:hover {
+    background: var(--primary-fade);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.pagination .active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--white);
+}
+
+.pagination .disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state img {
+    width: 120px;
+    height: 120px;
+    opacity: 0.5;
+    margin-bottom: var(--spacing-lg);
+}
+
+.empty-state h3 {
+    font-size: var(--font-xl);
+    color: var(--gray-dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    color: var(--gray-medium);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .search-filter-bar {
+        flex-direction: column;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+    
+    .action-btn {
+        text-align: center;
+    }
+}

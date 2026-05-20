@@ -48,10 +48,16 @@ function initAppSession() {
     $is_seller_page = (
         strpos($script_path, 'seller-dashboard.php') !== false ||
         strpos($script_path, 'seller-profile.php') !== false ||
+        strpos($script_path, 'admin/my-orders.php') !==false ||
         strpos($script_path, 'my-products.php') !== false ||
-        strpos($script_path, 'my-orders.php') !== false ||
         strpos($script_path, 'add-product.php') !== false ||
-        strpos($script_path, 'edit-product.php') !== false
+        strpos($script_path, 'edit-product.php') !== false ||
+        // Endpoints used by sellers
+        strpos($script_path, 'get-seller-products.php') !== false ||
+        strpos($script_path, 'get-seller-orders.php') !== false ||
+        strpos($script_path, 'get-seller-recent-orders.php') !== false ||
+        strpos($script_path, 'update-order-status.php') !== false ||
+        strpos($script_path, 'delete-product.php') !== false
     );
     
     // Seller pages

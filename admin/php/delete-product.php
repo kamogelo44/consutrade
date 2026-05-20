@@ -4,24 +4,22 @@
  * Author: Kamogelo Phale
  * 
  * Soft deletes a product (sets status to 'deleted') and removes image files
- * Supports both sellers (their own products) and admins (any product)
  */
 
-require_once dirname(__DIR__) . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
-header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'message' => ''];
 
 // Check if user is logged in
-if (!$is_logged_in) {
+if (!isLoggedIn()) {
     $response['message'] = 'Unauthorized. Please login.';
     echo json_encode($response);
     exit;
 }
 
-$role = $current_user['role'];
+$role = $_SESSION['role'] ?? '';
 $user_id = $current_user_id;
 
 $input = json_decode(file_get_contents('php://input'), true);
@@ -33,13 +31,13 @@ if ($product_id <= 0) {
     exit;
 }
 
-// Determine if user has permission to delete this product
 if ($role === 'seller') {
     // Seller can only delete their own products
     $result = deleteSellerProduct($conn, $product_id, $user_id);
+    $response['success'] = $result['success'];
+    $response['message'] = $result['message'];
 } elseif ($role === 'admin') {
     // Admin can delete any product
-    // First get the seller_id to verify product exists
     $check_sql = "SELECT seller_id, image_url FROM products WHERE product_id = ? AND status != 'deleted'";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param('i', $product_id);
@@ -56,7 +54,24 @@ if ($role === 'seller') {
     $product = $check_result->fetch_assoc();
     $check_stmt->close();
     
-    // Admin soft delete
+    // Delete gallery images first
+    $gallery_sql = "SELECT image_url FROM product_images WHERE product_id = ?";
+    $gallery_stmt = $conn->prepare($gallery_sql);
+    $gallery_stmt->bind_param('i', $product_id);
+    $gallery_stmt->execute();
+    $gallery_result = $gallery_stmt->get_result();
+    while ($img = $gallery_result->fetch_assoc()) {
+        deleteProductImage($img['image_url']);
+    }
+    $gallery_stmt->close();
+    
+    // Delete gallery records
+    $del_gallery = $conn->prepare("DELETE FROM product_images WHERE product_id = ?");
+    $del_gallery->bind_param('i', $product_id);
+    $del_gallery->execute();
+    $del_gallery->close();
+    
+    // Soft delete product
     $delete_sql = "UPDATE products SET status = 'deleted' WHERE product_id = ?";
     $delete_stmt = $conn->prepare($delete_sql);
     $delete_stmt->bind_param('i', $product_id);
@@ -71,21 +86,8 @@ if ($role === 'seller') {
         $response['message'] = 'Failed to delete product';
     }
     $delete_stmt->close();
-    
-    echo json_encode($response);
-    exit;
 } else {
     $response['message'] = 'Unauthorized. You do not have permission to delete products.';
-    echo json_encode($response);
-    exit;
-}
-
-// Return result for seller
-if ($result['success']) {
-    $response['success'] = true;
-    $response['message'] = $result['message'];
-} else {
-    $response['message'] = $result['message'];
 }
 
 echo json_encode($response);

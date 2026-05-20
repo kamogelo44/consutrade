@@ -29,8 +29,8 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <title>Seller Dashboard - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar-clean.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <script>
         var baseUrl = '<?php echo $baseUrl; ?>';
@@ -41,7 +41,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 <?php include 'includes/sidebar.php'; ?>
 
 <!-- Main Content -->
-<main class="dashboard-main">
+<main class="seller-main-content">
     <div class="dashboard-content">
         <!-- Welcome Section -->
         <div class="welcome-section">
@@ -74,11 +74,11 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             </script>
         <?php endif; ?>
 
-        <!-- Stats Section -->
-        <div class="stats-grid">
+        <!-- Stats Section - 3 clean cards -->
+        <div class="stats-grid-seller">
             <div class="stat-card">
                 <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" alt="Earnings" class="stat-icon-img">
+                    <img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" alt="Earnings">
                 </div>
                 <div class="stat-info">
                     <h3>Total Earnings</h3>
@@ -87,7 +87,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             </div>
             <div class="stat-card">
                 <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products" class="stat-icon-img">
+                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
                 </div>
                 <div class="stat-info">
                     <h3>Total Products</h3>
@@ -96,17 +96,17 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             </div>
             <div class="stat-card">
                 <div class="stat-icon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders" class="stat-icon-img">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders">
                 </div>
                 <div class="stat-info">
                     <h3>Pending Orders</h3>
-                    <p class="stat-number" id="stat-pending">0</p>
+                    <p class="stat-number pending" id="stat-pending">0</p>
                 </div>
             </div>
         </div>
 
-        <!-- Dashboard Sections -->
-        <div class="dashboard-sections">
+        <!-- Dashboard Sections - 2 columns -->
+        <div class="dashboard-grid">
             <!-- My Listings Section -->
             <div class="section-card">
                 <div class="section-header">
@@ -116,8 +116,8 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                 <div class="listings-grid" id="listings-grid">
                     <div class="loading-spinner">Loading your products...</div>
                 </div>
-                <div class="quick-actions">
-                    <a href="add-product.php" class="quick-action-btn add-product-btn">
+                <div class="add-product-btn-container">
+                    <a href="add-product.php" class="add-product-btn">
                         <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add">
                         <span>Add New Product</span>
                     </a>
@@ -134,54 +134,29 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                     <p class="placeholder-text">No recent orders to display.</p>
                 </div>
             </div>
+        </div>
 
-            <!-- Profile & Settings Section -->
-            <div class="section-card">
-                <div class="section-header">
-                    <h2>Profile & Settings</h2>
+        <!-- Store Summary Card (Replaces Profile & Settings) -->
+        <div class="store-summary-card">
+            <div class="store-summary-header">
+                <div class="store-avatar">
+                    <img src="<?php echo $profile_image; ?>" alt="Store Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                 </div>
-                <div class="profile-shortcuts">
-                    <a href="seller-profile.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>My Profile</h3>
-                            <p>View and edit your personal information</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="my-products.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>Manage Products</h3>
-                            <p>Add, edit or remove your products</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="my-orders.php" class="profile-shortcut-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>Order History</h3>
-                            <p>Track and manage your orders</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
-                    <a href="<?php echo $baseUrl; ?>admin/php/seller-logout.php" class="profile-shortcut-link logout-link">
-                        <div class="profile-shortcut-icon">
-                            <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout">
-                        </div>
-                        <div class="profile-shortcut-info">
-                            <h3>Logout</h3>
-                            <p>Sign out of your account</p>
-                        </div>
-                        <span class="profile-shortcut-arrow">→</span>
-                    </a>
+                <div class="store-info">
+                    <h3><?php echo htmlspecialchars($user['full_name']); ?></h3>
+                    <p class="store-role">Seller Account</p>
+                    <span class="store-status active">Active</span>
                 </div>
+            </div>
+            <div class="store-summary-actions">
+                <a href="seller-profile.php" class="store-action-link">
+                    <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile">
+                    Edit Profile
+                </a>
+                <a href="<?php echo $baseUrl; ?>admin/php/seller-logout.php" class="store-action-link logout">
+                    <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout">
+                    Logout
+                </a>
             </div>
         </div>
     </div>
@@ -189,5 +164,27 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
+<script>
+// Close sidebar when modal opens, reopen when modal closes
+$(document).on('click', '[data-modal-open], .view-details-btn, .process-btn, .ship-btn, .complete-btn, .cancel-btn, .delete-btn, .edit-btn', function() {
+    var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
+    var $sideMenu = $('#' + prefix + 'SideMenu');
+    if ($sideMenu.hasClass('active')) {
+        $sideMenu.data('was-open', true);
+        $sideMenu.removeClass('active');
+        $('#' + prefix + 'MenuOverlay').removeClass('active');
+    }
+});
+
+$(document).on('click', '.modal-close, .btn-close, .order-modal-close', function() {
+    var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
+    var $sideMenu = $('#' + prefix + 'SideMenu');
+    if ($sideMenu.data('was-open') === true) {
+        $sideMenu.addClass('active');
+        $('#' + prefix + 'MenuOverlay').addClass('active');
+        $sideMenu.removeData('was-open');
+    }
+});
+</script>
 </body>
 </html>

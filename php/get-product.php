@@ -6,20 +6,13 @@
  * Returns product details for the product details page
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
-header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'product' => null];
 
-if (!isset($_GET['id'])) {
-    $response['error'] = 'No product ID provided';
-    echo json_encode($response);
-    exit;
-}
-
-$product_id = (int)$_GET['id'];
+$product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
     $response['error'] = 'Invalid product ID';
@@ -27,97 +20,60 @@ if ($product_id <= 0) {
     exit;
 }
 
-// Get product details with stock_quantity
-$sql = "SELECT p.product_id, p.title, p.price, p.description, 
-        p.image_url, p.gallery_images, p.location, p.condition, p.category_id,
-        p.stock_quantity, p.status,
-        u.full_name as seller_name, u.user_id as seller_id, u.profile_image as seller_profile_image,
-        u.id_verified as is_verified
-        FROM products p 
-        LEFT JOIN users u ON p.seller_id = u.user_id 
+// Get product details
+$sql = "SELECT p.product_id, p.title, p.description, p.price, p.image_url, 
+        p.location, p.condition, p.category_id, p.stock_quantity,
+        u.user_id as seller_id, u.full_name as seller_name, 
+        u.profile_image, u.id_verified as is_verified
+        FROM products p
+        JOIN users u ON p.seller_id = u.user_id
         WHERE p.product_id = ? AND p.status = 'active'";
 
 $stmt = $conn->prepare($sql);
-
-if (!$stmt) {
-    $response['error'] = 'Database prepare error';
-    echo json_encode($response);
-    exit;
-}
-
 $stmt->bind_param('i', $product_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
-if ($result && $result->num_rows > 0) {
-    $row = $result->fetch_assoc();
+if ($row = $result->fetch_assoc()) {
+    // Use helper functions
+    $gallery_images = getProductGallery($conn, $product_id);
+    $gallery_urls = [];
+    foreach ($gallery_images as $img) {
+        $gallery_urls[] = getProductImageUrl($img['image_url']);
+    }
+    
+    $rating = getSellerRating($conn, $row['seller_id']);
     
     // Get category name
     $category_name = 'General';
-    if ($row['category_id'] > 0) {
-        $cat_sql = "SELECT category_name FROM categories WHERE category_id = ?";
-        $cat_stmt = $conn->prepare($cat_sql);
-        if ($cat_stmt) {
-            $cat_stmt->bind_param('i', $row['category_id']);
-            $cat_stmt->execute();
-            $cat_result = $cat_stmt->get_result();
-            if ($cat_result && $cat_result->num_rows > 0) {
-                $cat_row = $cat_result->fetch_assoc();
-                $category_name = $cat_row['category_name'];
-            }
-            $cat_stmt->close();
-        }
+    $cat_sql = "SELECT category_name FROM categories WHERE category_id = ?";
+    $cat_stmt = $conn->prepare($cat_sql);
+    $cat_stmt->bind_param('i', $row['category_id']);
+    $cat_stmt->execute();
+    $cat_result = $cat_stmt->get_result();
+    if ($cat_row = $cat_result->fetch_assoc()) {
+        $category_name = $cat_row['category_name'];
     }
-    
-    // Get seller rating
-    $avg_rating = 0;
-    $review_count = 0;
-    $rating_sql = "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM reviews WHERE seller_id = ?";
-    $rating_stmt = $conn->prepare($rating_sql);
-    if ($rating_stmt) {
-        $rating_stmt->bind_param('i', $row['seller_id']);
-        $rating_stmt->execute();
-        $rating_result = $rating_stmt->get_result();
-        if ($rating_row = $rating_result->fetch_assoc()) {
-            $avg_rating = round($rating_row['avg_rating'] ?? 0, 1);
-            $review_count = (int)($rating_row['review_count'] ?? 0);
-        }
-        $rating_stmt->close();
-    }
-    
-    // Determine stock status
-    $stock_quantity = (int)($row['stock_quantity'] ?? 1);
-    $stock_status = 'in_stock';
-    if ($stock_quantity <= 0) {
-        $stock_status = 'out_of_stock';
-    } elseif ($stock_quantity <= 5) {
-        $stock_status = 'low_stock';
-    }
-    
-    // Use helper for consistent image URL
-    $image_url = getProductImageUrl($row['image_url'] ?? null);
+    $cat_stmt->close();
     
     $response['product'] = [
         'id' => (int)$row['product_id'],
         'name' => $row['title'],
+        'description' => $row['description'],
         'price' => (float)$row['price'],
-        'description' => $row['description'] ?? '',
-        'condition' => $row['condition'] ?? '',
-        'location' => $row['location'] ?? '',
+        'condition' => $row['condition'],
+        'location' => $row['location'],
         'category_id' => (int)$row['category_id'],
         'category_name' => $category_name,
-        'image_url' => $image_url,
-        'image' => $image_url,
-        'gallery_images' => $row['gallery_images'],
-        'seller_name' => $row['seller_name'] ?? 'Unknown Seller',
+        'image_url' => getProductImageUrl($row['image_url']),
+        'gallery_images' => $gallery_urls,
         'seller_id' => (int)$row['seller_id'],
+        'seller_name' => $row['seller_name'],
+        'seller_profile_image' => getUserProfileImage($row['profile_image']),
         'is_verified' => (bool)$row['is_verified'],
-        'avg_rating' => $avg_rating,
-        'review_count' => $review_count,
-        'profile_image' => $row['seller_profile_image'] ?? null,
-        'stock_quantity' => $stock_quantity,
-        'stock_status' => $stock_status,
-        'status' => $row['status']
+        'stock_quantity' => (int)$row['stock_quantity'],
+        'avg_rating' => $rating['avg_rating'],
+        'review_count' => $rating['review_count']
     ];
     $response['success'] = true;
 } else {

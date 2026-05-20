@@ -1,9 +1,0 @@
-/* ========== UNIFIED DASHBOARD CSS ========== */
-/* Author: Kamogelo Phale */
-/* This file imports all dashboard-related styles */
-
-/* Import sidebar styles (sidebar, mobile toggle, main content layout) */
-@import url('sidebar.css');
-
-/* Import common dashboard styles (stats, cards, tables, badges, etc.) */
-@import url('dashboard-common.css');

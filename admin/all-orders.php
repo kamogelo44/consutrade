@@ -8,14 +8,12 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-// Check if admin is logged in using centralized auth
 if (!isAdminLoggedIn()) {
     header('Location: login.php');
     exit;
 }
 
 $baseUrl = getBaseUrl();
-$current_page = 'all-orders';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -23,43 +21,119 @@ $current_page = 'all-orders';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Orders - ConsuTrade Admin</title>
-    <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/my-orders.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar-clean.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/modal.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-        var currentPage = 1;
-        var currentStatus = 'all';
-        var currentSearch = '';
-    </script>
+    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
+    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
+    <script>var baseUrl = '<?php echo $baseUrl; ?>';</script>
+    <style>
+        .page-header { margin-bottom: var(--spacing-xl); }
+        .page-header h1 { font-size: var(--font-2xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-xs); }
+        .page-header p { color: var(--gray-medium); }
+        
+        .filters-bar { display: flex; justify-content: space-between; margin-bottom: var(--spacing-lg); flex-wrap: wrap; gap: var(--spacing-md); align-items: center; }
+        .status-filters { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; }
+        .filter-btn { padding: 8px 16px; border-radius: var(--radius-md); text-decoration: none; background: var(--white); border: 1px solid var(--border-light); color: var(--gray-dark); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-sm); }
+        .filter-btn:hover { background: var(--primary-fade); border-color: var(--primary-color); color: var(--primary-color); }
+        .filter-btn.active { background: var(--primary-color); color: var(--white); border-color: var(--primary-color); }
+        
+        .search-bar { display: flex; gap: var(--spacing-sm); }
+        .search-bar input { padding: 8px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); width: 250px; font-size: var(--font-md); }
+        .search-bar input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1); }
+        .search-bar button { padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: var(--font-medium); transition: all var(--transition-fast); }
+        .search-bar button:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        
+        .table-wrapper { overflow-x: auto; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); }
+        .data-table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); }
+        .data-table th, .data-table td { padding: var(--spacing-md); text-align: left; border-bottom: 1px solid var(--border-light); }
+        .data-table th { background: var(--gray-bg-light); font-weight: var(--font-semibold); color: var(--gray-dark); }
+        .data-table tr:hover td { background: var(--gray-bg-light); }
+        
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: var(--radius-round); font-size: var(--font-xs); font-weight: var(--font-medium); }
+        .status-badge.pending { background: var(--warning-light); color: var(--warning); }
+        .status-badge.processing { background: var(--info-light); color: var(--info); }
+        .status-badge.shipped { background: var(--primary-fade); color: var(--primary-color); }
+        .status-badge.completed { background: var(--success-light); color: var(--success); }
+        .status-badge.cancelled { background: var(--error-light); color: var(--error); }
+        
+        .action-buttons { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; }
+        .action-btn { padding: 6px 12px; border-radius: var(--radius-sm); font-size: var(--font-xs); cursor: pointer; border: none; font-weight: var(--font-medium); transition: all var(--transition-fast); }
+        .view-btn { background: var(--info-light); color: var(--info); border: 1px solid var(--info); }
+        .view-btn:hover { background: var(--info); color: white; transform: translateY(-1px); }
+        .process-btn { background: var(--warning-light); color: var(--warning); border: 1px solid var(--warning); }
+        .process-btn:hover { background: var(--warning); color: white; transform: translateY(-1px); }
+        .ship-btn { background: var(--primary-fade); color: var(--primary-color); border: 1px solid var(--primary-color); }
+        .ship-btn:hover { background: var(--primary-color); color: white; transform: translateY(-1px); }
+        .complete-btn { background: var(--success-light); color: var(--success); border: 1px solid var(--success); }
+        .complete-btn:hover { background: var(--success); color: white; transform: translateY(-1px); }
+        
+        .pagination { display: flex; justify-content: center; gap: var(--spacing-sm); margin-top: var(--spacing-xl); flex-wrap: wrap; }
+        .page-btn { padding: 8px 14px; border: 1px solid var(--border-light); background: var(--white); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); font-size: var(--font-sm); }
+        .page-btn:hover { background: var(--primary-fade); border-color: var(--primary-color); color: var(--primary-color); }
+        .page-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); cursor: default; }
+        .page-dots { padding: 8px 4px; color: var(--gray-light); }
+        
+        .loading-cell { text-align: center; padding: var(--spacing-xl); color: var(--gray-medium); }
+        .error-cell { text-align: center; padding: var(--spacing-xl); color: var(--error); background: var(--error-light); border-left: 4px solid var(--error); }
+        .empty-cell { text-align: center; padding: var(--spacing-xl); color: var(--gray-medium); }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .data-table th, .data-table td { padding: var(--spacing-sm); }
+        }
+        @media (max-width: 1024px) {
+            .data-table { min-width: 800px; }
+            .action-buttons { flex-direction: row; flex-wrap: wrap; }
+        }
+        @media (max-width: 768px) {
+            .filters-bar { flex-direction: column; align-items: stretch; }
+            .status-filters { justify-content: center; }
+            .search-bar { justify-content: center; }
+            .action-buttons { flex-direction: column; }
+            .action-btn { width: 100%; text-align: center; }
+            .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; }
+            .data-table thead { display: none; }
+            .data-table tr { border: 1px solid var(--border-light); margin-bottom: var(--spacing-md); border-radius: var(--radius-md); }
+            .data-table td { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-sm); border-bottom: 1px solid var(--border-light); }
+            .data-table td:last-child { border-bottom: none; }
+            .data-table td:before { content: attr(data-label); font-weight: var(--font-bold); color: var(--gray-dark); min-width: 120px; }
+            .error-cell { display: block; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            .page-header h1 { font-size: var(--font-xl); }
+            .search-bar input { width: 100%; }
+            .pagination { gap: var(--spacing-xs); }
+            .page-btn { padding: 6px 10px; font-size: var(--font-xs); }
+        }
+    </style>
 </head>
-<body class="admin-dashboard-page">
+<body>
 
 <?php include 'includes/sidebar.php'; ?>
 
-<main class="dashboard-main">
+<main class="admin-main-content">
     <div class="dashboard-content">
-        <div class="dashboard-header">
+        <div class="page-header">
             <h1>All Orders</h1>
             <p>View and manage all orders on the marketplace</p>
         </div>
 
-        <!-- Filters Bar -->
-        <div class="filters-bar" style="margin-bottom: 20px;">
+        <div class="filters-bar">
             <div class="status-filters">
-                <a href="#" data-status="all" class="filter-btn active">All Orders</a>
-                <a href="#" data-status="pending" class="filter-btn">Pending</a>
-                <a href="#" data-status="processing" class="filter-btn">Processing</a>
-                <a href="#" data-status="shipped" class="filter-btn">Shipped</a>
-                <a href="#" data-status="completed" class="filter-btn">Completed</a>
-                <a href="#" data-status="cancelled" class="filter-btn">Cancelled</a>
+                <button data-status="all" class="filter-btn active">All Orders</button>
+                <button data-status="pending" class="filter-btn">Pending</button>
+                <button data-status="processing" class="filter-btn">Processing</button>
+                <button data-status="shipped" class="filter-btn">Shipped</button>
+                <button data-status="completed" class="filter-btn">Completed</button>
+                <button data-status="cancelled" class="filter-btn">Cancelled</button>
             </div>
             <div class="search-bar">
-                <input type="text" id="search-orders" placeholder="Search by order #, customer, or seller...">
-                <button id="search-btn">Search</button>
-                <button id="reset-btn" style="display: none;">Reset</button>
+                <input type="text" id="searchInput" placeholder="Search by order number, customer, or seller...">
+                <button id="searchBtn">Search</button>
+                <button id="resetBtn" style="display: none;">Reset</button>
             </div>
         </div>
 
@@ -67,7 +141,7 @@ $current_page = 'all-orders';
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Order #</th>
+                        <th>Order Number</th>
                         <th>Customer</th>
                         <th>Seller</th>
                         <th>Items</th>
@@ -77,325 +151,140 @@ $current_page = 'all-orders';
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="orders-table">
-                    <tr><td colspan="8" style="text-align: center;">Loading orders...</td></tr>
+                <tbody id="ordersTable">
+                    <td><td colspan="8" class="loading-cell">Loading orders...</td></tr>
                 </tbody>
             </table>
         </div>
         
-        <!-- Pagination -->
         <div class="pagination" id="pagination"></div>
     </div>
 </main>
 
-<!-- Order Details Modal -->
-<div id="order-modal" class="order-modal">
-    <div class="order-modal-content">
-        <div class="order-modal-header">
-            <h2>Order Details</h2>
-            <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
+<div id="orderModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Order Details</h3>
+            <button class="modal-close" onclick="closeOrderModal()">&times;</button>
         </div>
-        <div id="order-details-content" class="order-details-content">
+        <div class="modal-body" id="orderModalBody">
             <div class="loading-spinner">Loading order details...</div>
         </div>
+        <div class="modal-footer" id="orderModalFooter"></div>
     </div>
 </div>
 
-<script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
-/*
- * ConsuTrade - Admin All Orders Functionality
- * Author: Kamogelo Phale
- */
+var currentPage = 1, currentStatus = 'all', currentSearch = '', totalPages = 1;
+
 $(function() {
-    loadAllOrders();
+    loadOrders();
     
-    // Status filter clicks
-    $('.status-filters .filter-btn').on('click', function(e) {
-        e.preventDefault();
+    $('.status-filters .filter-btn').on('click', function() {
         $('.status-filters .filter-btn').removeClass('active');
         $(this).addClass('active');
         currentStatus = $(this).data('status');
         currentPage = 1;
-        loadAllOrders();
+        loadOrders();
     });
     
-    // Search button
-    $('#search-btn').on('click', function() {
-        currentSearch = $('#search-orders').val().trim();
+    $('#searchBtn').on('click', function() {
+        currentSearch = $('#searchInput').val().trim();
         currentPage = 1;
-        loadAllOrders();
-        if (currentSearch) {
-            $('#reset-btn').show();
-        }
+        loadOrders();
+        $('#resetBtn').toggle(!!currentSearch);
     });
     
-    // Reset button
-    $('#reset-btn').on('click', function() {
-        $('#search-orders').val('');
+    $('#resetBtn').on('click', function() {
+        $('#searchInput').val('');
         currentSearch = '';
         currentPage = 1;
-        loadAllOrders();
+        loadOrders();
         $(this).hide();
     });
     
-    // Enter key in search
-    $('#search-orders').on('keypress', function(e) {
-        if (e.which === 13) {
-            currentSearch = $(this).val().trim();
-            currentPage = 1;
-            loadAllOrders();
-            if (currentSearch) {
-                $('#reset-btn').show();
+    $('#searchInput').on('keypress', function(e) {
+        if (e.which === 13) $('#searchBtn').click();
+    });
+});
+
+function loadOrders() {
+    $('#ordersTable').html('<tr><td colspan="8" class="loading-cell">Loading orders...</td></tr>');
+    
+    $.ajax({
+        url: baseUrl + 'admin/php/get-all-orders.php',
+        type: 'GET',
+        dataType: 'json',
+        data: { page: currentPage, status: currentStatus, search: currentSearch },
+        success: function(data) {
+            if (data.success && data.orders && data.orders.length) {
+                displayOrders(data.orders);
+                totalPages = data.total_pages;
+                displayPagination();
+            } else {
+                $('#ordersTable').html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
+                $('#pagination').empty();
             }
+        },
+        error: function() {
+            $('#ordersTable').html('<td><td colspan="8" class="error-cell">Error loading orders. Please refresh and try again.</td></tr>');
         }
     });
+}
+
+function displayOrders(orders) {
+    var $tbody = $('#ordersTable');
+    $tbody.empty();
     
-    function loadAllOrders() {
-        var $tbody = $('#orders-table');
-        $tbody.html('<tr><td colspan="8" style="text-align: center;">Loading orders...</td></tr>');
+    $.each(orders, function(i, order) {
+        var statusClass = order.status;
+        var actionButtons = '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
         
-        $.ajax({
-            url: baseUrl + 'admin/php/get-all-orders.php',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                page: currentPage,
-                status: currentStatus,
-                search: currentSearch
-            },
-            success: function(data) {
-                if (data.success && data.orders && data.orders.length) {
-                    $tbody.empty();
-                    $.each(data.orders, function(i, order) {
-                        var statusClass = '';
-                        if (order.status === 'pending') statusClass = 'status-pending';
-                        else if (order.status === 'processing') statusClass = 'status-processing';
-                        else if (order.status === 'shipped') statusClass = 'status-shipped';
-                        else if (order.status === 'completed') statusClass = 'status-completed';
-                        else if (order.status === 'cancelled') statusClass = 'status-cancelled';
-                        
-                        var actionButtons = '';
-                        if (order.status === 'pending') {
-                            actionButtons = '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
-                        } else if (order.status === 'processing') {
-                            actionButtons = '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
-                        } else if (order.status === 'shipped') {
-                            actionButtons = '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
-                        } else if (order.status === 'pending' || order.status === 'processing') {
-                            actionButtons = '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel</button>';
-                        }
-                        
-                        $tbody.append(`
-                            <tr>
-                                <td>#${order.order_id}</td>
-                                <td>${escapeHtml(order.buyer_name)}</td>
-                                <td>${escapeHtml(order.seller_name)}</td>
-                                <td>${order.item_count || 0}</td>
-                                <td>R ${parseFloat(order.total_price).toFixed(2)}</td>
-                                <td><span class="status-badge ${statusClass}">${order.status}</span></td>
-                                <td>${order.created_at}</td>
-                                <td class="action-buttons">
-                                    <button class="action-btn view-btn" onclick="viewOrderDetails(${order.order_id})">View</button>
-                                    ${actionButtons}
-                                </td>
-                            </tr>
-                        `);
-                    });
-                    displayPagination(data.total_pages, data.current_page);
-                } else {
-                    $tbody.html('<tr><td colspan="8" style="text-align: center;">No orders found</td></tr>');
-                    $('#pagination').empty();
-                }
-            },
-            error: function() {
-                $tbody.html('<tr><td colspan="8" style="text-align: center;">Error loading orders</td></tr>');
-            }
-        });
+        if (order.status === 'pending') {
+            actionButtons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
+        } else if (order.status === 'processing') {
+            actionButtons += '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
+        } else if (order.status === 'shipped') {
+            actionButtons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
+        }
+        
+        $tbody.append(`
+            <tr>
+                <td data-label="Order Number">#${order.order_id}</td>
+                <td data-label="Customer">${escapeHtml(order.buyer_name)}</td>
+                <td data-label="Seller">${escapeHtml(order.seller_name)}</td>
+                <td data-label="Items">${order.item_count || 0}</td>
+                <td data-label="Amount">R ${parseFloat(order.total_price).toFixed(2)}</td>
+                <td data-label="Status"><span class="status-badge ${statusClass}">${order.status}</span></td>
+                <td data-label="Date">${order.created_at}</td>
+                <td data-label="Actions" class="action-buttons">${actionButtons}</td>
+            </tr>
+        `);
+    });
+}
+
+function displayPagination() {
+    if (totalPages <= 1) { $('#pagination').empty(); return; }
+    
+    var html = '';
+    if (currentPage > 1) html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Previous</button>`;
+    
+    for (var i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            html += `<button class="page-btn active" disabled>${i}</button>`;
+        } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
+            html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
+        } else if (Math.abs(i - currentPage) === 3) {
+            html += `<span class="page-dots">...</span>`;
+        }
     }
     
-    function displayPagination(totalPages, currentPageNum) {
-        var $pagination = $('#pagination');
-        if (totalPages <= 1) {
-            $pagination.empty();
-            return;
-        }
-        
-        var html = '';
-        if (currentPageNum > 1) {
-            html += '<button class="page-btn" onclick="goToPage(' + (currentPageNum - 1) + ')">← Previous</button>';
-        }
-        
-        for (var i = 1; i <= totalPages; i++) {
-            if (i === currentPageNum) {
-                html += '<button class="page-btn active" disabled>' + i + '</button>';
-            } else if (Math.abs(i - currentPageNum) <= 2 || i === 1 || i === totalPages) {
-                html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
-            } else if (Math.abs(i - currentPageNum) === 3) {
-                html += '<span class="page-dots">...</span>';
-            }
-        }
-        
-        if (currentPageNum < totalPages) {
-            html += '<button class="page-btn" onclick="goToPage(' + (currentPageNum + 1) + ')">Next →</button>';
-        }
-        
-        $pagination.html(html);
-    }
-    
-    window.goToPage = function(page) {
-        currentPage = page;
-        loadAllOrders();
-        $('html, body').animate({ scrollTop: 0 }, 'smooth');
-    };
-    
-    window.viewOrderDetails = function(orderId) {
-        var modal = document.getElementById('order-modal');
-        var content = document.getElementById('order-details-content');
-        
-        modal.classList.add('active');
-        content.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
-        
-        $.ajax({
-            url: baseUrl + 'php/get-order-details.php?order_id=' + orderId,
-            type: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                if (data.success && data.order) {
-                    displayOrderDetails(data.order);
-                } else {
-                    content.innerHTML = '<p class="error">Unable to load order details.</p>';
-                }
-            },
-            error: function() {
-                content.innerHTML = '<p class="error">Error loading order details.</p>';
-            }
-        });
-    };
-    
-    function displayOrderDetails(order) {
-        var content = document.getElementById('order-details-content');
-        var itemsHtml = '';
-        
-        if (order.items && order.items.length > 0) {
-            for (var i = 0; i < order.items.length; i++) {
-                var item = order.items[i];
-                var imagePath = item.image_url;
-                if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                    imagePath = baseUrl + imagePath;
-                }
-                itemsHtml += `
-                    <div class="order-item">
-                        <div class="order-item-img">
-                            <img src="${imagePath || baseUrl + 'images/default-product.png'}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'">
-                        </div>
-                        <div class="order-item-details">
-                            <h4>${escapeHtml(item.product_name)}</h4>
-                            <p>Quantity: ${item.quantity}</p>
-                        </div>
-                        <div class="order-item-price">
-                            R ${parseFloat(item.price).toFixed(2)}
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        
-        content.innerHTML = `
-            <div class="order-info-section">
-                <div class="info-row">
-                    <span class="info-label">Order Number:</span>
-                    <span class="info-value">#${order.order_id}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Order Date:</span>
-                    <span class="info-value">${order.created_at}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Order Status:</span>
-                    <span class="info-value status-${order.status}">${order.status.toUpperCase()}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Customer:</span>
-                    <span class="info-value">${escapeHtml(order.buyer_name || order.other_party_name || 'N/A')}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Seller:</span>
-                    <span class="info-value">${escapeHtml(order.seller_name || order.other_party_name || 'N/A')}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Shipping Address:</span>
-                    <span class="info-value">${escapeHtml(order.shipping_address) || 'Not provided'}</span>
-                </div>
-            </div>
-            
-            <h3>Order Items</h3>
-            <div class="order-items-list">
-                ${itemsHtml || '<p class="no-items">No items found for this order.</p>'}
-            </div>
-            
-            <div class="order-total-section">
-                <div class="total-row">
-                    <span>Subtotal:</span>
-                    <span>R ${parseFloat(order.subtotal || 0).toFixed(2)}</span>
-                </div>
-                <div class="total-row">
-                    <span>Delivery Fee:</span>
-                    <span>R ${parseFloat(order.delivery_fee || 0).toFixed(2)}</span>
-                </div>
-                <div class="total-row grand-total">
-                    <span>Total:</span>
-                    <span>R ${parseFloat(order.total || 0).toFixed(2)}</span>
-                </div>
-            </div>
-        `;
-    }
-    
-    window.updateOrderStatus = function(orderId, newStatus) {
-        var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
-        if (newStatus === 'cancelled') {
-            confirmMsg = 'Are you sure you want to cancel this order? This action cannot be undone.';
-        }
-        
-        if (confirm(confirmMsg)) {
-            $.ajax({
-                url: baseUrl + 'admin/php/update-order-status.php',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ order_id: orderId, status: newStatus }),
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success) {
-                        showSuccessToast(data.message || 'Order status updated successfully!');
-                        loadAllOrders();
-                        closeOrderModal();
-                    } else {
-                        showErrorToast('Error: ' + (data.message || 'Unknown error'));
-                    }
-                },
-                error: function() {
-                    showErrorToast('Something went wrong. Please try again.');
-                }
-            });
-        }
-    };
-    
-    window.closeOrderModal = function() {
-        var modal = document.getElementById('order-modal');
-        if (modal) modal.classList.remove('active');
-    };
-    
-    // Close modal when clicking outside
-    var modal = document.getElementById('order-modal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeOrderModal();
-            }
-        });
-    }
-});
+    if (currentPage < totalPages) html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
+    $('#pagination').html(html);
+}
+
+function goToPage(page) { currentPage = page; loadOrders(); $('html, body').animate({ scrollTop: 0 }, 'smooth'); }
 </script>
 
 </body>

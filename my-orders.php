@@ -5,7 +5,6 @@
  * 
  * This page displays all orders for the logged-in buyer
  */
-
 require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
@@ -30,14 +29,10 @@ $orders = getBuyerOrders($conn, $current_user_id, $status_filter, $search_term);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/products.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    
+    <!-- Master Stylesheet (includes all CSS) -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    
 </head>
 <body class="my-orders-page">
 
@@ -209,9 +204,9 @@ $orders = getBuyerOrders($conn, $current_user_id, $status_filter, $search_term);
  * ConsuTrade - My Orders Functionality
  * Author: Kamogelo Phale
  */
-var baseUrl = '<?php echo $baseUrl; ?>';
-var currentUserId = <?php echo $current_user_id; ?>;
-var currentUserRole = '<?php echo $current_user['role']; ?>';
+var baseUrl = <?php echo json_encode($baseUrl); ?>;
+var currentUserId = <?php echo json_encode($current_user_id); ?>;
+var currentUserRole = <?php echo json_encode($current_user['role'] ?? ''); ?>;
 var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 
 $(function() {

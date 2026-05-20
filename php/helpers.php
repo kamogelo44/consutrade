@@ -4,6 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Centralized helper functions to avoid duplication
+ * Updated to work with product_images table (gallery images)
  * NOTE: Session/auth functions are now in auth.php
  */
 
@@ -133,6 +134,188 @@ function deleteProductImage($image_path) {
     }
     
     return true;
+}
+
+// ========== PRODUCT GALLERY FUNCTIONS (NEW for product_images table) ==========
+
+/**
+ * Get all gallery images for a product
+ * 
+ * @param mysqli $conn Database connection
+ * @param int $product_id Product ID
+ * @return array Array of gallery images with image_id, image_url, is_primary, sort_order
+ */
+function getProductGallery($conn, $product_id) {
+    $stmt = $conn->prepare("SELECT image_id, image_url, is_primary, sort_order FROM product_images WHERE product_id = ? ORDER BY sort_order ASC, image_id ASC");
+    $stmt->bind_param('i', $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $images = [];
+    while ($row = $result->fetch_assoc()) {
+        $images[] = $row;
+    }
+    $stmt->close();
+    return $images;
+}
+
+/**
+ * Get primary image for a product
+ * 
+ * @param mysqli $conn Database connection
+ * @param int $product_id Product ID
+ * @return string|null Image URL or null
+ */
+function getProductPrimaryImage($conn, $product_id) {
+    // First try to get primary image from product_images table
+    $stmt = $conn->prepare("SELECT image_url FROM product_images WHERE product_id = ? AND is_primary = 1 LIMIT 1");
+    $stmt->bind_param('i', $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        $stmt->close();
+        return $row['image_url'];
+    }
+    $stmt->close();
+    
+    // Fallback to products table image_url
+    $stmt2 = $conn->prepare("SELECT image_url FROM products WHERE product_id = ?");
+    $stmt2->bind_param('i', $product_id);
+    $stmt2->execute();
+    $result2 = $stmt2->get_result();
+    $image = ($row2 = $result2->fetch_assoc()) ? $row2['image_url'] : null;
+    $stmt2->close();
+    return $image;
+}
+
+/**
+ * Get product display image (primary or first gallery or fallback)
+ * 
+ * @param mysqli $conn Database connection
+ * @param int $product_id Product ID
+ * @return string Image URL
+ */
+function getProductDisplayImage($conn, $product_id) {
+    $primary = getProductPrimaryImage($conn, $product_id);
+    if ($primary) {
+        return $primary;
+    }
+    
+    // Get first gallery image
+    $stmt = $conn->prepare("SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order ASC LIMIT 1");
+    $stmt->bind_param('i', $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        $stmt->close();
+        return $row['image_url'];
+    }
+    $stmt->close();
+    
+    return null;
+}
+
+/**
+ * Add gallery image to product
+ * 
+ * @param mysqli $conn Database connection
+ * @param int $product_id Product ID
+ * @param string $image_url Image path
+ * @param bool $is_primary Is this the primary image?
+ * @param int $sort_order Sort order (0 = first)
+ * @return bool Success or failure
+ */
+function addProductGalleryImage($conn, $product_id, $image_url, $is_primary = false, $sort_order = 0) {
+    $stmt = $conn->prepare("INSERT INTO product_images (product_id, image_url, is_primary, sort_order) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param('isii', $product_id, $image_url, $is_primary, $sort_order);
+    $result = $stmt->execute();
+    $stmt->close();
+    return $result;
+}
+
+/**
+ * Add multiple gallery images to product
+ * 
+ * @param mysqli $conn Database connection
+ * @param int $product_id Product ID
+ * @param array $image_urls Array of image paths
+ * @return int Number of images successfully added
+ */
+function addProductGalleryImages($conn, $product_id, $image_urls) {
+    $count = 0;
+    $sort_order = 0;
+    
+    // Get current max sort order
+    $stmt = $conn->prepare("SELECT MAX(sort_order) as max_sort FROM product_images WHERE product_id = ?");
+    $stmt->bind_param('i', $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $sort_order = ($row['max_sort'] ?? -1) + 1;
+    $stmt->close();
+    
+    foreach ($image_urls as $image_url) {
+        if (addProductGalleryImage($conn, $product_id, $image_url, false, $sort_order)) {
+            $count++;
+            $sort_order++;
+        }
+    }
+    
+    return $count;
+}
+
+/**
+ * Remove gallery image from product
+ * 
+ * @param mysqli $conn Database connection
+ * @param int $image_id Image ID
+ * @param int $product_id Product ID (for verification)
+ * @return bool Success or failure
+ */
+function removeProductGalleryImage($conn, $image_id, $product_id) {
+    // Get image path first to delete file
+    $stmt = $conn->prepare("SELECT image_url FROM product_images WHERE image_id = ? AND product_id = ?");
+    $stmt->bind_param('ii', $image_id, $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        deleteProductImage($row['image_url']);
+    }
+    $stmt->close();
+    
+    // Delete from database
+    $stmt2 = $conn->prepare("DELETE FROM product_images WHERE image_id = ? AND product_id = ?");
+    $stmt2->bind_param('ii', $image_id, $product_id);
+    $result = $stmt2->execute();
+    $stmt2->close();
+    return $result;
+}
+
+/**
+ * Set primary image for product (removes other primaries)
+ * 
+ * @param mysqli $conn Database connection
+ * @param int $product_id Product ID
+ * @param int $image_id Image ID to set as primary
+ * @return bool Success or failure
+ */
+function setProductPrimaryImage($conn, $product_id, $image_id) {
+    // First remove primary flag from all images of this product
+    $stmt = $conn->prepare("UPDATE product_images SET is_primary = 0 WHERE product_id = ?");
+    $stmt->bind_param('i', $product_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Set the selected image as primary
+    $stmt2 = $conn->prepare("UPDATE product_images SET is_primary = 1 WHERE image_id = ? AND product_id = ?");
+    $stmt2->bind_param('ii', $image_id, $product_id);
+    $result = $stmt2->execute();
+    $stmt2->close();
+    
+    return $result;
 }
 
 // ========== USER HELPER FUNCTIONS ==========
@@ -474,7 +657,7 @@ function getBuyerOrders($conn, $buyer_id, $status_filter = 'all', $search_term =
         $orders[] = $row;
     }
     $stmt->close();
-    
+
     return $orders;
 }
 
@@ -678,7 +861,7 @@ function cancelBuyerOrder($conn, $order_id, $buyer_id) {
 // ========== PRODUCT MANAGEMENT HELPER FUNCTIONS ==========
 
 /**
- * Get seller products with filters
+ * Get seller products with filters (includes primary image from product_images)
  * 
  * @param mysqli $conn Database connection
  * @param int $seller_id Seller ID
@@ -686,13 +869,15 @@ function cancelBuyerOrder($conn, $order_id, $buyer_id) {
  * @param string $search_term Search by product name or ID
  * @param int $limit Maximum products to return (0 for all)
  * @param int $offset Pagination offset
- * @return array Array of products
+ * @return array Array of products with display_image field
  */
 function getSellerProducts($conn, $seller_id, $status_filter = 'all', $search_term = '', $limit = 0, $offset = 0) {
     $sql = "SELECT p.product_id, p.title, p.price, p.image_url, p.status, p.stock_quantity, p.created_at,
-            c.category_name
+            c.category_name,
+            COALESCE(pi.image_url, p.image_url) AS display_image
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.category_id
+            LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
             WHERE p.seller_id = ? AND p.status != 'deleted'";
     
     $params = [$seller_id];
@@ -733,6 +918,7 @@ function getSellerProducts($conn, $seller_id, $status_filter = 'all', $search_te
             'title' => $row['title'],
             'price' => (float)$row['price'],
             'image' => $row['image_url'],
+            'display_image' => $row['display_image'],
             'status' => $row['status'],
             'stock_quantity' => (int)($row['stock_quantity'] ?? 1),
             'created_at' => $row['created_at'],
@@ -812,6 +998,24 @@ function deleteSellerProduct($conn, $product_id, $seller_id) {
     $product = $check_result->fetch_assoc();
     $check_stmt->close();
     
+    // Also delete gallery images
+    $gallery_sql = "SELECT image_url FROM product_images WHERE product_id = ?";
+    $gallery_stmt = $conn->prepare($gallery_sql);
+    $gallery_stmt->bind_param('i', $product_id);
+    $gallery_stmt->execute();
+    $gallery_result = $gallery_stmt->get_result();
+    while ($img = $gallery_result->fetch_assoc()) {
+        deleteProductImage($img['image_url']);
+    }
+    $gallery_stmt->close();
+    
+    // Delete gallery records
+    $del_gallery = $conn->prepare("DELETE FROM product_images WHERE product_id = ?");
+    $del_gallery->bind_param('i', $product_id);
+    $del_gallery->execute();
+    $del_gallery->close();
+    
+    // Soft delete product
     $delete_sql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
     $delete_stmt = $conn->prepare($delete_sql);
     $delete_stmt->bind_param('ii', $product_id, $seller_id);
@@ -831,7 +1035,7 @@ function deleteSellerProduct($conn, $product_id, $seller_id) {
 }
 
 /**
- * Get single product for editing
+ * Get single product for editing (includes gallery images)
  * 
  * @param mysqli $conn Database connection
  * @param int $product_id Product ID
@@ -840,7 +1044,7 @@ function deleteSellerProduct($conn, $product_id, $seller_id) {
  */
 function getProductForEdit($conn, $product_id, $seller_id) {
     $sql = "SELECT p.product_id, p.title, p.description, p.price, p.stock_quantity, 
-            p.condition, p.location, p.category_id, p.image_url, p.gallery_images, p.status
+            p.`condition`, p.location, p.category_id, p.image_url, p.status
             FROM products p
             WHERE p.product_id = ? AND p.seller_id = ? AND p.status != 'deleted'";
     
@@ -850,7 +1054,6 @@ function getProductForEdit($conn, $product_id, $seller_id) {
     $result = $stmt->get_result();
     
     if ($row = $result->fetch_assoc()) {
-        $row['gallery_images'] = $row['gallery_images'] ? json_decode($row['gallery_images'], true) : [];
         $stmt->close();
         return $row;
     }
@@ -968,6 +1171,9 @@ function createOrdersFromCart($conn, $buyer_id, $cart_items, $seller_ids) {
                 $item_stmt->bind_param('iiid', $order_id, $item['product_id'], $item['quantity'], $item['price']);
                 $item_stmt->execute();
                 $item_stmt->close();
+                
+                // Decrease stock
+                decreaseProductStock($conn, $item['product_id'], $item['quantity']);
             }
         }
         $order_stmt->close();

@@ -38,13 +38,12 @@ if ($is_logged_in && $current_user['role'] === 'admin') {
     <title>Start Selling in South Africa - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
     <meta name="description" content="Join ConsuTrade and start selling your products to buyers across South Africa. Free to join, secure payments via PayFast.">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/login-signup.css">
-    <link rel="stylesheet" href="css/sell.css">
-    <link rel="stylesheet" href="css/products.css">
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/footer.css">
+    
+    <!-- Master Stylesheet (includes all CSS) -->
+    <link rel="stylesheet" href="css/main.css">
+    
+    <!-- Additional page-specific CSS if needed -->
+    <!-- <link rel="stylesheet" href="css/page-specific.css"> -->
 </head>
 <body>
     <!--Header-->
@@ -155,7 +154,6 @@ if ($is_logged_in && $current_user['role'] === 'admin') {
     <!--Footer-->
     <?php include 'includes/footer.php'; ?>
 
-    <script src="js/main.js"></script>
     <script>
     /*
      * ConsuTrade - Sell Page Functionality

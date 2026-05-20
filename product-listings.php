@@ -17,13 +17,10 @@ $baseUrl = getBaseUrl();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop Products - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/products.css">
-    <link rel="stylesheet" href="css/login-signup.css">
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/footer.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    
+    <!-- Master Stylesheet (includes all CSS) -->
+    <link rel="stylesheet" href="css/main.css">
+
 </head>
 <body>
 
@@ -149,8 +146,8 @@ $baseUrl = getBaseUrl();
     </div>
 </main>
 
-<script src="js/products.js"></script>
 <?php include 'includes/footer.php'; ?>
+<script src="js/products.js"></script>
 
 <script>
 // Pass session data to JavaScript using centralized auth variables

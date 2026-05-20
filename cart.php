@@ -29,12 +29,10 @@ if ($is_logged_in && $current_user_id) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cart - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/animations.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/cart-checkout.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/login-signup.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/header.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/footer.css">
+    
+    <!-- Master Stylesheet (includes all CSS) -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    
 </head>
 <body>
 

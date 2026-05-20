@@ -8,7 +8,6 @@
 
 require_once __DIR__ . '/init.php';
 
-// No need to call startSession() - init.php already did it via initAuth()
 $baseUrl = getBaseUrl();
 
 // Read register errors
@@ -47,17 +46,10 @@ unset($_SESSION['flash']);
     <link rel="preload" as="image" href="images/hero-img-phones.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">
     
     <!-- Preload critical CSS -->
-    <link rel="preload" as="style" href="css/style.css">
-    <link rel="preload" as="style" href="css/header.css">
-    <link rel="preload" as="style" href="css/animations.css">
+    <link rel="preload" as="style" href="css/main.css">
     
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/login-signup.css">
-    <link rel="stylesheet" href="css/products.css">
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/footer.css">
+    <!-- Master Stylesheet (includes all other CSS) -->
+    <link rel="stylesheet" href="css/main.css">
     
 </head>
 <body>
@@ -161,10 +153,6 @@ unset($_SESSION['flash']);
 
 <?php if (!empty($registerErrors)): ?>
 <script>
-/*
- * ConsuTrade - Registration Error Handling
- * Author: Kamogelo Phale
- */
 $(function() {
     openModal($('#register-modal'));
     
@@ -185,9 +173,7 @@ $(function() {
     <?php endif; ?>
     
     <?php if (isset($registerErrors['general']) && !empty(trim($registerErrors['general']))): ?>
-    $('#register-error-container')
-        .show()
-        .text(<?php echo json_encode(trim($registerErrors['general'])); ?>);
+    $('#register-error-container').show().text(<?php echo json_encode(trim($registerErrors['general'])); ?>);
     <?php else: ?>
     $('#register-error-container').hide().empty();
     <?php endif; ?>
@@ -198,7 +184,6 @@ $(function() {
             var errorEl = document.createElement('small');
             errorEl.className = 'error-text';
             errorEl.textContent = <?php echo json_encode($message); ?>;
-            
             var $inputField = $('#register-<?php echo $field; ?>');
             if ($inputField.length) {
                 var $inputGroup = $inputField.closest('.input-group');
@@ -215,10 +200,6 @@ $(function() {
 
 <?php if (!empty($loginErrors)): ?>
 <script>
-/*
- * ConsuTrade - Login Error Handling
- * Author: Kamogelo Phale
- */
 $(function() {
     openModal($('#login-modal'));
     
@@ -227,9 +208,7 @@ $(function() {
     <?php endif; ?>
     
     <?php if (isset($loginErrors['general']) && !empty(trim($loginErrors['general']))): ?>
-    $('#login-error-container')
-        .show()
-        .text(<?php echo json_encode(trim($loginErrors['general'])); ?>);
+    $('#login-error-container').show().text(<?php echo json_encode(trim($loginErrors['general'])); ?>);
     <?php else: ?>
     $('#login-error-container').hide().empty();
     <?php endif; ?>
@@ -240,7 +219,6 @@ $(function() {
             var errorEl = document.createElement('small');
             errorEl.className = 'error-text';
             errorEl.textContent = <?php echo json_encode($message); ?>;
-            
             var $inputGroup = $('#login-<?php echo $field; ?>').closest('.input-group');
             if ($inputGroup.length) {
                 $inputGroup.addClass('error');
@@ -255,9 +233,6 @@ $(function() {
 <?php endif; ?>
 
 <script>
-/*
- * Featured Products Loader
- */
 $(function() {
     loadFeaturedProducts();
 
@@ -284,18 +259,15 @@ $(function() {
         $grid.empty();
         
         $.each(products, function(i, product) {
-            // Fix image path
             var imagePath = product.image;
             if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
                 imagePath = baseUrl + imagePath;
             }
             
-            // Determine verification badge
             var verifiedBadge = product.is_verified ? 
                 '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="Verified"><span>Verified Seller</span></div>' : 
                 '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="Not Verified"><span>Unverified</span></div>';
             
-            // Determine condition badge
             var conditionClass = '';
             var conditionText = product.condition || 'Good';
             if (conditionText === 'New') conditionClass = 'new';
@@ -303,7 +275,6 @@ $(function() {
             else if (conditionText === 'Good') conditionClass = 'good';
             else if (conditionText === 'Fair') conditionClass = 'fair';
             
-            // Use eager loading for first 4 images, lazy for others
             var loadingAttr = (i < 4) ? 'eager' : 'lazy';
             
             var $card = $('<div>').addClass('prod-card').css('cursor', 'pointer');
