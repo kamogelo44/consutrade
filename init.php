@@ -18,14 +18,89 @@ if (session_status() === PHP_SESSION_NONE) {
 // Load required files
 require_once __DIR__ . '/php/config.php';
 require_once __DIR__ . '/php/helpers.php';
-require_once __DIR__ . '/php/auth.php';
 
+// Load all class files
+require_once __DIR__ . '/php/classes/Database.php';
+require_once __DIR__ . '/php/classes/Auth.php';
+require_once __DIR__ . '/php/classes/ProductRepository.php';
+require_once __DIR__ . '/php/classes/OrderRepository.php';
+require_once __DIR__ . '/php/classes/CartRepository.php';
+
+// Domain classes
+require_once __DIR__ . '/php/classes/Product.php';
+require_once __DIR__ . '/php/classes/OrderItem.php';
+require_once __DIR__ . '/php/classes/Order.php';
+require_once __DIR__ . '/php/classes/Cart.php';
+require_once __DIR__ . '/php/classes/Transaction.php';
+require_once __DIR__ . '/php/classes/Review.php';
+require_once __DIR__ . '/php/classes/SellerVerification.php';
+require_once __DIR__ . '/php/classes/ProductImage.php';
+require_once __DIR__ . '/php/classes/Category.php';
+
+// User hierarchy
+require_once __DIR__ . '/php/classes/User.php';
+require_once __DIR__ . '/php/classes/Buyer.php';
+require_once __DIR__ . '/php/classes/Seller.php';
+require_once __DIR__ . '/php/classes/Admin.php';
+
+// ------------------------------------------------------------------
+// Instantiate shared services
+// ------------------------------------------------------------------
+
+$auth = new Auth($conn);
+
+$productRepo = new ProductRepository($conn);
+$orderRepo   = new OrderRepository($conn);
+$cartRepo    = new CartRepository($conn);
+
+// ------------------------------------------------------------------
 // Auto-detect and start appropriate session
-$session_data = initAppSession();
+// ------------------------------------------------------------------
 
-// Make variables available globally
-$current_user = $session_data['current_user'];
-$is_logged_in = $session_data['is_logged_in'];
+$session_data = $auth->initAppSession();
+
+// ------------------------------------------------------------------
+// Backward-compatible global variables (existing pages use these)
+// ------------------------------------------------------------------
+
+$current_user    = $session_data['current_user'];
+$is_logged_in    = $session_data['is_logged_in'];
 $current_user_id = $session_data['current_user_id'];
-$baseUrl = getBaseUrl();
-?>
+$baseUrl         = getBaseUrl();
+
+// ------------------------------------------------------------------
+// Create the current user object based on role
+// ------------------------------------------------------------------
+
+$currentUser = null;
+
+if ($is_logged_in && $current_user) {
+    $role = $current_user['role'] ?? '';
+
+    switch ($role) {
+        case 'buyer':
+            $currentUser = new Buyer($current_user, $cartRepo, $orderRepo);
+            $currentUser->refreshCartCount();
+            break;
+
+        case 'seller':
+            // Load verification data if available
+            $verification = null;
+            $verSql = "SELECT * FROM seller_verification WHERE seller_id = ?";
+            $verStmt = $conn->prepare($verSql);
+            $verStmt->bind_param('i', $current_user_id);
+            $verStmt->execute();
+            $verResult = $verStmt->get_result();
+            if ($verRow = $verResult->fetch_assoc()) {
+                $verification = new SellerVerification($verRow);
+            }
+            $verStmt->close();
+
+            $currentUser = new Seller($current_user, $productRepo, $orderRepo, $verification);
+            break;
+
+        case 'admin':
+            $currentUser = new Admin($current_user, $conn);
+            break;
+    }
+}
