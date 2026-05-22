@@ -1,9 +1,15 @@
 /* ========== SELLER PAGE STYLES ========== */
+/* Author: Kamogelo Phale */
 
-/* Seller Hero Section */
+/* Make icons orange to match brand */
+.why-sell-card .icon,
+.requirement-icon {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+}
+
+/* Hero Section */
 .seller-hero {
     background: linear-gradient(135deg, var(--primary-color) 0%, #2a52be 100%);
-    background-size: cover;
     padding: 80px var(--spacing-xl);
     text-align: center;
     color: var(--white);
@@ -30,27 +36,23 @@
     display: flex;
     gap: var(--spacing-md);
     justify-content: center;
+    flex-wrap: wrap;
 }
 
-.register-now-btn, .login-now-btn {
-    padding: 12px 32px;
-    font-size: var(--font-base);
-    font-weight: var(--font-bold);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.register-now-btn {
-    background-color: var(--white);
-    color: var(--primary-color);
-    border: none;
+.register-now-btn,
+.login-now-btn {
     padding: 12px 32px;
     font-size: var(--font-base);
     font-weight: var(--font-bold);
     border-radius: var(--radius-xl);
     cursor: pointer;
     transition: all var(--transition-normal);
+}
+
+.register-now-btn {
+    background-color: var(--white);
+    color: var(--primary-color);
+    border: none;
 }
 
 .register-now-btn:hover {
@@ -64,32 +66,32 @@
     background-color: transparent;
     color: var(--white);
     border: 2px solid var(--white);
-    padding: 12px 32px;
-    font-size: var(--font-base);
-    font-weight: var(--font-bold);
-    border-radius: var(--radius-xl);
-    cursor: pointer;
-    transition: all var(--transition-normal);
 }
 
 .login-now-btn:hover {
     background-color: var(--white);
     color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
 }
 
-/* Active state for all buttons */
-.register-now-btn:active, 
-.login-now-btn:active, 
+.register-now-btn:active,
+.login-now-btn:active,
 .create-seller-btn:active {
     transform: scale(0.98);
 }
 
-/* Why Sell Section */
+/* Why Sell Section - Cards like index.php */
 .why-sell {
     padding: 60px var(--spacing-xl);
     background-color: var(--white);
+}
+
+.section-heading {
+    font-size: 2.5rem;
+    margin-bottom: 50px;
+    color: var(--gray-dark);
+    text-align: center;
+    font-weight: var(--font-bold);
 }
 
 .why-sell-container {
@@ -104,27 +106,40 @@
 .why-sell-card {
     flex: 1;
     min-width: 250px;
-     max-width: 350px; 
-    background-color: var(--gray-bg-light);
-    padding: 30px;
+    max-width: 350px;
+    background-color: var(--white);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
     text-align: center;
-    transition: transform var(--transition-fast);
+    transition: all var(--transition-normal);
+    padding: var(--spacing-lg);
 }
 
 .why-sell-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
 }
 
-.why-sell-icon {
+.why-sell-card .icon {
     margin-bottom: var(--spacing-md);
+    transition: transform var(--transition-normal);
+}
+
+.why-sell-card:hover .icon {
+    transform: scale(1.05);
 }
 
 .why-sell-card h3 {
-    font-size: var(--font-xl);
+    font-size: 1.5rem;
     font-weight: var(--font-bold);
     margin-bottom: var(--spacing-sm);
     color: var(--dark-bg);
+    transition: color var(--transition-fast);
+}
+
+.why-sell-card:hover h3 {
+    color: var(--primary-color);
 }
 
 .why-sell-card p {
@@ -137,11 +152,26 @@
 .requirements {
     background-color: var(--gray-bg);
     padding: 60px var(--spacing-xl);
+    border-top: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .requirements-container {
     max-width: 800px;
     margin: 0 auto;
+    text-align: center;
+}
+
+.requirements-container h2 {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-sm);
+    color: var(--dark-bg);
+}
+
+.requirements-container > p {
+    color: var(--gray-medium);
+    margin-bottom: var(--spacing-xl);
 }
 
 .requirements-list {
@@ -149,7 +179,6 @@
     flex-wrap: wrap;
     gap: var(--spacing-lg);
     justify-content: center;
-    align-items: center;
     margin-top: var(--spacing-xl);
 }
 
@@ -162,23 +191,23 @@
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     min-width: 250px;
-    max-width: 350px; 
-     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: all var(--transition-fast);
 }
 
 .requirement-item:hover {
     transform: translateX(5px);
     box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
 }
 
 .requirement-icon {
-    font-size: 28px;
-}
-
-.requirement-icon img {
     width: 32px;
     height: 32px;
-    display: block;
+    transition: transform var(--transition-fast);
+}
+
+.requirement-item:hover .requirement-icon {
+    transform: scale(1.1);
 }
 
 .requirement-item p {
@@ -190,7 +219,8 @@
 .requirement-note {
     font-size: var(--font-sm);
     color: var(--gray-medium);
-    font-weight: var(--font-normal);
+    margin-top: var(--spacing-xl);
+    font-style: italic;
 }
 
 /* Ready to Start Section */
@@ -236,7 +266,7 @@
     box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
 }
 
-/* ========== RESPONSIVE STYLES ========== */
+/* Responsive */
 @media (max-width: 768px) {
     .seller-hero {
         padding: 60px var(--spacing-md);
@@ -255,16 +285,23 @@
         align-items: center;
     }
     
-    .register-now-btn, .login-now-btn {
-        width: 200px;
+    .register-now-btn,
+    .login-now-btn {
+        width: 220px;
     }
     
     .why-sell {
         padding: 40px var(--spacing-md);
     }
     
+    .section-heading {
+        font-size: 2rem;
+        margin-bottom: 30px;
+    }
+    
     .why-sell-card {
         min-width: 100%;
+        max-width: 100%;
     }
     
     .requirements {
@@ -286,7 +323,7 @@
     }
     
     .why-sell-card h3 {
-        font-size: var(--font-lg);
+        font-size: 1.2rem;
     }
     
     .ready-title {

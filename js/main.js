@@ -2,18 +2,7 @@
  * ConsuTrade - Main JavaScript File (jQuery Version)
  * Author: Kamogelo Phale
  * 
- * This file handles:
- * - Mobile menu toggle (hamburger)
- * - Mobile search bar
- * - Password show/hide
- * - Login/register modal popups
- * - Cart count updates
- * - Cart display and management
- * - User dropdown menus (desktop + mobile)
- * - Sell link behavior for logged-in buyers
- * - Active navigation link highlighting
- * - Error message clearing on input
- * - Toast notifications
+ * Handles mobile menu, search, password toggle, modals, cart, dropdowns, toast notifications
  */
 
 // Base URL for all fetch requests
@@ -25,64 +14,37 @@ function escapeHtml(text) {
     return $('<div>').text(text).html();
 }
 
-// ========== TOAST NOTIFICATIONS ==========
+// ========== TOAST NOTIFICATIONS (No emojis) ==========
 function showToast(message, type = 'success') {
-    // Remove any existing toast
     $('.toast-notification').remove();
-    
-    var icon = '';
-    if (type === 'success') icon = '✓';
-    else if (type === 'error') icon = '✕';
-    else if (type === 'info') icon = 'ℹ';
-    else if (type === 'warning') icon = '⚠';
     
     var toast = $(`
         <div class="toast-notification toast-${type}">
-            <div class="toast-icon">${icon}</div>
             <div class="toast-message">${escapeHtml(message)}</div>
         </div>
     `);
     
     $('body').append(toast);
     
-    // Click anywhere on toast to dismiss
-    toast.on('click', function(e) {
-        if (!$(e.target).hasClass('toast-close')) {
-            toast.addClass('hiding');
-            setTimeout(function() {
-                toast.remove();
-            }, 300);
-        }
+    toast.on('click', function() {
+        toast.addClass('hiding');
+        setTimeout(function() { toast.remove(); }, 300);
     });
     
-    // Auto remove after 4 seconds
     setTimeout(function() {
         if (toast && toast.length) {
             toast.addClass('hiding');
-            setTimeout(function() {
-                toast.remove();
-            }, 300);
+            setTimeout(function() { toast.remove(); }, 300);
         }
     }, 4000);
 }
 
-function showSuccessToast(message) {
-    showToast(message, 'success');
-}
+function showSuccessToast(message) { showToast(message, 'success'); }
+function showErrorToast(message) { showToast(message, 'error'); }
+function showInfoToast(message) { showToast(message, 'info'); }
+function showWarningToast(message) { showToast(message, 'warning'); }
 
-function showErrorToast(message) {
-    showToast(message, 'error');
-}
-
-function showInfoToast(message) {
-    showToast(message, 'info');
-}
-
-function showWarningToast(message) {
-    showToast(message, 'warning');
-}
-
-// ========== GLOBAL PASSWORD TOGGLE FUNCTION ==========
+// ========== PASSWORD TOGGLE ==========
 function togglePassword(fieldId, button) {
     var $input = $('#' + fieldId);
     var $img = $(button).find('img');
@@ -98,7 +60,7 @@ function togglePassword(fieldId, button) {
     }
 }
 
-// ========== ERROR CLEARING FUNCTIONS ==========
+// ========== ERROR CLEARING ==========
 function clearLoginErrors() {
     $('#login-error-container').hide().empty();
     $('#login-form .input-group').removeClass('error');
@@ -117,35 +79,27 @@ function clearModalErrors($modal) {
     $modal.find('.error-text').remove();
 }
 
-// ========== GLOBAL CART FUNCTIONS ==========
+// ========== CART FUNCTIONS ==========
 function addToCart(productId, productName, productPrice) {
     $.ajax({
         url: baseUrl + 'php/add-to-cart.php',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({
-            product_id: productId,
-            product_name: productName,
-            product_price: productPrice
-        }),
+        data: JSON.stringify({ product_id: productId, product_name: productName, product_price: productPrice }),
         success: function(data) {
             if (data.success) {
                 updateCartCount();
-                showSuccessToast(data.message || 'Item added to cart!');
+                showSuccessToast(data.message || 'Item added to cart');
             } else {
                 showErrorToast(data.message || 'Error adding item to cart');
             }
         },
-        error: function() {
-            showErrorToast('Something went wrong');
-        }
+        error: function() { showErrorToast('Something went wrong'); }
     });
 }
 
 function removeFromCart(productId) {
-    if (!confirm('Are you sure you want to remove this item from your cart?')) {
-        return;
-    }
+    if (!confirm('Are you sure you want to remove this item from your cart?')) return;
     
     $.ajax({
         url: baseUrl + 'php/remove-from-cart.php',
@@ -155,7 +109,6 @@ function removeFromCart(productId) {
         success: function(data) {
             if (data.success) {
                 updateCartCount();
-                // Reload if on cart page, otherwise just update count
                 if (window.location.pathname.includes('cart.php')) {
                     location.reload();
                 } else {
@@ -165,30 +118,20 @@ function removeFromCart(productId) {
                 showErrorToast(data.message || 'Error removing item from cart');
             }
         },
-        error: function() {
-            showErrorToast('Something went wrong');
-        }
+        error: function() { showErrorToast('Something went wrong'); }
     });
 }
 
 function updateCartCount() {
     $.get(baseUrl + 'php/get-cart.php', function(data) {
         if (data.success) {
-            var cartCount = data.item_count;
-            $('.cart-count').text(cartCount);
-            
-            var itemNum = $('.item-num');
-            if (itemNum.length) {
-                itemNum.text(cartCount);
-            }
+            $('.cart-count').text(data.item_count);
+            $('.item-num').text(data.item_count);
         }
-    }).fail(function() {
-        // Silent fail - don't show error for cart count
-    });
+    }).fail(function() {});
 }
 
 function loadCart() {
-    // Only run on cart page
     if (!window.location.pathname.includes('cart.php')) return;
     
     $.get(baseUrl + 'php/get-cart.php', function(data) {
@@ -196,9 +139,7 @@ function loadCart() {
             displayCartItems(data);
             updateOrderSummary(data);
         }
-    }).fail(function() {
-        console.log('Error loading cart');
-    });
+    }).fail(function() { console.log('Error loading cart'); });
 }
 
 function displayCartItems(cartData) {
@@ -224,25 +165,20 @@ function displayCartItems(cartData) {
     
     $.each(cartData.items, function(index, item) {
         var verifiedBadge = item.is_verified ? 
-            '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14px" height="14px" alt="verification"><span>Verified Seller</span></div>' : 
-            '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14px" height="14px" alt="not-verified"><span>Unverified</span></div>';
+            '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' : 
+            '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
         
         var imagePath = item.image;
         if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
             imagePath = baseUrl + imagePath;
         }
         
-        // Desktop table row - MATCHING PHP STRUCTURE
         if ($desktopTableBody.length) {
             var row = $('<tr>').html(`
                 <td class="product-cell" data-label="Product">
                     <div class="cart-product-wrapper">
-                        <div class="cart-img-container">
-                            <img src="${imagePath}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'">
-                        </div>
-                        <div class="cart-prod-info">
-                            <p class="prod-name">${escapeHtml(item.product_name)}</p>
-                        </div>
+                        <div class="cart-img-container"><img src="${imagePath}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'"></div>
+                        <div class="cart-prod-info"><p class="prod-name">${escapeHtml(item.product_name)}</p></div>
                     </div>
                   </td>
                 <td class="seller-cell" data-label="Seller">
@@ -262,15 +198,13 @@ function displayCartItems(cartData) {
                   </td>
                 <td class="actions-cell" data-label="Actions">
                     <button class="remove-btn" data-product-id="${item.product_id}">
-                        <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove">
-                        Remove
+                        <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove"> Remove
                     </button>
                   </td>
             `);
             $desktopTableBody.append(row);
         }
         
-        // Mobile card - MATCHING PHP STRUCTURE
         if ($mobileContainer.length) {
             var card = $('<div>').addClass('cart-card').html(`
                 <div class="cart-card-header">
@@ -289,8 +223,7 @@ function displayCartItems(cartData) {
                         <button class="qty-increase" data-cart-id="${item.cart_id}">+</button>
                     </div>
                     <button class="remove-btn" data-product-id="${item.product_id}">
-                        <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove">
-                        Remove
+                        <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove"> Remove
                     </button>
                 </div>
             `);
@@ -298,12 +231,10 @@ function displayCartItems(cartData) {
         }
     });
     
-    // Re-attach event handlers for the newly added elements
     attachCartEventHandlers();
 }
 
 function attachCartEventHandlers() {
-    // Quantity increase
     $('.qty-increase').off('click').on('click', function() {
         var cartId = $(this).data('cart-id');
         var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
@@ -315,7 +246,6 @@ function attachCartEventHandlers() {
         }
     });
     
-    // Quantity decrease
     $('.qty-decrease').off('click').on('click', function() {
         var cartId = $(this).data('cart-id');
         var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
@@ -326,24 +256,19 @@ function attachCartEventHandlers() {
         }
     });
     
-    // Manual quantity input
     $('.qty-input').off('change').on('change', function() {
         var cartId = $(this).data('cart-id');
         var quantity = parseInt($(this).val());
         var maxVal = parseInt($(this).attr('max'));
-        if (isNaN(quantity) || quantity < 1) {
-            quantity = 1;
-            $(this).val(1);
-        }
+        if (isNaN(quantity) || quantity < 1) quantity = 1;
         if (quantity > maxVal) {
             quantity = maxVal;
-            $(this).val(maxVal);
             alert('Only ' + maxVal + ' available in stock.');
         }
+        $(this).val(quantity);
         updateCartQuantity(cartId, quantity);
     });
     
-    // Remove button
     $('.remove-btn').off('click').on('click', function() {
         var productId = $(this).data('product-id');
         if (confirm('Remove this item from your cart?')) {
@@ -358,53 +283,33 @@ function updateOrderSummary(cartData) {
     if ($('.total-val').length) $('.total-val').text(cartData.total);
 }
 
-// ========== GLOBAL MODAL FUNCTIONS ==========
-
+// ========== MODAL FUNCTIONS ==========
 function openModal($modal) {
     if (!$modal.length) return;
     
     var $content = $modal.find('.modal-content');
-    
-    // Clear any existing errors when opening modal
     clearModalErrors($modal);
-    
-    // Remove any lingering animation classes
     $content.removeClass('animate-in animate-out');
     
-    // Show the modal
     $modal.css('visibility', 'visible');
     $modal.addClass('active');
     
     $modal[0].offsetHeight;
-    
-    // Now add the animation
     $content.addClass('animate-in');
     $('body').css('overflow', 'hidden');
     
-    // Clean up animation class after it completes
-    setTimeout(function() {
-        $content.removeClass('animate-in');
-    }, 350);
+    setTimeout(function() { $content.removeClass('animate-in'); }, 350);
 }
 
 function closeModal($modal) {
     if (!$modal.length) return;
     
     var $content = $modal.find('.modal-content');
-    
-    // Clear errors when closing modal
     clearModalErrors($modal);
-    
-    // Remove animate-in if present
     $content.removeClass('animate-in');
-    
-    // Force reflow
     $modal[0].offsetHeight;
-    
-    // Add animate-out
     $content.addClass('animate-out');
     
-    // Hide modal after animation completes
     setTimeout(function() {
         $modal.removeClass('active');
         $modal.css('visibility', 'hidden');
@@ -413,34 +318,21 @@ function closeModal($modal) {
     }, 280);
 }
 
-// ========== CLEAR ERRORS ON INPUT ==========
+// ========== ERROR CLEARING ON INPUT ==========
 function initErrorClearingOnInput() {
-    // Login form - clear errors when user starts typing
-    $('#login-email, #login-password').on('input', function() {
-        clearLoginErrors();
-    });
-    
-    // Register form - clear errors when user starts typing in any field
+    $('#login-email, #login-password').on('input', function() { clearLoginErrors(); });
     $('#register-full-name, #register-email, #register-phone, #register-password, #register-confirm-password').on('input', function() {
         clearRegisterErrors();
-        // Also clear the specific field's error highlighting
         $(this).closest('.input-group').removeClass('error');
         $(this).closest('.input-group').find('.error-text').remove();
     });
-    
-    // Clear errors when switching between login/register via the switch links
-    $('#switch-to-register').on('click', function() {
-        clearLoginErrors();
-    });
-    
-    $('#switch-to-login').on('click', function() {
-        clearRegisterErrors();
-    });
+    $('#switch-to-register').on('click', function() { clearLoginErrors(); });
+    $('#switch-to-login').on('click', function() { clearRegisterErrors(); });
 }
 
-// Document Ready
-$(function() { 
-    // ========== MOBILE MENU TOGGLE ==========
+// ========== DOCUMENT READY ==========
+$(function() {
+    // Mobile Menu Toggle
     var $mainToggle = $('#mobileMenuToggle');
     var $sideClose = $('#sideMenuClose');
     var $mobileNav = $('#mobileNav');
@@ -462,35 +354,23 @@ $(function() {
     
     if ($mainToggle.length) {
         $mainToggle.on('click', function() {
-            if ($mobileNav.hasClass('active')) {
-                closeMenu();
-            } else {
-                openMenu();
-            }
+            if ($mobileNav.hasClass('active')) closeMenu();
+            else openMenu();
         });
     }
     
-    if ($sideClose.length) {
-        $sideClose.on('click', closeMenu);
-    }
-    
-    if ($overlay.length) {
-        $overlay.on('click', closeMenu);
-    }
+    if ($sideClose.length) $sideClose.on('click', closeMenu);
+    if ($overlay.length) $overlay.on('click', closeMenu);
     
     $('.mobile-nav-links a, .mobile-nav-btn').on('click', function() {
-        if ($(window).width() <= 768) {
-            closeMenu();
-        }
+        if ($(window).width() <= 768) closeMenu();
     });
     
     $(window).on('resize', function() {
-        if ($(window).width() > 768 && $mobileNav.hasClass('active')) {
-            closeMenu();
-        }
+        if ($(window).width() > 768 && $mobileNav.hasClass('active')) closeMenu();
     });
     
-    // ========== MOBILE SEARCH ==========
+    // Mobile Search
     var $mobileSearchIcon = $('#mobileSearchIcon');
     var $mobileSearchContainer = $('#mobileSearchContainer');
     
@@ -498,25 +378,19 @@ $(function() {
         $mobileSearchIcon.on('click', function(e) {
             e.stopPropagation();
             $mobileSearchContainer.toggleClass('active');
-            
-            if ($mobileSearchContainer.hasClass('active')) {
-                $('#mobile-search').focus();
+            if ($mobileSearchContainer.hasClass('active')) $('#mobile-search').focus();
+        });
+        
+        $(document).on('click', function(event) {
+            if ($mobileSearchContainer.length && $mobileSearchContainer.hasClass('active') &&
+                !$mobileSearchContainer.is(event.target) && !$mobileSearchIcon.is(event.target) &&
+                !$mobileSearchContainer.has(event.target).length) {
+                $mobileSearchContainer.removeClass('active');
             }
         });
     }
     
-    $(document).on('click', function(event) {
-        if ($mobileSearchContainer.length && $mobileSearchIcon.length) {
-            if (!$mobileSearchContainer.is(event.target) && 
-                !$mobileSearchIcon.is(event.target) && 
-                !$mobileSearchContainer.has(event.target).length &&
-                $mobileSearchContainer.hasClass('active')) {
-                $mobileSearchContainer.removeClass('active');
-            }
-        }
-    });
-    
-    // ========== MODAL CONTROLS ==========
+    // Modal Controls
     var $registerModal = $('#register-modal');
     var $loginModal = $('#login-modal');
     var $deleteModal = $('#delete-modal');
@@ -527,94 +401,50 @@ $(function() {
     var $deleteClose = $('#delete-modal .btn-close, #delete-modal .modal-close, #delete-modal .delete-cancel-btn');
     var $switchToRegister = $('#switch-to-register');
     var $switchToLogin = $('#switch-to-login');
-
-
-    // Register buttons
+    
     if ($registerBtns.length) {
         $registerBtns.on('click', function(e) {
             e.preventDefault();
-            if ($loginModal.hasClass('active')) {
-                closeModal($loginModal);
-            }
+            if ($loginModal.hasClass('active')) closeModal($loginModal);
             openModal($registerModal);
         });
     }
-
-    // Login buttons
+    
     if ($loginBtns.length) {
         $loginBtns.on('click', function(e) {
             e.preventDefault();
-            if ($registerModal.hasClass('active')) {
-                closeModal($registerModal);
-            }
+            if ($registerModal.hasClass('active')) closeModal($registerModal);
             openModal($loginModal);
         });
     }
-
-    // Close buttons
-    if ($registerClose.length) {
-        $registerClose.on('click', function() { 
-            closeModal($registerModal); 
-        });
-    }
-
-    if ($loginClose.length) {
-        $loginClose.on('click', function() { 
-            closeModal($loginModal); 
-        });
-    }
-
-    if ($deleteClose.length) {
-        $deleteClose.on('click', function() { 
-            closeModal($deleteModal); 
-        });
-    }
-
-    // Close modal when clicking outside
-    $registerModal.on('click', function(e) {
-        if ($(e.target).is($registerModal)) {
-            closeModal($registerModal);
-        }
-    });
-
-    $loginModal.on('click', function(e) {
-        if ($(e.target).is($loginModal)) {
-            closeModal($loginModal);
-        }
-    });
-
-    if ($deleteModal.length) {
-        $deleteModal.on('click', function(e) {
-            if ($(e.target).is($deleteModal)) {
-                closeModal($deleteModal);
-            }
-        });
-    }
-
-    // Switch between modals - clear errors when switching
+    
+    if ($registerClose.length) $registerClose.on('click', function() { closeModal($registerModal); });
+    if ($loginClose.length) $loginClose.on('click', function() { closeModal($loginModal); });
+    if ($deleteClose.length) $deleteClose.on('click', function() { closeModal($deleteModal); });
+    
+    $registerModal.on('click', function(e) { if ($(e.target).is($registerModal)) closeModal($registerModal); });
+    $loginModal.on('click', function(e) { if ($(e.target).is($loginModal)) closeModal($loginModal); });
+    if ($deleteModal.length) $deleteModal.on('click', function(e) { if ($(e.target).is($deleteModal)) closeModal($deleteModal); });
+    
     if ($switchToRegister.length) {
         $switchToRegister.on('click', function(e) {
             e.preventDefault();
-            clearLoginErrors(); // Clear login errors before switching
+            clearLoginErrors();
             closeModal($loginModal);
-            setTimeout(function() { 
-                openModal($registerModal); 
-            }, 300);
-        });
-    }
-
-    if ($switchToLogin.length) {
-        $switchToLogin.on('click', function(e) {
-            e.preventDefault();
-            clearRegisterErrors(); // Clear register errors before switching
-            closeModal($registerModal);
-            setTimeout(function() { 
-                openModal($loginModal); 
-            }, 300);
+            setTimeout(function() { openModal($registerModal); }, 300);
         });
     }
     
-    // ========== USER DROPDOWN TOGGLE ==========
+    if ($switchToLogin.length) {
+        $switchToLogin.on('click', function(e) {
+            e.preventDefault();
+            clearRegisterErrors();
+            closeModal($registerModal);
+            setTimeout(function() { openModal($loginModal); }, 300);
+        });
+    }
+    
+    // User Dropdown
     var $userMenuBtn = $('#userMenuBtn');
     var $userDropdown = $('#userDropdown');
     
@@ -626,85 +456,46 @@ $(function() {
         });
         
         $(document).on('click', function(e) {
-            if (!$userMenuBtn.is(e.target) && 
-                !$userDropdown.is(e.target) && 
-                !$userMenuBtn.has(e.target).length && 
-                !$userDropdown.has(e.target).length) {
+            if (!$userMenuBtn.is(e.target) && !$userDropdown.is(e.target) &&
+                !$userMenuBtn.has(e.target).length && !$userDropdown.has(e.target).length) {
                 $userDropdown.removeClass('active');
                 $userMenuBtn.removeClass('active');
             }
         });
     }
     
-    // ========== AUTO-CLOSE MODAL ON SUCCESS ==========
+    // Auto-close modal on success
     var $flashMessage = $('.flash');
     if ($flashMessage.length) {
-        if ($('#register-modal').hasClass('active')) {
-            $('#register-modal').removeClass('active');
-        }
-        if ($('#login-modal').hasClass('active')) {
-            $('#login-modal').removeClass('active');
-        }
+        if ($('#register-modal').hasClass('active')) $('#register-modal').removeClass('active');
+        if ($('#login-modal').hasClass('active')) $('#login-modal').removeClass('active');
         
         setTimeout(function() {
             $flashMessage.css('opacity', '0').css('transition', 'opacity 0.5s ease');
-            setTimeout(function() {
-                $flashMessage.remove();
-            }, 500);
+            setTimeout(function() { $flashMessage.remove(); }, 500);
         }, 5000);
     }
     
-    // ========== ACTIVE NAVIGATION LINK ==========
+    // Active Navigation Link
     function setActiveLink() {
         var path = window.location.pathname;
-        var currentPage = path.substring(path.lastIndexOf('/') + 1);
-        
-        if (currentPage === '') {
-            currentPage = 'index.php';
-        }
+        var currentPage = path.substring(path.lastIndexOf('/') + 1) || 'index.php';
         
         $('.main-nav a, .mobile-nav-links a').each(function() {
             var $link = $(this);
             var href = $link.attr('href');
+            if (!href) return;
+            
+            var hrefPage = href.substring(href.lastIndexOf('/') + 1);
+            if (hrefPage.indexOf('?') !== -1) hrefPage = hrefPage.substring(0, hrefPage.indexOf('?'));
             
             $link.removeClass('active');
-            
-            if (href) {
-                var hrefPage = href.substring(href.lastIndexOf('/') + 1);
-                
-                if (hrefPage.indexOf('?') !== -1) {
-                    hrefPage = hrefPage.substring(0, hrefPage.indexOf('?'));
-                }
-                
-                if ((currentPage === 'index.php' || currentPage === 'index.html' || currentPage === '') && 
-                    (hrefPage === 'index.php' || hrefPage === 'index.html' || hrefPage === '')) {
-                    $link.addClass('active');
-                }
-                else if (hrefPage === currentPage) {
-                    $link.addClass('active');
-                }
-                else if (currentPage === 'cart.php' && hrefPage === 'cart.php') {
-                    $link.addClass('active');
-                }
-                else if (currentPage === 'sell.php' && hrefPage === 'sell.php') {
-                    $link.addClass('active');
-                }
-                else if (currentPage === 'profile.php' && hrefPage === 'profile.php') {
-                    $link.addClass('active');
-                }
-                else if (currentPage === 'my-orders.php' && hrefPage === 'my-orders.php') {
-                    $link.addClass('active');
-                }
-            }
+            if (hrefPage === currentPage) $link.addClass('active');
         });
     }
-
+    
     setActiveLink();
-    
-    // ========== INITIALIZE ERROR CLEARING ON INPUT ==========
     initErrorClearingOnInput();
-    
-    // ========== RUN THESE WHEN PAGE LOADS ==========
     updateCartCount();
     loadCart();
 });

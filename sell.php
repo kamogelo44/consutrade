@@ -1,182 +1,121 @@
 <?php
 /*
- * ConsuTrade - Start Selling Page
+ * ConsuTrade - Seller Information Page
  * Author: Kamogelo Phale
  * 
- * Landing page for potential sellers to learn about selling on ConsuTrade
+ * Information page for potential sellers to learn about selling on ConsuTrade
  */
 
 require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
-
-// If user is already logged in as buyer, redirect to home (buyers can't access sell page)
-if ($is_logged_in && $current_user['role'] === 'buyer') {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
-}
-
-// If seller is logged in, redirect to seller dashboard
-if ($is_logged_in && $current_user['role'] === 'seller') {
-    header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
-    exit;
-}
-
-// If admin is logged in, redirect to admin dashboard
-if ($is_logged_in && $current_user['role'] === 'admin') {
-    header('Location: ' . $baseUrl . 'admin/admin-dashboard.php');
-    exit;
-}
-
-// Only guests (not logged in) can see this page
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Start Selling in South Africa - ConsuTrade</title>
+    <title>Sell on ConsuTrade - Start Selling Online</title>
+    <meta name="description" content="Start selling your products on ConsuTrade. Reach thousands of customers across South Africa.">
     <meta name="author" content="Kamogelo Phale">
-    <meta name="description" content="Join ConsuTrade and start selling your products to buyers across South Africa. Free to join, secure payments via PayFast.">
-    
-    <!-- Master Stylesheet (includes all CSS) -->
-    <link rel="stylesheet" href="css/main.css">
-    
-    <!-- Additional page-specific CSS if needed -->
-    <!-- <link rel="stylesheet" href="css/page-specific.css"> -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/sell.css">
 </head>
 <body>
-    <!--Header-->
-    <?php include 'includes/header.php'; ?>
 
-    <main>
-        <!-- Hero Section -->
-        <section class="seller-hero">
-            <div class="seller-hero-container">
-                <h1 class="seller-hero-title">Start Selling on ConsuTrade Today</h1>
-                <p class="seller-hero-subtitle">Reach buyers across South Africa with Africa's growing marketplace</p>
-                <div class="seller-hero-buttons">
-                    <button class="register-now-btn" id="seller-register-btn">Register Now</button>
-                    <button class="login-now-btn" id="seller-login-btn">Login</button>
+<?php include 'includes/header.php'; ?>
+
+<main>
+    <!-- Hero Section -->
+    <section class="seller-hero">
+        <div class="seller-hero-container">
+            <h1 class="seller-hero-title">Start Selling Today</h1>
+            <p class="seller-hero-subtitle">Join thousands of South African entrepreneurs selling on ConsuTrade</p>
+            <div class="seller-hero-buttons">
+                <button class="register-now-btn" id="sellerRegisterBtn">Create Seller Account</button>
+                <button class="login-now-btn" id="loginBtn">Login to Account</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Sell Section - Same as index.php cards -->
+    <section class="why-sell">
+        <h1 class="section-heading">Why Sell with Us</h1>
+        <div class="why-sell-container">
+            <div class="why-sell-card">
+                <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" width="48" height="48" alt="Reach customers" class="icon">
+                <h3>Reach More Customers</h3>
+                <p>Connect with thousands of buyers across South Africa</p>
+            </div>
+            <div class="why-sell-card">
+                <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" width="48" height="48" alt="Secure payments" class="icon">
+                <h3>Secure Payments</h3>
+                <p>Get paid securely through PayFast</p>
+            </div>
+            <div class="why-sell-card">
+                <img src="<?php echo $baseUrl; ?>images/icons/delivery-svgrepo-com.svg" width="48" height="48" alt="Easy shipping" class="icon">
+                <h3>Easy Shipping</h3>
+                <p>Simple shipping with nationwide delivery</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Requirements Section -->
+    <section class="requirements">
+        <div class="requirements-container">
+            <h2>What You Need to Start Selling</h2>
+            <p>Getting started is easy. Just make sure you have:</p>
+            <div class="requirements-list">
+                <div class="requirement-item">
+                    <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" class="requirement-icon" alt="Valid ID">
+                    <p>Valid South African ID</p>
+                </div>
+                <div class="requirement-item">
+                    <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" class="requirement-icon" alt="Email">
+                    <p>Active Email Address</p>
+                </div>
+                <div class="requirement-item">
+                    <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" class="requirement-icon" alt="Phone">
+                    <p>Valid Phone Number</p>
                 </div>
             </div>
-        </section>
+            <p class="requirement-note">All sellers must be verified before they can start selling on ConsuTrade.</p>
+        </div>
+    </section>
 
-        <!-- Why Sell With Us Section -->
-        <section class="why-sell">
-            <h2 class="section-heading">Why Sell With Us</h2>
-            <div class="why-sell-container">
-                <div class="why-sell-card">
-                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="Free to join" class="why-sell-icon" loading="lazy">
-                    <h3>Free to Join</h3>
-                    <p>No upfront costs. Create your seller account for free and start listing products immediately.</p>
-                </div>
-                <div class="why-sell-card">
-                    <img src="images/icons/verified-svgrepo-com.svg" width="48px" height="48px" alt="Verified badge" class="why-sell-icon" loading="lazy">
-                    <h3>Verified Badge</h3>
-                    <p>Get a verified seller badge after completing your profile, building trust with buyers.</p>
-                </div>
-                <div class="why-sell-card">
-                    <img src="images/icons/delivery-svgrepo-com.svg" width="48px" height="48px" alt="Reach buyers" class="why-sell-icon" loading="lazy">
-                    <h3>Reach Buyers</h3>
-                    <p>Connect with thousands of active buyers looking for products across South Africa.</p>
-                </div>
-            </div>
-        </section>
+    <!-- Ready to Start Section -->
+    <section class="ready-to-start">
+        <div class="ready-container">
+            <h2 class="ready-title">Ready to Grow Your Business?</h2>
+            <p class="ready-subtitle">Create your seller account today and start reaching more customers.</p>
+            <button class="create-seller-btn" id="createSellerBtn">Create Seller Account</button>
+        </div>
+    </section>
+</main>
 
-        <!--How it works section-->
-        <section class="how">
-            <h1 class="section-heading">How it works</h1>
-            <div class="how-container">
-                <div class="card">
-                    <img src="images/icons/register-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
-                    <h2>Register</h2>
-                    <p>Create your free seller account</p>
-                </div>
+<?php include 'includes/footer.php'; ?>
 
-                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow" loading="lazy">
+<script>
+// Function to open register modal with seller role pre-selected
+function openSellerRegisterModal() {
+    // Select the seller radio button    
+    $('#seller').prop('checked', true);
+    
+    // Open the register modal
+    $('#register-modal').addClass('active');
+    $('#register-modal').css('visibility', 'visible');
+}
 
-                <div class="card">
-                    <img src="images/icons/product-catalog-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
-                    <h2>List</h2>
-                    <p>Upload your products in minutes</p>
-                </div>
+// Attach click handlers to all seller registration buttons
+document.getElementById('sellerRegisterBtn').addEventListener('click', openSellerRegisterModal);
+document.getElementById('createSellerBtn').addEventListener('click', openSellerRegisterModal);
 
-                <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48px" height="48px" alt="arrow" loading="lazy">
+// Regular login button (opens login modal normally)
+document.getElementById('loginBtn').addEventListener('click', function() {
+    $('#login-modal').addClass('active');
+    $('#login-modal').css('visibility', 'visible');
+});
+</script>
 
-                <div class="card">
-                    <img src="images/icons/cash-atm-svgrepo-com.svg" width="48px" height="48px" alt="" class="icon" loading="lazy">
-                    <h2>Get Paid</h2>
-                    <p>Receive payments securely with 
-                        <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank" rel="noopener noreferrer">
-                            <img src="images/icons/Payfast logo.svg" alt="PayFast icon" width="60" height="20" loading="lazy">
-                        </a>
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <!-- What You Need Section -->
-        <section class="requirements">
-            <div class="requirements-container">
-                <h2 class="section-heading">What You Need to Get Started</h2>
-                <div class="requirements-list">
-                    <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/valid-document-svgrepo-com.svg" width="32px" height="32px" alt="SA ID document" loading="lazy"></span>
-                        <p>Valid SA ID number</p>
-                    </div>
-                    <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/phone-number.svg" width="32px" height="32px" alt="Phone Number" loading="lazy"></span>
-                        <p>Phone number</p>
-                    </div>
-                    <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/Payfast logo.svg" width="32px" height="32px" alt="PayFast Logo" loading="lazy"></span>
-                        <p>PayFast account <span class="requirement-note">(free to create)</span></p>
-                    </div>
-                    <div class="requirement-item">
-                        <span class="requirement-icon"><img src="images/icons/photos-filled-svgrepo-com.svg" width="32px" height="32px" alt="Product Photos" loading="lazy"></span>
-                        <p>Product photos</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Ready to Start Section -->
-        <section class="ready-to-start">
-            <div class="ready-container">
-                <h2 class="ready-title">Ready to Start Selling?</h2>
-                <p class="ready-subtitle">Join thousands of successful sellers on ConsuTrade</p>
-                <button class="create-seller-btn" id="create-seller-btn">Create Your Seller Account</button>
-            </div>
-        </section>
-    </main>
-
-    <!--Footer-->
-    <?php include 'includes/footer.php'; ?>
-
-    <script>
-    /*
-     * ConsuTrade - Sell Page Functionality
-     */
-    $(function() {
-        // Register button - open registration modal with seller role selected
-        $('#seller-register-btn, #create-seller-btn').on('click', function(e) {
-            e.preventDefault();
-            // Open registration modal
-            openModal($('#register-modal'));
-            // Pre-select seller role
-            $('#seller').prop('checked', true);
-            // Clear any existing errors
-            clearRegisterErrors();
-        });
-        
-        // Login button - open login modal
-        $('#seller-login-btn').on('click', function(e) {
-            e.preventDefault();
-            openModal($('#login-modal'));
-            clearLoginErrors();
-        });
-    });
-    </script>
 </body>
 </html>

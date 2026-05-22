@@ -1,10 +1,11 @@
-
- <!--
- *
+<?php
+/*
  * ConsuTrade - Site Footer Component
  * Author: Kamogelo Phale
- *
--->
+ * 
+ * Simplified version - Clean footer with scripts
+ */
+?>
 <footer class="site-footer">
     <div class="footer-container">
         <div class="footer-section">
@@ -21,7 +22,6 @@
             <h4>Quick Links</h4>
             <ul>
                 <li><a href="<?php echo $baseUrl; ?>about.php">About Us</a></li>
-                <li><a href="<?php echo $baseUrl; ?>contact.php">Contact</a></li>
                 <li><a href="<?php echo $baseUrl; ?>product-listings.php">Shop</a></li>
                 <li><a href="<?php echo $baseUrl; ?>sell.php">Sell with Us</a></li>
             </ul>
@@ -32,7 +32,6 @@
                 <li><a href="<?php echo $baseUrl; ?>faq.php">FAQ</a></li>
                 <li><a href="<?php echo $baseUrl; ?>privacy.php">Privacy Policy</a></li>
                 <li><a href="<?php echo $baseUrl; ?>terms.php">Terms & Conditions</a></li>
-                <li><a href="<?php echo $baseUrl; ?>returns.php">Returns Policy</a></li>
             </ul>
         </div>
         <div class="footer-section">
@@ -47,6 +46,7 @@
     </div>
 </footer>
 
+<!-- Scripts -->
 <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script>

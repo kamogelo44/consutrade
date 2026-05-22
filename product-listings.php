@@ -18,40 +18,95 @@ $baseUrl = getBaseUrl();
     <title>Shop Products - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
     
-    <!-- Master Stylesheet (includes all CSS) -->
+    <!-- Master Stylesheet -->
     <link rel="stylesheet" href="css/main.css">
-
+    
+    <style>
+        /* ========== PRODUCT LISTINGS PAGE SPECIFIC STYLES ========== */
+        
+        /* Breadcrumb */
+        .breadcrumb {
+            margin: 30px 0 20px 30px;
+            padding: 12px 20px;
+            font-size: var(--font-md);
+            background-color: var(--gray-bg-light);
+            border-radius: var(--radius-md);
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .breadcrumb a {
+            text-decoration: none;
+            color: var(--primary-color);
+            transition: color var(--transition-fast);
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        .breadcrumb .current-page {
+            color: var(--dark-bg);
+            font-weight: var(--font-semibold);
+            background-color: var(--primary-fade);
+            padding: 4px 12px;
+            border-radius: var(--radius-round);
+        }
+        .breadcrumb-separator {
+            color: var(--gray-light);
+            margin: 0 4px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .breadcrumb {
+                margin: 20px 15px;
+                padding: 10px 15px;
+                font-size: var(--font-sm);
+                width: calc(100% - 30px);
+            }
+        }
+        @media (max-width: 480px) {
+            .breadcrumb {
+                margin: 15px 12px;
+                padding: 8px 12px;
+                font-size: var(--font-xs);
+                width: calc(100% - 24px);
+            }
+        }
+    </style>
 </head>
 <body>
 
 <?php include 'includes/header.php'; ?>
 
 <main>
+    <!-- Breadcrumb -->
     <div class="breadcrumb">
         <a href="index.php">Home</a>
         <span class="breadcrumb-separator">></span>
         <span class="current-page">All Products</span>
     </div>
 
+    <!-- Listings Body -->
     <div class="listings-body">
-        <!-- Filter button - only shows on mobile devices -->
+        <!-- Mobile Filter Button -->
         <button class="filter-btn" id="mobileFilterBtn">
-            <img src="images/icons/filter-svgrepo-com.svg" alt="filter" width="18px" height="18px">
+            <img src="images/icons/filter-svgrepo-com.svg" alt="filter" width="18" height="18">
             Filter Products
         </button>
         
-        <!-- Filter sidebar - sticky on desktop, hidden on mobile until button click -->
+        <!-- Filter Sidebar -->
         <aside class="filter-sidebar" id="filterSidebar">
             <form id="filterForm">
                 <fieldset class="filter-fields">
                     <legend class="filter-title">Filter Results</legend>
                     
-                    <!-- Category Filter Section -->
+                    <!-- Category Filter -->
                     <fieldset class="filter-category">
                         <legend class="filter-heading">Category</legend>
                         <label class="checkbox-label">
                             <input type="checkbox" name="category[]" value="clothing">
-                            <span>Clothing & Accessories</span>
+                            <span>Clothing and Accessories</span>
                         </label>
                         <label class="checkbox-label">
                             <input type="checkbox" name="category[]" value="electronics">
@@ -67,7 +122,7 @@ $baseUrl = getBaseUrl();
                         </label>
                         <label class="checkbox-label">
                             <input type="checkbox" name="category[]" value="beauty">
-                            <span>Beauty & Health</span>
+                            <span>Beauty and Health</span>
                         </label>
                         <label class="checkbox-label">
                             <input type="checkbox" name="category[]" value="other">
@@ -75,7 +130,7 @@ $baseUrl = getBaseUrl();
                         </label>
                     </fieldset>
                     
-                    <!-- Price Range Filter Section -->
+                    <!-- Price Range Filter -->
                     <fieldset class="filter-price">
                         <legend class="filter-heading">Price Range</legend>
                         <label class="radio-label">
@@ -96,26 +151,23 @@ $baseUrl = getBaseUrl();
                         </label>
                     </fieldset>
                     
-                    <!-- Location Filter Section -->
+                    <!-- Location Filter -->
                     <fieldset class="filter-location">
                         <legend class="filter-heading">Location</legend>
                         <div class="search-loc-wrapper">
-                            <img src="images/icons/pin-location-svgrepo-com.svg" alt="location" class="location-icon" width="16px" height="16px">
-                            <input type="search"
-                                id="search-location"
-                                name="location"
-                                placeholder="Enter city or province...">
+                            <img src="images/icons/pin-location-svgrepo-com.svg" alt="location" class="location-icon" width="16" height="16">
+                            <input type="search" id="search-location" name="location" placeholder="Enter city or province...">
                         </div>
                     </fieldset>
                     
-                    <!-- Filter Action Buttons -->
+                    <!-- Filter Actions -->
                     <div class="filter-actions">
                         <button type="submit" class="apply-filter-btn">
-                            <img src="images/icons/verified-svgrepo-com.svg" alt="apply" width="14px" height="14px">
+                            <img src="images/icons/verified-svgrepo-com.svg" alt="apply" width="14" height="14">
                             Apply Filters
                         </button>
                         <button type="reset" class="reset-filter-btn" id="resetFilters">
-                            <img src="images/icons/form-close-svgrepo-com.svg" alt="reset" width="14px" height="14px">
+                            <img src="images/icons/form-close-svgrepo-com.svg" alt="reset" width="14" height="14">
                             Reset
                         </button>
                     </div>
@@ -147,10 +199,11 @@ $baseUrl = getBaseUrl();
 </main>
 
 <?php include 'includes/footer.php'; ?>
+
 <script src="js/products.js"></script>
 
 <script>
-// Pass session data to JavaScript using centralized auth variables
+// Pass session data to JavaScript
 var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 var currentUserId = <?php echo $current_user_id ?: 0; ?>;
 var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';

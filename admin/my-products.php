@@ -15,6 +15,7 @@ if (!isSellerLoggedIn()) {
 
 $baseUrl = getBaseUrl();
 $seller_id = $current_user_id;
+echo $seller_id;
 
 // Handle status changes
 if (isset($_GET['action']) && isset($_GET['id'])) {
