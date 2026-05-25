@@ -530,7 +530,12 @@
     padding: 60px var(--spacing-xl);
     background-color: var(--white);
     border-radius: var(--radius-lg);
-    grid-column: 1 / -1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
 }
 .error {
     text-align: center;
@@ -682,6 +687,62 @@
     color: var(--primary-color);
     white-space: nowrap;
 }
+
+/* ========== STOCK STATUS STYLES ========== */
+.stock-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    margin: 10px 0;
+}
+
+.stock-icon {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.stock-status.in-stock {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #4caf50;
+}
+
+.stock-status.low-stock {
+    background-color: #fff3e0;
+    color: #e65100;
+    border-left: 4px solid #ff9800;
+    animation: pulseWarning 1.5s infinite;
+}
+
+.stock-status.out-of-stock {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #f44336;
+}
+
+@keyframes pulseWarning {
+    0% {
+        background-color: #fff3e0;
+    }
+    50% {
+        background-color: #ffe0b2;
+    }
+    100% {
+        background-color: #fff3e0;
+    }
+}
+
+/* Update existing stock status in actions card */
+.actions-card .stock-status {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
 .description {
     margin-top: var(--spacing-sm);
 }

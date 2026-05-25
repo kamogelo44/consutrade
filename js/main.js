@@ -82,7 +82,7 @@ function clearModalErrors($modal) {
 // ========== CART FUNCTIONS ==========
 function addToCart(productId, productName, productPrice) {
     $.ajax({
-        url: baseUrl + 'php/add-to-cart.php',
+        url: baseUrl + 'php/endpoints/add-to-cart.php',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ product_id: productId, product_name: productName, product_price: productPrice }),
@@ -102,7 +102,7 @@ function removeFromCart(productId) {
     if (!confirm('Are you sure you want to remove this item from your cart?')) return;
     
     $.ajax({
-        url: baseUrl + 'php/remove-from-cart.php',
+        url: baseUrl + 'php/endpoints/remove-from-cart.php',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ product_id: productId }),
@@ -123,7 +123,7 @@ function removeFromCart(productId) {
 }
 
 function updateCartCount() {
-    $.get(baseUrl + 'php/get-cart.php', function(data) {
+    $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
         if (data.success) {
             $('.cart-count').text(data.item_count);
             $('.item-num').text(data.item_count);

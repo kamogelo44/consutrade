@@ -15,7 +15,7 @@ $response = ['success' => false, 'product' => null];
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
-    $response['error'] = 'Invalid product ID';
+    $response['error'] = 'Invalid product';
     echo json_encode($response);
     exit;
 }
@@ -35,16 +35,14 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($row = $result->fetch_assoc()) {
-    // Use helper functions
-    $gallery_images = getProductGallery($conn, $product_id);
+    $gallery = $productRepo->getProductGallery($product_id);
     $gallery_urls = [];
-    foreach ($gallery_images as $img) {
-        $gallery_urls[] = getProductImageUrl($img['image_url']);
+    foreach ($gallery as $img) {
+        $gallery_urls[] = $productRepo->getProductImageUrl($img['image_url']);
     }
     
-    $rating = getSellerRating($conn, $row['seller_id']);
+    $rating = $reviewRepo->getSellerRating($row['seller_id']);
     
-    // Get category name
     $category_name = 'General';
     $cat_sql = "SELECT category_name FROM categories WHERE category_id = ?";
     $cat_stmt = $conn->prepare($cat_sql);
@@ -57,29 +55,28 @@ if ($row = $result->fetch_assoc()) {
     $cat_stmt->close();
     
     $response['product'] = [
-        'id' => (int)$row['product_id'],
-        'name' => $row['title'],
-        'description' => $row['description'],
-        'price' => (float)$row['price'],
-        'condition' => $row['condition'],
-        'location' => $row['location'],
-        'category_id' => (int)$row['category_id'],
-        'category_name' => $category_name,
-        'image_url' => getProductImageUrl($row['image_url']),
-        'gallery_images' => $gallery_urls,
-        'seller_id' => (int)$row['seller_id'],
-        'seller_name' => $row['seller_name'],
+        'id'                  => (int) $row['product_id'],
+        'name'                => $row['title'],
+        'description'         => $row['description'],
+        'price'               => (float) $row['price'],
+        'condition'           => $row['condition'],
+        'location'            => $row['location'],
+        'category_id'         => (int) $row['category_id'],
+        'category_name'       => $category_name,
+        'image_url'           => $productRepo->getProductImageUrl($row['image_url']),
+        'gallery_images'      => $gallery_urls,
+        'seller_id'           => (int) $row['seller_id'],
+        'seller_name'         => $row['seller_name'],
         'seller_profile_image' => getUserProfileImage($row['profile_image']),
-        'is_verified' => (bool)$row['is_verified'],
-        'stock_quantity' => (int)$row['stock_quantity'],
-        'avg_rating' => $rating['avg_rating'],
-        'review_count' => $rating['review_count']
+        'is_verified'         => (bool) $row['is_verified'],
+        'stock_quantity'      => (int) $row['stock_quantity'],
+        'avg_rating'          => $rating['avg_rating'],
+        'review_count'        => $rating['review_count']
     ];
     $response['success'] = true;
 } else {
-    $response['error'] = 'Product not found';
+    $response['error'] = 'Product not found.';
 }
 
 $stmt->close();
 echo json_encode($response);
-?>

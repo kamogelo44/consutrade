@@ -39,8 +39,6 @@ if ($product_id <= 0) {
 
 <?php include 'includes/footer.php'; ?>
 
-<script src="<?php echo $baseUrl; ?>js/products.js"></script>
-
 <script>
 var productId = <?php echo $product_id; ?>;
 var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
@@ -49,5 +47,6 @@ var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>
 var baseUrl = '<?php echo $baseUrl; ?>';
 </script>
 
+<script src="<?php echo $baseUrl; ?>js/products.js"></script>
 </body>
 </html>

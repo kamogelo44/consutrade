@@ -42,18 +42,6 @@ unset($_SESSION['flash']);
     <style>
         /* ========== PAGE SPECIFIC STYLES ========== */
         
-        /* Flash Message */
-        .flash-message {
-            background: var(--success-light);
-            border-left: 4px solid var(--success);
-            padding: var(--spacing-md) var(--spacing-lg);
-            margin: 20px auto;
-            max-width: 1200px;
-            border-radius: var(--radius-md);
-            color: var(--success);
-            font-weight: var(--font-medium);
-        }
-        
         /* Trust Section Cards - Override default card styles */
         .trust .card {
             background-color: var(--primary-color);
@@ -170,8 +158,6 @@ unset($_SESSION['flash']);
 
 <?php include 'includes/footer.php'; ?>
 
-<script src="js/products.js"></script>
-
 <?php if (!empty($registerErrors)): ?>
 <script>
 $(function() {
@@ -240,7 +226,7 @@ $(function() {
         
         $grid.html('<div class="loading-spinner">Loading products...</div>');
         
-        $.get(baseUrl + 'php/get-products.php?page=1&limit=4', function(data) {
+        $.get(baseUrl + 'php/endpoints/get-products.php?page=1&limit=4', function(data) {
             if (data.success && data.products && data.products.length > 0) {
                 var featuredProducts = data.products.slice(0, 4);
                 displayFeaturedProducts(featuredProducts);

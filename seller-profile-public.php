@@ -23,13 +23,18 @@ if ($seller_id <= 0) {
 $seller = getSellerById($conn, $seller_id);
 
 if (!$seller) {
-    // Seller not found
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
 // Set profile image path using helper
 $profile_image = getUserProfileImage($seller['profile_image']);
+
+// Set breadcrumb
+$breadcrumbItems = [
+    ['url' => 'product-listings.php', 'label' => 'Products'],
+    ['label' => htmlspecialchars($seller['full_name'])]
+];
 
 ?>
 <!DOCTYPE html>
@@ -40,9 +45,8 @@ $profile_image = getUserProfileImage($seller['profile_image']);
     <title><?php echo htmlspecialchars($seller['full_name']); ?> - Seller Profile | ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
     
-    <!-- Master Stylesheet (includes all CSS) -->
+    <!-- Master Stylesheet -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
-    
 </head>
 <body>
 
@@ -50,13 +54,7 @@ $profile_image = getUserProfileImage($seller['profile_image']);
 
 <main class="public-seller-profile-container">
     <!-- Breadcrumb -->
-    <div class="breadcrumb">
-        <a href="<?php echo $baseUrl; ?>index.php">Home</a>
-        <span> > </span>
-        <a href="<?php echo $baseUrl; ?>product-listings.php">Products</a>
-        <span> > </span>
-        <span>Seller Profile</span>
-    </div>
+    <?php include 'includes/breadcrumb.php'; ?>
 
     <!-- Seller Profile Header -->
     <div class="seller-public-header">
@@ -68,12 +66,12 @@ $profile_image = getUserProfileImage($seller['profile_image']);
             <div class="seller-public-meta">
                 <?php if ($seller['id_verified'] == 1): ?>
                     <span class="verified-badge">
-                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16px" height="16px" alt="Verified">
+                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16" height="16" alt="Verified">
                         Verified Seller
                     </span>
                 <?php else: ?>
                     <span class="unverified-badge">
-                        <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="16px" height="16px" alt="Unverified">
+                        <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="16" height="16" alt="Unverified">
                         Unverified Seller
                     </span>
                 <?php endif; ?>
@@ -81,14 +79,14 @@ $profile_image = getUserProfileImage($seller['profile_image']);
             </div>
             <?php if ($seller['location']): ?>
                 <p class="seller-location">
-                    <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14px" height="14px" alt="Location">
+                    <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14" height="14" alt="Location">
                     <?php echo htmlspecialchars($seller['location']); ?>
                 </p>
             <?php endif; ?>
         </div>
     </div>
 
-    <!-- Seller Stats Section -->
+    <!-- Seller Stats -->
     <div class="seller-public-stats">
         <div class="stat-card">
             <h3>Products</h3>
@@ -104,7 +102,7 @@ $profile_image = getUserProfileImage($seller['profile_image']);
         </div>
     </div>
 
-    <!-- Seller Products Section -->
+    <!-- Seller Products -->
     <div class="seller-public-products">
         <h2>Products from <?php echo htmlspecialchars($seller['full_name']); ?></h2>
         <div class="products-grid" id="products-grid">
@@ -113,11 +111,9 @@ $profile_image = getUserProfileImage($seller['profile_image']);
     </div>
 </main>
 
+<?php include 'includes/footer.php'; ?>
+
 <script>
-/*
- * ConsuTrade - Public Seller Profile Functionality
- * Author: Kamogelo Phale
- */
 var baseUrl = '<?php echo $baseUrl; ?>';
 var sellerId = <?php echo $seller_id; ?>;
 var currentUserId = <?php echo $current_user_id ?: 0; ?>;
@@ -130,7 +126,7 @@ $(function() {
     
     function loadSellerStats() {
         $.ajax({
-            url: baseUrl + 'php/get-user-stats.php?seller_id=' + sellerId,
+            url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + sellerId,
             type: 'GET',
             dataType: 'json',
             success: function(data) {
@@ -154,7 +150,7 @@ $(function() {
         $grid.html('<div class="loading-spinner">Loading products...</div>');
         
         $.ajax({
-            url: baseUrl + 'php/get-seller-products.php?seller_id=' + sellerId,
+            url: baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + sellerId,
             type: 'GET',
             dataType: 'json',
             success: function(data) {
@@ -192,6 +188,5 @@ $(function() {
 });
 </script>
 
-<?php include 'includes/footer.php'; ?>
 </body>
 </html>

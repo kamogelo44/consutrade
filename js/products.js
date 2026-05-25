@@ -51,7 +51,7 @@ function setupProductEventListeners() {
 }
 
 function collectFilters() {
-    var categories = [];
+    let categories = [];
     $('input[name="category[]"]:checked').each(function() {
         categories.push($(this).val());
     });
@@ -64,7 +64,7 @@ function collectFilters() {
 }
 
 function loadProducts() {
-    var params = new URLSearchParams();
+    let params = new URLSearchParams();
     params.append('page', currentPage);
     params.append('sort', currentSort);
     
@@ -76,13 +76,13 @@ function loadProducts() {
     
     $('#products-grid').html('<div class="loading-spinner">Loading products...</div>');
     
-    $.get(baseUrl + 'php/get-products.php?' + params.toString(), function(data) {
+    $.get(`${baseUrl}php/endpoints/get-products.php?${params.toString()}`, function(data) {
         if (data.success && data.products && data.products.length > 0) {
             displayProducts(data.products);
             totalPages = data.total_pages || 1;
             displayPagination();
         } else {
-            $('#products-grid').html('<div class="no-products"><p>No products found.</p><button onclick="resetFilters()" class="reset-btn">Clear Filters</button></div>');
+            $('#products-grid').html('<div class="no-products"><p>No products found.</p></div>');
         }
     }).fail(function() {
         $('#products-grid').html('<p class="error">Error loading products. Please try again.</p>');
@@ -90,47 +90,46 @@ function loadProducts() {
 }
 
 function displayProducts(products) {
-    var $grid = $('#products-grid');
+    let $grid = $('#products-grid');
     $grid.empty();
     
     $.each(products, function(index, product) {
-        var imagePath = product.display_image || product.image || product.image_url;
+        let imagePath = product.display_image || product.image || product.image_url;
         if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
             imagePath = baseUrl + imagePath;
         }
         
-        var verifiedBadge = product.is_verified ? 
-            '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' : 
-            '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
+        let verifiedBadge = product.is_verified ? 
+            `<div class="verified-badge-card"><img src="${baseUrl}images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>` : 
+            `<div class="unverified-badge-card"><img src="${baseUrl}images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>`;
         
-        var conditionClass = '';
-        var conditionText = product.condition || 'Good';
+        let conditionClass = '';
+        let conditionText = product.condition || 'Good';
         if (conditionText === 'New') conditionClass = 'new';
         else if (conditionText === 'Like New') conditionClass = 'like-new';
         else if (conditionText === 'Good') conditionClass = 'good';
         else if (conditionText === 'Fair') conditionClass = 'fair';
         
-        var stockQuantity = product.stock_quantity || 1;
-        var isOutOfStock = stockQuantity <= 0;
-        var stockBadge = isOutOfStock ? 
+        let stockQuantity = product.stock_quantity || 1;
+        let isOutOfStock = stockQuantity <= 0;
+        let stockBadge = isOutOfStock ? 
             '<div class="out-of-stock-badge-card">Out of Stock</div>' : 
-            (stockQuantity <= 5 ? '<div class="low-stock-badge-card">Only ' + stockQuantity + ' left</div>' : '');
+            (stockQuantity <= 5 ? `<div class="low-stock-badge-card">Only ${stockQuantity} left</div>` : '');
         
-        var isOwnProduct = (typeof currentUserRole !== 'undefined' && currentUserRole === 'seller' && product.seller_id == currentUserId);
-        var addToCartButton = '';
+        let isOwnProduct = (typeof currentUserRole !== 'undefined' && currentUserRole === 'seller' && product.seller_id == currentUserId);
+        let addToCartButton = '';
         
         if (!isOwnProduct && !isOutOfStock) {
-            addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', ' + product.price + ')">' +
-                '<img src="' + baseUrl + 'images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart"> Add to Cart</button>';
+            addToCartButton = `<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">Add to Cart</button>`;
         } else if (isOutOfStock) {
             addToCartButton = '<button class="out-of-stock-btn" disabled>Out of Stock</button>';
         } else if (isOwnProduct) {
             addToCartButton = '<button class="own-product-btn" disabled>Your Product</button>';
         }
         
-        var $card = $('<div>').addClass('prod-card').css('cursor', 'pointer');
+        let $card = $('<div>').addClass('prod-card').css('cursor', 'pointer');
         $card.on('click', function() {
-            window.location.href = baseUrl + 'product-details.php?id=' + product.id;
+            window.location.href = `${baseUrl}product-details.php?id=${product.id}`;
         });
         
         $card.html(`
@@ -167,26 +166,26 @@ function displayProducts(products) {
 }
 
 function displayPagination() {
-    var $pagination = $('#pagination');
+    let $pagination = $('#pagination');
     if (!$pagination.length || totalPages <= 1) {
         $pagination.empty();
         return;
     }
     
-    var html = '';
-    if (currentPage > 1) html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous</button>';
+    let html = '';
+    if (currentPage > 1) html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Previous</button>`;
     
-    for (var i = 1; i <= totalPages; i++) {
+    for (let i = 1; i <= totalPages; i++) {
         if (i === currentPage) {
-            html += '<button class="page-btn active" disabled>' + i + '</button>';
+            html += `<button class="page-btn active" disabled>${i}</button>`;
         } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-            html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
+            html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
         } else if (Math.abs(i - currentPage) === 3) {
             html += '<span class="page-dots">...</span>';
         }
     }
     
-    if (currentPage < totalPages) html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →</button>';
+    if (currentPage < totalPages) html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
     $pagination.html(html);
 }
 
@@ -205,24 +204,24 @@ function resetFilters() {
 
 // ========== PRODUCT DETAILS PAGE FUNCTIONS ==========
 function loadProductDetails(id) {
-    var $container = $('#product-details-container');
+    let $container = $('.product-details-container');
     if (!$container.length) return;
     
-    $container.html('<div class="loading-spinner">Loading product details...</div>');
+    $('#product-details-content').html('<div class="loading-spinner">Loading product details...</div>');
     
-    $.get(baseUrl + 'php/get-product.php?id=' + id, function(data) {
+    $.get(`${baseUrl}php/endpoints/get-product.php?id=${id}`, function(data) {
         if (data.success && data.product) {
             displayProductDetails(data.product);
         } else {
             showError(data.error || 'Product not found.');
         }
     }).fail(function() {
-        showError('Unable to load product. Please try again later.');
+        showError('Unable to load product.');
     });
 }
 
 function showError(message) {
-    var $container = $('#product-details-container');
+    let $container = $('.product-details-container');
     if (!$container.length) return;
     
     $container.html(`
@@ -235,49 +234,99 @@ function showError(message) {
 }
 
 function displayProductDetails(product) {
-    var $container = $('#product-details-content');
+    let $container = $('#product-details-content');
     if (!$container.length) return;
     
-    var mainImage = product.image_url || baseUrl + 'images/default-product.png';
-    var galleryImages = product.gallery_images || [];
-    var allImages = [mainImage, ...galleryImages];
+    // Helper function to fix image URLs
+    function fixImageUrl(url) {
+        if (!url || url === '') return `${baseUrl}images/default-product.png`;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        
+        let parts = url.split('/');
+        let filename = parts[parts.length - 1];
+        
+        if (url.includes('/products/')) {
+            return `${baseUrl}uploads/products/${filename}`;
+        } else if (url.includes('/profiles/')) {
+            return `${baseUrl}uploads/profiles/${filename}`;
+        }
+        
+        let uploadsIndex = url.indexOf('uploads/');
+        if (uploadsIndex !== -1) {
+            return baseUrl + url.substring(uploadsIndex);
+        }
+        
+        return `${baseUrl}images/default-product.png`;
+    }
     
-    var galleryHtml = '';
-    for (var i = 0; i < Math.min(allImages.length, 4); i++) {
-        var activeClass = (i === 0) ? 'active' : '';
+    // Get main image
+    let mainImage = fixImageUrl(product.image_url);
+    let galleryImages = product.gallery_images || [];
+    
+    // Build thumbnails: start with main image
+    let thumbnails = [mainImage];
+    
+    // Add up to 3 gallery images (remaining spots)
+    for (let i = 0; i < galleryImages.length && thumbnails.length < 4; i++) {
+        let galleryUrl = fixImageUrl(galleryImages[i]);
+        if (galleryUrl !== mainImage) {
+            thumbnails.push(galleryUrl);
+        }
+    }
+    
+    // Fill remaining spots (up to 3) with placeholders
+    while (thumbnails.length < 4) {
+        thumbnails.push(`${baseUrl}images/default-product.png`);
+    }
+    
+    // Build thumbnails HTML
+    let galleryHtml = '';
+    for (let i = 0; i < thumbnails.length; i++) {
+        let isActive = (i === 0) ? 'active' : '';
+        let thumbUrl = thumbnails[i];
+        
         galleryHtml += `
-            <div class="small-img ${activeClass}" data-image-path="${allImages[i]}">
-                <img src="${allImages[i]}" alt="Product thumbnail" onerror="this.src='${baseUrl}images/default-product.png'">
+            <div class="small-img ${isActive}" data-image-path="${thumbUrl}">
+                <img src="${thumbUrl}" alt="Thumbnail ${i+1}" onerror="this.src='${baseUrl}images/default-product.png'">
             </div>
         `;
     }
     
-    var isOutOfStock = product.stock_quantity <= 0;
-    var stockHtml = '';
+    // Stock status with proper styling
+    let isOutOfStock = product.stock_quantity <= 0;
+    let isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5;
+    let stockHtml = '';
+    
     if (isOutOfStock) {
-        stockHtml = '<div class="stock-status out-of-stock"><span>Out of Stock</span></div>';
-    } else if (product.stock_quantity <= 5) {
-        stockHtml = '<div class="stock-status low-stock"><span>Only ' + product.stock_quantity + ' left</span></div>';
+        stockHtml = '<div class="stock-status out-of-stock"><span class="stock-icon">✕</span> Out of Stock</div>';
+    } else if (isLowStock) {
+        stockHtml = `<div class="stock-status low-stock"><span class="stock-icon">⚠</span> Only ${product.stock_quantity} left in stock!</div>`;
     } else {
-        stockHtml = '<div class="stock-status in-stock"><span>In Stock (' + product.stock_quantity + ' available)</span></div>';
+        stockHtml = `<div class="stock-status in-stock"><span class="stock-icon">✓</span> In Stock (${product.stock_quantity} available)</div>`;
     }
     
-    var starsHtml = '';
-    for (var i = 1; i <= 5; i++) {
-        starsHtml += (i <= product.avg_rating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
+    let starsHtml = '';
+    let avgRating = parseFloat(product.avg_rating) || 0;
+    for (let i = 1; i <= 5; i++) {
+        starsHtml += (i <= avgRating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
     }
     
-    var actionButtonsHtml = '';
+    let actionButtonsHtml = '';
     if (!isOutOfStock) {
+        let escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
         actionButtonsHtml = `
-            <button class="cart-btn" onclick="addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart"> Add to Cart
+            <button class="cart-btn" onclick="addToCart(${product.id}, '${escapedName}', ${product.price})">
+                Add to Cart
             </button>
-            <button class="buy-btn" onclick="buyNow(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">Buy Now</button>
+            <button class="buy-btn" onclick="buyNow(${product.id}, '${escapedName}', ${product.price})">Buy Now</button>
         `;
     } else {
         actionButtonsHtml = '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
     }
+    
+    let sellerImage = fixImageUrl(product.seller_profile_image);
     
     $container.html(`
         <div class="breadcrumb">
@@ -300,7 +349,7 @@ function displayProductDetails(product) {
                 <h1 class="details-prod-name">${escapeHtml(product.name)}</h1>
                 <p class="details-price">R ${parseFloat(product.price).toFixed(2)}</p>
                 <div class="cat-badge">
-                    <span class="cat-name">${escapeHtml(product.category_name)}</span>
+                    <span class="cat-name">${escapeHtml(product.category_name || 'General')}</span>
                 </div>
                 ${stockHtml}
                 <div class="description">
@@ -318,19 +367,19 @@ function displayProductDetails(product) {
             <div class="rev-container">
                 <div class="seller-profile">
                     <div class="profile-pic">
-                        <img src="${product.seller_profile_image || baseUrl + 'images/icons/profile-svgrepo-com.svg'}" width="40" height="40" alt="${escapeHtml(product.seller_name)}">
+                        <img src="${sellerImage}" width="40" height="40" alt="${escapeHtml(product.seller_name)}" onerror="this.src='${baseUrl}images/icons/profile-svgrepo-com.svg'">
                     </div>
                     <p class="seller-name">${escapeHtml(product.seller_name)}</p>
                 </div>
                 <div class="verification">
                     ${product.is_verified ? 
-                        '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20"><p>Verified Seller</p></div>' : 
-                        '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20"><p>Not Verified</p></div>'}
+                        `<div class="verified-badge"><img src="${baseUrl}images/icons/verified-svgrepo-com.svg" width="20" height="20"><p>Verified Seller</p></div>` : 
+                        `<div class="not-verified-badge"><img src="${baseUrl}images/icons/not-verified-svgrepo-com.svg" width="20" height="20"><p>Not Verified</p></div>`}
                 </div>
                 <div class="star-reviews">
                     <h1>Seller Reviews</h1>
                     ${starsHtml}
-                    <p>Rating: ${product.avg_rating}/5 (${product.review_count || 0} reviews)</p>
+                    <p>Rating: ${avgRating.toFixed(1)}/5 (${product.review_count || 0} reviews)</p>
                 </div>
                 <button class="view-profile" onclick="window.location.href='${baseUrl}seller-profile-public.php?seller_id=${product.seller_id}'">
                     View Seller Profile
@@ -340,7 +389,6 @@ function displayProductDetails(product) {
 
         <div class="actions">
             <div class="actions-card">
-                ${stockHtml}
                 <div class="action-btns">
                     ${actionButtonsHtml}
                 </div>
@@ -352,9 +400,10 @@ function displayProductDetails(product) {
         </div>
     `);
     
+    // Thumbnail click handler
     $('.small-img').on('click', function() {
-        var imagePath = $(this).data('image-path');
-        $('#main-product-image').attr('src', imagePath);
+        let newImagePath = $(this).data('image-path');
+        $('#main-product-image').attr('src', newImagePath);
         $('.small-img').removeClass('active');
         $(this).addClass('active');
     });
@@ -362,7 +411,7 @@ function displayProductDetails(product) {
 
 function buyNow(productId, productName, productPrice) {
     addToCart(productId, productName, productPrice);
-    window.location.href = baseUrl + 'checkout.php';
+    window.location.href = `${baseUrl}checkout.php`;
 }
 
 // ========== INITIALIZE ==========
@@ -371,9 +420,8 @@ $(function() {
         loadProducts();
         setupProductEventListeners();
     }
-    
-    if ($('#product-details-container').length) {
-        var productId = $('#product-details-container').data('product-id');
+    if ($('.product-details-container').length) {
+        let productId = $('.product-details-container').data('product-id');
         if (productId > 0) {
             loadProductDetails(productId);
         }
