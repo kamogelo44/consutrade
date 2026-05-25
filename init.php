@@ -25,6 +25,7 @@ require_once __DIR__ . '/php/classes/Auth.php';
 require_once __DIR__ . '/php/classes/ProductRepository.php';
 require_once __DIR__ . '/php/classes/OrderRepository.php';
 require_once __DIR__ . '/php/classes/CartRepository.php';
+require_once __DIR__ . '/php/classes/ReviewRepository.php';
 
 // Domain classes
 require_once __DIR__ . '/php/classes/Product.php';
@@ -52,6 +53,7 @@ $auth = new Auth($conn);
 $productRepo = new ProductRepository($conn);
 $orderRepo   = new OrderRepository($conn);
 $cartRepo    = new CartRepository($conn);
+$reviewRepo = new ReviewRepository($conn);
 
 // ------------------------------------------------------------------
 // Auto-detect and start appropriate session

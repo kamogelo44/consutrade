@@ -50,8 +50,8 @@ class CartRepository
     public function getCartItems(int $userId): array
     {
         $sql = "SELECT c.cart_id, c.quantity, c.added_at,
-                       p.product_id, p.title, p.price, p.image_url, p.seller_id, p.stock_quantity,
-                       u.full_name as seller_name
+                    p.product_id, p.title, p.price, p.image_url, p.seller_id, p.stock_quantity,
+                    u.full_name as seller_name, u.id_verified
                 FROM cart c
                 JOIN products p ON c.product_id = p.product_id
                 JOIN users u ON p.seller_id = u.user_id

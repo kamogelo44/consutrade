@@ -27,15 +27,8 @@ if ($product_id <= 0) {
 
 $user_id = $current_user_id;
 
-// FIRST: Get product stock quantity
-$stock_sql = "SELECT stock_quantity FROM products WHERE product_id = ? AND status = 'active'";
-$stock_stmt = $conn->prepare($stock_sql);
-$stock_stmt->bind_param('i', $product_id);
-$stock_stmt->execute();
-$stock_result = $stock_stmt->get_result();
-$stock_row = $stock_result->fetch_assoc();
-$available_stock = (int)($stock_row['stock_quantity'] ?? 0);
-$stock_stmt->close();
+// Get product stock quantity
+$available_stock = $productRepo->getProductStock($product_id);
 
 if ($available_stock <= 0) {
     $response['message'] = 'This product is out of stock.';
@@ -55,15 +48,13 @@ if ($row = $result->fetch_assoc()) {
     
     // Check if new quantity exceeds available stock
     if ($new_qty > $available_stock) {
-        $response['message'] = 'Cannot add more. Only ' . $available_stock . ' available in stock. You already have ' . $row['quantity'] . ' in cart.';
+        $response['message'] = 'Cannot add more. Only ' . $available_stock
+            . ' available in stock. You already have ' . $row['quantity'] . ' in cart.';
         echo json_encode($response);
         exit;
     }
     
-    $updateStmt = $conn->prepare("UPDATE cart SET quantity = ? WHERE cart_id = ?");
-    $updateStmt->bind_param('ii', $new_qty, $row['cart_id']);
-    $success = $updateStmt->execute();
-    $updateStmt->close();
+    $success = $cartRepo->updateCartQuantity($row['cart_id'], $user_id, $new_qty);
     $response['message'] = 'Quantity updated!';
 } else {
     // Add new item with quantity 1
@@ -83,11 +74,10 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 
 if ($success) {
-    updateCartCount();
+    $auth->updateCartCount();
     $response['success'] = true;
 } else {
     $response['message'] = 'Failed to add item';
 }
 
 echo json_encode($response);
-?>

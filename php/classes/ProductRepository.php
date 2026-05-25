@@ -739,4 +739,269 @@ class ProductRepository
 
         return $baseUrl . 'images/default-product.png';
     }
+
+    /**
+     * Get public product listings with filters, sorting, and pagination.
+     *
+     * @param array $filters  Associative array: categories, price_range, location, sort, limit, offset
+     * @return array           ['products' => array, 'total' => int]
+     */
+    public function getPublicProducts(array $filters = []): array
+    {
+    $categories  = $filters['categories'] ?? [];
+    $priceRange  = $filters['price_range'] ?? '';
+    $location    = $filters['location'] ?? '';
+    $sort        = $filters['sort'] ?? 'newest';
+    $limit       = $filters['limit'] ?? 12;
+    $offset      = $filters['offset'] ?? 0;
+
+    $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url,
+                   p.location, p.condition, p.stock_quantity, p.created_at,
+                   COALESCE(pi.image_url, p.image_url) AS display_image,
+                   u.full_name as seller_name, u.user_id as seller_id,
+                   u.profile_image, u.id_verified as is_verified
+            FROM products p
+            JOIN users u ON p.seller_id = u.user_id
+            LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+            WHERE p.status = 'active'";
+
+    $params = [];
+    $types  = "";
+
+    // Category filter
+    if (!empty($categories) && $categories[0] !== '') {
+        $placeholders = implode(',', array_fill(0, count($categories), '?'));
+        $sql .= " AND p.category_id IN ($placeholders)";
+        foreach ($categories as $cat) {
+            $params[] = (int) $cat;
+            $types  .= "i";
+        }
+    }
+
+    // Price range filter
+    if (!empty($priceRange)) {
+        switch ($priceRange) {
+            case 'under100':  $sql .= " AND p.price < 100"; break;
+            case '100-500':   $sql .= " AND p.price BETWEEN 100 AND 500"; break;
+            case '500-1000':  $sql .= " AND p.price BETWEEN 500 AND 1000"; break;
+            case 'over1000':  $sql .= " AND p.price > 1000"; break;
+        }
+    }
+
+    // Location filter
+    if (!empty($location)) {
+        $sql    .= " AND p.location LIKE ?";
+        $params[] = "%$location%";
+        $types  .= "s";
+    }
+
+    // Get total count (before LIMIT)
+    $countSql    = $sql;
+    $countParams = $params;
+    $countTypes  = $types;
+
+    // Sorting
+    switch ($sort) {
+        case 'price_low':  $sql .= " ORDER BY p.price ASC"; break;
+        case 'price_high': $sql .= " ORDER BY p.price DESC"; break;
+        default:           $sql .= " ORDER BY p.created_at DESC";
+    }
+
+    // Pagination
+    $sql    .= " LIMIT ? OFFSET ?";
+    $params[] = $limit;
+    $params[] = $offset;
+    $types  .= "ii";
+
+    // Execute main query
+    $stmt = $this->db->prepare($sql);
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $products = [];
+    while ($row = $result->fetch_assoc()) {
+        $products[] = [
+            'id'             => (int) $row['product_id'],
+            'name'           => $row['product_name'],
+            'price'          => (float) $row['price'],
+            'image'          => $row['display_image'] ?? $row['image_url'],
+            'seller_name'    => $row['seller_name'],
+            'seller_id'      => (int) $row['seller_id'],
+            'location'       => $row['location'] ?? 'South Africa',
+            'condition'      => $row['condition'] ?? 'Good',
+            'stock_quantity' => (int) $row['stock_quantity'],
+            'is_verified'    => (bool) $row['is_verified'],
+            'profile_image'  => $row['profile_image'],
+            'created_at'     => $row['created_at']
+        ];
+    }
+    $stmt->close();
+
+    // Execute count query
+    $countStmt = $this->db->prepare("SELECT COUNT(*) as total FROM ($countSql) as subquery");
+    if (!empty($countParams)) {
+        $countStmt->bind_param($countTypes, ...$countParams);
+    }
+    $countStmt->execute();
+    $total = (int) ($countStmt->get_result()->fetch_assoc()['total'] ?? 0);
+    $countStmt->close();
+
+    return [
+        'products' => $products,
+        'total'    => $total
+    ];
+    }
+
+    /**
+     * Search public products with filters, sorting, and pagination.
+     *
+     * @param string $search  Search term (matches title and description)
+     * @param array  $filters Associative array: categories, price_range, location, sort, limit, offset
+     * @return array           ['products' => array, 'total' => int]
+     */
+    public function searchProducts(string $search, array $filters = []): array
+    {
+        $categories  = $filters['categories'] ?? [];
+        $priceRange  = $filters['price_range'] ?? '';
+        $location    = $filters['location'] ?? '';
+        $sort        = $filters['sort'] ?? 'newest';
+        $limit       = $filters['limit'] ?? 12;
+        $offset      = $filters['offset'] ?? 0;
+
+        $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url,
+                    p.location, p.condition, p.stock_quantity, p.created_at,
+                    u.full_name as seller_name, u.user_id as seller_id,
+                    u.profile_image, u.id_verified as is_verified
+                FROM products p
+                JOIN users u ON p.seller_id = u.user_id
+                WHERE p.status = 'active'
+                AND (p.title LIKE ? OR p.description LIKE ?)";
+
+        $params = ["%$search%", "%$search%"];
+        $types  = "ss";
+
+        // Category filter
+        if (!empty($categories) && $categories[0] !== '') {
+            $placeholders = implode(',', array_fill(0, count($categories), '?'));
+            $sql .= " AND p.category_id IN ($placeholders)";
+            foreach ($categories as $cat) {
+                $params[] = (int) $cat;
+                $types  .= "i";
+            }
+        }
+
+        // Price range filter
+        if (!empty($priceRange)) {
+            switch ($priceRange) {
+                case 'under100':  $sql .= " AND p.price < 100"; break;
+                case '100-500':   $sql .= " AND p.price BETWEEN 100 AND 500"; break;
+                case '500-1000':  $sql .= " AND p.price BETWEEN 500 AND 1000"; break;
+                case 'over1000':  $sql .= " AND p.price > 1000"; break;
+            }
+        }
+
+        // Location filter
+        if (!empty($location)) {
+            $sql    .= " AND p.location LIKE ?";
+            $params[] = "%$location%";
+            $types  .= "s";
+        }
+
+        // Sorting
+        switch ($sort) {
+            case 'price_low':  $sql .= " ORDER BY p.price ASC"; break;
+            case 'price_high': $sql .= " ORDER BY p.price DESC"; break;
+            default:           $sql .= " ORDER BY p.created_at DESC";
+        }
+
+        // Pagination
+        $sql    .= " LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types  .= "ii";
+
+        // Execute main query
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            return ['products' => [], 'total' => 0];
+        }
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $products = [];
+        while ($row = $result->fetch_assoc()) {
+            $imagePath = $row['image_url'];
+            if (empty($imagePath)) {
+                $imagePath = 'images/default-product.png';
+            }
+
+            $products[] = [
+                'id'             => (int) $row['product_id'],
+                'name'           => $row['product_name'],
+                'price'          => (float) $row['price'],
+                'image'          => $imagePath,
+                'seller_name'    => $row['seller_name'],
+                'seller_id'      => (int) $row['seller_id'],
+                'location'       => $row['location'] ?? 'South Africa',
+                'condition'      => $row['condition'] ?? 'Good',
+                'stock_quantity' => (int) ($row['stock_quantity'] ?? 1),
+                'is_verified'    => (bool) $row['is_verified'],
+                'profile_image'  => $row['profile_image'] ?? null
+            ];
+        }
+        $stmt->close();
+
+        // Count query (same filters, no LIMIT)
+        $countSql = "SELECT COUNT(*) as total
+                    FROM products p
+                    JOIN users u ON p.seller_id = u.user_id
+                    WHERE p.status = 'active'
+                    AND (p.title LIKE ? OR p.description LIKE ?)";
+
+        // Rebuild count params without limit/offset
+        $countParams = ["%$search%", "%$search%"];
+        $countTypes  = "ss";
+
+        if (!empty($categories) && $categories[0] !== '') {
+            $placeholders = implode(',', array_fill(0, count($categories), '?'));
+            $countSql .= " AND p.category_id IN ($placeholders)";
+            foreach ($categories as $cat) {
+                $countParams[] = (int) $cat;
+                $countTypes  .= "i";
+            }
+        }
+        if (!empty($priceRange)) {
+            switch ($priceRange) {
+                case 'under100':  $countSql .= " AND p.price < 100"; break;
+                case '100-500':   $countSql .= " AND p.price BETWEEN 100 AND 500"; break;
+                case '500-1000':  $countSql .= " AND p.price BETWEEN 500 AND 1000"; break;
+                case 'over1000':  $countSql .= " AND p.price > 1000"; break;
+            }
+        }
+        if (!empty($location)) {
+            $countSql    .= " AND p.location LIKE ?";
+            $countParams[] = "%$location%";
+            $countTypes  .= "s";
+        }
+
+        $countStmt = $this->db->prepare($countSql);
+        if ($countStmt) {
+            $countStmt->bind_param($countTypes, ...$countParams);
+            $countStmt->execute();
+            $total = (int) ($countStmt->get_result()->fetch_assoc()['total'] ?? 0);
+            $countStmt->close();
+        } else {
+            $total = 0;
+        }
+
+        return [
+            'products' => $products,
+            'total'    => $total
+        ];
+    }
+
 }

@@ -6,29 +6,29 @@
  * Toggles user verification status for sellers
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!isAdminLoggedIn()) {
-    $response['message'] = 'Unauthorized';
+if (!$auth->isAdminLoggedIn()) {
+    $response['message'] = 'Unauthorized.';
     echo json_encode($response);
     exit;
 }
 
-$data = json_decode(file_get_contents('php://input'), true);
+$data    = json_decode(file_get_contents('php://input'), true);
 $user_id = isset($data['user_id']) ? (int)$data['user_id'] : 0;
-$verify = isset($data['verify']) ? (bool)$data['verify'] : false;
+$verify  = isset($data['verify']) ? (bool)$data['verify'] : false;
 
 if (!$user_id) {
-    $response['message'] = 'Invalid user ID';
+    $response['message'] = 'Invalid user.';
     echo json_encode($response);
     exit;
 }
 
-// Don't allow verifying admin accounts
+// Only sellers can be verified
 $check_sql = "SELECT role FROM users WHERE user_id = ?";
 $check_stmt = $conn->prepare($check_sql);
 $check_stmt->bind_param('i', $user_id);
@@ -38,23 +38,22 @@ $user = $check_result->fetch_assoc();
 $check_stmt->close();
 
 if ($user['role'] !== 'seller') {
-    $response['message'] = 'Only sellers can be verified';
+    $response['message'] = 'Only sellers can be verified.';
     echo json_encode($response);
     exit;
 }
 
 $new_status = $verify ? 1 : 0;
-$sql = "UPDATE users SET id_verified = ? WHERE user_id = ?";
+$sql  = "UPDATE users SET id_verified = ? WHERE user_id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param('ii', $new_status, $user_id);
 
 if ($stmt->execute()) {
     $response['success'] = true;
-    $response['message'] = $verify ? 'Seller verified successfully' : 'Seller verification removed';
+    $response['message'] = $verify ? 'Seller verified.' : 'Verification removed.';
 } else {
-    $response['message'] = 'Failed to update verification status';
+    $response['message'] = 'Could not update verification.';
 }
-
 $stmt->close();
+
 echo json_encode($response);
-?>

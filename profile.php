@@ -17,7 +17,7 @@ if (!$is_logged_in) {
 }
 
 // Redirect sellers to their own profile page
-if ($current_user['role'] === 'seller') {
+if (($current_user['role'] ?? '') === 'seller') {
     header('Location: ' . $baseUrl . 'admin/seller-profile.php');
     exit;
 }
@@ -279,7 +279,7 @@ $(function() {
             formData.append('profile_image', file);
             
             $.ajax({
-                url: baseUrl + 'php/profile-handler.php',
+                url: baseUrl + 'php/endpoints/update-profile.php',
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -314,7 +314,7 @@ $(function() {
         formData.append('action', 'update_profile');
         
         $.ajax({
-            url: baseUrl + 'php/profile-handler.php',
+            url: baseUrl + 'php/update-profile.php',
             type: 'POST',
             data: formData,
             processData: false,

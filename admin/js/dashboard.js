@@ -33,8 +33,6 @@ function getStatusClass(status) {
 }
 
 // ========== SHARED MODAL FUNCTIONS ==========
-// These work for both my-orders.php and all-orders.php
-
 function openOrderModal(orderId) {
     var modal = document.getElementById('orderModal');
     var body = document.getElementById('orderModalBody');
@@ -44,10 +42,10 @@ function openOrderModal(orderId) {
     
     modal.classList.add('active');
     body.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
-    footer.innerHTML = ''; // Clear footer, will be populated by display function
+    footer.innerHTML = '';
     
     $.ajax({
-        url: baseUrl + 'php/get-order-details.php?order_id=' + orderId,
+        url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -155,7 +153,6 @@ function displayOrderDetailsInModal(order) {
         </div>
     `;
     
-    // Add action buttons only - NO duplicate close button (X button handles closing)
     var actionButtons = '';
     if (order.status === 'pending') {
         actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
@@ -176,12 +173,10 @@ function closeOrderModal() {
     if (modal) modal.classList.remove('active');
 }
 
-// Close modal when clicking outside
 $(document).on('click', '#orderModal', function(e) {
     if (e.target === this) closeOrderModal();
 });
 
-// Handle sidebar close when modal opens
 function initModalSidebarHandler() {
     var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
     var $sideMenu = $('#' + prefix + 'SideMenu');
@@ -215,7 +210,7 @@ window.deleteProduct = function(productId) {
     
     if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
         $.ajax({
-            url: baseUrl + 'admin/php/delete-product.php',
+            url: baseUrl + 'php/endpoints/delete-product.php',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ product_id: productId }),
@@ -264,7 +259,7 @@ window.updateOrderStatus = function(orderId, newStatus) {
     
     if (confirm(confirmMsg)) {
         $.ajax({
-            url: baseUrl + 'admin/php/update-order-status.php',
+            url: baseUrl + 'php/endpoints/update-order-status.php',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ order_id: orderId, status: newStatus }),
@@ -404,11 +399,11 @@ function loadRecentUsers() {
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="4" class="loading-cell">No users found</td</tr>');
+                $tbody.html('<tr><td colspan="4" class="loading-cell">No users found</td></tr>');
             }
         },
         error: function() {
-            $tbody.html('<tr><td colspan="4" class="loading-cell">Error loading users</td</tr>');
+            $tbody.html('<tr><td colspan="4" class="loading-cell">Error loading users</td></tr>');
         }
     });
 }
@@ -438,11 +433,11 @@ function loadRecentOrders(limit) {
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="5" class="loading-cell">No orders found</td</tr>');
+                $tbody.html('<tr><td colspan="5" class="loading-cell">No orders found</td></tr>');
             }
         },
         error: function() {
-            $tbody.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td</tr>');
+            $tbody.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td></tr>');
         }
     });
 }

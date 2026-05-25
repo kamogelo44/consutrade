@@ -11,9 +11,9 @@ $baseUrl = getBaseUrl();
 // Get current page for active link highlighting
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// Use centralized auth functions
-$is_logged_in = isLoggedIn();
-$current_user = getCurrentUser();
+// Use Auth class
+$is_logged_in = $auth->isLoggedIn();
+$current_user = $auth->getCurrentUser();
 
 // Get user data
 $user_role = null;

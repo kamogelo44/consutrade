@@ -17,9 +17,9 @@ if (!$is_logged_in) {
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-$cart_id = isset($input['cart_id']) ? (int)$input['cart_id'] : 0;
+$cart_id  = isset($input['cart_id']) ? (int)$input['cart_id'] : 0;
 $quantity = isset($input['quantity']) ? (int)$input['quantity'] : 1;
-$user_id = $current_user_id;
+$user_id  = $current_user_id;
 
 if ($cart_id <= 0) {
     $response['message'] = 'Invalid cart item';
@@ -30,11 +30,10 @@ if ($cart_id <= 0) {
 if ($quantity < 1) $quantity = 1;
 if ($quantity > 99) $quantity = 99;
 
-// Get product_id and current stock from cart
-$product_stmt = $conn->prepare("SELECT c.product_id, p.stock_quantity 
-                                FROM cart c 
-                                JOIN products p ON c.product_id = p.product_id 
-                                WHERE c.cart_id = ? AND c.user_id = ?");
+// Get product_id from cart to check stock
+$product_stmt = $conn->prepare(
+    "SELECT c.product_id FROM cart c WHERE c.cart_id = ? AND c.user_id = ?"
+);
 $product_stmt->bind_param('ii', $cart_id, $user_id);
 $product_stmt->execute();
 $product_result = $product_stmt->get_result();
@@ -47,19 +46,19 @@ if (!$product_row) {
     exit;
 }
 
-$available_stock = (int)($product_row['stock_quantity'] ?? 0);
+// Check stock using repository
+$available_stock = $productRepo->getProductStock($product_row['product_id']);
 
-// Check if requested quantity exceeds available stock
 if ($quantity > $available_stock) {
     $response['message'] = 'Only ' . $available_stock . ' available in stock.';
     echo json_encode($response);
     exit;
 }
 
-$result = updateCartQuantity($conn, $cart_id, $user_id, $quantity);
+$result = $cartRepo->updateCartQuantity($cart_id, $user_id, $quantity);
 
 if ($result) {
-    updateCartCount();
+    $auth->updateCartCount();
     $response['success'] = true;
     $response['message'] = 'Cart updated';
 } else {
@@ -67,4 +66,3 @@ if ($result) {
 }
 
 echo json_encode($response);
-?>

@@ -8,7 +8,7 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!isAdminLoggedIn()) {
+if (!$auth->isAdminLoggedIn()) {
     header('Location: login.php');
     exit;
 }
@@ -33,9 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($update_stmt->execute()) {
             $_SESSION['full_name'] = $full_name;
-            $success_message = 'Profile updated successfully!';
+            $success_message = 'Profile updated.';
         } else {
-            $error_message = 'Failed to update profile. Please try again.';
+            $error_message = 'Could not update profile.';
         }
         $update_stmt->close();
     }
@@ -58,38 +58,19 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
     <script>var baseUrl = '<?php echo $baseUrl; ?>';</script>
     <style>
-        /* Page specific styles */
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-        }
-        .page-header p {
-            color: var(--gray-medium);
-        }
+        .page-header { margin-bottom: var(--spacing-xl); }
+        .page-header h1 { font-size: var(--font-2xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-xs); }
+        .page-header p { color: var(--gray-medium); }
         
-        /* Flash Messages */
         .success-message, .error-message {
             padding: var(--spacing-md);
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-lg);
             text-align: center;
         }
-        .success-message {
-            background: var(--success-light);
-            color: var(--success);
-            border-left: 4px solid var(--success);
-        }
-        .error-message {
-            background: var(--error-light);
-            color: var(--error);
-            border-left: 4px solid var(--error);
-        }
+        .success-message { background: var(--success-light); color: var(--success); border-left: 4px solid var(--success); }
+        .error-message { background: var(--error-light); color: var(--error); border-left: 4px solid var(--error); }
         
-        /* Profile Layout - Two Columns */
         .profile-layout {
             display: grid;
             grid-template-columns: 1fr 1.5fr;
@@ -97,7 +78,6 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             margin-bottom: var(--spacing-xl);
         }
         
-        /* Left Column - Profile Info */
         .profile-left {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -105,9 +85,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             padding: var(--spacing-xl);
             text-align: center;
         }
-        .profile-avatar {
-            margin-bottom: var(--spacing-lg);
-        }
+        .profile-avatar { margin-bottom: var(--spacing-lg); }
         .profile-avatar img {
             width: 120px;
             height: 120px;
@@ -116,11 +94,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             border: 3px solid var(--primary-color);
             background: var(--primary-fade);
         }
-        .profile-left h2 {
-            font-size: var(--font-xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-        }
+        .profile-left h2 { font-size: var(--font-xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-xs); }
         .role-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -132,32 +106,12 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             margin-bottom: var(--spacing-lg);
         }
         
-        /* Stats List */
-        .stats-list {
-            text-align: left;
-            border-top: 1px solid var(--border-light);
-            padding-top: var(--spacing-lg);
-        }
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            padding: var(--spacing-sm) 0;
-            border-bottom: 1px solid var(--border-light);
-        }
-        .stat-item:last-child {
-            border-bottom: none;
-        }
-        .stat-label {
-            font-weight: var(--font-semibold);
-            color: var(--gray-dark);
-            font-size: var(--font-sm);
-        }
-        .stat-value {
-            color: var(--gray-medium);
-            font-size: var(--font-sm);
-        }
+        .stats-list { text-align: left; border-top: 1px solid var(--border-light); padding-top: var(--spacing-lg); }
+        .stat-item { display: flex; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-light); }
+        .stat-item:last-child { border-bottom: none; }
+        .stat-label { font-weight: var(--font-semibold); color: var(--gray-dark); font-size: var(--font-sm); }
+        .stat-value { color: var(--gray-medium); font-size: var(--font-sm); }
         
-        /* Right Column - Edit Form */
         .profile-right {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -172,48 +126,14 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             border-bottom: 2px solid var(--primary-color);
         }
         
-        /* Form Styles */
-        .form-group {
-            margin-bottom: var(--spacing-lg);
-        }
-        .form-group label {
-            display: block;
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-            font-size: var(--font-sm);
-        }
-        .form-group input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-            transition: all var(--transition-fast);
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-        .form-group input:disabled {
-            background: var(--gray-bg-light);
-            cursor: not-allowed;
-        }
-        .form-group small {
-            display: block;
-            margin-top: var(--spacing-xs);
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-        }
+        .form-group { margin-bottom: var(--spacing-lg); }
+        .form-group label { display: block; font-weight: var(--font-semibold); margin-bottom: var(--spacing-sm); color: var(--dark-bg); font-size: var(--font-sm); }
+        .form-group input { width: 100%; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: var(--font-md); transition: all var(--transition-fast); }
+        .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1); }
+        .form-group input:disabled { background: var(--gray-bg-light); cursor: not-allowed; }
+        .form-group small { display: block; margin-top: var(--spacing-xs); font-size: var(--font-xs); color: var(--gray-medium); }
         
-        /* Form Actions */
-        .form-actions {
-            display: flex;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
+        .form-actions { display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-xl); flex-wrap: wrap; }
         .save-btn, .change-password-btn {
             padding: 10px 24px;
             border-radius: var(--radius-md);
@@ -224,103 +144,23 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             display: inline-block;
             text-align: center;
         }
-        .save-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-        }
-        .save-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-        .change-password-btn {
-            background: var(--gray-bg-light);
-            color: var(--gray-dark);
-            border: 1px solid var(--border-light);
-        }
-        .change-password-btn:hover {
-            background: var(--gray-lighter);
-        }
+        .save-btn { background: var(--primary-color); color: white; border: none; }
+        .save-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .change-password-btn { background: var(--gray-bg-light); color: var(--gray-dark); border: 1px solid var(--border-light); }
+        .change-password-btn:hover { background: var(--gray-lighter); }
         
-        /* Quick Links Section */
-        .quick-links-section {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            padding: var(--spacing-xl);
-        }
-        .quick-links-section h3 {
-            font-size: var(--font-lg);
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-lg);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--primary-color);
-        }
-        .quick-links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: var(--spacing-md);
-        }
-        .quick-link-card {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            transition: all var(--transition-fast);
-            border: 1px solid transparent;
-        }
-        .quick-link-card:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-light);
-            transform: translateX(4px);
-        }
-        .quick-link-card img {
-            width: 24px;
-            height: 24px;
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
-        }
-        .quick-link-card span {
-            color: var(--gray-dark);
-            font-size: var(--font-sm);
-            font-weight: var(--font-medium);
-        }
-        .quick-link-card:hover span {
-            color: var(--primary-color);
-        }
+        .quick-links-section { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: var(--spacing-xl); }
+        .quick-links-section h3 { font-size: var(--font-lg); font-weight: var(--font-semibold); margin-bottom: var(--spacing-lg); padding-bottom: var(--spacing-sm); border-bottom: 2px solid var(--primary-color); }
+        .quick-links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--spacing-md); }
+        .quick-link-card { display: flex; align-items: center; gap: var(--spacing-md); padding: var(--spacing-md); background: var(--gray-bg-light); border-radius: var(--radius-md); text-decoration: none; transition: all var(--transition-fast); border: 1px solid transparent; }
+        .quick-link-card:hover { background: var(--primary-fade); border-color: var(--primary-light); transform: translateX(4px); }
+        .quick-link-card img { width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg); }
+        .quick-link-card span { color: var(--gray-dark); font-size: var(--font-sm); font-weight: var(--font-medium); }
+        .quick-link-card:hover span { color: var(--primary-color); }
         
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .profile-layout {
-                grid-template-columns: 1fr;
-                gap: var(--spacing-lg);
-            }
-            .quick-links-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media (max-width: 768px) {
-            .form-actions {
-                flex-direction: column;
-            }
-            .save-btn, .change-password-btn {
-                width: 100%;
-            }
-            .quick-links-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        @media (max-width: 480px) {
-            .profile-left, .profile-right, .quick-links-section {
-                padding: var(--spacing-md);
-            }
-            .stat-item {
-                flex-direction: column;
-                gap: var(--spacing-xs);
-            }
-        }
+        @media (max-width: 1024px) { .profile-layout { grid-template-columns: 1fr; gap: var(--spacing-lg); } .quick-links-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .form-actions { flex-direction: column; } .save-btn, .change-password-btn { width: 100%; } .quick-links-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 480px) { .profile-left, .profile-right, .quick-links-section { padding: var(--spacing-md); } .stat-item { flex-direction: column; gap: var(--spacing-xs); } }
     </style>
 </head>
 <body>
@@ -329,13 +169,11 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
 <main class="admin-main-content">
     <div class="dashboard-content">
-        <!-- Page Header -->
         <div class="page-header">
             <h1>Admin Profile</h1>
             <p>Manage your account information</p>
         </div>
 
-        <!-- Flash Messages -->
         <?php if ($success_message): ?>
             <div class="success-message"><?php echo $success_message; ?></div>
         <?php endif; ?>
@@ -343,9 +181,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             <div class="error-message"><?php echo $error_message; ?></div>
         <?php endif; ?>
 
-        <!-- Profile Layout -->
         <div class="profile-layout">
-            <!-- Left Column - Profile Info -->
             <div class="profile-left">
                 <div class="profile-avatar">
                     <img src="<?php echo $profile_image; ?>" alt="Profile Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
@@ -375,7 +211,6 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                 </div>
             </div>
 
-            <!-- Right Column - Edit Form -->
             <div class="profile-right">
                 <h3>Edit Profile Information</h3>
                 <form method="POST" action="" class="profile-form">
@@ -404,7 +239,6 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             </div>
         </div>
         
-        <!-- Quick Links Section -->
         <div class="quick-links-section">
             <h3>Quick Links</h3>
             <div class="quick-links-grid">

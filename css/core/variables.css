@@ -1,0 +1,94 @@
+/* 
+ * ConsuTrade - CSS Variables & Design Tokens
+ * Author: Kamogelo Phale
+ * 
+ * "A good variable is like a good friend - reliable and consistent."
+ * These variables keep our design system in check across the entire platform.
+ */
+:root {
+    /* Primary Brand Colors - The ConsuTrade Orange */
+    --primary-color: #FF6B00;
+    --primary-dark: #e05f00;
+    --primary-darker: #cc5500;
+    --primary-light: #ff8533;
+    --primary-lighter: #ffa366;
+    --primary-fade: #FFF4E8;
+    
+    /* Neutral Colors - Keeping it clean and professional */
+    --white: #ffffff;
+    --black: #000000;
+    --dark-bg: #1A1A1A;
+    --gray-dark: #333333;
+    --gray-medium: #666666;
+    --gray-light: #999999;
+    --gray-lighter: #cccccc;
+    --gray-bg: #f5f5f5;
+    --gray-bg-light: #f8f9fa;
+    
+    /* Border Colors - For those fine lines */
+    --border-light: #e0e0e0;
+    --border-medium: #cccccc;
+    --border-dark: #999999;
+    
+    /* Status Colors - Because users need to know what's up */
+    --success: #4caf50;
+    --success-light: #E8f5e9;
+    --error: #f44336;
+    --error-light: #ffebee;
+    --warning: #ff9800;
+    --warning-light: #fff3e0;
+    --info: #2196f3;
+    --info-light: #e3f2fd;
+    
+    /* Shadows - Adding depth to our design */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+    
+    /* Spacing - The breath between elements */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    
+    /* Border Radius - Rounding those corners nicely */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-round: 999px;
+    
+    /* Font Sizes - Typography hierarchy */
+    --font-xs: 11px;
+    --font-sm: 12px;
+    --font-md: 14px;
+    --font-base: 16px;
+    --font-lg: 18px;
+    --font-xl: 20px;
+    --font-2xl: 24px;
+    --font-3xl: 28px;
+    --font-4xl: 32px;
+    
+    /* Font Weights */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    
+    /* Transitions - Smooth like butter */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.6s ease;
+    
+    /* Z-Index Layers - Who's on top? */
+    --z-below: -1;
+    --z-normal: 1;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-modal: 1000;
+    --z-popup: 1100;
+    --z-tooltip: 1200;
+}

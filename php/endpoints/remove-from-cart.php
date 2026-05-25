@@ -12,7 +12,6 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check if user is logged in using centralized auth
 if (!$is_logged_in) {
     $response['message'] = 'Please login to remove items';
     echo json_encode($response);
@@ -29,11 +28,10 @@ if ($product_id <= 0) {
     exit;
 }
 
-// Use the helper function to remove item by product_id
-$result = removeCartItemByProductId($conn, $product_id, $user_id);
+$result = $cartRepo->removeCartItemByProductId($product_id, $user_id);
 
 if ($result) {
-    updateCartCount(); // Updates $_SESSION['cart_count']
+    $auth->updateCartCount();
     $response['success'] = true;
     $response['message'] = 'Item removed from cart';
 } else {
@@ -41,4 +39,3 @@ if ($result) {
 }
 
 echo json_encode($response);
-?>

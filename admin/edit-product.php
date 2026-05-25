@@ -8,13 +8,13 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!isSellerLoggedIn()) {
+if (!$auth->isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
 }
 
-$baseUrl = getBaseUrl();
-$seller_id = $current_user_id;
+$baseUrl    = getBaseUrl();
+$seller_id  = $current_user_id;
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
@@ -23,22 +23,14 @@ if ($product_id <= 0) {
 }
 
 // Get product data
-$product = getProductForEdit($conn, $product_id, $seller_id);
+$product = $productRepo->getProductForEdit($product_id, $seller_id);
 if (!$product) {
     header('Location: my-products.php');
     exit;
 }
 
-// Get gallery images from product_images table
-$gallery_images = [];
-$gallery_stmt = $conn->prepare("SELECT image_id, image_url, is_primary, sort_order FROM product_images WHERE product_id = ? ORDER BY sort_order ASC");
-$gallery_stmt->bind_param('i', $product_id);
-$gallery_stmt->execute();
-$gallery_result = $gallery_stmt->get_result();
-while ($img = $gallery_result->fetch_assoc()) {
-    $gallery_images[] = $img;
-}
-$gallery_stmt->close();
+// Get gallery images
+$gallery_images = $productRepo->getProductGallery($product_id);
 
 $user = getUserById($conn, $seller_id);
 $profile_image = getUserProfileImage($user['profile_image'] ?? null);
@@ -75,7 +67,6 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         .error-msg { background: var(--error-light); color: var(--error); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); }
         .success-msg { background: var(--success-light); color: var(--success); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); }
         
-        /* Responsive */
         @media (max-width: 1024px) {
             .form-container { margin: 0 var(--spacing-md); padding: var(--spacing-lg); }
             .form-row { grid-template-columns: 1fr; gap: var(--spacing-sm); }
@@ -103,7 +94,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         <?php endif; ?>
 
         <div class="form-container">
-            <form action="<?php echo $baseUrl; ?>php/edit-product-handler.php" method="post" enctype="multipart/form-data">
+            <form action="<?php echo $baseUrl; ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
                 
                 <div class="form-group">
@@ -163,7 +154,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                     <input type="file" name="main_image" accept="image/*">
                     <?php if (!empty($product['image_url'])): ?>
                         <div class="current-image">
-                            <img src="<?php echo getProductImageUrl($product['image_url']); ?>" alt="Current main image">
+                            <img src="<?php echo $productRepo->getProductImageUrl($product['image_url']); ?>" alt="Current main image">
                             <p style="font-size: var(--font-sm); color: var(--gray-medium); margin-top: var(--spacing-sm)">Leave empty to keep current image</p>
                         </div>
                     <?php endif; ?>
@@ -175,7 +166,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                     <div class="gallery-grid" id="existing-gallery">
                         <?php foreach ($gallery_images as $img): ?>
                             <div class="gallery-item" data-image-id="<?php echo $img['image_id']; ?>">
-                                <img src="<?php echo getProductImageUrl($img['image_url']); ?>" alt="Gallery image">
+                                <img src="<?php echo $productRepo->getProductImageUrl($img['image_url']); ?>" alt="Gallery image">
                                 <a href="javascript:void(0)" class="remove-btn" onclick="removeGalleryImage(<?php echo $img['image_id']; ?>, <?php echo $product_id; ?>)">×</a>
                                 <?php if ($img['is_primary']): ?>
                                     <span class="primary-badge">Primary</span>
@@ -202,7 +193,6 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 </main>
 
 <script>
-// Preview new gallery images
 $('input[name="new_gallery_images[]"]').on('change', function(e) {
     const preview = $('#new-gallery-preview');
     preview.empty();
@@ -224,7 +214,7 @@ $('input[name="new_gallery_images[]"]').on('change', function(e) {
 function removeGalleryImage(imageId, productId) {
     if (confirm('Remove this image from the gallery?')) {
         $.ajax({
-            url: baseUrl + 'admin/php/remove-gallery-image.php',
+            url: baseUrl + 'php/endpoints/remove-gallery-image.php',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ image_id: imageId, product_id: productId }),
@@ -232,13 +222,12 @@ function removeGalleryImage(imageId, productId) {
             success: function(data) {
                 if (data.success) {
                     $('.gallery-item[data-image-id="' + imageId + '"]').remove();
-                    showSuccessToast('Image removed');
                 } else {
-                    showErrorToast('Error: ' + data.message);
+                    alert('Could not remove image.');
                 }
             },
             error: function() {
-                showErrorToast('Something went wrong');
+                alert('Something went wrong.');
             }
         });
     }

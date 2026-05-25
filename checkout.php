@@ -3,65 +3,37 @@
  * ConsuTrade - Checkout Page
  * Author: Kamogelo Phale
  * 
- * This page handles the checkout process and redirects to PayFast
+ * Displays order summary and PayFast payment form.
+ * Checkout processing is handled by php/endpoints/place-order.php
  */
 
 require_once __DIR__ . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// Check if user is logged in using centralized auth
-if (!$is_logged_in) {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
-}
-
-$user_id = $current_user_id;
-
-// Get cart items using helper function
-$cart_items = getCartItems($conn, $user_id);
-
-// If cart is empty, redirect to shop
-if (empty($cart_items)) {
+// Must have checkout data in session
+if (!isset($_SESSION['checkout_data'])) {
     header('Location: ' . $baseUrl . 'cart.php');
     exit;
 }
 
-// ========== STOCK VERIFICATION ==========
-$stock_errors = verifyCartStock($conn, $cart_items);
+$data        = $_SESSION['checkout_data'];
+$cart_items  = $data['cart_items'];
+$subtotal    = $data['subtotal'];
+$delivery_fee = $data['delivery_fee'];
+$total       = $data['total'];
 
-if (!empty($stock_errors)) {
-    $_SESSION['checkout_errors'] = $stock_errors;
-    header('Location: ' . $baseUrl . 'cart.php');
-    exit;
-}
-
-// Calculate totals using helper function
-$totals = calculateCartTotals($cart_items);
-$subtotal = $totals['subtotal'];
-$delivery_fee = $totals['delivery_fee'];
-$total = $totals['total'];
-
-// Process checkout (creates orders, clears cart)
-$checkout_result = processCheckout($conn, $user_id, $cart_items);
-
-if (!$checkout_result['success']) {
-    $_SESSION['checkout_errors'] = $checkout_result['errors'];
-    header('Location: ' . $baseUrl . 'cart.php');
-    exit;
-}
-
-// Get user info for PayFast
-$user = getUserCheckoutInfo($conn, $user_id);
-
-// Prepare PayFast data
-$payfast_data = preparePayFastData([
-    'payment_id' => $checkout_result['payment_id'],
-    'primary_order_id' => $checkout_result['primary_order_id'],
-    'total' => $total,
-    'buyer_name' => $user['full_name'],
-    'buyer_email' => $user['email']
+// Prepare PayFast form data
+$payfast_data = $cartRepo->preparePayFastData([
+    'payment_id'       => $data['payment_id'],
+    'primary_order_id' => $data['primary_order_id'],
+    'total'            => $total,
+    'buyer_name'       => $data['buyer_name'],
+    'buyer_email'      => $data['buyer_email'],
 ], $baseUrl);
+
+// Clear checkout data after displaying (prevents double submission on refresh)
+unset($_SESSION['checkout_data']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -71,7 +43,6 @@ $payfast_data = preparePayFastData([
     <title>Checkout - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
     
-    <!-- Master Stylesheet (includes all CSS) -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
 </head>
 <body>
@@ -138,8 +109,8 @@ $payfast_data = preparePayFastData([
                 
                 <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($payfast_data['name_first']); ?>">
                 <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($payfast_data['email_address']); ?>">
-                <?php if (!empty($user['phone'])): ?>
-                <input type="hidden" name="cell_number" value="<?php echo htmlspecialchars($user['phone']); ?>">
+                <?php if (!empty($data['buyer_phone'])): ?>
+                <input type="hidden" name="cell_number" value="<?php echo htmlspecialchars($data['buyer_phone']); ?>">
                 <?php endif; ?>
                 
                 <button type="submit" class="pay-now-btn">Pay Now with PayFast</button>

@@ -266,7 +266,7 @@ $(function() {
         
         var rating = $('#review-rating').val();
         if (rating == 0) {
-            showErrorToast('Please select a rating');
+            alert('Please select a rating');
             return;
         }
         
@@ -278,20 +278,20 @@ $(function() {
         };
         
         $.ajax({
-            url: baseUrl + 'php/submit-review.php',
+            url: baseUrl + 'php/endpoints/submit-review.php',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(reviewData),
             success: function(data) {
                 if (data.success) {
-                    showSuccessToast('Thank you for your review!');
+                    alert('Thank you for your review!');
                     closeReviewModal();
                 } else {
-                    showErrorToast('Error submitting review: ' + data.message);
+                    alert(data.message);
                 }
             },
             error: function() {
-                showErrorToast('Something went wrong');
+                alert('Something went wrong.');
             }
         });
     });
@@ -304,14 +304,14 @@ function viewOrderDetails(orderId) {
     $modal.addClass('active');
     $content.html('<div class="loading-spinner">Loading order details...</div>');
     
-    $.get(baseUrl + 'php/get-order-details.php?order_id=' + orderId, function(data) {
+    $.get(baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId, function(data) {
         if (data.success) {
             displayOrderDetails(data.order);
         } else {
-            $content.html('<p class="error">Error loading order details.</p>');
+            $content.html('<p class="error">Could not load order details.</p>');
         }
     }).fail(function() {
-        $content.html('<p class="error">Error loading order details.</p>');
+        $content.html('<p class="error">Could not load order details.</p>');
     });
 }
 
@@ -389,24 +389,24 @@ function displayOrderDetails(order) {
 }
 
 function cancelOrder(orderId) {
-    if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to cancel this order?')) {
         $.ajax({
-            url: baseUrl + 'php/cancel-order.php',
+            url: baseUrl + 'php/endpoints/cancel-order.php',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ order_id: orderId }),
             success: function(data) {
                 if (data.success) {
-                    showSuccessToast('Order cancelled successfully!');
+                    alert('Order cancelled.');
                     setTimeout(function() {
                         location.reload();
-                    }, 1500);
+                    }, 1000);
                 } else {
-                    showErrorToast('Error cancelling order: ' + data.message);
+                    alert(data.message);
                 }
             },
             error: function() {
-                showErrorToast('Something went wrong');
+                alert('Something went wrong.');
             }
         });
     }
@@ -433,6 +433,3 @@ function resetRatingStars() {
     $('.rating-stars .star').removeClass('active');
 }
 </script>
-
-</body>
-</html>
