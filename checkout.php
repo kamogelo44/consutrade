@@ -8,6 +8,10 @@
  */
 
 require_once __DIR__ . '/init.php';
+$breadcrumbItems = [
+    ['url' => 'cart.php', 'label' => 'Shopping Cart'],
+    ['label' => 'Checkout']
+];
 
 $baseUrl = getBaseUrl();
 
@@ -50,6 +54,7 @@ unset($_SESSION['checkout_data']);
 <?php include 'includes/header.php'; ?>
 
 <main class="checkout-container">
+    <?php include 'includes/breadcrumb.php'; ?>
     <h1>Checkout</h1>
     
     <div class="checkout-layout">

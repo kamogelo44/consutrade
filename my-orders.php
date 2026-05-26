@@ -7,6 +7,11 @@
  */
 require_once __DIR__ . '/init.php';
 
+$breadcrumbItems = [
+    ['url' => 'profile.php', 'label' => 'My Profile'],
+    ['label' => 'My Orders']
+];
+
 $baseUrl = getBaseUrl();
 
 // Check if user is logged in using centralized auth
@@ -39,6 +44,7 @@ $orders = getBuyerOrders($conn, $current_user_id, $status_filter, $search_term);
 <?php include 'includes/header.php'; ?>
 
 <main>
+    <?php include 'includes/breadcrumb.php'; ?>
     <div class="orders-container">
         <!-- Breadcrumb Navigation -->
         <div class="breadcrumb">

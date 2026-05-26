@@ -7,6 +7,9 @@
  */
 
 require_once __DIR__ . '/init.php';
+$breadcrumbItems = [
+    ['label' => 'All Products']
+];
 
 $baseUrl = getBaseUrl();
 ?>
@@ -21,59 +24,6 @@ $baseUrl = getBaseUrl();
     <!-- Master Stylesheet -->
     <link rel="stylesheet" href="css/main.css">
     
-    <style>
-        /* ========== PRODUCT LISTINGS PAGE SPECIFIC STYLES ========== */
-        
-        /* Breadcrumb */
-        .breadcrumb {
-            margin: 30px 0 20px 30px;
-            padding: 12px 20px;
-            font-size: var(--font-md);
-            background-color: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-            display: inline-flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .breadcrumb a {
-            text-decoration: none;
-            color: var(--primary-color);
-            transition: color var(--transition-fast);
-        }
-        .breadcrumb a:hover {
-            text-decoration: underline;
-        }
-        .breadcrumb .current-page {
-            color: var(--dark-bg);
-            font-weight: var(--font-semibold);
-            background-color: var(--primary-fade);
-            padding: 4px 12px;
-            border-radius: var(--radius-round);
-        }
-        .breadcrumb-separator {
-            color: var(--gray-light);
-            margin: 0 4px;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .breadcrumb {
-                margin: 20px 15px;
-                padding: 10px 15px;
-                font-size: var(--font-sm);
-                width: calc(100% - 30px);
-            }
-        }
-        @media (max-width: 480px) {
-            .breadcrumb {
-                margin: 15px 12px;
-                padding: 8px 12px;
-                font-size: var(--font-xs);
-                width: calc(100% - 24px);
-            }
-        }
-    </style>
 </head>
 <body>
 
@@ -81,11 +31,7 @@ $baseUrl = getBaseUrl();
 
 <main>
     <!-- Breadcrumb -->
-    <div class="breadcrumb">
-        <a href="index.php">Home</a>
-        <span class="breadcrumb-separator">></span>
-        <span class="current-page">All Products</span>
-    </div>
+    <?php include 'includes/breadcrumb.php'; ?>
 
     <!-- Listings Body -->
     <div class="listings-body">

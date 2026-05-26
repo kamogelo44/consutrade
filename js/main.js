@@ -134,7 +134,7 @@ function updateCartCount() {
 function loadCart() {
     if (!window.location.pathname.includes('cart.php')) return;
     
-    $.get(baseUrl + 'php/get-cart.php', function(data) {
+    $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
         if (data.success) {
             displayCartItems(data);
             updateOrderSummary(data);
@@ -464,16 +464,12 @@ $(function() {
         });
     }
     
-    // Auto-close modal on success
-    var $flashMessage = $('.flash');
-    if ($flashMessage.length) {
-        if ($('#register-modal').hasClass('active')) $('#register-modal').removeClass('active');
-        if ($('#login-modal').hasClass('active')) $('#login-modal').removeClass('active');
-        
+    // Auto-hide flash messages
+    var $flashMsg = $('.flash-message');
+    if ($flashMsg.length) {
         setTimeout(function() {
-            $flashMessage.css('opacity', '0').css('transition', 'opacity 0.5s ease');
-            setTimeout(function() { $flashMessage.remove(); }, 500);
-        }, 5000);
+            $flashMsg.fadeOut(500);
+        }, 4000);
     }
     
     // Active Navigation Link

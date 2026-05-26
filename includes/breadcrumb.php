@@ -16,7 +16,7 @@ if (isset($breadcrumbItems) && !empty($breadcrumbItems)) {
     ?>
     <div class="breadcrumb">
         <a href="<?php echo $baseUrl; ?>index.php">Home</a>
-        <?php foreach ($breadcrumbItems as $item): ?>
+        <?php foreach ($breadcrumbItems as $index => $item): ?>
             <span class="breadcrumb-separator">›</span>
             <?php if (isset($item['url'])): ?>
                 <a href="<?php echo $baseUrl . $item['url']; ?>"><?php echo htmlspecialchars($item['label']); ?></a>

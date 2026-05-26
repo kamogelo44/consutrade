@@ -8,6 +8,10 @@
 
 require_once __DIR__ . '/init.php';
 
+$breadcrumbItems = [
+    ['label' => 'My Profile']
+];
+
 $baseUrl = getBaseUrl();
 
 // Check if user is logged in using centralized auth
@@ -53,11 +57,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
 <main class="profile-container">
     <!-- Breadcrumb Navigation -->
-    <div class="breadcrumb">
-        <a href="<?php echo $baseUrl; ?>index.php">Home</a>
-        <span class="breadcrumb-separator">›</span>
-        <span class="current-page">My Profile</span>
-    </div>
+    <?php include 'includes/breadcrumb.php'; ?>
 
     <!-- User Profile Header -->
     <div class="profile-user-header">

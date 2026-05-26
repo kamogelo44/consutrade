@@ -7,6 +7,9 @@
  */
 
 require_once __DIR__ . '/init.php';
+$breadcrumbItems = [
+    ['label' => 'Shopping Cart']
+];
 
 $baseUrl = getBaseUrl();
 
@@ -39,6 +42,8 @@ if ($is_logged_in && $current_user_id) {
 <?php include 'includes/header.php'; ?>
 
 <main>
+    <!--Breadcrumb-->
+    <?php include 'includes/breadcrumb.php'; ?>
     <div class="cart-container">
         <div class="heading-container">
             <h1 class="cart-heading">My Cart (<span class="item-num" id="cart-item-count"><?php echo $total_quantity; ?></span> items)</h1>

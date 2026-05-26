@@ -6,7 +6,7 @@
  * Handles user authentication for buyers on the main website
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 // Only process if form was submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {

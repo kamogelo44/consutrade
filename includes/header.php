@@ -5,17 +5,12 @@
  * 
  */
 
-// Base URL for the site
 $baseUrl = getBaseUrl();
-
-// Get current page for active link highlighting
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// Use Auth class
 $is_logged_in = $auth->isLoggedIn();
 $current_user = $auth->getCurrentUser();
 
-// Get user data
 $user_role = null;
 $user_name = 'User';
 $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
@@ -31,26 +26,20 @@ if ($is_logged_in && $current_user) {
     }
 }
 
-// Get cart count
 $cart_count = $_SESSION['cart_count'] ?? 0;
-
-// Show Sell link only for guests
 $show_sell_link = !$is_logged_in;
 ?>
 
 <header class="site-header">
     <div class="header-container">
-        <!-- Mobile Menu Button -->
         <button class="mobile-menu-toggle" id="mobileMenuToggle">
             <span></span><span></span><span></span>
         </button>
         
-        <!-- Logo -->
         <div class="logo">
             <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
         </div>
         
-        <!-- Desktop Search -->
         <div class="desktop-search">
             <form action="<?php echo $baseUrl; ?>search-results.php" method="GET" class="search-wrapper">
                 <input type="search" name="search" placeholder="Search for products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
@@ -60,7 +49,6 @@ $show_sell_link = !$is_logged_in;
             </form>
         </div>
         
-        <!-- Desktop Navigation -->
         <nav class="main-nav">
             <ul>
                 <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
@@ -72,7 +60,6 @@ $show_sell_link = !$is_logged_in;
             </ul>
         </nav>
         
-        <!-- Header Actions -->
         <div class="header-actions">
             <a href="<?php echo $baseUrl; ?>cart.php" class="cart-icon desktop-cart">
                 <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart">
@@ -80,7 +67,6 @@ $show_sell_link = !$is_logged_in;
             </a>
             
             <?php if ($is_logged_in): ?>
-                <!-- User Menu (Logged In) -->
                 <div class="user-menu">
                     <button class="user-menu-btn" id="userMenuBtn">
                         <img src="<?php echo $user_profile_image; ?>" alt="Profile" class="user-avatar-icon" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
@@ -90,25 +76,17 @@ $show_sell_link = !$is_logged_in;
                         </svg>
                     </button>
                     <div class="user-dropdown" id="userDropdown">
-                        <?php if ($user_role === 'seller'): ?>
-                            <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a>
-                            <a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a>
-                            <a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a>
-                        <?php else: ?>
-                            <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
-                            <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
-                        <?php endif; ?>
+                        <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
+                        <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
                         <hr>
-                        <a href="<?php echo $baseUrl; ?>php/logout.php" class="logout-link">Logout</a>
+                        <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="logout-link">Logout</a>
                     </div>
                 </div>
             <?php else: ?>
-                <!-- Login/Signup Buttons (Not Logged In) -->
                 <button class="login-btn" id="loginBtn">Login</button>
                 <button class="signup-btn" id="registerBtn">Sign Up</button>
             <?php endif; ?>
             
-            <!-- Mobile Icons -->
             <div class="mobile-header-icons">
                 <button class="mobile-search-icon" id="mobileSearchIcon">
                     <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="22" height="22" alt="Search">
@@ -121,7 +99,6 @@ $show_sell_link = !$is_logged_in;
         </div>
     </div>
     
-    <!-- Mobile Search (Hidden by default) -->
     <div class="mobile-search-container" id="mobileSearchContainer">
         <form action="<?php echo $baseUrl; ?>search-results.php" method="GET" class="search-wrapper">
             <input type="search" name="search" placeholder="Search for products..." id="mobile-search">
@@ -131,7 +108,6 @@ $show_sell_link = !$is_logged_in;
         </form>
     </div>
     
-    <!-- Mobile Navigation Sidebar -->
     <div class="mobile-nav" id="mobileNav">
         <div class="mobile-menu-header">
             <div class="mobile-menu-logo">
@@ -170,15 +146,9 @@ $show_sell_link = !$is_logged_in;
             
             <?php if ($is_logged_in): ?>
                 <li class="mobile-menu-divider"></li>
-                <?php if ($user_role === 'seller'): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
-                <?php else: ?>
-                    <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
-                <?php endif; ?>
-                <li><a href="<?php echo $baseUrl; ?>php/logout.php">Logout</a></li>
+                <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
+                <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                <li><a href="<?php echo $baseUrl; ?>php/endpoints/logout.php">Logout</a></li>
             <?php else: ?>
                 <li class="mobile-menu-divider"></li>
                 <li><button class="mobile-nav-btn" id="mobile-login-btn">Login</button></li>
@@ -187,13 +157,10 @@ $show_sell_link = !$is_logged_in;
         </ul>
     </div>
     
-    <!-- Overlay -->
     <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 </header>
 
-<!-- Login/Register Modals (Only shown when not logged in) -->
 <?php if (!$is_logged_in): ?>
-    <!-- Login Modal -->
     <div id="login-modal" class="modal">
         <div class="modal-content">
             <button class="btn-close"></button>
@@ -202,7 +169,7 @@ $show_sell_link = !$is_logged_in;
                 <p>Welcome back! Please login to your account</p>
             </div>
             <div id="login-error-container" class="error-container" style="display: none;"></div>
-            <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/login.php">
+            <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/login.php">
                 <div class="input-group">
                     <label for="login-email">Email Address</label>
                     <input type="email" id="login-email" name="email" placeholder="Enter your email address" required>
@@ -223,7 +190,6 @@ $show_sell_link = !$is_logged_in;
         </div>
     </div>
 
-    <!-- Register Modal -->
     <div id="register-modal" class="modal">
         <div class="modal-content">
             <button class="btn-close"></button>
@@ -232,7 +198,7 @@ $show_sell_link = !$is_logged_in;
                 <p>Create your account to start buying and selling</p>
             </div>
             <div id="register-error-container" class="error-container" style="display: none;"></div>
-            <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/register.php">
+            <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/register.php">
                 <div class="input-group">
                     <label for="register-full-name">Full Name</label>
                     <input type="text" id="register-full-name" name="full_name" placeholder="Enter your full name" required>

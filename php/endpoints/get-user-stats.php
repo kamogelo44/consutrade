@@ -2,122 +2,97 @@
 /*
  * ConsuTrade - Get User Statistics (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * Returns public stats for a seller (no login required)
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 
 $response = ['success' => false];
 
-// Get role from the variables that init.php provides
-$role = $current_user['role'] ?? '';
-$user_id = $current_user_id ?? 0;
+$seller_id = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
+$user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 
-// ========== ADMIN STATS ==========
-if ($role === 'admin') {
-    // Total users
-    $users_sql = "SELECT COUNT(*) as total FROM users";
-    $users_result = $conn->query($users_sql);
-    $total_users = (int)$users_result->fetch_assoc()['total'];
-    
-    // Total products (not deleted)
-    $products_sql = "SELECT COUNT(*) as total FROM products WHERE status != 'deleted'";
-    $products_result = $conn->query($products_sql);
-    $total_products = (int)$products_result->fetch_assoc()['total'];
-    
-    // Pending orders
-    $orders_sql = "SELECT COUNT(*) as total FROM orders WHERE status = 'pending'";
-    $orders_result = $conn->query($orders_sql);
-    $pending_orders = (int)$orders_result->fetch_assoc()['total'];
-    
-    // Total earnings from completed orders
-    $earnings_sql = "SELECT SUM(total_price) as total FROM orders WHERE status = 'completed'";
-    $earnings_result = $conn->query($earnings_sql);
-    $earnings_row = $earnings_result->fetch_assoc();
-    $total_earnings = (float)($earnings_row['total'] ?? 0);
-    
-    $response = [
-        'success' => true,
-        'total_users' => $total_users,
-        'total_products' => $total_products,
-        'pending_orders' => $pending_orders,
-        'total_earnings' => $total_earnings
-    ];
-    
-// ========== SELLER STATS ==========
-} elseif ($role === 'seller') {
-    // Total products
-    $product_sql = "SELECT COUNT(*) as total FROM products WHERE seller_id = ? AND status != 'deleted'";
+// Use seller_id if provided, otherwise use user_id
+$target_id = $seller_id > 0 ? $seller_id : $user_id;
+
+if ($target_id <= 0) {
+    $response['message'] = 'Invalid user ID';
+    echo json_encode($response);
+    exit;
+}
+
+// Get user role
+$role_sql = "SELECT role FROM users WHERE user_id = ?";
+$role_stmt = $conn->prepare($role_sql);
+$role_stmt->bind_param('i', $target_id);
+$role_stmt->execute();
+$role_result = $role_stmt->get_result();
+$user_role = $role_result->fetch_assoc()['role'] ?? '';
+$role_stmt->close();
+
+// ========== SELLER STATS (Public) ==========
+if ($user_role === 'seller') {
+    // Total active products
+    $product_sql = "SELECT COUNT(*) as total FROM products WHERE seller_id = ? AND status = 'active'";
     $product_stmt = $conn->prepare($product_sql);
-    $product_stmt->bind_param('i', $user_id);
+    $product_stmt->bind_param('i', $target_id);
     $product_stmt->execute();
     $total_products = (int)$product_stmt->get_result()->fetch_assoc()['total'];
     $product_stmt->close();
     
-    // Pending orders
-    $orders_sql = "SELECT COUNT(*) as total FROM orders WHERE seller_id = ? AND status = 'pending'";
+    // Completed orders for this seller's products
+    $orders_sql = "SELECT COUNT(DISTINCT o.order_id) as total 
+                   FROM orders o
+                   JOIN order_items oi ON o.order_id = oi.order_id
+                   JOIN products p ON oi.product_id = p.product_id
+                   WHERE p.seller_id = ? AND o.status = 'completed'";
     $orders_stmt = $conn->prepare($orders_sql);
-    $orders_stmt->bind_param('i', $user_id);
+    $orders_stmt->bind_param('i', $target_id);
     $orders_stmt->execute();
-    $pending_orders = (int)$orders_stmt->get_result()->fetch_assoc()['total'];
+    $total_sales = (int)$orders_stmt->get_result()->fetch_assoc()['total'];
     $orders_stmt->close();
-    
-    // Total earnings
-    $earnings_sql = "SELECT SUM(total_price) as total FROM orders WHERE seller_id = ? AND status = 'completed'";
-    $earnings_stmt = $conn->prepare($earnings_sql);
-    $earnings_stmt->bind_param('i', $user_id);
-    $earnings_stmt->execute();
-    $earnings_row = $earnings_stmt->get_result()->fetch_assoc();
-    $total_earnings = (float)($earnings_row['total'] ?? 0);
-    $earnings_stmt->close();
     
     $response = [
         'success' => true,
         'total_products' => $total_products,
-        'pending_orders' => $pending_orders,
-        'total_earnings' => $total_earnings
+        'total_sales' => $total_sales
     ];
     
-// ========== BUYER STATS ==========
-} elseif ($role === 'buyer') {
-    $orders_sql = "SELECT 
-                    COUNT(*) as total_orders,
-                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
-                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_orders,
-                    SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing_orders,
-                    SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
-                    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
-                    SUM(CASE WHEN status IN ('completed', 'processing', 'shipped') THEN total_price ELSE 0 END) as total_spent
-                  FROM orders 
-                  WHERE buyer_id = ?";
-    $orders_stmt = $conn->prepare($orders_sql);
-    $orders_stmt->bind_param('i', $user_id);
-    $orders_stmt->execute();
-    $orders_data = $orders_stmt->get_result()->fetch_assoc();
-    $orders_stmt->close();
+// ========== BUYER STATS (Private - only for logged in user viewing their own profile) ==========
+} elseif ($user_role === 'buyer') {
+    // Only return data if the viewer is the same buyer (logged in)
+    $is_authenticated = isset($current_user_id) && $current_user_id == $target_id;
     
-    $review_sql = "SELECT COUNT(*) as count FROM reviews WHERE buyer_id = ?";
-    $review_stmt = $conn->prepare($review_sql);
-    $review_stmt->bind_param('i', $user_id);
-    $review_stmt->execute();
-    $reviews_written = (int)$review_stmt->get_result()->fetch_assoc()['count'];
-    $review_stmt->close();
-    
-    $response = [
-        'success' => true,
-        'total_orders' => (int)($orders_data['total_orders'] ?? 0),
-        'total_spent' => (float)($orders_data['total_spent'] ?? 0),
-        'pending_orders' => (int)($orders_data['pending_orders'] ?? 0),
-        'completed_orders' => (int)($orders_data['completed_orders'] ?? 0),
-        'processing_orders' => (int)($orders_data['processing_orders'] ?? 0),
-        'shipped_orders' => (int)($orders_data['shipped_orders'] ?? 0),
-        'cancelled_orders' => (int)($orders_data['cancelled_orders'] ?? 0),
-        'reviews_written' => $reviews_written
-    ];
+    if ($is_authenticated) {
+        $orders_sql = "SELECT 
+                        COUNT(*) as total_orders,
+                        SUM(CASE WHEN status IN ('completed', 'processing', 'shipped') THEN total_price ELSE 0 END) as total_spent,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+                        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_orders
+                      FROM orders 
+                      WHERE buyer_id = ?";
+        $orders_stmt = $conn->prepare($orders_sql);
+        $orders_stmt->bind_param('i', $target_id);
+        $orders_stmt->execute();
+        $orders_data = $orders_stmt->get_result()->fetch_assoc();
+        $orders_stmt->close();
+        
+        $response = [
+            'success' => true,
+            'total_orders' => (int)($orders_data['total_orders'] ?? 0),
+            'total_spent' => (float)($orders_data['total_spent'] ?? 0),
+            'pending_orders' => (int)($orders_data['pending_orders'] ?? 0),
+            'completed_orders' => (int)($orders_data['completed_orders'] ?? 0)
+        ];
+    } else {
+        $response['message'] = 'Unauthorized to view buyer stats';
+    }
     
 } else {
-    $response['message'] = 'Not authenticated - Role: ' . $role;
+    $response['message'] = 'User not found';
 }
 
 echo json_encode($response);

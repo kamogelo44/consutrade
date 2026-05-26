@@ -4,8 +4,8 @@
  * Author: Kamogelo Phale
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 $auth->logoutUser();
-header('Location: ../index.php');
+header('Location: ' . getBaseUrl() . 'index.php');
 exit;

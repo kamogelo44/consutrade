@@ -3,7 +3,7 @@
  * ConsuTrade - Get Seller Products (AJAX)
  * Author: Kamogelo Phale
  * 
- * Returns products for the logged-in seller
+ * Returns products for a seller (public access - no login required)
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -12,48 +12,61 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'products' => [], 'message' => ''];
 
-// Check if seller is logged in
-if (!isSellerLoggedIn()) {
-    $response['message'] = 'Unauthorized';
+$seller_id = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
+
+if ($seller_id <= 0) {
+    $response['message'] = 'Invalid seller ID';
     echo json_encode($response);
     exit;
 }
 
-$seller_id = $current_user_id;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 0;
-$status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
-$search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Get seller products using helper function
-$products = getSellerProducts($conn, $seller_id, $status_filter, $search_term, $limit);
+// Get seller products (active only for public view)
+$sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,
+        p.condition, p.stock_quantity, p.created_at,
+        COALESCE(pi.image_url, p.image_url) AS display_image
+        FROM products p
+        LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+        WHERE p.seller_id = ? AND p.status = 'active'
+        ORDER BY p.created_at DESC";
 
-// Get seller info
-$user_info = getUserById($conn, $seller_id);
-
-// Format products
-$formatted_products = [];
-foreach ($products as $product) {
-    $formatted_products[] = [
-        'id' => $product['id'],
-        'title' => $product['title'],
-        'name' => $product['title'],
-        'price' => $product['price'],
-        'image' => $product['display_image'] ?? $product['image'],
-        'image_url' => $product['display_image'] ?? $product['image'],
-        'display_image' => $product['display_image'] ?? $product['image'],
-        'status' => $product['status'],
-        'stock_quantity' => $product['stock_quantity'],
-        'created_at' => $product['created_at'],
-        'seller_name' => $user_info['full_name'] ?? 'You',
-        'profile_image' => $user_info['profile_image'] ?? null,
-        'is_verified' => (bool)($user_info['id_verified'] ?? false),
-        'category_name' => $product['category_name'] ?? 'General'
-    ];
+if ($limit > 0) {
+    $sql .= " LIMIT ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ii', $seller_id, $limit);
+} else {
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('i', $seller_id);
 }
 
+$stmt->execute();
+$result = $stmt->get_result();
+
+$products = [];
+while ($row = $result->fetch_assoc()) {
+    $imagePath = $row['display_image'] ?? $row['image'];
+    if ($imagePath && !preg_match('/^http/', $imagePath)) {
+        $imagePath = getBaseUrl() . $imagePath;
+    }
+    
+    $products[] = [
+        'id' => (int)$row['id'],
+        'name' => $row['name'],
+        'price' => (float)$row['price'],
+        'image' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
+        'image_url' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
+        'display_image' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
+        'condition' => ucfirst($row['condition'] ?? 'Good'),
+        'stock_quantity' => (int)($row['stock_quantity'] ?? 0),
+        'created_at' => $row['created_at']
+    ];
+}
+$stmt->close();
+
 $response['success'] = true;
-$response['products'] = $formatted_products;
-$response['total'] = count($formatted_products);
+$response['products'] = $products;
+$response['total'] = count($products);
 
 echo json_encode($response);
 ?>

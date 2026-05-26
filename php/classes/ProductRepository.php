@@ -117,6 +117,47 @@ class ProductRepository
         return $products;
     }
 
+        /**
+     * Get seller products with filters (includes primary image from product_images).
+     *
+     * @param int    $id      Seller ID
+     * @param string $filter  Status filter: 'all', 'active', 'suspended'
+     * @param string $search  Search by product name or ID
+     * @param int    $limit   Maximum products to return (0 = all)
+     * @param int    $offset  Pagination offset (default 0)
+     * @return array
+     */
+
+    /**
+     * Get product data for display (lightweight, for breadcrumb and basic info)
+     *
+     * @param int $productId Product ID
+     * @return array|null
+     */
+    public function getProductForDisplay(int $productId): ?array
+    {
+        $sql = "SELECT p.product_id, p.title, p.image_url
+                FROM products p
+                WHERE p.product_id = ? AND p.status = 'active'";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return [
+                'id' => (int)$row['product_id'],
+                'title' => $row['title'],
+                'image_url' => $row['image_url']
+            ];
+        }
+        
+        $stmt->close();
+        return null;
+    }
+
     /**
      * Get single product for editing (with ownership verification).
      *

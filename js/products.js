@@ -328,13 +328,7 @@ function displayProductDetails(product) {
     
     let sellerImage = fixImageUrl(product.seller_profile_image);
     
-    $container.html(`
-        <div class="breadcrumb">
-            <a href="${baseUrl}index.php">Home</a> > 
-            <a href="${baseUrl}product-listings.php">Products</a> > 
-            <span>${escapeHtml(product.name)}</span>
-        </div>
-        
+    $container.html(`        
         <div class="top-items">
             <div class="product-imgs">
                 <div class="main-img">
@@ -381,7 +375,7 @@ function displayProductDetails(product) {
                     ${starsHtml}
                     <p>Rating: ${avgRating.toFixed(1)}/5 (${product.review_count || 0} reviews)</p>
                 </div>
-                <button class="view-profile" onclick="window.location.href='${baseUrl}seller-profile-public.php?seller_id=${product.seller_id}'">
+                <button class="view-profile" onclick="window.location.href='${baseUrl}seller-profile-public.php?seller_id=${product.seller_id}&product_id=${product.id}&product_name=${encodeURIComponent(product.name)}'">
                     View Seller Profile
                 </button>
             </div>
