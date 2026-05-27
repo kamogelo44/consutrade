@@ -6,7 +6,7 @@
  * Returns detailed order information for the logged-in user
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
@@ -46,6 +46,11 @@ unset($item);
 $delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
 $total        = $subtotal + $delivery_fee;
 
+// Get shipping address from order if available
+$shipping_address = isset($order['shipping_address']) && !empty($order['shipping_address']) 
+    ? $order['shipping_address'] 
+    : 'Not provided';
+
 $response['success'] = true;
 $response['order']   = [
     'order_id'         => (int) $order['order_id'],
@@ -57,8 +62,9 @@ $response['order']   = [
     'delivery_fee'     => round($delivery_fee, 2),
     'total'            => round($total, 2),
     'other_party_name' => $order['other_party_name'],
-    'shipping_address' => 'Not provided',
+    'shipping_address' => $shipping_address,
     'items'            => $order['items'],
 ];
 
 echo json_encode($response);
+?>

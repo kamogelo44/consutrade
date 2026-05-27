@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . getBaseUrl() . 'admin/login.php');

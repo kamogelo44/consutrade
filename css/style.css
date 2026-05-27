@@ -37,12 +37,16 @@
     /* Status Colors */
     --success: #4caf50;
     --success-light: #E8f5e9;
+    --success-dark: #388e3c;
     --error: #f44336;
     --error-light: #ffebee;
+    --error-dark: #d32f2f;
     --warning: #ff9800;
     --warning-light: #fff3e0;
+    --warning-dark: #e68900;
     --info: #2196f3;
     --info-light: #e3f2fd;
+    --info-dark: #1976d2;
     
     /* Shadows */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);

@@ -4,6 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Returns public stats for a seller (no login required)
+ * Returns private stats for buyer when authenticated
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -67,6 +68,7 @@ if ($user_role === 'seller') {
     $is_authenticated = isset($current_user_id) && $current_user_id == $target_id;
     
     if ($is_authenticated) {
+        // Get order statistics
         $orders_sql = "SELECT 
                         COUNT(*) as total_orders,
                         SUM(CASE WHEN status IN ('completed', 'processing', 'shipped') THEN total_price ELSE 0 END) as total_spent,
@@ -80,12 +82,21 @@ if ($user_role === 'seller') {
         $orders_data = $orders_stmt->get_result()->fetch_assoc();
         $orders_stmt->close();
         
+        // Get reviews written count
+        $reviews_sql = "SELECT COUNT(*) as total FROM reviews WHERE buyer_id = ?";
+        $reviews_stmt = $conn->prepare($reviews_sql);
+        $reviews_stmt->bind_param('i', $target_id);
+        $reviews_stmt->execute();
+        $reviews_count = (int)$reviews_stmt->get_result()->fetch_assoc()['total'];
+        $reviews_stmt->close();
+        
         $response = [
             'success' => true,
             'total_orders' => (int)($orders_data['total_orders'] ?? 0),
             'total_spent' => (float)($orders_data['total_spent'] ?? 0),
             'pending_orders' => (int)($orders_data['pending_orders'] ?? 0),
-            'completed_orders' => (int)($orders_data['completed_orders'] ?? 0)
+            'completed_orders' => (int)($orders_data['completed_orders'] ?? 0),
+            'reviews_written' => $reviews_count
         ];
     } else {
         $response['message'] = 'Unauthorized to view buyer stats';

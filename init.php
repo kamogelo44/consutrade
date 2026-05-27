@@ -18,6 +18,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // Load required files
 require_once __DIR__ . '/php/config.php';
 require_once __DIR__ . '/php/helpers.php';
+require_once __DIR__ . '/php/auth.php'; 
 
 // Load all class files
 require_once __DIR__ . '/php/classes/Database.php';

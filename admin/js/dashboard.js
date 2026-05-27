@@ -299,7 +299,8 @@ window.loadSellerProducts = function(limit) {
     
     $grid.html('<div class="loading-spinner">Loading your products...</div>');
     
-    var url = baseUrl + 'admin/php/get-seller-products.php';
+    // FIXED: Correct path to endpoints
+    var url = baseUrl + 'php/endpoints/get-seller-products.php';
     if (limit) url += '?limit=' + limit;
     
     $.ajax({
@@ -310,7 +311,7 @@ window.loadSellerProducts = function(limit) {
             if (data.success && data.products && data.products.length) {
                 displaySellerProducts($grid, data.products);
             } else {
-                $grid.html('<div class="empty-listings"><p>You haven\'t listed any products yet.</p><button class="add-listing-btn" onclick="window.location.href=\'' + baseUrl + 'admin/add-product.php\'">+ Add Your First Product</button></div>');
+                $grid.html('<div class="empty-listings"><p>You haven\'t listed any products yet.</p></div>');
             }
         },
         error: function() {
@@ -359,7 +360,7 @@ function displaySellerProducts($grid, products) {
 // ========== ADMIN DASHBOARD FUNCTIONS ==========
 function loadAdminStats() {
     $.ajax({
-        url: baseUrl + 'php/get-user-stats.php',
+        url: baseUrl + 'php/endpoints/get-user-stats.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -381,7 +382,7 @@ function loadRecentUsers() {
     if (!$tbody.length) return;
     
     $.ajax({
-        url: baseUrl + 'admin/php/get-recent-users.php',
+        url: baseUrl + 'php/endpoints/get-recent-users.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -414,7 +415,7 @@ function loadRecentOrders(limit) {
     if (!$tbody.length) return;
     
     $.ajax({
-        url: baseUrl + 'admin/php/get-recent-orders.php?limit=' + limit,
+        url: baseUrl + 'php/endpoints/get-recent-orders.php?limit=' + limit,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -451,7 +452,7 @@ function loadAdminDashboard() {
 // ========== SELLER DASHBOARD FUNCTIONS ==========
 function loadSellerStats() {
     $.ajax({
-        url: baseUrl + 'php/get-user-stats.php',
+        url: baseUrl + 'php/endpoints/get-user-stats.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -473,7 +474,7 @@ function loadSellerRecentOrders(limit) {
     if (!$ordersList.length) return;
     
     $.ajax({
-        url: baseUrl + 'admin/php/get-seller-recent-orders.php?limit=' + limit,
+        url: baseUrl + 'php/endpoints/get-seller-recent-orders.php?limit=' + limit,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -481,11 +482,20 @@ function loadSellerRecentOrders(limit) {
                 $ordersList.empty();
                 $.each(data.orders, function(i, order) {
                     var statusClass = getStatusClass(order.status);
+                    // Truncate product names if too long
+                    var productNames = order.product_names || '';
+                    if (productNames.length > 40) {
+                        productNames = productNames.substring(0, 37) + '...';
+                    }
                     $ordersList.append(
                         '<div class="order-item" onclick="viewOrder(' + order.id + ')">' +
                         '<div class="order-info">' +
                         '<span class="order-number">#' + order.id + '</span>' +
                         '<span class="order-status ' + statusClass + '">' + capitalizeFirst(order.status) + '</span>' +
+                        '</div>' +
+                        '<div class="order-products">' +
+                        '<span class="product-names" title="' + escapeHtml(order.product_names) + '">' + escapeHtml(productNames) + '</span>' +
+                        '<span class="product-count">' + order.item_count + ' item(s)</span>' +
                         '</div>' +
                         '<div class="order-details">' +
                         '<span class="order-total">R ' + parseFloat(order.total).toFixed(2) + '</span>' +

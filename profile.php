@@ -47,16 +47,91 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <title>My Profile - ConsuTrade</title>
     <meta name="author" content="Kamogelo Phale">
     
-    <!-- Master Stylesheet (includes all CSS) -->
+    <!-- Master Stylesheet -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
-
+    
+    <style>
+        /* ========== PROFILE PAGE SPECIFIC STYLES ========== */
+        .profile-container { width: 100%; max-width: 100%; padding: var(--spacing-xl); min-height: calc(100vh - 200px); }
+        
+        /* User Header */
+        .profile-user-header { display: flex; align-items: center; gap: var(--spacing-xl); background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); border-radius: var(--radius-lg); padding: var(--spacing-2xl) var(--spacing-xl); margin-bottom: var(--spacing-xl); color: var(--white); }
+        .profile-user-avatar { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+        .profile-user-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid var(--white); box-shadow: var(--shadow-md); }
+        .avatar-upload-btn { position: absolute; bottom: 5px; right: 5px; background: var(--primary-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition-fast); border: 2px solid var(--white); }
+        .avatar-upload-btn:hover { transform: scale(1.1); background: var(--primary-dark); }
+        .avatar-upload-btn img { width: 16px; height: 16px; filter: brightness(0) invert(1); margin: 0; border: none; }
+        .profile-user-info { flex: 1; }
+        .profile-user-info h1 { font-size: var(--font-3xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-sm); color: var(--white); }
+        .profile-user-meta { display: flex; align-items: center; gap: var(--spacing-md); flex-wrap: wrap; }
+        .role-badge { padding: 4px 12px; border-radius: var(--radius-round); font-size: var(--font-sm); font-weight: var(--font-medium); }
+        .role-buyer { background: rgba(76, 175, 80, 0.9); color: var(--white); }
+        .member-since { background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: var(--radius-round); font-size: var(--font-sm); }
+        
+        /* Messages */
+        .success-message, .error-message { padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); text-align: center; }
+        .success-message { background: var(--success-light); color: var(--success); border-left: 4px solid var(--success); }
+        .error-message { background: var(--error-light); color: var(--error); border-left: 4px solid var(--error); }
+        
+        /* Profile Content - Two Columns */
+        .profile-content { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-xl); margin-bottom: var(--spacing-xl); }
+        
+        /* Stats Card */
+        .profile-stats-card, .profile-edit-card { background: var(--white); border-radius: var(--radius-lg); padding: var(--spacing-xl); box-shadow: var(--shadow-sm); border: 1px solid var(--border-light); }
+        .profile-stats-card h3, .profile-edit-card h3 { font-size: var(--font-xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-lg); color: var(--dark-bg); padding-bottom: var(--spacing-sm); border-bottom: 2px solid var(--primary-color); }
+        .stats-list { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-light); }
+        .stat-label { font-weight: var(--font-medium); color: var(--gray-dark); }
+        .stat-value { color: var(--gray-medium); }
+        .stat-value.highlight { font-size: var(--font-xl); font-weight: var(--font-bold); color: var(--primary-color); }
+        .stat-divider { height: 1px; background: var(--border-light); margin: var(--spacing-sm) 0; }
+        
+        /* Edit Form */
+        .profile-edit-form { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .form-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+        .form-group label { font-weight: var(--font-medium); color: var(--gray-dark); font-size: var(--font-sm); }
+        .form-group input { padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: var(--font-md); transition: all var(--transition-fast); }
+        .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1); }
+        .form-group input:disabled { background: var(--gray-bg); color: var(--gray-light); cursor: not-allowed; }
+        .form-group small { color: var(--gray-light); font-size: var(--font-xs); }
+        .form-actions { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-md); }
+        .save-btn { flex: 1; padding: 12px; background: var(--primary-color); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: var(--font-bold); cursor: pointer; transition: all var(--transition-fast); }
+        .save-btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .change-password-btn { flex: 1; padding: 12px; background: var(--white); color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: var(--radius-md); font-weight: var(--font-bold); text-align: center; text-decoration: none; transition: all var(--transition-fast); }
+        .change-password-btn:hover { background: var(--primary-fade); transform: translateY(-2px); }
+        
+        /* Danger Zone */
+        .danger-zone { margin-top: var(--spacing-xl); }
+        .danger-card { display: flex; justify-content: space-between; align-items: center; background: var(--error-light); border-radius: var(--radius-lg); padding: var(--spacing-lg); border: 1px solid var(--error); flex-wrap: wrap; gap: var(--spacing-md); }
+        .danger-info h4 { color: var(--error); font-size: var(--font-lg); font-weight: var(--font-bold); margin-bottom: var(--spacing-xs); }
+        .danger-info p { color: var(--gray-dark); font-size: var(--font-sm); }
+        .delete-account-btn { padding: 10px 24px; background: var(--error); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: var(--font-bold); cursor: pointer; transition: all var(--transition-fast); }
+        .delete-account-btn:hover { background: var(--error-dark); transform: translateY(-2px); }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .profile-content { grid-template-columns: 1fr; gap: var(--spacing-lg); }
+        }
+        @media (max-width: 768px) {
+            .profile-container { padding: var(--spacing-lg); }
+            .profile-user-header { flex-direction: column; text-align: center; padding: var(--spacing-xl) var(--spacing-lg); }
+            .profile-user-meta { justify-content: center; }
+            .danger-card { flex-direction: column; text-align: center; }
+            .form-actions { flex-direction: column; }
+        }
+        @media (max-width: 480px) {
+            .profile-container { padding: var(--spacing-md); }
+            .profile-user-avatar { width: 100px; height: 100px; }
+            .profile-user-info h1 { font-size: var(--font-2xl); }
+            .stat-value.highlight { font-size: var(--font-lg); }
+        }
+    </style>
 </head>
 <body>
 
 <?php include 'includes/header.php'; ?>
 
 <main class="profile-container">
-    <!-- Breadcrumb Navigation -->
     <?php include 'includes/breadcrumb.php'; ?>
 
     <!-- User Profile Header -->
@@ -70,9 +145,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         <div class="profile-user-info">
             <h1><?php echo htmlspecialchars($user['full_name']); ?></h1>
             <div class="profile-user-meta">
-                <span class="role-badge role-buyer">
-                    Buyer
-                </span>
+                <span class="role-badge role-buyer">Buyer</span>
                 <span class="member-since">Member since <?php echo formatDate($user['created_at']); ?></span>
             </div>
         </div>
@@ -200,6 +273,8 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     </div>
 </main>
 
+<?php include 'includes/footer.php'; ?>
+
 <script>
 /*
  * ConsuTrade - Profile Page Functionality
@@ -217,30 +292,36 @@ function closeDeleteModal() {
 }
 
 $(function() {
-    // Show flash message
     function showMessage(message, isError) {
         if (isError) {
             $('#error-message').text(message).show();
-            setTimeout(function() {
-                $('#error-message').fadeOut();
-            }, 5000);
+            setTimeout(function() { $('#error-message').fadeOut(); }, 5000);
         } else {
             $('#flash-message').text(message).show();
-            setTimeout(function() {
-                $('#flash-message').fadeOut();
-            }, 5000);
+            setTimeout(function() { $('#flash-message').fadeOut(); }, 5000);
         }
     }
     
-    // Load buyer statistics via AJAX
     function loadUserStats() {
         $.ajax({
-            url: baseUrl + 'php/get-user-stats.php',
+            url: baseUrl + 'php/endpoints/get-user-stats.php?user_id=' + currentUserId,
             type: 'GET',
             dataType: 'json',
             success: function(data) {
                 if (data.success) {
-                    updateStatsDisplay(data);
+                    $('#stat-orders').text(data.total_orders || 0);
+                    $('#stat-spent').text('R ' + (data.total_spent || 0).toFixed(2));
+                    if (data.pending_orders > 0) {
+                        $('#stat-pending').text(data.pending_orders);
+                        $('#pending-row').show();
+                    }
+                    if (data.reviews_written > 0) {
+                        $('#stat-reviews').text(data.reviews_written);
+                        $('#reviews-row').show();
+                    }
+                } else {
+                    $('#stat-orders').text('0');
+                    $('#stat-spent').text('R 0.00');
                 }
             },
             error: function() {
@@ -250,21 +331,6 @@ $(function() {
         });
     }
     
-    function updateStatsDisplay(stats) {
-        $('#stat-orders').text(stats.total_orders || 0);
-        $('#stat-spent').text('R ' + (stats.total_spent || 0).toFixed(2));
-        
-        if (stats.pending_orders > 0) {
-            $('#stat-pending').text(stats.pending_orders);
-            $('#pending-row').show();
-        }
-        if (stats.reviews_written > 0) {
-            $('#stat-reviews').text(stats.reviews_written);
-            $('#reviews-row').show();
-        }
-    }
-    
-    // Profile image upload
     $('#profile-image-upload').on('change', function() {
         var file = this.files[0];
         if (file) {
@@ -300,21 +366,18 @@ $(function() {
         }
     });
     
-    // Trigger file input when clicking avatar upload button
     $('.avatar-upload-btn').on('click', function(e) {
         e.preventDefault();
         $('#profile-image-upload').click();
     });
     
-    // Profile edit form submission
     $('#profile-edit-form').on('submit', function(e) {
         e.preventDefault();
-        
         var formData = new FormData(this);
         formData.append('action', 'update_profile');
         
         $.ajax({
-            url: baseUrl + 'php/update-profile.php',
+            url: baseUrl + 'php/endpoints/update-profile.php',
             type: 'POST',
             data: formData,
             processData: false,
@@ -323,8 +386,7 @@ $(function() {
             success: function(data) {
                 if (data.success) {
                     showMessage(data.message, false);
-                    var newName = $('#full_name').val();
-                    $('.profile-user-info h1').text(newName);
+                    $('.profile-user-info h1').text($('#full_name').val());
                 } else {
                     showMessage(data.message, true);
                 }
@@ -335,20 +397,16 @@ $(function() {
         });
     });
     
-    // Delete account form submission
     $('#delete-account-form').on('submit', function(e) {
         e.preventDefault();
-        
         var password = $('#delete-password').val();
-        
         if (!password) {
             alert('Please enter your password');
             return;
         }
-        
         if (confirm('WARNING: This will permanently delete your account and all your data. Are you absolutely sure?')) {
             $.ajax({
-                url: baseUrl + 'php/delete-account.php',
+                url: baseUrl + 'php/endpoints/delete-account.php',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({ password: password }),
@@ -368,11 +426,9 @@ $(function() {
         }
     });
     
-    // Load stats when page loads
     loadUserStats();
 });
 </script>
 
-<?php include 'includes/footer.php'; ?>
 </body>
 </html>

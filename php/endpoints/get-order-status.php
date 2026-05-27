@@ -6,7 +6,7 @@
  * Returns the current status of an order
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
@@ -32,11 +32,17 @@ if ($order_id <= 0) {
 
 // Get order status based on role (buyer or seller can view)
 if ($role === 'seller') {
-    $sql = "SELECT status, created_at FROM orders WHERE order_id = ? AND seller_id = ?";
+    $sql = "SELECT o.status, o.created_at, u.full_name as other_party_name 
+            FROM orders o 
+            JOIN users u ON o.buyer_id = u.user_id
+            WHERE o.order_id = ? AND o.seller_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('ii', $order_id, $user_id);
 } else {
-    $sql = "SELECT status, created_at FROM orders WHERE order_id = ? AND buyer_id = ?";
+    $sql = "SELECT o.status, o.created_at, u.full_name as other_party_name 
+            FROM orders o 
+            JOIN users u ON o.seller_id = u.user_id
+            WHERE o.order_id = ? AND o.buyer_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('ii', $order_id, $user_id);
 }
@@ -48,6 +54,7 @@ if ($row = $result->fetch_assoc()) {
     $response['success'] = true;
     $response['status'] = $row['status'];
     $response['created_at'] = date('d M Y, h:i A', strtotime($row['created_at']));
+    $response['other_party_name'] = $row['other_party_name'];
     
     // Add status description
     $status_descriptions = [

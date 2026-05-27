@@ -99,6 +99,71 @@ class ReviewRepository
     }
 
     // ============================================================
+    //  CHECK & UPDATE
+    // ============================================================
+
+    /**
+     * Check if a review already exists for an order.
+     *
+     * @param int $orderId Order ID
+     * @param int $buyerId Buyer ID
+     * @return array|null Returns review data if exists, null otherwise
+     */
+    public function getReviewByOrderAndBuyer(int $orderId, int $buyerId): ?array
+    {
+        $sql = "SELECT review_id, rating, comment, created_at FROM reviews WHERE order_id = ? AND buyer_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $orderId, $buyerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return [
+                'review_id' => (int) $row['review_id'],
+                'rating' => (int) $row['rating'],
+                'comment' => $row['comment'],
+                'created_at' => $row['created_at']
+            ];
+        }
+        
+        $stmt->close();
+        return null;
+    }
+
+    /**
+     * Update an existing review.
+     *
+     * @param int    $orderId Order ID
+     * @param int    $buyerId Buyer ID
+     * @param int    $rating  New rating (1-5)
+     * @param string $comment New comment
+     * @return array          ['success' => bool, 'message' => string]
+     */
+    public function updateReview(int $orderId, int $buyerId, int $rating, string $comment): array
+    {
+        // Check if review exists
+        $existing = $this->getReviewByOrderAndBuyer($orderId, $buyerId);
+        if (!$existing) {
+            return ['success' => false, 'message' => 'Review not found'];
+        }
+        
+        // Update the review
+        $sql = "UPDATE reviews SET rating = ?, comment = ?, updated_at = NOW() WHERE order_id = ? AND buyer_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('isii', $rating, $comment, $orderId, $buyerId);
+        
+        if ($stmt->execute()) {
+            $stmt->close();
+            return ['success' => true, 'message' => 'Review updated successfully'];
+        }
+        
+        $stmt->close();
+        return ['success' => false, 'message' => 'Failed to update review'];
+    }
+
+
+    // ============================================================
     //  RETRIEVE
     // ============================================================
 
