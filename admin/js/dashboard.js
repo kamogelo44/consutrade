@@ -4,6 +4,8 @@
  * 
  * Handles both Admin and Seller dashboards
  * Includes shared modal functions for order details
+ * 
+ * Note: Relies on main.js for escapeHtml(), showSuccessToast(), showErrorToast()
  */
 
 // ========== GLOBAL VARIABLES ==========
@@ -11,8 +13,7 @@ var baseUrl = baseUrl || '';
 
 // ========== HELPER FUNCTIONS ==========
 function setText(id, value) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = value;
+    $('#' + id).text(value);
 }
 
 function capitalizeFirst(str) {
@@ -34,15 +35,15 @@ function getStatusClass(status) {
 
 // ========== SHARED MODAL FUNCTIONS ==========
 function openOrderModal(orderId) {
-    var modal = document.getElementById('orderModal');
-    var body = document.getElementById('orderModalBody');
-    var footer = document.getElementById('orderModalFooter');
+    var $modal = $('#orderModal');
+    var $body = $('#orderModalBody');
+    var $footer = $('#orderModalFooter');
     
-    if (!modal) return;
+    if (!$modal.length) return;
     
-    modal.classList.add('active');
-    body.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
-    footer.innerHTML = '';
+    $modal.addClass('active');
+    $body.html('<div class="loading-spinner">Loading order details...</div>');
+    $footer.empty();
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
@@ -52,26 +53,25 @@ function openOrderModal(orderId) {
             if (data.success && data.order) {
                 displayOrderDetailsInModal(data.order);
             } else {
-                body.innerHTML = '<p class="error" style="color: var(--error); text-align: center;">Unable to load order details.</p>';
-                footer.innerHTML = '';
+                $body.html('<p class="error" style="color: var(--error); text-align: center;">Unable to load order details.</p>');
+                $footer.empty();
             }
         },
         error: function() {
-            body.innerHTML = '<p class="error" style="color: var(--error); text-align: center;">Error loading order details.</p>';
-            footer.innerHTML = '';
+            $body.html('<p class="error" style="color: var(--error); text-align: center;">Error loading order details.</p>');
+            $footer.empty();
         }
     });
 }
 
 function displayOrderDetailsInModal(order) {
-    var body = document.getElementById('orderModalBody');
-    var footer = document.getElementById('orderModalFooter');
+    var $body = $('#orderModalBody');
+    var $footer = $('#orderModalFooter');
     var isAdmin = window.location.pathname.includes('all-orders.php');
     
     var itemsHtml = '';
     if (order.items && order.items.length > 0) {
-        for (var i = 0; i < order.items.length; i++) {
-            var item = order.items[i];
+        $.each(order.items, function(i, item) {
             var imagePath = item.image_url;
             if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
                 imagePath = baseUrl + imagePath;
@@ -88,10 +88,10 @@ function displayOrderDetailsInModal(order) {
                     <div class="order-item-price">R ${parseFloat(item.price).toFixed(2)}</div>
                 </div>
             `;
-        }
+        });
     }
     
-    body.innerHTML = `
+    $body.html(`
         <div class="order-info-section">
             <div class="info-row">
                 <span class="info-label">Order Number:</span>
@@ -151,7 +151,7 @@ function displayOrderDetailsInModal(order) {
                 <span>R ${parseFloat(order.total || 0).toFixed(2)}</span>
             </div>
         </div>
-    `;
+    `);
     
     var actionButtons = '';
     if (order.status === 'pending') {
@@ -165,12 +165,11 @@ function displayOrderDetailsInModal(order) {
         actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
     }
     
-    footer.innerHTML = actionButtons;
+    $footer.html(actionButtons);
 }
 
 function closeOrderModal() {
-    var modal = document.getElementById('orderModal');
-    if (modal) modal.classList.remove('active');
+    $('#orderModal').removeClass('active');
 }
 
 $(document).on('click', '#orderModal', function(e) {
@@ -299,7 +298,6 @@ window.loadSellerProducts = function(limit) {
     
     $grid.html('<div class="loading-spinner">Loading your products...</div>');
     
-    // FIXED: Correct path to endpoints
     var url = baseUrl + 'php/endpoints/get-seller-products.php';
     if (limit) url += '?limit=' + limit;
     
@@ -311,7 +309,7 @@ window.loadSellerProducts = function(limit) {
             if (data.success && data.products && data.products.length) {
                 displaySellerProducts($grid, data.products);
             } else {
-                $grid.html('<div class="empty-listings"><p>You haven\'t listed any products yet.</p></div>');
+                $grid.html('<div class="empty-state"><p>You haven\'t listed any products yet.</p></div>');
             }
         },
         error: function() {
@@ -371,9 +369,7 @@ function loadAdminStats() {
                 setText('pendingOrders', data.pending_orders || 0);
             }
         },
-        error: function() {
-            console.log('Error loading admin stats');
-        }
+        error: function() {}
     });
 }
 
@@ -462,9 +458,7 @@ function loadSellerStats() {
                 setText('stat-pending', data.pending_orders || 0);
             }
         },
-        error: function() {
-            console.log('Error loading seller stats');
-        }
+        error: function() {}
     });
 }
 
@@ -482,7 +476,6 @@ function loadSellerRecentOrders(limit) {
                 $ordersList.empty();
                 $.each(data.orders, function(i, order) {
                     var statusClass = getStatusClass(order.status);
-                    // Truncate product names if too long
                     var productNames = order.product_names || '';
                     if (productNames.length > 40) {
                         productNames = productNames.substring(0, 37) + '...';

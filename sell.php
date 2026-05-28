@@ -7,8 +7,15 @@
  */
 
 require_once __DIR__ . '/init.php';
+// Read register errors
+$registerErrors = $_SESSION['register_errors'] ?? [];
+$registerFormData = $_SESSION['register_form_data'] ?? [];
+unset($_SESSION['register_errors'], $_SESSION['register_form_data']);
 
-$baseUrl = getBaseUrl();
+// Read login errors
+$loginErrors = $_SESSION['login_errors'] ?? [];
+$loginEmail = $_SESSION['login_email'] ?? '';
+unset($_SESSION['login_errors'], $_SESSION['login_email']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -94,6 +101,24 @@ $baseUrl = getBaseUrl();
 </main>
 
 <?php include 'includes/footer.php'; ?>
+
+<?php if (!empty($registerErrors)): ?>
+<script>
+$(function() {
+    openModal($('#register-modal'));
+    displayModalErrors('#register-modal', <?php echo json_encode($registerErrors); ?>, <?php echo json_encode($registerFormData); ?>);
+});
+</script>
+<?php endif; ?>
+
+<?php if (!empty($loginErrors)): ?>
+<script>
+$(function() {
+    openModal($('#login-modal'));
+    displayModalErrors('#login-modal', <?php echo json_encode($loginErrors); ?>, {email: <?php echo json_encode($loginEmail); ?>});
+});
+</script>
+<?php endif; ?>
 
 <script>
 // Function to open register modal with seller role pre-selected

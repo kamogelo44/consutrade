@@ -35,43 +35,43 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($row = $result->fetch_assoc()) {
-    $gallery = $productRepo->getProductGallery($product_id);
+    // Get gallery images using ProductImageRepository
+    $gallery = $productImageRepo->getByProductId($product_id);
     $gallery_urls = [];
     foreach ($gallery as $img) {
         $gallery_urls[] = $productRepo->getProductImageUrl($img['image_url']);
     }
     
+    // Get seller rating using ReviewRepository
     $rating = $reviewRepo->getSellerRating($row['seller_id']);
     
-    $category_name = 'General';
-    $cat_sql = "SELECT category_name FROM categories WHERE category_id = ?";
-    $cat_stmt = $conn->prepare($cat_sql);
-    $cat_stmt->bind_param('i', $row['category_id']);
-    $cat_stmt->execute();
-    $cat_result = $cat_stmt->get_result();
-    if ($cat_row = $cat_result->fetch_assoc()) {
-        $category_name = $cat_row['category_name'];
+    // Get category name using CategoryRepository
+    $category_name = $categoryRepo->getCategoryName($row['category_id']) ?? 'General';
+    
+    // Build seller profile image URL
+    $seller_profile_image = getBaseUrl() . 'images/icons/profile-svgrepo-com.svg';
+    if (!empty($row['profile_image'])) {
+        $seller_profile_image = getBaseUrl() . $row['profile_image'];
     }
-    $cat_stmt->close();
     
     $response['product'] = [
-        'id'                  => (int) $row['product_id'],
-        'name'                => $row['title'],
-        'description'         => $row['description'],
-        'price'               => (float) $row['price'],
-        'condition'           => $row['condition'],
-        'location'            => $row['location'],
-        'category_id'         => (int) $row['category_id'],
-        'category_name'       => $category_name,
-        'image_url'           => $productRepo->getProductImageUrl($row['image_url']),
-        'gallery_images'      => $gallery_urls,
-        'seller_id'           => (int) $row['seller_id'],
-        'seller_name'         => $row['seller_name'],
-        'seller_profile_image' => getUserProfileImage($row['profile_image']),
-        'is_verified'         => (bool) $row['is_verified'],
-        'stock_quantity'      => (int) $row['stock_quantity'],
-        'avg_rating'          => $rating['avg_rating'],
-        'review_count'        => $rating['review_count']
+        'id'                    => (int) $row['product_id'],
+        'name'                  => $row['title'],
+        'description'           => $row['description'],
+        'price'                 => (float) $row['price'],
+        'condition'             => $row['condition'],
+        'location'              => $row['location'],
+        'category_id'           => (int) $row['category_id'],
+        'category_name'         => $category_name,
+        'image_url'             => $productRepo->getProductImageUrl($row['image_url']),
+        'gallery_images'        => $gallery_urls,
+        'seller_id'             => (int) $row['seller_id'],
+        'seller_name'           => $row['seller_name'],
+        'seller_profile_image'  => $seller_profile_image,
+        'is_verified'           => (bool) $row['is_verified'],
+        'stock_quantity'        => (int) $row['stock_quantity'],
+        'avg_rating'            => $rating['avg_rating'],
+        'review_count'          => $rating['review_count']
     ];
     $response['success'] = true;
 } else {
@@ -80,3 +80,4 @@ if ($row = $result->fetch_assoc()) {
 
 $stmt->close();
 echo json_encode($response);
+?>

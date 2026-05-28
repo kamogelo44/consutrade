@@ -82,7 +82,7 @@ function loadProducts() {
             totalPages = data.total_pages || 1;
             displayPagination();
         } else {
-            $('#products-grid').html('<div class="no-products"><p>No products found.</p></div>');
+            $('#products-grid').html('<div class="empty-state"><p>No products found.</p></div>');
         }
     }).fail(function() {
         $('#products-grid').html('<p class="error">Error loading products. Please try again.</p>');

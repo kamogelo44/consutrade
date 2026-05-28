@@ -3,11 +3,13 @@
  * ConsuTrade - Site Header Component
  * Author: Kamogelo Phale
  * 
+ * Reusable header component with dynamic cart count and user menu
  */
 
 $baseUrl = getBaseUrl();
 $current_page = basename($_SERVER['PHP_SELF']);
 
+// Use Auth class for all user data
 $is_logged_in = $auth->isLoggedIn();
 $current_user = $auth->getCurrentUser();
 
@@ -18,28 +20,27 @@ $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
 if ($is_logged_in && $current_user) {
     $user_role = $current_user['role'] ?? null;
     $user_name = $current_user['full_name'] ?? 'User';
-    $user_id = $current_user['user_id'];
-    
-    $user_data = getUserById($conn, $user_id);
-    if ($user_data && !empty($user_data['profile_image'])) {
-        $user_profile_image = getUserProfileImage($user_data['profile_image']);
+    if (!empty($current_user['profile_image'])) {
+        $user_profile_image = $baseUrl . $current_user['profile_image'];
     }
 }
 
-$cart_count = $_SESSION['cart_count'] ?? 0;
 $show_sell_link = !$is_logged_in;
 ?>
 
 <header class="site-header">
     <div class="header-container">
+        <!-- Mobile Menu Toggle -->
         <button class="mobile-menu-toggle" id="mobileMenuToggle">
             <span></span><span></span><span></span>
         </button>
         
+        <!-- Logo -->
         <div class="logo">
             <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
         </div>
         
+        <!-- Desktop Search -->
         <div class="desktop-search">
             <form action="<?php echo $baseUrl; ?>search-results.php" method="GET" class="search-wrapper">
                 <input type="search" name="search" placeholder="Search for products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
@@ -49,6 +50,7 @@ $show_sell_link = !$is_logged_in;
             </form>
         </div>
         
+        <!-- Main Navigation -->
         <nav class="main-nav">
             <ul>
                 <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
@@ -60,12 +62,15 @@ $show_sell_link = !$is_logged_in;
             </ul>
         </nav>
         
+        <!-- Header Actions -->
         <div class="header-actions">
+            <!-- Desktop Cart -->
             <a href="<?php echo $baseUrl; ?>cart.php" class="cart-icon desktop-cart">
                 <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart">
-                <span class="cart-count"><?php echo $cart_count; ?></span>
+                <span class="cart-count">0</span>
             </a>
             
+            <!-- User Menu (Logged In) -->
             <?php if ($is_logged_in): ?>
                 <div class="user-menu">
                     <button class="user-menu-btn" id="userMenuBtn">
@@ -76,29 +81,39 @@ $show_sell_link = !$is_logged_in;
                         </svg>
                     </button>
                     <div class="user-dropdown" id="userDropdown">
-                        <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
-                        <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
+                        <?php if ($user_role === 'seller'): ?>
+                            <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a>
+                            <a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a>
+                            <a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a>
+                        <?php else: ?>
+                            <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
+                            <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
+                        <?php endif; ?>
                         <hr>
                         <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="logout-link">Logout</a>
                     </div>
                 </div>
+            
+            <!-- Login/Signup Buttons (Not Logged In) -->
             <?php else: ?>
                 <button class="login-btn" id="loginBtn">Login</button>
                 <button class="signup-btn" id="registerBtn">Sign Up</button>
             <?php endif; ?>
             
+            <!-- Mobile Header Icons -->
             <div class="mobile-header-icons">
                 <button class="mobile-search-icon" id="mobileSearchIcon">
                     <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="22" height="22" alt="Search">
                 </button>
                 <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-header-cart">
                     <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="22" height="22" alt="Cart">
-                    <span class="cart-count"><?php echo $cart_count; ?></span>
+                    <span class="cart-count">0</span>
                 </a>
             </div>
         </div>
     </div>
     
+    <!-- Mobile Search Container -->
     <div class="mobile-search-container" id="mobileSearchContainer">
         <form action="<?php echo $baseUrl; ?>search-results.php" method="GET" class="search-wrapper">
             <input type="search" name="search" placeholder="Search for products..." id="mobile-search">
@@ -108,6 +123,7 @@ $show_sell_link = !$is_logged_in;
         </form>
     </div>
     
+    <!-- Mobile Navigation Menu -->
     <div class="mobile-nav" id="mobileNav">
         <div class="mobile-menu-header">
             <div class="mobile-menu-logo">
@@ -118,6 +134,7 @@ $show_sell_link = !$is_logged_in;
             </button>
         </div>
         
+        <!-- Mobile Profile Section (Logged In) -->
         <?php if ($is_logged_in): ?>
             <div class="mobile-profile-section">
                 <div class="mobile-profile-info">
@@ -130,6 +147,7 @@ $show_sell_link = !$is_logged_in;
             </div>
         <?php endif; ?>
         
+        <!-- Mobile Navigation Links -->
         <ul class="mobile-nav-links">
             <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
             <li><a href="<?php echo $baseUrl; ?>product-listings.php">Products</a></li>
@@ -140,14 +158,20 @@ $show_sell_link = !$is_logged_in;
             <li>
                 <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
                     <span>Cart</span>
-                    <span class="cart-count"><?php echo $cart_count; ?></span>
+                    <span class="cart-count">0</span>
                 </a>
             </li>
             
             <?php if ($is_logged_in): ?>
                 <li class="mobile-menu-divider"></li>
-                <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                <?php if ($user_role === 'seller'): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php">Orders</a></li>
+                <?php else: ?>
+                    <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                <?php endif; ?>
                 <li><a href="<?php echo $baseUrl; ?>php/endpoints/logout.php">Logout</a></li>
             <?php else: ?>
                 <li class="mobile-menu-divider"></li>
@@ -157,10 +181,13 @@ $show_sell_link = !$is_logged_in;
         </ul>
     </div>
     
+    <!-- Mobile Menu Overlay -->
     <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 </header>
 
+<!-- Login & Registration Modals (shown only when user is not logged in) -->
 <?php if (!$is_logged_in): ?>
+    <!-- Login Modal -->
     <div id="login-modal" class="modal">
         <div class="modal-content">
             <button class="btn-close"></button>
@@ -190,6 +217,7 @@ $show_sell_link = !$is_logged_in;
         </div>
     </div>
 
+    <!-- Register Modal -->
     <div id="register-modal" class="modal">
         <div class="modal-content">
             <button class="btn-close"></button>

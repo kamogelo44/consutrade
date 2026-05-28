@@ -42,6 +42,49 @@ class CartRepository
     // ============================================================
 
     /**
+     * Add item to cart.
+     *
+     * @param int $userId    User ID
+     * @param int $productId Product ID
+     * @param int $quantity  Quantity to add
+     * @return bool
+     */
+    public function addItem(int $userId, int $productId, int $quantity): bool
+    {
+        $stmt = $this->db->prepare(
+            "INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)"
+        );
+        $stmt->bind_param('iii', $userId, $productId, $quantity);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Get a specific cart item by user and product.
+     *
+     * @param int $userId    User ID
+     * @param int $productId Product ID
+     * @return array|null
+     */
+    public function getCartItemByProduct(int $userId, int $productId): ?array
+    {
+        $sql = "SELECT cart_id, quantity FROM cart WHERE user_id = ? AND product_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $userId, $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return $row;
+        }
+        
+        $stmt->close();
+        return null;
+    }
+
+    /**
      * Get cart items for a user with product and seller details.
      *
      * @param int $userId User ID

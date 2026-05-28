@@ -55,3 +55,26 @@ var currentUserRole = <?php echo isset($user_role) ? json_encode($user_role) : '
 var baseUrl = <?php echo json_encode($baseUrl); ?>;
 var currentUserId = <?php echo isset($_SESSION['user_id']) ? json_encode($_SESSION['user_id']) : '0'; ?>;
 </script>
+
+<!-- Cart count initialization moved from header.php -->
+<script>
+$(function() {
+    function initCartCount() {
+        if (window.sessionStorage && sessionStorage.getItem('cart_count')) {
+            var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
+            if (!isNaN(cachedCount)) {
+                $('.cart-count').text(cachedCount);
+            } else {
+                updateCartCount();
+            }
+        } else {
+            updateCartCount();
+        }
+    }
+    initCartCount();
+});
+</script>
+
+<?php if (isset($load_products_js) && $load_products_js): ?>
+<script src="<?php echo $baseUrl; ?>js/products.js"></script>
+<?php endif; ?>

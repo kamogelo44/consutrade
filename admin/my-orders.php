@@ -8,7 +8,7 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!isSellerLoggedIn()) {
+if (!$auth->isSellerLoggedIn()) {
     header('Location: login.php');
     exit;
 }
@@ -18,7 +18,9 @@ $seller_id = $current_user_id;
 
 $status_filter = $_GET['status'] ?? 'all';
 $search_term = $_GET['search'] ?? '';
-$orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
+
+// Use OrderRepository to get orders
+$orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,14 +29,13 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade Seller</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar-clean.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/modal.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
-    <script>var baseUrl = '<?php echo $baseUrl; ?>';</script>
     <style>
+        /* ========== DASHBOARD LAYOUT ========== */
+        .seller-main-content { margin-left: 280px; padding: var(--spacing-xl); min-height: 100vh; background: var(--gray-bg); transition: margin-left var(--transition-normal); }
+        .dashboard-content { max-width: 1400px; margin: 0 auto; }
+        
         /* Page Header */
         .page-header { margin-bottom: var(--spacing-xl); }
         .page-header h1 { font-size: var(--font-2xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-xs); }
@@ -74,7 +75,7 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
         .order-status-badge.status-completed { background: var(--success-light); color: var(--success); }
         .order-status-badge.status-cancelled { background: var(--error-light); color: var(--error); }
         
-        /* Desktop Horizontal Layout */
+        /* Order Body */
         .order-body { padding: var(--spacing-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-md); }
         .customer-info { display: flex; flex-direction: column; gap: var(--spacing-sm); flex: 2; }
         .customer-details { display: flex; align-items: center; gap: var(--spacing-sm); font-size: var(--font-sm); }
@@ -95,19 +96,24 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
         .complete-btn:hover { background: var(--success); color: white; transform: translateY(-2px); }
         .cancel-btn { background: var(--error-light); color: var(--error); border: 1px solid var(--error); }
         .cancel-btn:hover { background: var(--error); color: white; transform: translateY(-2px); }
+
+        .order-modal-footer {padding: var(--spacing-lg); border-top: 1px solid var(--border-light); display: flex; gap: var(--spacing-md); justify-content: flex-end; background: var(--white);border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
         
         /* Empty State */
-        .empty-orders { text-align: center; padding: 60px; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); }
-        .empty-orders h3 { font-size: var(--font-xl); font-weight: var(--font-semibold); margin: var(--spacing-md) 0 var(--spacing-sm); }
-        .empty-orders p { color: var(--gray-medium); margin-bottom: var(--spacing-md); }
+        .empty-orders { text-align: center; padding: 60px var(--spacing-xl); background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); }
+        .empty-orders img { opacity: 0.5; margin-bottom: var(--spacing-lg); }
+        .empty-orders h3 { font-size: var(--font-xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-sm); }
+        .empty-orders p { color: var(--gray-medium); margin-bottom: var(--spacing-lg); }
         .clear-btn, .back-btn { display: inline-block; padding: 10px 24px; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-md); }
         
         /* Responsive */
-        @media (max-width: 1024px) {
-            .order-body { flex-wrap: wrap; }
-            .customer-info { flex: 1; }
+        @media (max-width: 1024px) { 
+            .seller-main-content { margin-left: 0; width: 100%; padding: var(--spacing-md); padding-top: 70px; }
+            .order-body { flex-wrap: wrap; } 
+            .customer-info { flex: 1; } 
         }
         @media (max-width: 768px) {
+            .seller-main-content { padding: var(--spacing-md); padding-top: 70px; }
             .filters-bar { flex-direction: column; align-items: stretch; }
             .status-filters { justify-content: center; }
             .search-bar form { width: 100%; }
@@ -118,6 +124,7 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
             .order-footer { justify-content: center; }
         }
         @media (max-width: 480px) {
+            .seller-main-content { padding: var(--spacing-sm); padding-top: 60px; }
             .order-footer { flex-direction: column; }
             .order-footer button { width: 100%; }
             .amount-value { font-size: var(--font-xl); }
@@ -131,13 +138,11 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
 
 <main class="seller-main-content">
     <div class="dashboard-content">
-        <!-- Page Header -->
         <div class="page-header">
             <h1>My Orders</h1>
             <p>Manage and track all customer orders</p>
         </div>
 
-        <!-- Filters Bar -->
         <div class="filters-bar">
             <div class="status-filters">
                 <a href="?status=all" class="filter-btn <?php echo $status_filter === 'all' ? 'active' : ''; ?>">All Orders</a>
@@ -152,9 +157,7 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
                 <form method="GET" action="">
                     <input type="hidden" name="status" value="<?php echo $status_filter; ?>">
                     <input type="text" name="search" placeholder="Search by order number or customer..." value="<?php echo htmlspecialchars($search_term); ?>">
-                    <button type="submit">
-                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search"> Search
-                    </button>
+                    <button type="submit"><img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search"> Search</button>
                     <?php if (!empty($search_term)): ?>
                         <a href="?status=<?php echo $status_filter; ?>" class="clear-search">Clear</a>
                     <?php endif; ?>
@@ -162,7 +165,6 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
             </div>
         </div>
 
-        <!-- Orders List -->
         <div class="orders-list">
             <?php if (count($orders) > 0): ?>
                 <?php foreach ($orders as $order): ?>
@@ -218,9 +220,9 @@ $orders = getSellerOrders($conn, $seller_id, $status_filter, $search_term);
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="empty-orders">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="No orders" style="opacity: 0.5;">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="No orders">
                     <h3>No Orders Found</h3>
-                    <p><?php echo !empty($search_term) ? 'No orders match your search criteria.' : 'You have not received any orders yet.'; ?></p>
+                    <p><?php echo !empty($search_term) ? 'No orders match your search criteria.' : 'You have not received any orders yet.' ?></p>
                     <?php if (!empty($search_term)): ?>
                         <a href="?status=<?php echo $status_filter; ?>" class="clear-btn">Clear Search</a>
                     <?php else: ?>

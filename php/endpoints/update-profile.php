@@ -6,7 +6,7 @@
  * Handles profile updates and profile image uploads for all user types
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -36,42 +36,35 @@ if ($action === 'upload_image') {
         mkdir($uploadDir, 0777, true);
     }
 
-    $file     = $_FILES['profile_image'];
-    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'user_' . $current_user_id . '.' . $ext;
-    $dest     = $uploadDir . $filename;
+    $file = $_FILES['profile_image'];
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'user_' . $current_user_id . '_' . time() . '.' . $ext;
+    $dest = $uploadDir . $filename;
 
-    // Remove old profile image if exists
-    $oldSql = "SELECT profile_image FROM users WHERE user_id = ?";
-    $oldStmt = $conn->prepare($oldSql);
-    $oldStmt->bind_param('i', $current_user_id);
-    $oldStmt->execute();
-    $oldResult = $oldStmt->get_result();
-    if ($oldRow = $oldResult->fetch_assoc()) {
-        if (!empty($oldRow['profile_image'])) {
-            $oldPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $oldRow['profile_image'];
-            if (file_exists($oldPath)) {
-                unlink($oldPath);
-            }
+    // Get current profile image using UserRepository
+    $current_user_data = $userRepo->getById($current_user_id);
+    
+    if ($current_user_data && !empty($current_user_data['profile_image'])) {
+        $oldPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $current_user_data['profile_image'];
+        if (file_exists($oldPath) && basename($oldPath) !== 'default-avatar.png') {
+            unlink($oldPath);
         }
     }
-    $oldStmt->close();
 
     if (move_uploaded_file($file['tmp_name'], $dest)) {
         $imagePath = 'uploads/profiles/' . $filename;
+        
+        // Update using UserRepository
+        $result = $userRepo->updateProfileImage($current_user_id, $imagePath);
 
-        $updateSql = "UPDATE users SET profile_image = ? WHERE user_id = ?";
-        $updateStmt = $conn->prepare($updateSql);
-        $updateStmt->bind_param('si', $imagePath, $current_user_id);
-
-        if ($updateStmt->execute()) {
+        if ($result) {
+            $_SESSION['profile_image'] = $imagePath;
             $response['success'] = true;
             $response['message'] = 'Profile image updated.';
             $response['image_url'] = getBaseUrl() . $imagePath;
         } else {
             $response['message'] = 'Could not save image.';
         }
-        $updateStmt->close();
     } else {
         $response['message'] = 'Could not upload image.';
     }
@@ -85,7 +78,7 @@ if ($action === 'upload_image') {
 // ------------------------------------------------------------------
 if ($action === 'update_profile') {
     $fullName = trim($_POST['full_name'] ?? '');
-    $phone    = trim($_POST['phone'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
     $location = trim($_POST['location'] ?? '');
 
     if (empty($fullName)) {
@@ -102,22 +95,28 @@ if ($action === 'update_profile') {
         exit;
     }
 
-    $sql  = "UPDATE users SET full_name = ?, phone = ?, location = ? WHERE user_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sssi', $fullName, $cleanPhone, $location, $current_user_id);
+    // Update using UserRepository
+    $updateData = ['full_name' => $fullName];
+    if (!empty($cleanPhone)) {
+        $updateData['phone'] = $cleanPhone;
+    }
+    if (!empty($location)) {
+        $updateData['location'] = $location;
+    }
+    
+    $result = $userRepo->updateProfile($current_user_id, $updateData);
 
-    if ($stmt->execute()) {
+    if ($result) {
         $_SESSION['full_name'] = $fullName;
         $response['success'] = true;
         $response['message'] = 'Profile updated.';
     } else {
         $response['message'] = 'Could not update profile.';
     }
-    $stmt->close();
-
     echo json_encode($response);
     exit;
 }
 
 $response['message'] = 'Invalid action.';
 echo json_encode($response);
+?>

@@ -6,7 +6,7 @@
  * Handles new user registration for buyers and sellers
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 // If user is already logged in, redirect to homepage
 if ($is_logged_in) {
@@ -69,23 +69,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['confirm_password'] = 'Passwords do not match';
     }
     
-    // Check if email already exists
+    // Check if email already exists using UserRepository
     if (empty($errors)) {
-        $check_sql = "SELECT user_id, role FROM users WHERE email = ?";
-        $check_stmt = $conn->prepare($check_sql);
-        $check_stmt->bind_param('s', $email);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
+        $existing_user = $userRepo->getByEmail($email);
         
-        if ($check_result->num_rows > 0) {
-            $existing_user = $check_result->fetch_assoc();
+        if ($existing_user) {
             if ($existing_user['role'] === 'admin') {
                 $errors['general'] = 'Cannot register with this email.';
             } else {
                 $errors['email'] = 'Email already registered. Please login instead.';
             }
         }
-        $check_stmt->close();
     }
     
     // Check if phone already exists
@@ -104,15 +98,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // If no errors, register the user
     if (empty($errors)) {
-        // Use Auth class to register (handles hashing and duplicate email check)
-        $result = $auth->register($full_name, $email, $password, $clean_phone, '', $role);
+        // Hash password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
-        if ($result['success']) {
-            // Registration already logged the user in (for buyers)
-            // For sellers, log them in manually since register() only auto-logs buyers
-            if ($role === 'seller') {
-                $auth->loginUser($result['user_id'], $full_name, $email, $role);
-            }
+        // Insert user
+        $insert_sql = "INSERT INTO users (full_name, email, phone, password, role, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
+        $insert_stmt = $conn->prepare($insert_sql);
+        $insert_stmt->bind_param('sssss', $full_name, $email, $clean_phone, $hashed_password, $role);
+        
+        if ($insert_stmt->execute()) {
+            $user_id = $insert_stmt->insert_id;
+            $insert_stmt->close();
+            
+            // Login the user using Auth class
+            $auth->login($email, $password);
             
             $_SESSION['flash'] = 'Welcome to ConsuTrade, ' . $full_name . '!';
             
@@ -123,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             exit;
         } else {
-            $errors['general'] = $result['message'];
+            $errors['general'] = 'Registration failed. Please try again.';
         }
     }
     
@@ -135,3 +134,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 }
+?>

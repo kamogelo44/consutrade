@@ -8,7 +8,16 @@
 
 require_once __DIR__ . '/init.php';
 
-$baseUrl = getBaseUrl();
+// Read register errors
+$registerErrors = $_SESSION['register_errors'] ?? [];
+$registerFormData = $_SESSION['register_form_data'] ?? [];
+unset($_SESSION['register_errors'], $_SESSION['register_form_data']);
+
+// Read login errors
+$loginErrors = $_SESSION['login_errors'] ?? [];
+$loginEmail = $_SESSION['login_email'] ?? '';
+unset($_SESSION['login_errors'], $_SESSION['login_email']);
+
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
@@ -41,6 +50,7 @@ $breadcrumbItems = [
         .product-details-main { width: 100%; max-width: 1400px; margin: 0 auto; padding: var(--spacing-xl); }
         .product-details-container { width: 100%; }
         
+        /* ========== PRODUCT IMAGES GALLERY ========== */
         .top-items { display: flex; justify-content: space-between; gap: 40px; margin: 30px 0; }
         .product-imgs { flex: 1; max-width: 600px; width: 100%; }
         .main-img { background-color: var(--gray-lighter); width: 100%; height: auto; aspect-ratio: 4/3; margin-bottom: var(--spacing-md); border-radius: var(--radius-lg); overflow: hidden; }
@@ -52,6 +62,7 @@ $breadcrumbItems = [
         .small-img.active { border: 2px solid var(--primary-color); box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2); }
         .small-img img { width: 100%; height: 100%; object-fit: cover; }
         
+        /* ========== PRODUCT INFO SECTION ========== */
         .product-info { display: flex; flex-direction: column; gap: var(--spacing-md); background-color: var(--white); padding: 30px; flex: 1; max-width: 500px; border: 1px solid var(--border-light); border-radius: var(--radius-lg); }
         .details-prod-name { font-size: var(--font-3xl); font-weight: var(--font-bold); color: var(--dark-bg); }
         .details-price { font-size: var(--font-4xl); font-weight: var(--font-bold); color: var(--primary-color); }
@@ -62,14 +73,7 @@ $breadcrumbItems = [
         .description .des { font-size: var(--font-md); line-height: 1.5; color: var(--gray-medium); }
         .con-loc { display: flex; flex-direction: column; gap: var(--spacing-sm); }
         
-        /* Stock Status */
-        .stock-status { display: flex; align-items: center; gap: 8px; padding: 10px 15px; border-radius: var(--radius-md); font-size: var(--font-sm); font-weight: var(--font-medium); margin: 10px 0; }
-        .stock-icon { font-size: 16px; font-weight: bold; }
-        .stock-status.in-stock { background-color: #e8f5e9; color: #2e7d32; border-left: 4px solid #4caf50; }
-        .stock-status.low-stock { background-color: #fff3e0; color: #e65100; border-left: 4px solid #ff9800; animation: pulseWarning 1.5s infinite; }
-        .stock-status.out-of-stock { background-color: #ffebee; color: #c62828; border-left: 4px solid #f44336; }
-        @keyframes pulseWarning { 0% { background-color: #fff3e0; } 50% { background-color: #ffe0b2; } 100% { background-color: #fff3e0; } }
-        
+        /* ========== SELLER REVIEWS SECTION ========== */
         .rev-container { display: flex; flex-direction: column; align-items: center; gap: var(--spacing-md); width: 100%; }
         .verified-badge, .not-verified-badge { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 16px; border-radius: var(--radius-round); width: auto; min-width: 140px; height: 34px; }
         .verified-badge { background-color: var(--success-light); border: 1px solid var(--success); }
@@ -86,6 +90,7 @@ $breadcrumbItems = [
         .view-profile { color: var(--gray-medium); width: 160px; height: 36px; border-radius: var(--radius-round); border: 1px solid var(--border-medium); background-color: var(--white); font-weight: var(--font-medium); cursor: pointer; }
         .view-profile:hover { background-color: var(--gray-bg); border-color: var(--primary-color); color: var(--primary-color); }
         
+        /* ========== ACTION BUTTONS SECTION ========== */
         .actions { display: flex; justify-content: center; margin: 30px auto; padding: 0 var(--spacing-xl); }
         .actions-card { display: flex; flex-direction: column; justify-content: center; align-items: center; max-width: 600px; width: 100%; min-height: 280px; border: 1px solid var(--border-light); border-radius: var(--radius-lg); gap: var(--spacing-md); padding: 30px; background-color: var(--white); }
         .action-btns { display: flex; align-items: center; flex-direction: column; gap: var(--spacing-md); width: 100%; }
@@ -96,14 +101,17 @@ $breadcrumbItems = [
         .action-btns .buy-btn:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
         .action-btns .cart-btn.out-of-stock-btn { background-color: #ccc; cursor: not-allowed; opacity: 0.6; color: #666; border-color: #ccc; }
         
+        /* ========== PAYMENT BADGE ========== */
         .payfast-badge { display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); margin-top: var(--spacing-lg); padding-top: var(--spacing-md); border-top: 1px solid var(--border-light); font-size: var(--font-sm); color: var(--gray-medium); }
         .payfast-badge img { height: 30px; width: auto; }
         
+        /* ========== LOADING & ERROR STATES ========== */
         .loading-spinner { text-align: center; padding: 60px; color: var(--gray-medium); }
         .product-error-container { text-align: center; padding: 80px 20px; max-width: 500px; margin: 0 auto; background-color: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
         .product-error-title { color: var(--error); margin-bottom: 10px; font-size: 24px; font-weight: var(--font-bold); }
         .product-error-action-btn { margin-top: 10px; padding: 10px 24px; background-color: var(--primary-color); color: var(--white); border: none; border-radius: var(--radius-md); cursor: pointer; }
         
+        /* ========== RESPONSIVE ========== */
         @media (max-width: 992px) { .top-items { flex-direction: column; align-items: center; } .product-info { max-width: 100%; } }
         @media (max-width: 768px) { .product-details-main { padding: var(--spacing-lg); } .small-img { width: 70px; height: 70px; } .actions-card { padding: 20px; } }
         @media (max-width: 576px) { .details-prod-name { font-size: var(--font-xl); } .details-price { font-size: var(--font-2xl); } .small-img { width: 60px; height: 60px; } .action-btns button { height: 44px; font-size: var(--font-sm); } }
@@ -123,16 +131,24 @@ $breadcrumbItems = [
     </div>
 </main>
 
+<?php $load_products_js = true; ?>
 <?php include 'includes/footer.php'; ?>
-
+<?php if (!empty($registerErrors)): ?>
 <script>
-var productId = <?php echo $product_id; ?>;
-var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
-var currentUserId = <?php echo $current_user_id ?: 0; ?>;
-var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
-var baseUrl = '<?php echo $baseUrl; ?>';
+$(function() {
+    openModal($('#register-modal'));
+    displayModalErrors('#register-modal', <?php echo json_encode($registerErrors); ?>, <?php echo json_encode($registerFormData); ?>);
+});
 </script>
+<?php endif; ?>
 
-<script src="<?php echo $baseUrl; ?>js/products.js"></script>
+<?php if (!empty($loginErrors)): ?>
+<script>
+$(function() {
+    openModal($('#login-modal'));
+    displayModalErrors('#login-modal', <?php echo json_encode($loginErrors); ?>, {email: <?php echo json_encode($loginEmail); ?>});
+});
+</script>
+<?php endif; ?>
 </body>
 </html>

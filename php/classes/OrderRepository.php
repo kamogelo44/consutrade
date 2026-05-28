@@ -419,4 +419,92 @@ class OrderRepository
 
         return ['order_ids' => $orderIds, 'payment_id' => $paymentId];
     }
+
+    /**
+     * Count completed orders for a seller.
+     *
+     * @param int $sellerId Seller ID
+     * @return int
+     */
+    public function countSellerCompletedOrders(int $sellerId): int
+    {
+        $sql = "SELECT COUNT(DISTINCT o.order_id) as total 
+                FROM orders o
+                JOIN order_items oi ON o.order_id = oi.order_id
+                JOIN products p ON oi.product_id = p.product_id
+                WHERE p.seller_id = ? AND o.status = 'completed'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $sellerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int)($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $total;
+    }
+
+    /**
+     * Get buyer statistics (orders count, total spent, pending, completed).
+     *
+     * @param int $buyerId Buyer ID
+     * @return array
+     */
+    public function getBuyerStats(int $buyerId): array
+    {
+        $sql = "SELECT 
+                    COUNT(*) as total_orders,
+                    SUM(CASE WHEN status IN ('completed', 'processing', 'shipped') THEN total_price ELSE 0 END) as total_spent,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_orders
+                FROM orders 
+                WHERE buyer_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $buyerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+        $stmt->close();
+        
+        return [
+            'total_orders' => (int)($data['total_orders'] ?? 0),
+            'total_spent' => (float)($data['total_spent'] ?? 0),
+            'pending_orders' => (int)($data['pending_orders'] ?? 0),
+            'completed_orders' => (int)($data['completed_orders'] ?? 0)
+        ];
+    }
+
+    /**
+     * Get seller recent orders for dashboard.
+     *
+     * @param int $sellerId Seller ID
+     * @param int $limit Limit of orders to return
+     * @return array
+     */
+    public function getSellerRecentOrders(int $sellerId, int $limit = 5): array
+    {
+        $sql = "SELECT o.order_id as id, o.total_price as total, o.status,
+                DATE_FORMAT(o.created_at, '%d %b %Y') as created_at,
+                u.full_name as buyer_name,
+                GROUP_CONCAT(DISTINCT p.title SEPARATOR ', ') as product_names,
+                COUNT(DISTINCT oi.order_item_id) as item_count
+                FROM orders o
+                JOIN users u ON o.buyer_id = u.user_id
+                JOIN order_items oi ON o.order_id = oi.order_id
+                JOIN products p ON oi.product_id = p.product_id
+                WHERE o.seller_id = ?
+                GROUP BY o.order_id
+                ORDER BY o.created_at DESC 
+                LIMIT ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $sellerId, $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $orders = [];
+        while ($row = $result->fetch_assoc()) {
+            $orders[] = $row;
+        }
+        $stmt->close();
+        
+        return $orders;
+    }
 }

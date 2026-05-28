@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$email    = trim($_POST['email']);
+$email = trim($_POST['email']);
 $password = $_POST['password'];
 $role_type = $_POST['role_type'] ?? 'admin';
 
@@ -21,35 +21,27 @@ if (empty($email) || empty($password)) {
     exit;
 }
 
-if ($role_type === 'admin') {
-    $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'admin'";
-} else {
-    $sql = "SELECT user_id, full_name, email, password, role FROM users WHERE email = ? AND role = 'seller'";
-}
+// Use Auth class login method
+$result = $auth->login($email, $password);
 
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('s', $email);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 1) {
-    $user = $result->fetch_assoc();
-    
-    if (password_verify($password, $user['password'])) {
-        if ($role_type === 'admin') {
-            $auth->loginAdmin($user['user_id'], $user['full_name'], $user['email'], $user['role']);
-            header('Location: ' . getBaseUrl() . 'admin/admin-dashboard.php');
-        } else {
-            $auth->loginSeller($user['user_id'], $user['full_name'], $user['email'], $user['role']);
-            header('Location: ' . getBaseUrl() . 'admin/seller-dashboard.php');
-        }
+if ($result['success']) {
+    // Check if role matches the selected type
+    if ($role_type === 'admin' && $result['role'] === 'admin') {
+        header('Location: ' . getBaseUrl() . 'admin/admin-dashboard.php');
         exit;
+    } elseif ($role_type === 'seller' && $result['role'] === 'seller') {
+        header('Location: ' . getBaseUrl() . 'admin/seller-dashboard.php');
+        exit;
+    } else {
+        // Wrong role for this login page
+        $auth->logout();
+        $_SESSION['login_error'] = 'Invalid credentials for ' . ucfirst($role_type) . ' login.';
     }
+} else {
+    $_SESSION['login_error'] = $result['message'];
 }
 
-$stmt->close();
-
-$_SESSION['login_error'] = 'Invalid email or password.';
 $_SESSION['login_email'] = $email;
 header('Location: ' . getBaseUrl() . 'admin/login.php');
 exit;
+?>

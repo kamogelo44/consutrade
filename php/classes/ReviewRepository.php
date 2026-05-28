@@ -229,4 +229,22 @@ class ReviewRepository
             'review_count' => (int) ($row['review_count'] ?? 0)
         ];
     }
+    
+    /**
+     * Count reviews written by a buyer.
+     *
+     * @param int $buyerId Buyer ID
+     * @return int
+     */
+    public function countBuyerReviews(int $buyerId): int
+    {
+        $sql = "SELECT COUNT(*) as total FROM reviews WHERE buyer_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $buyerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $count = (int)($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $count;
+    }
 }

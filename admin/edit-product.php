@@ -13,8 +13,7 @@ if (!$auth->isSellerLoggedIn()) {
     exit;
 }
 
-$baseUrl    = getBaseUrl();
-$seller_id  = $current_user_id;
+$seller_id = $current_user_id;
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
@@ -22,18 +21,23 @@ if ($product_id <= 0) {
     exit;
 }
 
-// Get product data
-$product = $productRepo->getProductForEdit($product_id, $seller_id);
-if (!$product) {
+// Get product as Product object using ProductRepository
+$product = $productRepo->getProductObject($product_id);
+
+if (!$product || $product->getSellerId() != $seller_id) {
     header('Location: my-products.php');
     exit;
 }
 
-// Get gallery images
-$gallery_images = $productRepo->getProductGallery($product_id);
+// Get gallery images using ProductImageRepository
+$gallery_images = $productImageRepo->getByProductId($product_id);
 
-$user = getUserById($conn, $seller_id);
-$profile_image = getUserProfileImage($user['profile_image'] ?? null);
+// Get categories using CategoryRepository
+$categories = $categoryRepo->getAll();
+
+// Get user data using UserRepository
+$user_data = $userRepo->getById($seller_id);
+$profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data['profile_image'] : getBaseUrl() . 'images/icons/profile-svgrepo-com.svg';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,40 +45,33 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar-clean.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/modal.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script>var baseUrl = '<?php echo $baseUrl; ?>';</script>
+    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/dashboard-clean.css">
+    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/sidebar-clean.css">
+    <script src="<?php echo getBaseUrl(); ?>js/jquery-3.7.1.min.js"></script>
+    <script src="<?php echo getBaseUrl(); ?>js/main.js"></script>
     <style>
         .form-container { max-width: 800px; margin: 0 auto; background: var(--white); border-radius: var(--radius-lg); padding: var(--spacing-xl); border: 1px solid var(--border-light); }
         .form-group { margin-bottom: var(--spacing-lg); }
         .form-group label { display: block; font-weight: var(--font-semibold); margin-bottom: var(--spacing-sm); color: var(--dark-bg); }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: var(--font-md); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); }
-        .btn-submit { background: var(--primary-color); color: var(--white); padding: 12px 24px; border: none; border-radius: var(--radius-md); cursor: pointer; }
-        .btn-cancel { background: var(--gray-bg-light); color: var(--gray-dark); padding: 12px 24px; border: 1px solid var(--border-light); border-radius: var(--radius-md); text-decoration: none; margin-left: var(--spacing-sm); }
+        .btn-submit { background: var(--primary-color); color: var(--white); padding: 12px 24px; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: var(--font-bold); transition: all var(--transition-fast); }
+        .btn-submit:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-cancel { background: var(--gray-bg-light); color: var(--gray-dark); padding: 12px 24px; border: 1px solid var(--border-light); border-radius: var(--radius-md); text-decoration: none; margin-left: var(--spacing-sm); transition: all var(--transition-fast); }
+        .btn-cancel:hover { background: var(--border-light); }
         .current-image { margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: var(--gray-bg-light); border-radius: var(--radius-md); }
         .current-image img { max-width: 150px; border-radius: var(--radius-md); }
         .gallery-section { margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-light); }
         .gallery-grid { display: flex; gap: var(--spacing-md); flex-wrap: wrap; margin-top: var(--spacing-md); }
-        .gallery-item { position: relative; width: 100px; height: 100px; border: 1px solid var(--border-light); border-radius: var(--radius-md); overflow: hidden; }
+        .gallery-item { position: relative; width: 100px; height: 100px; border: 1px solid var(--border-light); border-radius: var(--radius-md); overflow: hidden; background: var(--gray-bg); }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-        .gallery-item .remove-btn { position: absolute; top: 4px; right: 4px; background: var(--error); color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; cursor: pointer; font-size: 12px; line-height: 18px; text-decoration: none; }
+        .gallery-item .remove-btn { position: absolute; top: 4px; right: 4px; background: var(--error); color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; cursor: pointer; font-size: 12px; line-height: 18px; text-decoration: none; z-index: 1; }
         .gallery-item .primary-badge { position: absolute; bottom: 4px; left: 4px; background: var(--primary-color); color: white; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 10px; }
-        .error-msg { background: var(--error-light); color: var(--error); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); }
-        .success-msg { background: var(--success-light); color: var(--success); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); }
-        
-        @media (max-width: 1024px) {
-            .form-container { margin: 0 var(--spacing-md); padding: var(--spacing-lg); }
-            .form-row { grid-template-columns: 1fr; gap: var(--spacing-sm); }
-        }
-        @media (max-width: 768px) {
-            .form-container { margin: 0 var(--spacing-sm); padding: var(--spacing-md); }
-            .gallery-grid { justify-content: center; }
-        }
+        .error-msg { background: var(--error-light); color: var(--error); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--error); }
+        .success-msg { background: var(--success-light); color: var(--success); padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); border-left: 4px solid var(--success); }
+        @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } .form-container { padding: var(--spacing-lg); } }
     </style>
 </head>
 <body>
@@ -83,47 +80,45 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 
 <main class="admin-main-content">
     <div class="dashboard-content">
-        <h1 style="margin-bottom: var(--spacing-md); font-size: var(--font-2xl); font-weight: var(--font-bold)">Edit Product</h1>
-        <p style="margin-bottom: var(--spacing-lg); color: var(--gray-medium)">Update your product information</p>
+        <h1 style="margin-bottom: var(--spacing-sm); font-size: var(--font-3xl); font-weight: var(--font-bold)">Edit Product</h1>
+        <p style="margin-bottom: var(--spacing-xl); color: var(--gray-medium)">Update your product information</p>
 
         <?php if (isset($_SESSION['error'])): ?>
-            <div class="error-msg"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <div class="error-msg"><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
         <?php endif; ?>
         <?php if (isset($_SESSION['success'])): ?>
-            <div class="success-msg"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+            <div class="success-msg"><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></div>
         <?php endif; ?>
 
         <div class="form-container">
-            <form action="<?php echo $baseUrl; ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+            <form action="<?php echo getBaseUrl(); ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="product_id" value="<?php echo $product->getProductId(); ?>">
                 
                 <div class="form-group">
                     <label>Product Title *</label>
-                    <input type="text" name="title" required value="<?php echo htmlspecialchars($product['title']); ?>">
+                    <input type="text" name="title" required value="<?php echo htmlspecialchars($product->getTitle()); ?>">
                 </div>
 
                 <div class="form-group">
                     <label>Category *</label>
                     <select name="category_id" required>
                         <option value="">Select Category</option>
-                        <option value="1" <?php echo $product['category_id'] == 1 ? 'selected' : ''; ?>>Clothing & Accessories</option>
-                        <option value="2" <?php echo $product['category_id'] == 2 ? 'selected' : ''; ?>>Electronics</option>
-                        <option value="3" <?php echo $product['category_id'] == 3 ? 'selected' : ''; ?>>Food and Drinks</option>
-                        <option value="4" <?php echo $product['category_id'] == 4 ? 'selected' : ''; ?>>Furniture</option>
-                        <option value="5" <?php echo $product['category_id'] == 5 ? 'selected' : ''; ?>>Home & Garden</option>
-                        <option value="6" <?php echo $product['category_id'] == 6 ? 'selected' : ''; ?>>Beauty & Health</option>
-                        <option value="7" <?php echo $product['category_id'] == 7 ? 'selected' : ''; ?>>Other</option>
+                        <?php foreach ($categories as $category): ?>
+                            <option value="<?php echo $category['id']; ?>" <?php echo $category['id'] == $product->getCategoryId() ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($category['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Price (R) *</label>
-                        <input type="number" name="price" step="0.01" required value="<?php echo $product['price']; ?>">
+                        <input type="number" name="price" step="0.01" min="0" required value="<?php echo $product->getPrice(); ?>">
                     </div>
                     <div class="form-group">
                         <label>Stock Quantity *</label>
-                        <input type="number" name="stock_quantity" min="1" required value="<?php echo $product['stock_quantity']; ?>">
+                        <input type="number" name="stock_quantity" min="1" required value="<?php echo $product->getStockQuantity(); ?>">
                     </div>
                 </div>
 
@@ -131,30 +126,30 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                     <div class="form-group">
                         <label>Condition</label>
                         <select name="condition">
-                            <option value="">Not Applicable</option>
-                            <option value="New" <?php echo ($product['condition'] ?? '') == 'New' ? 'selected' : ''; ?>>Brand New</option>
-                            <option value="Like New" <?php echo ($product['condition'] ?? '') == 'Like New' ? 'selected' : ''; ?>>Like New</option>
-                            <option value="Good" <?php echo ($product['condition'] ?? '') == 'Good' ? 'selected' : ''; ?>>Good</option>
-                            <option value="Fair" <?php echo ($product['condition'] ?? '') == 'Fair' ? 'selected' : ''; ?>>Fair</option>
+                            <option value="">Not Specified</option>
+                            <option value="New" <?php echo $product->getCondition() == 'New' ? 'selected' : ''; ?>>New</option>
+                            <option value="Like New" <?php echo $product->getCondition() == 'Like New' ? 'selected' : ''; ?>>Like New</option>
+                            <option value="Good" <?php echo $product->getCondition() == 'Good' ? 'selected' : ''; ?>>Good</option>
+                            <option value="Fair" <?php echo $product->getCondition() == 'Fair' ? 'selected' : ''; ?>>Fair</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Location</label>
-                        <input type="text" name="location" value="<?php echo htmlspecialchars($product['location'] ?? ''); ?>" placeholder="e.g., Johannesburg">
+                        <input type="text" name="location" value="<?php echo htmlspecialchars($product->getLocation()); ?>" placeholder="e.g., Johannesburg, Cape Town">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Description *</label>
-                    <textarea name="description" rows="5" required><?php echo htmlspecialchars($product['description']); ?></textarea>
+                    <textarea name="description" rows="5" required><?php echo htmlspecialchars($product->getDescription()); ?></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Change Main Image (Optional)</label>
                     <input type="file" name="main_image" accept="image/*">
-                    <?php if (!empty($product['image_url'])): ?>
+                    <?php if (!empty($product->getImageUrl())): ?>
                         <div class="current-image">
-                            <img src="<?php echo $productRepo->getProductImageUrl($product['image_url']); ?>" alt="Current main image">
+                            <img src="<?php echo $productRepo->getProductImageUrl($product->getImageUrl()); ?>" alt="Current main image">
                             <p style="font-size: var(--font-sm); color: var(--gray-medium); margin-top: var(--spacing-sm)">Leave empty to keep current image</p>
                         </div>
                     <?php endif; ?>
@@ -167,7 +162,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                         <?php foreach ($gallery_images as $img): ?>
                             <div class="gallery-item" data-image-id="<?php echo $img['image_id']; ?>">
                                 <img src="<?php echo $productRepo->getProductImageUrl($img['image_url']); ?>" alt="Gallery image">
-                                <a href="javascript:void(0)" class="remove-btn" onclick="removeGalleryImage(<?php echo $img['image_id']; ?>, <?php echo $product_id; ?>)">×</a>
+                                <a href="javascript:void(0)" class="remove-btn" onclick="removeGalleryImage(<?php echo $img['image_id']; ?>, <?php echo $product->getProductId(); ?>)">×</a>
                                 <?php if ($img['is_primary']): ?>
                                     <span class="primary-badge">Primary</span>
                                 <?php endif; ?>
@@ -193,20 +188,23 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
 </main>
 
 <script>
+var baseUrl = '<?php echo getBaseUrl(); ?>';
+var currentUserId = <?php echo $current_user_id ?: 0; ?>;
+var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
+var isLoggedIn = true;
+
 $('input[name="new_gallery_images[]"]').on('change', function(e) {
-    const preview = $('#new-gallery-preview');
+    var preview = $('#new-gallery-preview');
     preview.empty();
-    const files = this.files;
+    var files = this.files;
     
-    for (let i = 0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            preview.append(`
-                <div class="gallery-item">
-                    <img src="${event.target.result}" alt="Preview">
-                </div>
-            `);
-        };
+    for (var i = 0; i < files.length; i++) {
+        var reader = new FileReader();
+        reader.onload = (function(fileIndex) {
+            return function(event) {
+                preview.append('<div class="gallery-item"><img src="' + event.target.result + '" alt="Preview ' + (fileIndex + 1) + '"></div>');
+            };
+        })(i);
         reader.readAsDataURL(files[i]);
     }
 });
@@ -223,7 +221,7 @@ function removeGalleryImage(imageId, productId) {
                 if (data.success) {
                     $('.gallery-item[data-image-id="' + imageId + '"]').remove();
                 } else {
-                    alert('Could not remove image.');
+                    alert('Could not remove image: ' + data.message);
                 }
             },
             error: function() {
@@ -233,6 +231,7 @@ function removeGalleryImage(imageId, productId) {
     }
 }
 </script>
+<script src="<?php echo getBaseUrl(); ?>admin/js/dashboard.js"></script>
 
 </body>
 </html>

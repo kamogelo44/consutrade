@@ -2,24 +2,14 @@
 /**
  * ConsuTrade - ProductRepository
  *
- * Handles all product, product image, and gallery database operations.
+ * Handles all product database operations.
+ * NOTE: Product images are handled by ProductImageRepository.
  *
  * @author     Kamogelo Phale
  * @module     ITECA3-12 Web Development and e-Commerce
  * @institution Eduvos
  * @version    2.0.0
  * @since      2026
- *
- * References:
- * - Pressman, R.S. and Maxim, B.R., 2015. Software Engineering:
- *   A Practitioner's Approach. 8th ed. McGraw-Hill.
- * - Dennis, A., Wixom, B.H. and Tegarden, D., 2015. Systems Analysis
- *   and Design: An Object-Oriented Approach with UML. 6th ed.
- *   John Wiley and Sons.
- * - PHP Group, 2025. Classes and Objects. Available at:
- *   https://www.php.net/manual/en/language.oop5.php
- * - PHP-FIG, 2023. PSR-12: Extended Coding Style. Available at:
- *   https://www.php.fig.org/psr/psr-12/
  */
 
 class ProductRepository
@@ -38,17 +28,187 @@ class ProductRepository
     }
 
     // ============================================================
-    //  PRODUCT QUERIES (SELLER)
+    //  PRODUCT OBJECT METHODS (OOP)
     // ============================================================
 
     /**
-     * Get seller products with filters (includes primary image from product_images).
+     * Get product as Product object.
+     *
+     * @param int $productId Product ID
+     * @return Product|null
+     */
+    public function getProductObject(int $productId): ?Product
+    {
+        $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
+                       p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
+                       p.status, p.created_at
+                FROM products p
+                WHERE p.product_id = ? AND p.status != 'deleted'";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return new Product($row);
+        }
+        $stmt->close();
+        return null;
+    }
+
+    /**
+     * Get seller products as Product objects.
+     *
+     * @param int $sellerId Seller ID
+     * @param string $filter Status filter
+     * @param string $search Search term
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return Product[]
+     */
+    public function getSellerProductObjects(
+        int $sellerId,
+        string $filter = 'all',
+        string $search = '',
+        int $limit = 0,
+        int $offset = 0
+    ): array {
+        $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
+                       p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
+                       p.status, p.created_at
+                FROM products p
+                WHERE p.seller_id = ? AND p.status != 'deleted'";
+
+        $params = [$sellerId];
+        $types = "i";
+
+        if ($filter !== 'all') {
+            $sql .= " AND p.status = ?";
+            $params[] = $filter;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (p.title LIKE ? OR p.product_id LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $sql .= " ORDER BY p.created_at DESC";
+
+        if ($limit > 0) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = $limit;
+            $params[] = $offset;
+            $types .= "ii";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $products = [];
+        while ($row = $result->fetch_assoc()) {
+            $products[] = new Product($row);
+        }
+        $stmt->close();
+
+        return $products;
+    }
+
+    /**
+     * Save product changes to database.
+     *
+     * @param Product $product Product object
+     * @return bool
+     */
+    public function saveProduct(Product $product): bool
+    {
+        $sql = "UPDATE products SET 
+                    title = ?,
+                    description = ?,
+                    price = ?,
+                    stock_quantity = ?,
+                    `condition` = ?,
+                    location = ?,
+                    category_id = ?,
+                    image_url = ?,
+                    status = ?
+                WHERE product_id = ? AND seller_id = ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param(
+            'ssdisssssii',
+            $product->getTitle(),
+            $product->getDescription(),
+            $product->getPrice(),
+            $product->getStockQuantity(),
+            $product->getCondition(),
+            $product->getLocation(),
+            $product->getCategoryId(),
+            $product->getImageUrl(),
+            $product->getStatus(),
+            $product->getProductId(),
+            $product->getSellerId()
+        );
+
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Create a new product from Product object.
+     *
+     * @param Product $product Product object (without product_id)
+     * @return int|false Insert ID or false on failure
+     */
+    public function createProduct(Product $product)
+    {
+        $sql = "INSERT INTO products (seller_id, category_id, title, description, price, stock_quantity, `condition`, location, image_url, status, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param(
+            'iissdissss',
+            $product->getSellerId(),
+            $product->getCategoryId(),
+            $product->getTitle(),
+            $product->getDescription(),
+            $product->getPrice(),
+            $product->getStockQuantity(),
+            $product->getCondition(),
+            $product->getLocation(),
+            $product->getImageUrl(),
+            $product->getStatus()
+        );
+        
+        if ($stmt->execute()) {
+            $productId = $stmt->insert_id;
+            $stmt->close();
+            return $productId;
+        }
+        $stmt->close();
+        return false;
+    }
+
+    // ============================================================
+    //  PRODUCT QUERIES (ARRAY BASED - Legacy)
+    // ============================================================
+
+    /**
+     * Get seller products with filters (includes primary image).
      *
      * @param int    $id      Seller ID
-     * @param string $filter  Status filter: 'all', 'active', 'suspended'
-     * @param string $search  Search by product name or ID
-     * @param int    $limit   Maximum products to return (0 = all)
-     * @param int    $offset  Pagination offset (default 0)
+     * @param string $filter  Status filter
+     * @param string $search  Search term
+     * @param int    $limit   Maximum products
+     * @param int    $offset  Pagination offset
      * @return array
      */
     public function getSellerProducts(
@@ -117,19 +277,8 @@ class ProductRepository
         return $products;
     }
 
-        /**
-     * Get seller products with filters (includes primary image from product_images).
-     *
-     * @param int    $id      Seller ID
-     * @param string $filter  Status filter: 'all', 'active', 'suspended'
-     * @param string $search  Search by product name or ID
-     * @param int    $limit   Maximum products to return (0 = all)
-     * @param int    $offset  Pagination offset (default 0)
-     * @return array
-     */
-
     /**
-     * Get product data for display (lightweight, for breadcrumb and basic info)
+     * Get product data for display (lightweight, for breadcrumb).
      *
      * @param int $productId Product ID
      * @return array|null
@@ -162,7 +311,7 @@ class ProductRepository
      * Get single product for editing (with ownership verification).
      *
      * @param int $productId Product ID
-     * @param int $sellerId  Seller ID (for verification)
+     * @param int $sellerId  Seller ID
      * @return array|null
      */
     public function getProductForEdit(int $productId, int $sellerId): ?array
@@ -190,9 +339,9 @@ class ProductRepository
      * Update product information.
      *
      * @param int   $id       Product ID
-     * @param int   $sellerId Seller ID (for verification)
+     * @param int   $sellerId Seller ID
      * @param array $data     Product data
-     * @return array          ['success' => bool, 'message' => string]
+     * @return array
      */
     public function updateSellerProduct(int $id, int $sellerId, array $data): array
     {
@@ -230,12 +379,12 @@ class ProductRepository
     }
 
     /**
-     * Update product status (activate/suspend).
+     * Update product status.
      *
      * @param int    $id       Product ID
-     * @param int    $sellerId Seller ID (for verification)
+     * @param int    $sellerId Seller ID
      * @param string $action   'activate' or 'suspend'
-     * @return array           ['success' => bool, 'message' => string]
+     * @return array
      */
     public function updateProductStatus(int $id, int $sellerId, string $action): array
     {
@@ -276,12 +425,11 @@ class ProductRepository
     }
 
     /**
-     * Delete product (soft delete — sets status to 'deleted').
-     * Also removes gallery images from disk and database.
+     * Delete product (soft delete).
      *
      * @param int $id       Product ID
-     * @param int $sellerId Seller ID (for verification)
-     * @return array        ['success' => bool, 'message' => string]
+     * @param int $sellerId Seller ID
+     * @return array
      */
     public function deleteSellerProduct(int $id, int $sellerId): array
     {
@@ -299,23 +447,6 @@ class ProductRepository
 
         $product = $checkResult->fetch_assoc();
         $checkStmt->close();
-
-        // Delete gallery image files
-        $gallerySql = "SELECT image_url FROM product_images WHERE product_id = ?";
-        $galleryStmt = $this->db->prepare($gallerySql);
-        $galleryStmt->bind_param('i', $id);
-        $galleryStmt->execute();
-        $galleryResult = $galleryStmt->get_result();
-        while ($img = $galleryResult->fetch_assoc()) {
-            $this->deleteProductImage($img['image_url']);
-        }
-        $galleryStmt->close();
-
-        // Delete gallery records
-        $delGallery = $this->db->prepare("DELETE FROM product_images WHERE product_id = ?");
-        $delGallery->bind_param('i', $id);
-        $delGallery->execute();
-        $delGallery->close();
 
         // Soft delete the product
         $deleteSql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
@@ -341,7 +472,7 @@ class ProductRepository
     // ============================================================
 
     /**
-     * Update product stock quantity (add or subtract).
+     * Update product stock quantity.
      *
      * @param int $productId Product ID
      * @param int $qty       Quantity to add (negative to subtract)
@@ -433,228 +564,79 @@ class ProductRepository
         return $stock;
     }
 
+    /**
+     * Count active products for a user (seller).
+     *
+     * @param int $userId User ID
+     * @return int
+     */
+    public function countUserProducts(int $userId): int
+    {
+        $sql = "SELECT COUNT(*) as total FROM products WHERE seller_id = ? AND status = 'active'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int)($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $total;
+    }
+
     // ============================================================
-    //  GALLERY IMAGES (product_images table)
+    //  IMAGE FILE OPERATIONS (Product image deletion)
     // ============================================================
 
     /**
-     * Get all gallery images for a product.
+     * Delete a product image file from disk.
      *
-     * @param int $productId Product ID
-     * @return array
-     */
-    public function getProductGallery(int $productId): array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT image_id, image_url, is_primary, sort_order
-             FROM product_images
-             WHERE product_id = ?
-             ORDER BY sort_order ASC, image_id ASC"
-        );
-        $stmt->bind_param('i', $productId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $images = [];
-        while ($row = $result->fetch_assoc()) {
-            $images[] = $row;
-        }
-        $stmt->close();
-        return $images;
-    }
-
-    /**
-     * Get primary image URL for a product.
-     *
-     * @param int $productId Product ID
-     * @return string|null
-     */
-    public function getProductPrimaryImage(int $productId): ?string
-    {
-        $stmt = $this->db->prepare(
-            "SELECT image_url FROM product_images
-             WHERE product_id = ? AND is_primary = 1
-             LIMIT 1"
-        );
-        $stmt->bind_param('i', $productId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            return $row['image_url'];
-        }
-        $stmt->close();
-
-        // Fallback to products table
-        $stmt2 = $this->db->prepare("SELECT image_url FROM products WHERE product_id = ?");
-        $stmt2->bind_param('i', $productId);
-        $stmt2->execute();
-        $result2 = $stmt2->get_result();
-        $image = ($row2 = $result2->fetch_assoc()) ? $row2['image_url'] : null;
-        $stmt2->close();
-
-        return $image;
-    }
-
-    /**
-     * Get the best available display image for a product.
-     *
-     * @param int $productId Product ID
-     * @return string|null
-     */
-    public function getProductDisplayImage(int $productId): ?string
-    {
-        $primary = $this->getProductPrimaryImage($productId);
-        if ($primary) {
-            return $primary;
-        }
-
-        $stmt = $this->db->prepare(
-            "SELECT image_url FROM product_images
-             WHERE product_id = ?
-             ORDER BY sort_order ASC
-             LIMIT 1"
-        );
-        $stmt->bind_param('i', $productId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            return $row['image_url'];
-        }
-        $stmt->close();
-
-        return null;
-    }
-
-    /**
-     * Add a gallery image to a product.
-     *
-     * @param int    $id        Product ID
-     * @param string $url       Image path
-     * @param bool   $isPrimary Whether this is the primary image
-     * @param int    $sortOrder Sort order
+     * @param string $imagePath Relative path to the image
      * @return bool
      */
-    public function addProductGalleryImage(
-        int $id,
-        string $url,
-        bool $isPrimary = false,
-        int $sortOrder = 0
-    ): bool {
-        $primaryInt = $isPrimary ? 1 : 0;
-        $stmt = $this->db->prepare(
-            "INSERT INTO product_images (product_id, image_url, is_primary, sort_order)
-             VALUES (?, ?, ?, ?)"
-        );
-        $stmt->bind_param('isii', $id, $url, $primaryInt, $sortOrder);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Add multiple gallery images to a product.
-     *
-     * @param int   $id   Product ID
-     * @param array $urls Array of image paths
-     * @return int        Number of images successfully added
-     */
-    public function addProductGalleryImages(int $id, array $urls): int
+    public function deleteProductImage(string $imagePath): bool
     {
-        $count = 0;
-
-        $stmt = $this->db->prepare(
-            "SELECT MAX(sort_order) as max_sort FROM product_images WHERE product_id = ?"
-        );
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $sortOrder = (int) (($row['max_sort'] ?? -1) + 1);
-        $stmt->close();
-
-        foreach ($urls as $url) {
-            if ($this->addProductGalleryImage($id, $url, false, $sortOrder)) {
-                $count++;
-                $sortOrder++;
-            }
+        if (empty($imagePath)) {
+            return true;
         }
 
-        return $count;
-    }
+        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
 
-    /**
-     * Remove a gallery image from a product.
-     *
-     * @param int $imageId   Image ID
-     * @param int $productId Product ID (for verification)
-     * @return bool
-     */
-    public function removeProductGalleryImage(int $imageId, int $productId): bool
-    {
-        $stmt = $this->db->prepare(
-            "SELECT image_url FROM product_images WHERE image_id = ? AND product_id = ?"
-        );
-        $stmt->bind_param('ii', $imageId, $productId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            $this->deleteProductImage($row['image_url']);
+        if (file_exists($fullPath)) {
+            return unlink($fullPath);
         }
-        $stmt->close();
 
-        $stmt2 = $this->db->prepare(
-            "DELETE FROM product_images WHERE image_id = ? AND product_id = ?"
-        );
-        $stmt2->bind_param('ii', $imageId, $productId);
-        $result = $stmt2->execute();
-        $stmt2->close();
-
-        return $result;
+        return true;
     }
 
     /**
-     * Set a gallery image as the primary image for a product.
+     * Get the full URL for a product image, with fallback to default.
      *
-     * @param int $productId Product ID
-     * @param int $imageId   Image ID to set as primary
-     * @return bool
+     * @param string $imagePath The stored image path
+     * @return string
      */
-    public function setProductPrimaryImage(int $productId, int $imageId): bool
+    public function getProductImageUrl(string $imagePath): string
     {
-        $stmt = $this->db->prepare(
-            "UPDATE product_images SET is_primary = 0 WHERE product_id = ?"
-        );
-        $stmt->bind_param('i', $productId);
-        $stmt->execute();
-        $stmt->close();
+        $baseUrl = getBaseUrl();
 
-        $stmt2 = $this->db->prepare(
-            "UPDATE product_images SET is_primary = 1 WHERE image_id = ? AND product_id = ?"
-        );
-        $stmt2->bind_param('ii', $imageId, $productId);
-        $result = $stmt2->execute();
-        $stmt2->close();
+        if (empty($imagePath)) {
+            return $baseUrl . 'images/default-product.png';
+        }
 
-        return $result;
+        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
+        if (file_exists($fullPath)) {
+            return $baseUrl . $imagePath;
+        }
+
+        return $baseUrl . 'images/default-product.png';
     }
-
-    // ============================================================
-    //  IMAGE FILE OPERATIONS
-    // ============================================================
 
     /**
      * Convert an uploaded image to WebP format.
      *
      * @param array  $file         The uploaded file from $_FILES
      * @param int    $sellerId     The seller's ID
-     * @param string $productTitle The product title (used in filename)
+     * @param string $productTitle The product title
      * @param string $prefix       Optional filename prefix
-     * @return string|false        Relative path or false on failure
+     * @return string|false
      */
     public function convertToWebP(array $file, int $sellerId, string $productTitle, string $prefix = 'main')
     {
@@ -738,170 +720,123 @@ class ProductRepository
         return false;
     }
 
-    /**
-     * Delete a product image file from disk.
-     *
-     * @param string $imagePath Relative path to the image
-     * @return bool
-     */
-    public function deleteProductImage(string $imagePath): bool
-    {
-        if (empty($imagePath)) {
-            return true;
-        }
-
-        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
-
-        if (file_exists($fullPath)) {
-            return unlink($fullPath);
-        }
-
-        return true;
-    }
-
-    /**
-     * Get the full URL for a product image, with fallback to default.
-     *
-     * @param string $imagePath The stored image path
-     * @return string           Full URL to the image
-     */
-    public function getProductImageUrl(string $imagePath): string
-    {
-        $baseUrl = getBaseUrl();
-
-        if (empty($imagePath)) {
-            return $baseUrl . 'images/default-product.png';
-        }
-
-        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
-        if (file_exists($fullPath)) {
-            return $baseUrl . $imagePath;
-        }
-
-        return $baseUrl . 'images/default-product.png';
-    }
+    // ============================================================
+    //  PUBLIC PRODUCT LISTINGS
+    // ============================================================
 
     /**
      * Get public product listings with filters, sorting, and pagination.
      *
-     * @param array $filters  Associative array: categories, price_range, location, sort, limit, offset
-     * @return array           ['products' => array, 'total' => int]
+     * @param array $filters Associative array of filters
+     * @return array
      */
     public function getPublicProducts(array $filters = []): array
     {
-    $categories  = $filters['categories'] ?? [];
-    $priceRange  = $filters['price_range'] ?? '';
-    $location    = $filters['location'] ?? '';
-    $sort        = $filters['sort'] ?? 'newest';
-    $limit       = $filters['limit'] ?? 12;
-    $offset      = $filters['offset'] ?? 0;
+        $categories  = $filters['categories'] ?? [];
+        $priceRange  = $filters['price_range'] ?? '';
+        $location    = $filters['location'] ?? '';
+        $sort        = $filters['sort'] ?? 'newest';
+        $limit       = $filters['limit'] ?? 12;
+        $offset      = $filters['offset'] ?? 0;
 
-    $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url,
-                   p.location, p.condition, p.stock_quantity, p.created_at,
-                   COALESCE(pi.image_url, p.image_url) AS display_image,
-                   u.full_name as seller_name, u.user_id as seller_id,
-                   u.profile_image, u.id_verified as is_verified
-            FROM products p
-            JOIN users u ON p.seller_id = u.user_id
-            LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-            WHERE p.status = 'active'";
+        $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url,
+                       p.location, p.condition, p.stock_quantity, p.created_at,
+                       COALESCE(pi.image_url, p.image_url) AS display_image,
+                       u.full_name as seller_name, u.user_id as seller_id,
+                       u.profile_image, u.id_verified as is_verified
+                FROM products p
+                JOIN users u ON p.seller_id = u.user_id
+                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                WHERE p.status = 'active'";
 
-    $params = [];
-    $types  = "";
+        $params = [];
+        $types  = "";
 
-    // Category filter
-    if (!empty($categories) && $categories[0] !== '') {
-        $placeholders = implode(',', array_fill(0, count($categories), '?'));
-        $sql .= " AND p.category_id IN ($placeholders)";
-        foreach ($categories as $cat) {
-            $params[] = (int) $cat;
-            $types  .= "i";
+        if (!empty($categories) && $categories[0] !== '') {
+            $placeholders = implode(',', array_fill(0, count($categories), '?'));
+            $sql .= " AND p.category_id IN ($placeholders)";
+            foreach ($categories as $cat) {
+                $params[] = (int) $cat;
+                $types  .= "i";
+            }
         }
-    }
 
-    // Price range filter
-    if (!empty($priceRange)) {
-        switch ($priceRange) {
-            case 'under100':  $sql .= " AND p.price < 100"; break;
-            case '100-500':   $sql .= " AND p.price BETWEEN 100 AND 500"; break;
-            case '500-1000':  $sql .= " AND p.price BETWEEN 500 AND 1000"; break;
-            case 'over1000':  $sql .= " AND p.price > 1000"; break;
+        if (!empty($priceRange)) {
+            switch ($priceRange) {
+                case 'under100':  $sql .= " AND p.price < 100"; break;
+                case '100-500':   $sql .= " AND p.price BETWEEN 100 AND 500"; break;
+                case '500-1000':  $sql .= " AND p.price BETWEEN 500 AND 1000"; break;
+                case 'over1000':  $sql .= " AND p.price > 1000"; break;
+            }
         }
-    }
 
-    // Location filter
-    if (!empty($location)) {
-        $sql    .= " AND p.location LIKE ?";
-        $params[] = "%$location%";
-        $types  .= "s";
-    }
+        if (!empty($location)) {
+            $sql    .= " AND p.location LIKE ?";
+            $params[] = "%$location%";
+            $types  .= "s";
+        }
 
-    // Get total count (before LIMIT)
-    $countSql    = $sql;
-    $countParams = $params;
-    $countTypes  = $types;
+        $countSql = $sql;
+        $countParams = $params;
+        $countTypes = $types;
 
-    // Sorting
-    switch ($sort) {
-        case 'price_low':  $sql .= " ORDER BY p.price ASC"; break;
-        case 'price_high': $sql .= " ORDER BY p.price DESC"; break;
-        default:           $sql .= " ORDER BY p.created_at DESC";
-    }
+        switch ($sort) {
+            case 'price_low':  $sql .= " ORDER BY p.price ASC"; break;
+            case 'price_high': $sql .= " ORDER BY p.price DESC"; break;
+            default:           $sql .= " ORDER BY p.created_at DESC";
+        }
 
-    // Pagination
-    $sql    .= " LIMIT ? OFFSET ?";
-    $params[] = $limit;
-    $params[] = $offset;
-    $types  .= "ii";
+        $sql    .= " LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types  .= "ii";
 
-    // Execute main query
-    $stmt = $this->db->prepare($sql);
-    if (!empty($params)) {
-        $stmt->bind_param($types, ...$params);
-    }
-    $stmt->execute();
-    $result = $stmt->get_result();
+        $stmt = $this->db->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-    $products = [];
-    while ($row = $result->fetch_assoc()) {
-        $products[] = [
-            'id'             => (int) $row['product_id'],
-            'name'           => $row['product_name'],
-            'price'          => (float) $row['price'],
-            'image'          => $row['display_image'] ?? $row['image_url'],
-            'seller_name'    => $row['seller_name'],
-            'seller_id'      => (int) $row['seller_id'],
-            'location'       => $row['location'] ?? 'South Africa',
-            'condition'      => $row['condition'] ?? 'Good',
-            'stock_quantity' => (int) $row['stock_quantity'],
-            'is_verified'    => (bool) $row['is_verified'],
-            'profile_image'  => $row['profile_image'],
-            'created_at'     => $row['created_at']
+        $products = [];
+        while ($row = $result->fetch_assoc()) {
+            $products[] = [
+                'id'             => (int) $row['product_id'],
+                'name'           => $row['product_name'],
+                'price'          => (float) $row['price'],
+                'image'          => $row['display_image'] ?? $row['image_url'],
+                'seller_name'    => $row['seller_name'],
+                'seller_id'      => (int) $row['seller_id'],
+                'location'       => $row['location'] ?? 'South Africa',
+                'condition'      => $row['condition'] ?? 'Good',
+                'stock_quantity' => (int) $row['stock_quantity'],
+                'is_verified'    => (bool) $row['is_verified'],
+                'profile_image'  => $row['profile_image'],
+                'created_at'     => $row['created_at']
+            ];
+        }
+        $stmt->close();
+
+        $countStmt = $this->db->prepare("SELECT COUNT(*) as total FROM ($countSql) as subquery");
+        if (!empty($countParams)) {
+            $countStmt->bind_param($countTypes, ...$countParams);
+        }
+        $countStmt->execute();
+        $total = (int) ($countStmt->get_result()->fetch_assoc()['total'] ?? 0);
+        $countStmt->close();
+
+        return [
+            'products' => $products,
+            'total'    => $total
         ];
-    }
-    $stmt->close();
-
-    // Execute count query
-    $countStmt = $this->db->prepare("SELECT COUNT(*) as total FROM ($countSql) as subquery");
-    if (!empty($countParams)) {
-        $countStmt->bind_param($countTypes, ...$countParams);
-    }
-    $countStmt->execute();
-    $total = (int) ($countStmt->get_result()->fetch_assoc()['total'] ?? 0);
-    $countStmt->close();
-
-    return [
-        'products' => $products,
-        'total'    => $total
-    ];
     }
 
     /**
-     * Search public products with filters, sorting, and pagination.
+     * Search public products with filters.
      *
-     * @param string $search  Search term (matches title and description)
-     * @param array  $filters Associative array: categories, price_range, location, sort, limit, offset
-     * @return array           ['products' => array, 'total' => int]
+     * @param string $search  Search term
+     * @param array  $filters Filters
+     * @return array
      */
     public function searchProducts(string $search, array $filters = []): array
     {
@@ -924,7 +859,6 @@ class ProductRepository
         $params = ["%$search%", "%$search%"];
         $types  = "ss";
 
-        // Category filter
         if (!empty($categories) && $categories[0] !== '') {
             $placeholders = implode(',', array_fill(0, count($categories), '?'));
             $sql .= " AND p.category_id IN ($placeholders)";
@@ -934,7 +868,6 @@ class ProductRepository
             }
         }
 
-        // Price range filter
         if (!empty($priceRange)) {
             switch ($priceRange) {
                 case 'under100':  $sql .= " AND p.price < 100"; break;
@@ -944,27 +877,23 @@ class ProductRepository
             }
         }
 
-        // Location filter
         if (!empty($location)) {
             $sql    .= " AND p.location LIKE ?";
             $params[] = "%$location%";
             $types  .= "s";
         }
 
-        // Sorting
         switch ($sort) {
             case 'price_low':  $sql .= " ORDER BY p.price ASC"; break;
             case 'price_high': $sql .= " ORDER BY p.price DESC"; break;
             default:           $sql .= " ORDER BY p.created_at DESC";
         }
 
-        // Pagination
         $sql    .= " LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
         $types  .= "ii";
 
-        // Execute main query
         $stmt = $this->db->prepare($sql);
         if (!$stmt) {
             return ['products' => [], 'total' => 0];
@@ -996,14 +925,13 @@ class ProductRepository
         }
         $stmt->close();
 
-        // Count query (same filters, no LIMIT)
+        // Count query
         $countSql = "SELECT COUNT(*) as total
                     FROM products p
                     JOIN users u ON p.seller_id = u.user_id
                     WHERE p.status = 'active'
                     AND (p.title LIKE ? OR p.description LIKE ?)";
 
-        // Rebuild count params without limit/offset
         $countParams = ["%$search%", "%$search%"];
         $countTypes  = "ss";
 
@@ -1044,5 +972,4 @@ class ProductRepository
             'total'    => $total
         ];
     }
-
 }

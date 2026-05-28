@@ -17,7 +17,7 @@ $current_file = basename($_SERVER['PHP_SELF']);
 $is_products_subpage = in_array($current_file, ['add-product.php', 'edit-product.php']);
 
 // Dashboard home link based on role
-$dashboard_home = ($_SESSION['role'] === 'admin') ? 'admin-dashboard.php' : 'seller-dashboard.php';
+$dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dashboard.php' : $baseUrl . 'admin/seller-dashboard.php';
 ?>
 
 <div class="<?php echo $role_class; ?>-sidebar" id="<?php echo $role_class; ?>SideMenu">
@@ -26,7 +26,6 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? 'admin-dashboard.php' : 'sel
         <div class="<?php echo $role_class; ?>-sidebar-logo">
             <a href="<?php echo $dashboard_home; ?>">Consu<span>Trade</span></a>
         </div>
-        <!-- Close button (X) - mobile only -->
         <button class="<?php echo $role_class; ?>-sidebar-close" id="<?php echo $role_class; ?>SidebarClose">
             <span></span><span></span>
         </button>
@@ -47,44 +46,14 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? 'admin-dashboard.php' : 'sel
     <div class="<?php echo $role_class; ?>-sidebar-nav">
         <ul>
             <?php if ($_SESSION['role'] === 'admin'): ?>
-                <!-- Admin Navigation -->
-                <li>
-                    <a href="admin-dashboard.php" class="<?php echo $current_file == 'admin-dashboard.php' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard"> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="users.php" class="<?php echo $current_file == 'users.php' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users"> Users
-                    </a>
-                </li>
-                <li>
-                    <a href="all-products.php" class="<?php echo $current_file == 'all-products.php' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products"> All Products
-                    </a>
-                </li>
-                <li>
-                    <a href="all-orders.php" class="<?php echo $current_file == 'all-orders.php' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders"> All Orders
-                    </a>
-                </li>
+                <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php" class="<?php echo $current_file == 'admin-dashboard.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard"> Dashboard</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/users.php" class="<?php echo $current_file == 'users.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users"> Users</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/all-products.php" class="<?php echo $current_file == 'all-products.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products"> All Products</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php" class="<?php echo $current_file == 'all-orders.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders"> All Orders</a></li>
             <?php else: ?>
-                <!-- Seller Navigation -->
-                <li>
-                    <a href="seller-dashboard.php" class="<?php echo $current_file == 'seller-dashboard.php' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard"> Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="my-products.php" class="<?php echo ($current_file == 'my-products.php' || $is_products_subpage) ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products"> My Products
-                    </a>
-                </li>
-                <li>
-                    <a href="my-orders.php" class="<?php echo $current_file == 'my-orders.php' ? 'active' : ''; ?>">
-                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders"> My Orders
-                    </a>
-                </li>
+                <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo $current_file == 'seller-dashboard.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard"> Dashboard</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/my-products.php" class="<?php echo ($current_file == 'my-products.php' || $is_products_subpage) ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products"> My Products</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="<?php echo $current_file == 'my-orders.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders"> My Orders</a></li>
             <?php endif; ?>
         </ul>
     </div>
@@ -92,17 +61,17 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? 'admin-dashboard.php' : 'sel
     <!-- Footer Links -->
     <div class="<?php echo $role_class; ?>-sidebar-footer">
         <?php if ($_SESSION['role'] === 'admin'): ?>
-            <a href="admin-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'admin-profile.php' ? 'active' : ''; ?>">
+            <a href="<?php echo $baseUrl; ?>admin/admin-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'admin-profile.php' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Profile Settings
             </a>
-            <a href="php/admin-logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
+            <a href="<?php echo $baseUrl; ?>php/endpoints/admin-logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
                 <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
             </a>
         <?php else: ?>
-            <a href="seller-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'seller-profile.php' ? 'active' : ''; ?>">
+            <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'seller-profile.php' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> My Profile
             </a>
-            <a href="php/seller-logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
+            <a href="<?php echo $baseUrl; ?>php/endpoints/seller-logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
                 <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
             </a>
         <?php endif; ?>
@@ -116,3 +85,12 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? 'admin-dashboard.php' : 'sel
 
 <!-- Menu Overlay -->
 <div class="<?php echo $role_class; ?>-menu-overlay" id="<?php echo $role_class; ?>MenuOverlay"></div>
+
+<script src="<?php echo getBaseUrl(); ?>js/jquery-3.7.1.min.js"></script>
+<script src="<?php echo getBaseUrl(); ?>js/main.js"></script>
+<script>
+var baseUrl = '<?php echo getBaseUrl(); ?>';
+var currentUserId = <?php echo $current_user_id ?: 0; ?>;
+var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
+var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+</script>

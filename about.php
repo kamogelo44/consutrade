@@ -8,7 +8,15 @@
 
 require_once __DIR__ . '/init.php';
 
-$baseUrl = getBaseUrl();
+// Read register errors
+$registerErrors = $_SESSION['register_errors'] ?? [];
+$registerFormData = $_SESSION['register_form_data'] ?? [];
+unset($_SESSION['register_errors'], $_SESSION['register_form_data']);
+
+// Read login errors
+$loginErrors = $_SESSION['login_errors'] ?? [];
+$loginEmail = $_SESSION['login_email'] ?? '';
+unset($_SESSION['login_errors'], $_SESSION['login_email']);
 ?>
 <!DOCTYPE html>
 <html lang="en">

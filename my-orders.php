@@ -100,11 +100,7 @@ $reviewRepo = new ReviewRepository($conn);
         .review-btn:hover { background: var(--success-dark); color: var(--white); transform: translateY(-2px); }
         .edit-review-btn { background: var(--info); color: var(--white); }
         .edit-review-btn:hover { background: var(--info-dark); color: var(--white); transform: translateY(-2px); }
-        
-        .empty-orders { text-align: center; padding: var(--spacing-2xl); background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); }
-        .empty-orders img { opacity: 0.5; margin-bottom: var(--spacing-lg); }
-        .empty-orders h3 { font-size: var(--font-xl); color: var(--gray-dark); margin-bottom: var(--spacing-sm); }
-        .empty-orders p { color: var(--gray-medium); margin-bottom: var(--spacing-lg); }
+
         .clear-btn, .shop-btn { display: inline-block; padding: 10px 24px; border-radius: var(--radius-md); text-decoration: none; font-weight: var(--font-medium); }
         .clear-btn { background: var(--error); color: var(--white); }
         .shop-btn { background: var(--primary-color); color: var(--white); }
@@ -272,7 +268,7 @@ $reviewRepo = new ReviewRepository($conn);
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="empty-orders">
+                <div class="empty-state">
                     <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="No orders">
                     <h3>No Orders Found</h3>
                     <p><?php echo !empty($search_term) ? 'No orders match your search criteria.' : 'You haven\'t placed any orders yet.'; ?></p>

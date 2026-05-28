@@ -25,36 +25,17 @@ if ($target_id <= 0) {
     exit;
 }
 
-// Get user role
-$role_sql = "SELECT role FROM users WHERE user_id = ?";
-$role_stmt = $conn->prepare($role_sql);
-$role_stmt->bind_param('i', $target_id);
-$role_stmt->execute();
-$role_result = $role_stmt->get_result();
-$user_role = $role_result->fetch_assoc()['role'] ?? '';
-$role_stmt->close();
+// Get user role using UserRepository
+$user_data = $userRepo->getById($target_id);
+$user_role = $user_data['role'] ?? '';
 
 // ========== SELLER STATS (Public) ==========
 if ($user_role === 'seller') {
-    // Total active products
-    $product_sql = "SELECT COUNT(*) as total FROM products WHERE seller_id = ? AND status = 'active'";
-    $product_stmt = $conn->prepare($product_sql);
-    $product_stmt->bind_param('i', $target_id);
-    $product_stmt->execute();
-    $total_products = (int)$product_stmt->get_result()->fetch_assoc()['total'];
-    $product_stmt->close();
+    // Total active products using ProductRepository
+    $total_products = $productRepo->countUserProducts($target_id);
     
-    // Completed orders for this seller's products
-    $orders_sql = "SELECT COUNT(DISTINCT o.order_id) as total 
-                   FROM orders o
-                   JOIN order_items oi ON o.order_id = oi.order_id
-                   JOIN products p ON oi.product_id = p.product_id
-                   WHERE p.seller_id = ? AND o.status = 'completed'";
-    $orders_stmt = $conn->prepare($orders_sql);
-    $orders_stmt->bind_param('i', $target_id);
-    $orders_stmt->execute();
-    $total_sales = (int)$orders_stmt->get_result()->fetch_assoc()['total'];
-    $orders_stmt->close();
+    // Completed orders using OrderRepository
+    $total_sales = $orderRepo->countSellerCompletedOrders($target_id);
     
     $response = [
         'success' => true,
@@ -68,34 +49,18 @@ if ($user_role === 'seller') {
     $is_authenticated = isset($current_user_id) && $current_user_id == $target_id;
     
     if ($is_authenticated) {
-        // Get order statistics
-        $orders_sql = "SELECT 
-                        COUNT(*) as total_orders,
-                        SUM(CASE WHEN status IN ('completed', 'processing', 'shipped') THEN total_price ELSE 0 END) as total_spent,
-                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
-                        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_orders
-                      FROM orders 
-                      WHERE buyer_id = ?";
-        $orders_stmt = $conn->prepare($orders_sql);
-        $orders_stmt->bind_param('i', $target_id);
-        $orders_stmt->execute();
-        $orders_data = $orders_stmt->get_result()->fetch_assoc();
-        $orders_stmt->close();
+        // Get order statistics using OrderRepository
+        $order_stats = $orderRepo->getBuyerStats($target_id);
         
-        // Get reviews written count
-        $reviews_sql = "SELECT COUNT(*) as total FROM reviews WHERE buyer_id = ?";
-        $reviews_stmt = $conn->prepare($reviews_sql);
-        $reviews_stmt->bind_param('i', $target_id);
-        $reviews_stmt->execute();
-        $reviews_count = (int)$reviews_stmt->get_result()->fetch_assoc()['total'];
-        $reviews_stmt->close();
+        // Get reviews written count using ReviewRepository
+        $reviews_count = $reviewRepo->countBuyerReviews($target_id);
         
         $response = [
             'success' => true,
-            'total_orders' => (int)($orders_data['total_orders'] ?? 0),
-            'total_spent' => (float)($orders_data['total_spent'] ?? 0),
-            'pending_orders' => (int)($orders_data['pending_orders'] ?? 0),
-            'completed_orders' => (int)($orders_data['completed_orders'] ?? 0),
+            'total_orders' => $order_stats['total_orders'],
+            'total_spent' => $order_stats['total_spent'],
+            'pending_orders' => $order_stats['pending_orders'],
+            'completed_orders' => $order_stats['completed_orders'],
             'reviews_written' => $reviews_count
         ];
     } else {

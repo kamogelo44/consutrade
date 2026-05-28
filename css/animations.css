@@ -2,167 +2,67 @@
 /* Author: Kamogelo Phale */
 
 /* ========== HAMBURGER TO X ANIMATION ========== */
-@keyframes hamburgerToX {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(135deg); }
-}
-
-@keyframes xToHamburger {
-    0% { transform: rotate(135deg); }
-    100% { transform: rotate(0deg); }
-}
+@keyframes hamburgerToX { 0% { transform: rotate(0deg); } 100% { transform: rotate(135deg); } }
+@keyframes xToHamburger { 0% { transform: rotate(135deg); } 100% { transform: rotate(0deg); } }
 
 /* ========== SIDE MENU CLOSE BUTTON ANIMATIONS ========== */
-@keyframes fadeInScale {
-    0% { opacity: 0; transform: scale(0.5) rotate(-90deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0deg); }
-}
-
-@keyframes fadeOutScale {
-    0% { opacity: 1; transform: scale(1) rotate(0deg); }
-    100% { opacity: 0; transform: scale(0.5) rotate(90deg); }
-}
+@keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.5) rotate(-90deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes fadeOutScale { 0% { opacity: 1; transform: scale(1) rotate(0deg); } 100% { opacity: 0; transform: scale(0.5) rotate(90deg); } }
 
 /* ========== MOBILE MENU SLIDE ANIMATIONS ========== */
-@keyframes slideInLeft {
-    from { left: -100%; }
-    to { left: 0; }
-}
-
-@keyframes slideOutLeft {
-    from { left: 0; }
-    to { left: -100%; }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
+@keyframes slideInLeft { from { left: -100%; } to { left: 0; } }
+@keyframes slideOutLeft { from { left: 0; } to { left: -100%; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
 /* ========== MOBILE SEARCH SLIDE DOWN ========== */
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ========== MODAL ANIMATION CLASSES ========== */
-/* All modals start hidden when animation classes aren't applied */
-.modal:not(.active) .modal-content {
-    opacity: 0;
-}
+.modal:not(.active) .modal-content { opacity: 0; }
+.modal.active .modal-content.animate-in { animation: modalFadeIn 0.3s ease forwards; }
+.modal.active .modal-content.animate-out { animation: modalFadeOut 0.25s ease forwards; }
 
-/* Generic fade in/out for any modal */
-.modal.active .modal-content.animate-in {
-    animation: modalFadeIn 0.3s ease forwards;
-}
+/* ========== LOGIN MODAL - SLIDE IN LEFT ========== */
+#login-modal.active .modal-content.animate-in { animation: modalSlideInLeft 0.3s ease forwards; }
 
-.modal.active .modal-content.animate-out {
-    animation: modalFadeOut 0.25s ease forwards;
-}
+/* ========== REGISTER MODAL - SLIDE IN RIGHT ========== */
+#register-modal.active .modal-content.animate-in { animation: modalSlideInRight 0.3s ease forwards; }
 
-/* Login modal - slides in from LEFT */
-#login-modal.active .modal-content.animate-in {
-    animation: modalSlideInLeft 0.3s ease forwards;
-}
+/* ========== DELETE MODAL - SLIDE UP ========== */
+#delete-modal.active .modal-content.animate-in { animation: modalSlideUp 0.3s ease forwards; }
 
-/* Register modal - slides in from RIGHT */
-#register-modal.active .modal-content.animate-in {
-    animation: modalSlideInRight 0.3s ease forwards;
-}
-
-/* Delete modal - slides UP */
-#delete-modal.active .modal-content.animate-in {
-    animation: modalSlideUp 0.3s ease forwards;
-}
-
-/* All modals fade out the same way */
+/* ========== ALL MODALS - FADE OUT ========== */
 #login-modal .modal-content.animate-out,
 #register-modal .modal-content.animate-out,
-#delete-modal .modal-content.animate-out {
-    animation: modalFadeOut 0.25s ease forwards;
-}
+#delete-modal .modal-content.animate-out { animation: modalFadeOut 0.25s ease forwards; }
+
+/* ========== STOCK STATUS PULSE WARNING ========== */
+@keyframes pulseWarning { 0% { background-color: var(--warning-light); } 50% { background-color: #ffe0b2; } 100% { background-color: var(--warning-light); } }
 
 /* ========== SHAKE ERROR ANIMATION ========== */
-@keyframes shakeError {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
-}
+@keyframes shakeError { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* ========== PULSE ERROR ANIMATION ========== */
+@keyframes pulseWarning { 0% { background-color: var(--warning-light); } 50% { background-color: #ffe0b2; } 100% { background-color: var(--warning-light); } }
 
 /* ========== CARD HOVER ANIMATIONS ========== */
-@keyframes cardHover {
-    from { transform: translateY(0); }
-    to { transform: translateY(-5px); }
-}
+@keyframes cardHover { from { transform: translateY(0); } to { transform: translateY(-5px); } }
 
 /* ========== BUTTON PULSE ANIMATION ========== */
-@keyframes buttonPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
+@keyframes buttonPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
 /* ========== MODAL FADE IN/OUT KEYFRAMES ========== */
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes modalFadeOut {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.95); }
-}
-
-@keyframes modalSlideInLeft {
-    from { opacity: 0; transform: translateX(-40px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes modalSlideInRight {
-    from { opacity: 0; transform: translateX(40px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes modalSlideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+@keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes modalFadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+@keyframes modalSlideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes modalSlideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes modalSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ========== TOAST NOTIFICATION ANIMATIONS ========== */
-/* Author: Kamogelo Phale */
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-/* Toast animation classes */
-.toast-notification {
-    animation: slideInRight 0.3s ease forwards;
-}
-
-.toast-notification.hiding {
-    animation: slideOutRight 0.3s ease forwards;
-}
+/* ========== TOAST ANIMATION CLASSES ========== */
+.toast-notification { animation: slideInRight 0.3s ease forwards; }
+.toast-notification.hiding { animation: slideOutRight 0.3s ease forwards; }

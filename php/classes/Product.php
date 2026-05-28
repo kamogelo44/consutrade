@@ -9,17 +9,6 @@
  * @institution Eduvos
  * @version    2.0.0
  * @since      2026
- *
- * References:
- * - Pressman, R.S. and Maxim, B.R., 2015. Software Engineering:
- *   A Practitioner's Approach. 8th ed. McGraw-Hill.
- * - Dennis, A., Wixom, B.H. and Tegarden, D., 2015. Systems Analysis
- *   and Design: An Object-Oriented Approach with UML. 6th ed.
- *   John Wiley and Sons.
- * - PHP Group, 2025. Classes and Objects. Available at:
- *   https://www.php.net/manual/en/language.oop5.php
- * - PHP-FIG, 2023. PSR-12: Extended Coding Style. Available at:
- *   https://www.php.fig.org/psr/psr-12/
  */
 
 class Product
@@ -81,49 +70,43 @@ class Product
         $this->createdAt     = (string) ($data['created_at']   ?? '');
     }
 
-    /**
-     * Returns the product ID.
-     *
-     * @return int
-     */
-    public function getProductId(): int
-    {
-        return $this->productId;
-    }
+    // ============================================================
+    //  GETTERS
+    // ============================================================
 
-    /**
-     * Returns the product title.
-     *
-     * @return string
-     */
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
+    public function getProductId(): int { return $this->productId; }
+    public function getSellerId(): int { return $this->sellerId; }
+    public function getCategoryId(): int { return $this->categoryId; }
+    public function getTitle(): string { return $this->title; }
+    public function getDescription(): string { return $this->description; }
+    public function getPrice(): float { return $this->price; }
+    public function getStockQuantity(): int { return $this->stockQuantity; }
+    public function getCondition(): string { return $this->condition; }
+    public function getLocation(): string { return $this->location; }
+    public function getImageUrl(): string { return $this->imageUrl; }
+    public function getStatus(): string { return $this->status; }
+    public function getCreatedAt(): string { return $this->createdAt; }
 
-    /**
-     * Returns the product price.
-     *
-     * @return float
-     */
-    public function getPrice(): float
-    {
-        return $this->price;
-    }
+    // ============================================================
+    //  SETTERS (for updates)
+    // ============================================================
 
-    /**
-     * Returns the product status.
-     *
-     * @return string
-     */
-    public function getStatus(): string
-    {
-        return $this->status;
-    }
+    public function setTitle(string $title): void { $this->title = $title; }
+    public function setDescription(string $description): void { $this->description = $description; }
+    public function setPrice(float $price): void { $this->price = $price; }
+    public function setStockQuantity(int $stockQuantity): void { $this->stockQuantity = $stockQuantity; }
+    public function setCondition(string $condition): void { $this->condition = $condition; }
+    public function setLocation(string $location): void { $this->location = $location; }
+    public function setCategoryId(int $categoryId): void { $this->categoryId = $categoryId; }
+    public function setImageUrl(string $imageUrl): void { $this->imageUrl = $imageUrl; }
+    public function setStatus(string $status): void { $this->status = $status; }
+
+    // ============================================================
+    //  BUSINESS LOGIC METHODS
+    // ============================================================
 
     /**
      * Checks whether the product is available for purchase.
-     * Must be active and have stock.
      *
      * @return bool
      */
@@ -132,110 +115,101 @@ class Product
         return $this->status === 'active' && $this->stockQuantity > 0;
     }
 
-    // ============================================================
-    //  ADDITIONAL GETTERS (not in diagram but useful)
-    // ============================================================
-
     /**
-     * Returns the seller ID.
+     * Checks if product is out of stock.
      *
-     * @return int
+     * @return bool
      */
-    public function getSellerId(): int
+    public function isOutOfStock(): bool
     {
-        return $this->sellerId;
+        return $this->stockQuantity <= 0;
     }
 
     /**
-     * Returns the category ID.
+     * Checks if product has low stock (5 or less).
      *
-     * @return int
+     * @return bool
      */
-    public function getCategoryId(): int
+    public function isLowStock(): bool
     {
-        return $this->categoryId;
+        return $this->stockQuantity > 0 && $this->stockQuantity <= 5;
     }
 
     /**
-     * Returns the product description.
+     * Returns formatted price with currency.
      *
      * @return string
      */
-    public function getDescription(): string
+    public function getFormattedPrice(): string
     {
-        return $this->description;
+        return 'R ' . number_format($this->price, 2);
     }
 
     /**
-     * Returns the current stock quantity.
-     *
-     * @return int
-     */
-    public function getStockQuantity(): int
-    {
-        return $this->stockQuantity;
-    }
-
-    /**
-     * Returns the product condition.
+     * Returns stock badge class for UI.
      *
      * @return string
      */
-    public function getCondition(): string
+    public function getStockBadgeClass(): string
     {
-        return $this->condition;
+        if ($this->isOutOfStock()) return 'out-of-stock';
+        if ($this->isLowStock()) return 'low-stock';
+        return '';
     }
 
     /**
-     * Returns the product location.
+     * Returns stock badge text for UI.
      *
      * @return string
      */
-    public function getLocation(): string
+    public function getStockBadgeText(): string
     {
-        return $this->location;
+        if ($this->isOutOfStock()) return 'Out of Stock';
+        if ($this->isLowStock()) return 'Only ' . $this->stockQuantity . ' left';
+        return '';
     }
 
     /**
-     * Returns the image URL.
+     * Returns condition badge class.
      *
      * @return string
      */
-    public function getImageUrl(): string
+    public function getConditionClass(): string
     {
-        return $this->imageUrl;
+        switch (strtolower($this->condition)) {
+            case 'new': return 'new';
+            case 'like new': return 'like-new';
+            case 'good': return 'good';
+            case 'fair': return 'fair';
+            default: return '';
+        }
     }
 
     /**
-     * Returns the creation date.
-     *
-     * @return string
-     */
-    public function getCreatedAt(): string
-    {
-        return $this->createdAt;
-    }
-
-    /**
-     * Returns all product data as an array (useful for templates).
+     * Returns all product data as an array.
      *
      * @return array
      */
     public function toArray(): array
     {
         return [
-            'product_id'     => $this->productId,
-            'seller_id'      => $this->sellerId,
-            'category_id'    => $this->categoryId,
-            'title'          => $this->title,
-            'description'    => $this->description,
-            'price'          => $this->price,
-            'stock_quantity' => $this->stockQuantity,
-            'condition'      => $this->condition,
-            'location'       => $this->location,
-            'image_url'      => $this->imageUrl,
-            'status'         => $this->status,
-            'created_at'     => $this->createdAt,
+            'product_id'        => $this->productId,
+            'seller_id'         => $this->sellerId,
+            'category_id'       => $this->categoryId,
+            'title'             => $this->title,
+            'description'       => $this->description,
+            'price'             => $this->price,
+            'stock_quantity'    => $this->stockQuantity,
+            'condition'         => $this->condition,
+            'location'          => $this->location,
+            'image_url'         => $this->imageUrl,
+            'status'            => $this->status,
+            'created_at'        => $this->createdAt,
+            'formatted_price'   => $this->getFormattedPrice(),
+            'is_available'      => $this->isAvailable(),
+            'stock_badge_class' => $this->getStockBadgeClass(),
+            'stock_badge_text'  => $this->getStockBadgeText(),
+            'condition_class'   => $this->getConditionClass()
         ];
     }
 }

@@ -835,6 +835,13 @@ footer {
     }
 }
 
+/* ========== STOCK STATUS STYLES ========== */
+.stock-status { display: flex; align-items: center; gap: 8px; padding: 10px 15px; border-radius: var(--radius-md); font-size: var(--font-sm); font-weight: var(--font-medium); margin: 10px 0; }
+.stock-icon { font-size: 16px; font-weight: bold; }
+.stock-status.in-stock { background-color: var(--success-light); color: var(--success-dark); border-left: 4px solid var(--success); }
+.stock-status.low-stock { background-color: var(--warning-light); color: var(--warning-dark); border-left: 4px solid var(--warning); animation: pulseWarning 1.5s infinite; }
+.stock-status.out-of-stock { background-color: var(--error-light); color: var(--error-dark); border-left: 4px solid var(--error); }
+
 /* ========== BREADCRUMB NAVIGATION ========== */
 .breadcrumb {
     margin: 30px 0 20px 30px;
@@ -907,3 +914,68 @@ footer {
         width: calc(100% - 24px);
     }
 }
+/* ========== ERROR & MESSAGE STYLES ========== */
+.error {
+    text-align: center;
+    padding: 40px;
+    color: var(--error);
+    background-color: var(--error-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+    grid-column: 1 / -1;
+}
+
+.error-message {
+    background: var(--error-light);
+    color: var(--error);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+    border-left: 4px solid var(--error);
+}
+
+/* ========== LOADING STATES ========== */
+.loading-spinner {
+    text-align: center;
+    padding: 60px;
+    color: var(--gray-medium);
+    font-size: var(--font-md);
+    grid-column: 1 / -1;
+}
+
+/* ========== PLACEHOLDER / EMPTY STATES ========== */
+.empty-state, .no-products, .empty-listings, .empty-orders {
+    text-align: center;
+    padding: 60px var(--spacing-xl);
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: var(--gray-medium);
+    border: 1px solid var(--border-light);
+}
+
+.empty-state p, .no-products p, .empty-listings p, .empty-orders p {
+    margin: 0;
+}
+
+.empty-state img, .no-products img, .empty-listings img, .empty-orders img {
+    opacity: 0.5;
+    margin-bottom: var(--spacing-lg);
+}
+
+.empty-state h3, .no-products h3, .empty-listings h3, .empty-orders h3 {
+    font-size: var(--font-xl);
+    font-weight: var(--font-bold);
+    color: var(--dark-bg);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Empty state inside listings-grid should span full width */
+.listings-grid .empty-state {grid-column: 1 / -1; width: 100%; max-width: 100%; }
+

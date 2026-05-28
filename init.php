@@ -17,13 +17,14 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Load required files
 require_once __DIR__ . '/php/config.php';
-require_once __DIR__ . '/php/helpers.php';
-require_once __DIR__ . '/php/auth.php'; 
 
 // Load all class files
 require_once __DIR__ . '/php/classes/Database.php';
 require_once __DIR__ . '/php/classes/Auth.php';
+require_once __DIR__ . '/php/classes/UserRepository.php';
+require_once __DIR__ . '/php/classes/CategoryRepository.php';
 require_once __DIR__ . '/php/classes/ProductRepository.php';
+require_once __DIR__ . '/php/classes/ProductImageRepository.php';
 require_once __DIR__ . '/php/classes/OrderRepository.php';
 require_once __DIR__ . '/php/classes/CartRepository.php';
 require_once __DIR__ . '/php/classes/ReviewRepository.php';
@@ -51,10 +52,13 @@ require_once __DIR__ . '/php/classes/Admin.php';
 
 $auth = new Auth($conn);
 
+$categoryRepo = new CategoryRepository($conn);
 $productRepo = new ProductRepository($conn);
+$productImageRepo = new ProductImageRepository($conn);
 $orderRepo   = new OrderRepository($conn);
 $cartRepo    = new CartRepository($conn);
-$reviewRepo = new ReviewRepository($conn);
+$reviewRepo  = new ReviewRepository($conn);
+$userRepo    = new UserRepository($conn);
 
 // ------------------------------------------------------------------
 // Auto-detect and start appropriate session
@@ -107,3 +111,4 @@ if ($is_logged_in && $current_user) {
             break;
     }
 }
+?>

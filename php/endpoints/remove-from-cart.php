@@ -2,15 +2,13 @@
 /*
  * ConsuTrade - Remove from Cart (AJAX)
  * Author: Kamogelo Phale
- * 
- * Removes a product from the user's cart
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 
-$response = ['success' => false, 'message' => ''];
+$response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
 if (!$is_logged_in) {
     $response['message'] = 'Please login to remove items';
@@ -34,8 +32,10 @@ if ($result) {
     $auth->updateCartCount();
     $response['success'] = true;
     $response['message'] = 'Item removed from cart';
+    $response['cart_count'] = $_SESSION['cart_count'] ?? $cartRepo->getCartCount($user_id);
 } else {
     $response['message'] = 'Failed to remove item';
 }
 
 echo json_encode($response);
+?>

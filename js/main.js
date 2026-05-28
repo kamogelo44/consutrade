@@ -5,8 +5,8 @@
  * Handles mobile menu, search, password toggle, modals, cart, dropdowns, toast notifications
  */
 
-// Base URL for all fetch requests
-var baseUrl = '/www/consutrade/';
+// Base URL will be set by footer.php
+var baseUrl = baseUrl || '';
 
 // ========== GLOBAL ESCAPE HTML FUNCTION ==========
 function escapeHtml(text) {
@@ -14,7 +14,7 @@ function escapeHtml(text) {
     return $('<div>').text(text).html();
 }
 
-// ========== TOAST NOTIFICATIONS (No emojis) ==========
+// ========== TOAST NOTIFICATIONS ==========
 function showToast(message, type = 'success') {
     $('.toast-notification').remove();
     
@@ -60,6 +60,56 @@ function togglePassword(fieldId, button) {
     }
 }
 
+// ========== MODAL ERROR HANDLING ==========
+function clearModalErrors(modalId) {
+    var $modal = $(modalId);
+    $modal.find('.error-container').hide().empty();
+    $modal.find('.input-group').removeClass('error');
+    $modal.find('.error-text').remove();
+}
+
+function displayModalErrors(modalId, errors, formData) {
+    var $modal = $(modalId);
+    
+    if (!formData) formData = {};
+    
+    if (modalId === '#register-modal') {
+        if (formData.full_name) $('#register-full-name').val(formData.full_name);
+        if (formData.email) $('#register-email').val(formData.email);
+        if (formData.phone) $('#register-phone').val(formData.phone);
+        
+        if (errors.general && errors.general.trim()) {
+            $('#register-error-container').show().text(errors.general);
+        }
+        
+        $.each(errors, function(field, message) {
+            if (field !== 'general' && message && message.trim()) {
+                var $input = $('#register-' + field);
+                if ($input.length) {
+                    $input.closest('.input-group').addClass('error');
+                    $input.closest('.input-group').append('<small class="error-text">' + message + '</small>');
+                }
+            }
+        });
+    } else if (modalId === '#login-modal') {
+        if (formData.email) $('#login-email').val(formData.email);
+        
+        if (errors.general && errors.general.trim()) {
+            $('#login-error-container').show().text(errors.general);
+        }
+        
+        $.each(errors, function(field, message) {
+            if (field !== 'general' && message && message.trim()) {
+                var $input = $('#login-' + field);
+                if ($input.length) {
+                    $input.closest('.input-group').addClass('error');
+                    $input.closest('.input-group').append('<small class="error-text">' + message + '</small>');
+                }
+            }
+        });
+    }
+}
+
 // ========== ERROR CLEARING ==========
 function clearLoginErrors() {
     $('#login-error-container').hide().empty();
@@ -73,7 +123,7 @@ function clearRegisterErrors() {
     $('#register-form .error-text').remove();
 }
 
-function clearModalErrors($modal) {
+function clearModalErrorsOld($modal) {
     $modal.find('.error-container').hide().empty();
     $modal.find('.input-group').removeClass('error');
     $modal.find('.error-text').remove();
@@ -88,7 +138,10 @@ function addToCart(productId, productName, productPrice) {
         data: JSON.stringify({ product_id: productId, product_name: productName, product_price: productPrice }),
         success: function(data) {
             if (data.success) {
-                updateCartCount();
+                var newCount = data.cart_count || 0;
+                $('.cart-count').text(newCount);
+                $('.item-num').text(newCount);
+                if (window.sessionStorage) sessionStorage.setItem('cart_count', newCount);
                 showSuccessToast(data.message || 'Item added to cart');
             } else {
                 showErrorToast(data.message || 'Error adding item to cart');
@@ -108,12 +161,12 @@ function removeFromCart(productId) {
         data: JSON.stringify({ product_id: productId }),
         success: function(data) {
             if (data.success) {
-                updateCartCount();
-                if (window.location.pathname.includes('cart.php')) {
-                    location.reload();
-                } else {
-                    showSuccessToast(data.message || 'Item removed from cart');
-                }
+                var newCount = data.cart_count || 0;
+                $('.cart-count').text(newCount);
+                $('.item-num').text(newCount);
+                if (window.sessionStorage) sessionStorage.setItem('cart_count', newCount);
+                if (window.location.pathname.includes('cart.php')) location.reload();
+                else showSuccessToast(data.message || 'Item removed from cart');
             } else {
                 showErrorToast(data.message || 'Error removing item from cart');
             }
@@ -123,10 +176,19 @@ function removeFromCart(productId) {
 }
 
 function updateCartCount() {
+    if (window.sessionStorage && sessionStorage.getItem('cart_count')) {
+        var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
+        if (!isNaN(cachedCount)) {
+            $('.cart-count').text(cachedCount);
+            $('.item-num').text(cachedCount);
+        }
+    }
+    
     $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
         if (data.success) {
             $('.cart-count').text(data.item_count);
             $('.item-num').text(data.item_count);
+            if (window.sessionStorage) sessionStorage.setItem('cart_count', data.item_count);
         }
     }).fail(function() {});
 }
@@ -180,13 +242,13 @@ function displayCartItems(cartData) {
                         <div class="cart-img-container"><img src="${imagePath}" alt="${escapeHtml(item.product_name)}" onerror="this.src='${baseUrl}images/default-product.png'"></div>
                         <div class="cart-prod-info"><p class="prod-name">${escapeHtml(item.product_name)}</p></div>
                     </div>
-                  </td>
+                </td>
                 <td class="seller-cell" data-label="Seller">
                     <div class="seller-cart-info">
                         <p class="seller-name">${escapeHtml(item.seller_name)}</p>
                         <div class="verification">${verifiedBadge}</div>
                     </div>
-                  </td>
+                </td>
                 <td class="price-cell" data-label="Price">R ${parseFloat(item.price).toFixed(2)}</td>
                 <td class="quantity-cell" data-label="Quantity">
                     <div class="quantity-controls">
@@ -195,12 +257,12 @@ function displayCartItems(cartData) {
                         <button class="qty-increase" data-cart-id="${item.cart_id}">+</button>
                     </div>
                     ${item.quantity >= (item.stock_quantity || 99) && (item.stock_quantity || 0) > 0 ? `<small class="stock-warning">Max ${item.stock_quantity} available</small>` : ''}
-                  </td>
+                </td>
                 <td class="actions-cell" data-label="Actions">
                     <button class="remove-btn" data-product-id="${item.product_id}">
                         <img src="${baseUrl}images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove"> Remove
                     </button>
-                  </td>
+                </td>
             `);
             $desktopTableBody.append(row);
         }
@@ -283,12 +345,29 @@ function updateOrderSummary(cartData) {
     if ($('.total-val').length) $('.total-val').text(cartData.total);
 }
 
+function updateCartQuantity(cartId, quantity) {
+    $.ajax({
+        url: baseUrl + 'php/endpoints/update-cart.php',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ cart_id: cartId, quantity: quantity }),
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) location.reload();
+            else alert('Error: ' + response.message);
+        },
+        error: function() { alert('Something went wrong.'); }
+    });
+}
+
 // ========== MODAL FUNCTIONS ==========
 function openModal($modal) {
     if (!$modal.length) return;
     
+    clearModalErrors($modal.attr('id'));
+    
     var $content = $modal.find('.modal-content');
-    clearModalErrors($modal);
+    clearModalErrorsOld($modal);
     $content.removeClass('animate-in animate-out');
     
     $modal.css('visibility', 'visible');
@@ -305,7 +384,7 @@ function closeModal($modal) {
     if (!$modal.length) return;
     
     var $content = $modal.find('.modal-content');
-    clearModalErrors($modal);
+    clearModalErrorsOld($modal);
     $content.removeClass('animate-in');
     $modal[0].offsetHeight;
     $content.addClass('animate-out');
@@ -467,9 +546,7 @@ $(function() {
     // Auto-hide flash messages
     var $flashMsg = $('.flash-message');
     if ($flashMsg.length) {
-        setTimeout(function() {
-            $flashMsg.fadeOut(500);
-        }, 4000);
+        setTimeout(function() { $flashMsg.fadeOut(500); }, 4000);
     }
     
     // Active Navigation Link

@@ -6,13 +6,13 @@
  * Permanently deletes user account and all associated data
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check if user is logged in using centralized auth
+// Check if user is logged in
 if (!$is_logged_in) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
@@ -30,16 +30,10 @@ if (empty($password)) {
     exit;
 }
 
-// Verify password
-$sql = "SELECT password FROM users WHERE user_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
-$stmt->close();
+// Verify password using UserRepository
+$user_data = $userRepo->getById($user_id);
 
-if (!$user || !password_verify($password, $user['password'])) {
+if (!$user_data || !password_verify($password, $user_data['password'])) {
     $response['message'] = 'Invalid password';
     echo json_encode($response);
     exit;
@@ -50,24 +44,21 @@ $conn->begin_transaction();
 
 try {
     // Delete user's cart items
-    $cart_sql = "DELETE FROM cart WHERE user_id = ?";
-    $cart_stmt = $conn->prepare($cart_sql);
+    $cart_stmt = $conn->prepare("DELETE FROM cart WHERE user_id = ?");
     $cart_stmt->bind_param('i', $user_id);
     $cart_stmt->execute();
     $cart_stmt->close();
     
     // Delete user's orders (as buyer)
-    $buyer_orders_sql = "DELETE FROM orders WHERE buyer_id = ?";
-    $buyer_orders_stmt = $conn->prepare($buyer_orders_sql);
+    $buyer_orders_stmt = $conn->prepare("DELETE FROM orders WHERE buyer_id = ?");
     $buyer_orders_stmt->bind_param('i', $user_id);
     $buyer_orders_stmt->execute();
     $buyer_orders_stmt->close();
     
-    // Delete user's orders (as seller) - but first check if they have completed orders
+    // Delete user's orders (as seller) - check for completed orders first
     if ($role === 'seller') {
         // Check if seller has any completed orders
-        $check_sql = "SELECT COUNT(*) as count FROM orders WHERE seller_id = ? AND status IN ('completed', 'shipped', 'processing')";
-        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM orders WHERE seller_id = ? AND status IN ('completed', 'shipped', 'processing')");
         $check_stmt->bind_param('i', $user_id);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
@@ -75,66 +66,52 @@ try {
         $check_stmt->close();
         
         if ($check_row['count'] > 0) {
-            // Seller has completed orders - cannot delete account
             throw new Exception('Cannot delete account with completed orders. Please contact support.');
         }
         
         // Delete seller's orders
-        $seller_orders_sql = "DELETE FROM orders WHERE seller_id = ?";
-        $seller_orders_stmt = $conn->prepare($seller_orders_sql);
+        $seller_orders_stmt = $conn->prepare("DELETE FROM orders WHERE seller_id = ?");
         $seller_orders_stmt->bind_param('i', $user_id);
         $seller_orders_stmt->execute();
         $seller_orders_stmt->close();
         
         // Delete seller's products
-        $products_sql = "DELETE FROM products WHERE seller_id = ?";
-        $products_stmt = $conn->prepare($products_sql);
+        $products_stmt = $conn->prepare("DELETE FROM products WHERE seller_id = ?");
         $products_stmt->bind_param('i', $user_id);
         $products_stmt->execute();
         $products_stmt->close();
     }
     
     // Delete user's reviews (as buyer)
-    $reviews_buyer_sql = "DELETE FROM reviews WHERE buyer_id = ?";
-    $reviews_buyer_stmt = $conn->prepare($reviews_buyer_sql);
+    $reviews_buyer_stmt = $conn->prepare("DELETE FROM reviews WHERE buyer_id = ?");
     $reviews_buyer_stmt->bind_param('i', $user_id);
     $reviews_buyer_stmt->execute();
     $reviews_buyer_stmt->close();
     
-    // Delete user's reviews (as seller) - these will be handled by ON DELETE CASCADE or manually
-    $reviews_seller_sql = "DELETE FROM reviews WHERE seller_id = ?";
-    $reviews_seller_stmt = $conn->prepare($reviews_seller_sql);
+    // Delete user's reviews (as seller)
+    $reviews_seller_stmt = $conn->prepare("DELETE FROM reviews WHERE seller_id = ?");
     $reviews_seller_stmt->bind_param('i', $user_id);
     $reviews_seller_stmt->execute();
     $reviews_seller_stmt->close();
     
-    // Delete user's profile image if exists
-    $profile_image_sql = "SELECT profile_image FROM users WHERE user_id = ?";
-    $profile_stmt = $conn->prepare($profile_image_sql);
-    $profile_stmt->bind_param('i', $user_id);
-    $profile_stmt->execute();
-    $profile_result = $profile_stmt->get_result();
-    $profile_row = $profile_result->fetch_assoc();
-    $profile_stmt->close();
-    
-    if (!empty($profile_row['profile_image'])) {
-        $image_path = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $profile_row['profile_image'];
+    // Delete profile image if exists
+    if (!empty($user_data['profile_image'])) {
+        $image_path = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $user_data['profile_image'];
         if (file_exists($image_path)) {
             unlink($image_path);
         }
     }
     
-    // Finally, delete the user
-    $delete_sql = "DELETE FROM users WHERE user_id = ?";
-    $delete_stmt = $conn->prepare($delete_sql);
+    // Finally, delete the user using UserRepository
+    $delete_stmt = $conn->prepare("DELETE FROM users WHERE user_id = ?");
     $delete_stmt->bind_param('i', $user_id);
     $delete_stmt->execute();
     $delete_stmt->close();
     
     $conn->commit();
     
-    // Clear session using auth helper
-    logoutUser();
+    // Logout using Auth class
+    $auth->logout();
     
     $response['success'] = true;
     $response['message'] = 'Account deleted successfully';
