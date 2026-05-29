@@ -13,7 +13,7 @@ header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'items' => [], 'item_count' => 0, 'subtotal' => 0, 'delivery_fee' => 0, 'total' => 0];
 
-if (!$is_logged_in || !$current_user_id) {
+if (!$auth->isLoggedIn()) {
     echo json_encode($response);
     exit;
 }

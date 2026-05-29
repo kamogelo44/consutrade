@@ -3,13 +3,13 @@
  * ConsuTrade - User Registration
  * Author: Kamogelo Phale
  * 
- * Handles new user registration for buyers and sellers
+ * Handles new user registration for buyers and sellers using OOP
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
 
 // If user is already logged in, redirect to homepage
-if ($is_logged_in) {
+if ($auth->isLoggedIn()) {
     header('Location: ' . getBaseUrl() . 'index.php');
     exit;
 }
@@ -17,11 +17,11 @@ if ($is_logged_in) {
 // Only process if form was submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
-    $full_name        = trim($_POST['full_name']);
-    $email            = trim($_POST['email']);
-    $phone            = trim($_POST['phone']);
-    $password         = $_POST['password'];
-    $confirm_password = $_POST['confirm_password'];
+    $full_name        = trim($_POST['full_name'] ?? '');
+    $email            = trim($_POST['email'] ?? '');
+    $phone            = trim($_POST['phone'] ?? '');
+    $password         = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
     $role             = $_POST['role'] ?? 'buyer';
     
     $errors = [];
@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['email'] = 'Email address is too long';
     }
     
+    $clean_phone = '';
     if (empty($phone)) {
         $errors['phone'] = 'Phone number is required';
     } else {
@@ -74,26 +75,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $existing_user = $userRepo->getByEmail($email);
         
         if ($existing_user) {
-            if ($existing_user['role'] === 'admin') {
-                $errors['general'] = 'Cannot register with this email.';
-            } else {
-                $errors['email'] = 'Email already registered. Please login instead.';
-            }
+            // Generic error for security
+            $errors['email'] = 'Unable to register with this email. Please contact support if you believe this is an error.';
         }
     }
     
-    // Check if phone already exists
+    // Check if phone already exists - using UserRepository method
     if (empty($errors) && !empty($clean_phone)) {
-        $phone_sql = "SELECT user_id FROM users WHERE phone = ?";
-        $phone_stmt = $conn->prepare($phone_sql);
-        $phone_stmt->bind_param('s', $clean_phone);
-        $phone_stmt->execute();
-        $phone_result = $phone_stmt->get_result();
+        // public function getByPhone(string $phone): ?array
+        $existing_phone = $userRepo->getByPhone($clean_phone);
         
-        if ($phone_result->num_rows > 0) {
-            $errors['phone'] = 'Phone number already registered.';
+        if ($existing_phone) {
+            $errors['phone'] = 'Unable to register with this phone number. Please contact support.';
         }
-        $phone_stmt->close();
     }
     
     // If no errors, register the user
@@ -101,15 +95,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Hash password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
-        // Insert user
-        $insert_sql = "INSERT INTO users (full_name, email, phone, password, role, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
-        $insert_stmt = $conn->prepare($insert_sql);
-        $insert_stmt->bind_param('sssss', $full_name, $email, $clean_phone, $hashed_password, $role);
+        // Insert user using UserRepository
+        $userData = [
+            'full_name' => $full_name,
+            'email' => $email,
+            'phone' => $clean_phone,
+            'password' => $hashed_password,
+            'role' => $role
+        ];
         
-        if ($insert_stmt->execute()) {
-            $user_id = $insert_stmt->insert_id;
-            $insert_stmt->close();
-            
+        $userId = $userRepo->createUser($userData);
+        
+        if ($userId) {
             // Login the user using Auth class
             $auth->login($email, $password);
             

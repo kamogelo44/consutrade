@@ -47,12 +47,15 @@ class Auth
     {
         $user = $this->userRepo->getByEmail($email);
         
+        // Generic error message - same for both cases (security best practice)
+        $genericError = 'Invalid email or password.';
+        
         if (!$user) {
-            return ['success' => false, 'message' => 'Email not found', 'role' => null];
+            return ['success' => false, 'message' => $genericError, 'role' => null];
         }
         
         if (!password_verify($password, $user['password'])) {
-            return ['success' => false, 'message' => 'Invalid password', 'role' => null];
+            return ['success' => false, 'message' => $genericError, 'role' => null];
         }
         
         // Check user status

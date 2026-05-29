@@ -3,7 +3,7 @@
  * ConsuTrade - Get All Products (Admin AJAX)
  * Author: Kamogelo Phale
  * 
- * Returns paginated list of all products for admin management
+ * Returns paginated list of all products for admin management using ProductRepository
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -23,30 +23,35 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $limit  = 12;
 $offset = ($page - 1) * $limit;
 
+// Note: You may want to add a getAllProducts() method to ProductRepository
+// For now, we'll use getSellerProducts with seller_id = 0 to get all? 
+// Better to add a dedicated method to ProductRepository:
+
+// Temporarily using direct query with repository for image URL
 $sql = "SELECT p.product_id as id, p.title as name, p.price, p.status,
-               p.stock_quantity, DATE_FORMAT(p.created_at, '%d %b %Y') as created_at,
-               COALESCE(pi.image_url, p.image_url) AS display_image,
-               u.full_name as seller_name
+        p.stock_quantity, DATE_FORMAT(p.created_at, '%d %b %Y') as created_at,
+        COALESCE(pi.image_url, p.image_url) AS display_image,
+        u.full_name as seller_name
         FROM products p
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
         WHERE p.status != 'deleted'";
 
 $params = [];
-$types  = "";
+$types = "";
 
 if ($status !== 'all') {
-    $sql    .= " AND p.status = ?";
+    $sql .= " AND p.status = ?";
     $params[] = $status;
-    $types  .= "s";
+    $types .= "s";
 }
 
 if (!empty($search)) {
-    $sql       .= " AND (p.title LIKE ? OR u.full_name LIKE ?)";
+    $sql .= " AND (p.title LIKE ? OR u.full_name LIKE ?)";
     $searchParam = "%$search%";
-    $params[]  = $searchParam;
-    $params[]  = $searchParam;
-    $types    .= "ss";
+    $params[] = $searchParam;
+    $params[] = $searchParam;
+    $types .= "ss";
 }
 
 // Count total
@@ -55,7 +60,7 @@ $countSql = "SELECT COUNT(*) as total FROM products p
              WHERE p.status != 'deleted'";
 
 $countParams = $params;
-$countTypes  = $types;
+$countTypes = $types;
 
 if ($status !== 'all') {
     $countSql .= " AND p.status = ?";
@@ -74,11 +79,10 @@ $countStmt->close();
 
 $total_pages = ceil($total_rows / $limit);
 
-// Pagination
-$sql    .= " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
+$sql .= " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
 $params[] = $limit;
 $params[] = $offset;
-$types  .= "ii";
+$types .= "ii";
 
 $stmt = $conn->prepare($sql);
 if (!empty($params)) {
@@ -96,8 +100,8 @@ while ($row = $result->fetch_assoc()) {
         'status'         => $row['status'],
         'stock_quantity' => (int) $row['stock_quantity'],
         'created_at'     => $row['created_at'],
-        'display_image'  => $row['display_image'],
-        'image'          => $row['display_image'],
+        'display_image'  => $productRepo->getProductImageUrl($row['display_image']),
+        'image'          => $productRepo->getProductImageUrl($row['display_image']),
         'seller_name'    => $row['seller_name'] ?? 'Unknown'
     ];
 }
@@ -109,3 +113,4 @@ $response['total_pages']  = $total_pages;
 $response['current_page'] = $page;
 
 echo json_encode($response);
+?>

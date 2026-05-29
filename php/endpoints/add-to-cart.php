@@ -10,7 +10,7 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
-if (!$is_logged_in) {
+if (!$auth->isLoggedIn()) {
     $response['message'] = 'Please login to add items to cart';
     echo json_encode($response);
     exit;

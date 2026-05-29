@@ -16,87 +16,125 @@ ConsuTrade is an attempt to change that. It is a locally built platform that giv
 
 ## Key Features
 
-- Seller registration with identity verification
-- Product listing with image upload
-- Secure payments via PayFast (South Africa's trusted local gateway)
-- Shopping cart and order management
-- Low-data optimisation (under 3MB per transaction)
-- Admin dashboard with Role-Based Access Control (RBAC)
-- Mobile-responsive design
+- **User Management:** Registration, login, and role-based access (Buyer, Seller, Admin)
+- **Seller Verification:** Identity verification system for trusted sellers
+- **Product Management:** List, edit, and manage products with image upload (WebP conversion)
+- **Shopping Cart:** Add, remove, and update quantities with stock awareness
+- **Secure Payments:** PayFast integration (South Africa's trusted local gateway)
+- **Order Management:** Track orders, update status, and manage history
+- **Review System:** Rate and review sellers after completed orders
+- **Admin Dashboard:** Full platform oversight with user and product management
+- **Responsive Design:** Works on desktop, tablet, and mobile devices
 
 ## Technology Stack
 
 | Layer | Technology |
 |---|---|
-| Structure | HTML5 |
-| Styling | CSS3 |
-| Interactivity | JavaScript |
-| Server-side logic | PHP |
+| Frontend | HTML5, CSS3, JavaScript (jQuery) |
+| Backend | PHP 8.x (Object-Oriented) |
 | Database | MySQL |
-| Payment Gateway | PayFast |
-| Hosting | InfinityFree (pilot phase) |
+| Payment Gateway | PayFast (Sandbox/Production) |
+| Image Processing | PHP GD Library (WebP conversion) |
 
 ## Project Structure
 
-```
-└───consutrade
-    │   index.html
-    │   README.md
-    │
-    ├───css
-    │       style.css
-    │
-    ├───database
-    │       consutrade.sql
-    │
-    ├───design
-    │   └───wireframes
-    │       ├───admin-website
-    │       │       AdminDashboard - Desktop.png
-    │       │       AdminDashboard - Phone.png
-    │       │       AdminDashboard - Tablet.png
-    │       │
-    │       └───main-website
-    │               Homepage_Prototype - Desktop.png
-    │               HomePage_Prototype - Tablet.png
-    │               Homepage_Prototype- Phone.png
-    │               LoginModal - Desktop.png
-    │               LoginModal - Phone.png
-    │               LoginModal - Tablet.png
-    │               Product Detail - Desktop.png
-    │               Product Detail - Phone.png
-    │               Product Detail - Tablet.png
-    │               Product Listing - Desktop.png
-    │               Product Listing - Phone.png
-    │               Product Listing - Tablet.png
-    │               Register Modal - Desktop.png
-    │               Register Modal - Phone.png
-    │               Register Modal - Tablet.png
-    │               Sellerdashboard - Desktop.png
-    │               Sellerdashboard - Phone.png
-    │               Sellerdashboard - Tablet.png
-    │
-    ├───images
-    │   └───icons
-    │           search-svgrepo-com.svg
-    │           shopping-cart-01-svgrepo-com.svg
-    │
-    ├───js
-    │       main.js
-    │
-    └───php
-            config.php
-            login.php
-            register.php
-```
+
+
+## Object-Oriented Architecture
+
+The platform follows a clean OOP architecture with separation of concerns:
+
+### Domain Classes
+- `User`, `Product`, `ProductImage`, `Order`, `Cart`, `Review` — represent business entities
+- Contain business logic and validation rules
+
+### Repository Pattern
+- `UserRepository`, `ProductRepository`, `OrderRepository`, `CartRepository`, `ReviewRepository`, `CategoryRepository`, `ProductImageRepository`
+- Handle all database operations
+- Each repository is responsible for a single entity
+
+### Authentication
+- `Auth` class manages all session handling and login/logout logic
+- Separate session namespaces for buyers, sellers, and admins
+- Role-based access control (RBAC)
+
+### API Endpoints
+- All AJAX requests go to `php/endpoints/`
+- Endpoints are thin controllers that call repository methods
+- Return JSON responses for frontend consumption
+
+## Key Features Implemented
+
+### For Buyers
+- Browse and search products with filters (category, price, location)
+- Add to cart with stock validation
+- Secure checkout with PayFast payment gateway
+- View order history and track status
+- Leave reviews for completed orders
+
+### For Sellers
+- Seller dashboard with sales statistics
+- Product management (add, edit, delete, suspend/activate)
+- Order management with status updates (pending → processing → shipped → completed)
+- View buyer information and order details
+- Store profile page
+
+### For Admins
+- Admin dashboard with platform statistics
+- User management (view, suspend, ban)
+- Product moderation (view all products)
+- Order management across all sellers
+- Seller verification approval
+
+## Security Features
+
+- Password hashing using `password_hash()` (BCRYPT)
+- Session regeneration on login
+- HTTP-only cookies
+- Prepared statements for all database queries (prevents SQL injection)
+- XSS protection with `htmlspecialchars()` and `escapeHtml()`
+- Input validation on all forms
+- Role-based access control for admin and seller areas
+
+## Payment Integration
+
+- PayFast payment gateway integration
+- Sandbox mode for testing
+- ITN (Instant Transaction Notification) handling
+- Automatic order status updates upon payment confirmation
+
+## Image Optimisation
+
+- Automatic WebP conversion on upload
+- Image resizing to max 1200x1200 pixels
+- Optimised file sizes for low-data users
+- Default fallback images when none available
+
+## Installation
+
+1. Clone the repository to your web server (XAMPP/WAMP/LAMP)
+2. Import `database/consutrade.sql` into MySQL
+3. Configure database credentials in `php/config.php`
+4. Set up PayFast merchant credentials (sandbox for testing)
+5. Ensure `uploads/` directory has write permissions
+6. Configure your web server to point to the project root
+7. Access the application via `http://localhost/consutrade/`
+
+## Default Test Accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Buyer | buyer@consutrade.co.za | password123 |
+| Seller | seller@consutrade.co.za | password123 |
+| Admin | kamogelo@consutrade.co.za | password@123 |
 
 ## Development Timeline
 
 This project follows a 14-week development schedule across three deliverables:
 
 - **Deliverable 1** (Weeks 1–4): Research and project proposal
-- **Deliverable 2** (Weeks 5–14): Design, development, and testing
-- **Deliverable 3** (Final week): User manual and live presentation
+- **Deliverable 2** (Weeks 5–10): Design, development, and testing
+- **Deliverable 3** (Weeks 11–14): User manual and live presentation
 
 ## Legal Compliance
 
@@ -104,9 +142,22 @@ The platform is designed to comply with:
 - Electronic Communications and Transactions Act (ECTA) No. 25 of 2002
 - Protection of Personal Information Act (POPIA) No. 4 of 2013
 
+## Future Enhancements
+
+- Mobile application (React Native)
+- WhatsApp integration for order notifications
+- Multi-language support (isiZulu, Afrikaans)
+- Offline-first mode for low-connectivity areas
+- Advanced analytics for sellers
+
 ## Module Information
 
 - **Module:** ITECA3-12 — Web Development and e-Commerce
 - **Institution:** Eduvos
 - **Student:** Kamogelo Phale
 - **Student Number:** EDUV4810351
+- **Year:** 2026
+
+## License
+
+This project is for educational purposes as part of the ITECA3-12 module at Eduvos.

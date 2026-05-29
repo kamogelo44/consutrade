@@ -79,6 +79,60 @@ class UserRepository
         $stmt->close();
         return null;
     }
+    
+    /**
+     * Get user by phone number.
+     *
+     * @param string $phone Phone number
+     * @return array|null
+     */
+    public function getByPhone(string $phone): ?array
+    {
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at 
+                FROM users 
+                WHERE phone = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $phone);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return $row;
+        }
+        
+        $stmt->close();
+        return null;
+    }
+
+    /**
+     * Create a new user.
+     *
+     * @param array $userData User data (full_name, email, phone, password, role)
+     * @return int|false Insert ID or false on failure
+     */
+    public function createUser(array $userData)
+    {
+        $sql = "INSERT INTO users (full_name, email, phone, password, role, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param(
+            'sssss',
+            $userData['full_name'],
+            $userData['email'],
+            $userData['phone'],
+            $userData['password'],
+            $userData['role']
+        );
+        
+        if ($stmt->execute()) {
+            $userId = $stmt->insert_id;
+            $stmt->close();
+            return $userId;
+        }
+        
+        $stmt->close();
+        return false;
+    }
 
     /**
      * Get all users with optional filters.

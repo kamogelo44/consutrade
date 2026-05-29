@@ -972,4 +972,117 @@ class ProductRepository
             'total'    => $total
         ];
     }
+
+    // ============================================================
+    //  ADMIN PRODUCT MANAGEMENT
+    // ============================================================
+
+    /**
+     * Get all products for admin (across all sellers) with filters and pagination.
+     *
+     * @param string $status Status filter (all, active, suspended)
+     * @param string $search Search term (product title, seller name)
+     * @param int $limit Results per page
+     * @param int $offset Pagination offset
+     * @return array
+     */
+    public function getAllProductsForAdmin(string $status = 'all', string $search = '', int $limit = 12, int $offset = 0): array
+    {
+        $sql = "SELECT p.product_id as id, p.title as name, p.price, p.status,
+                p.stock_quantity, p.created_at,
+                COALESCE(pi.image_url, p.image_url) AS display_image,
+                u.full_name as seller_name
+                FROM products p
+                LEFT JOIN users u ON p.seller_id = u.user_id
+                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                WHERE p.status != 'deleted'";
+
+        $params = [];
+        $types = "";
+
+        if ($status !== 'all') {
+            $sql .= " AND p.status = ?";
+            $params[] = $status;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (p.title LIKE ? OR u.full_name LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $sql .= " ORDER BY p.created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
+
+        $stmt = $this->db->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $products = [];
+        while ($row = $result->fetch_assoc()) {
+            $products[] = [
+                'id'             => (int) $row['id'],
+                'name'           => $row['name'],
+                'price'          => (float) $row['price'],
+                'status'         => $row['status'],
+                'stock_quantity' => (int) $row['stock_quantity'],
+                'created_at'     => date('d M Y', strtotime($row['created_at'])),
+                'display_image'  => $this->getProductImageUrl($row['display_image']),
+                'image'          => $this->getProductImageUrl($row['display_image']),
+                'seller_name'    => $row['seller_name'] ?? 'Unknown'
+            ];
+        }
+        $stmt->close();
+        return $products;
+    }
+
+    /**
+     * Get total count of products for admin with filters for pagination.
+     *
+     * @param string $status Status filter (all, active, suspended)
+     * @param string $search Search term (product title, seller name)
+     * @return int
+     */
+    public function getProductsCountForAdmin(string $status = 'all', string $search = ''): int
+    {
+        $sql = "SELECT COUNT(*) as total FROM products p
+                LEFT JOIN users u ON p.seller_id = u.user_id
+                WHERE p.status != 'deleted'";
+
+        $params = [];
+        $types = "";
+
+        if ($status !== 'all') {
+            $sql .= " AND p.status = ?";
+            $params[] = $status;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (p.title LIKE ? OR u.full_name LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $total;
+    }
+
 }

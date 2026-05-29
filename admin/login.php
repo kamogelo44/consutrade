@@ -149,7 +149,7 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
                 </div>
             <?php endif; ?>
             
-            <form action="<?php echo $baseUrl; ?>php/endpoints/admin-login.php" method="post" class="login-form">
+            <form action="<?php echo $baseUrl; ?>php/endpoints/login.php" method="post" class="login-form">
                 <div class="input-group">
                     <label for="role_type">Login As</label>
                     <select id="role_type" name="role_type" required>
