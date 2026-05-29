@@ -13,7 +13,7 @@ header('Content-Type: application/json');
 $response = ['success' => false, 'message' => ''];
 
 // Check if seller is logged in
-if (!isSellerLoggedIn()) {
+if (!$auth->isSellerLoggedIn()) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;

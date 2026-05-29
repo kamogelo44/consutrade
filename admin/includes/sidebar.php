@@ -64,14 +64,14 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dash
             <a href="<?php echo $baseUrl; ?>admin/admin-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'admin-profile.php' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Profile Settings
             </a>
-            <a href="<?php echo $baseUrl; ?>php/endpoints/admin-logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
+            <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
                 <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
             </a>
         <?php else: ?>
             <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'seller-profile.php' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> My Profile
             </a>
-            <a href="<?php echo $baseUrl; ?>php/endpoints/seller-logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
+            <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
                 <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
             </a>
         <?php endif; ?>

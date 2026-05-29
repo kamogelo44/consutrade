@@ -3,16 +3,22 @@
  * ConsuTrade - My Orders (Buyer)
  * Author: Kamogelo Phale
  * 
- * This page displays all orders for the logged-in buyer
+ * This page displays all orders for the logged-in buyer using OOP
  */
 require_once __DIR__ . '/init.php';
 
-$baseUrl = getBaseUrl();
-
-// Check if user is logged in using centralized auth
-if (!$is_logged_in) {
+// Check if user is logged in and is a buyer using Auth class
+if (!$auth->isLoggedIn() || $auth->getCurrentUser()['role'] !== 'buyer') {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
+}
+
+// Get current user object (already created in init.php as $currentUser)
+if (!$currentUser instanceof Buyer) {
+    // Fallback: create Buyer object if not already set
+    $userData = $auth->getCurrentUser();
+    $currentUser = new Buyer($userData, $cartRepo, $orderRepo);
+    $currentUser->refreshCartCount();
 }
 
 // Set breadcrumb
@@ -22,14 +28,11 @@ $breadcrumbItems = [
 ];
 
 // Get filter parameters
-$status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
-$search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
+$status_filter = $_GET['status'] ?? 'all';
+$search_term = $_GET['search'] ?? '';
 
-// Get orders using helper function
-$orders = getBuyerOrders($conn, $current_user_id, $status_filter, $search_term);
-
-// Initialize ReviewRepository for checking existing reviews
-$reviewRepo = new ReviewRepository($conn);
+// Get orders using Buyer class method
+$orders = $currentUser->getOrders($status_filter, $search_term);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,6 +44,7 @@ $reviewRepo = new ReviewRepository($conn);
     
     <!-- Master Stylesheet -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     
     <style>
         /* ========== MY ORDERS PAGE SPECIFIC STYLES ========== */
@@ -131,7 +135,7 @@ $reviewRepo = new ReviewRepository($conn);
         .total-row { display: flex; justify-content: space-between; padding: var(--spacing-xs) 0; }
         .grand-total { font-weight: var(--font-bold); font-size: var(--font-lg); color: var(--dark-bg); }
         
-        /* Review Modal - Fixed Layout */
+        /* Review Modal */
         .review-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .review-modal.active { display: flex; }
         .review-modal-content { background: var(--white); border-radius: var(--radius-lg); max-width: 500px; width: 90%; }
@@ -192,6 +196,7 @@ $reviewRepo = new ReviewRepository($conn);
                 <a href="?status=all" class="filter-btn <?php echo $status_filter === 'all' ? 'active' : ''; ?>">All Orders</a>
                 <a href="?status=pending" class="filter-btn <?php echo $status_filter === 'pending' ? 'active' : ''; ?>">Pending</a>
                 <a href="?status=processing" class="filter-btn <?php echo $status_filter === 'processing' ? 'active' : ''; ?>">Processing</a>
+                <a href="?status=shipped" class="filter-btn <?php echo $status_filter === 'shipped' ? 'active' : ''; ?>">Shipped</a>
                 <a href="?status=completed" class="filter-btn <?php echo $status_filter === 'completed' ? 'active' : ''; ?>">Completed</a>
                 <a href="?status=cancelled" class="filter-btn <?php echo $status_filter === 'cancelled' ? 'active' : ''; ?>">Cancelled</a>
             </div>
@@ -338,13 +343,14 @@ $reviewRepo = new ReviewRepository($conn);
 
 <script>
 var baseUrl = '<?php echo $baseUrl; ?>';
+var currentUserId = <?php echo $current_user_id; ?>;
 
 function openOrderModal(orderId) {
-    var modal = document.getElementById('orderModal');
-    var body = document.getElementById('orderModalBody');
+    var $modal = $('#orderModal');
+    var $body = $('#orderModalBody');
     
-    modal.classList.add('active');
-    body.innerHTML = '<div class="loading-spinner">Loading order details...</div>';
+    $modal.addClass('active');
+    $body.html('<div class="loading-spinner">Loading order details...</div>');
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
@@ -354,22 +360,22 @@ function openOrderModal(orderId) {
             if (data.success && data.order) {
                 displayOrderDetails(data.order);
             } else {
-                body.innerHTML = '<p class="error">Unable to load order details.</p>';
+                $body.html('<p class="error">Unable to load order details.</p>');
             }
         },
         error: function() {
-            body.innerHTML = '<p class="error">Error loading order details.</p>';
+            $body.html('<p class="error">Error loading order details.</p>');
         }
     });
 }
 
 function closeOrderModal() {
-    document.getElementById('orderModal').classList.remove('active');
+    $('#orderModal').removeClass('active');
 }
 
 function displayOrderDetails(order) {
-    var body = document.getElementById('orderModalBody');
-    var footer = document.getElementById('orderModalFooter');
+    var $body = $('#orderModalBody');
+    var $footer = $('#orderModalFooter');
     
     var itemsHtml = '';
     if (order.items && order.items.length > 0) {
@@ -394,7 +400,7 @@ function displayOrderDetails(order) {
         }
     }
     
-    body.innerHTML = `
+    $body.html(`
         <div class="info-row">
             <span class="info-label">Order Number:</span>
             <span class="info-value">#${order.order_id}</span>
@@ -435,9 +441,9 @@ function displayOrderDetails(order) {
                 <span>R ${parseFloat(order.total || 0).toFixed(2)}</span>
             </div>
         </div>
-    `;
+    `);
     
-    footer.innerHTML = '';
+    $footer.empty();
 }
 
 function cancelOrder(orderId) {
@@ -463,67 +469,60 @@ function cancelOrder(orderId) {
 }
 
 function openReviewModal(orderId, sellerId, sellerName) {
-    document.getElementById('isEditMode').value = '0';
-    document.getElementById('reviewModalTitle').textContent = 'Review Seller';
-    document.getElementById('submitReviewBtn').textContent = 'Submit Review';
-    document.getElementById('reviewOrderId').value = orderId;
-    document.getElementById('reviewSellerId').value = sellerId;
-    document.getElementById('reviewSellerName').textContent = sellerName;
-    document.getElementById('reviewComment').value = '';
+    $('#isEditMode').val('0');
+    $('#reviewModalTitle').text('Review Seller');
+    $('#submitReviewBtn').text('Submit Review');
+    $('#reviewOrderId').val(orderId);
+    $('#reviewSellerId').val(sellerId);
+    $('#reviewSellerName').text(sellerName);
+    $('#reviewComment').val('');
     resetRatingStars();
-    document.getElementById('reviewModal').classList.add('active');
+    $('#reviewModal').addClass('active');
 }
 
 function openEditReviewModal(orderId, sellerId, sellerName, existingRating, existingComment) {
-    document.getElementById('isEditMode').value = '1';
-    document.getElementById('reviewModalTitle').textContent = 'Edit Review';
-    document.getElementById('submitReviewBtn').textContent = 'Update Review';
-    document.getElementById('reviewOrderId').value = orderId;
-    document.getElementById('reviewSellerId').value = sellerId;
-    document.getElementById('reviewSellerName').textContent = sellerName;
-    document.getElementById('reviewComment').value = existingComment;
-    
-    // Set existing rating
+    $('#isEditMode').val('1');
+    $('#reviewModalTitle').text('Edit Review');
+    $('#submitReviewBtn').text('Update Review');
+    $('#reviewOrderId').val(orderId);
+    $('#reviewSellerId').val(sellerId);
+    $('#reviewSellerName').text(sellerName);
+    $('#reviewComment').val(existingComment);
     setRating(existingRating);
-    
-    document.getElementById('reviewModal').classList.add('active');
+    $('#reviewModal').addClass('active');
 }
 
 function closeReviewModal() {
-    document.getElementById('reviewModal').classList.remove('active');
+    $('#reviewModal').removeClass('active');
     resetRatingStars();
 }
 
 function resetRatingStars() {
-    document.getElementById('reviewRating').value = 0;
-    var stars = document.querySelectorAll('.rating-stars .star');
-    stars.forEach(function(star) {
-        star.classList.remove('active');
-    });
+    $('#reviewRating').val(0);
+    $('.rating-stars .star').removeClass('active');
 }
 
 function setRating(rating) {
-    document.getElementById('reviewRating').value = rating;
-    var stars = document.querySelectorAll('.rating-stars .star');
-    stars.forEach(function(star, index) {
+    $('#reviewRating').val(rating);
+    $('.rating-stars .star').each(function(index) {
         if (index < rating) {
-            star.classList.add('active');
+            $(this).addClass('active');
         } else {
-            star.classList.remove('active');
+            $(this).removeClass('active');
         }
     });
 }
 
-document.getElementById('reviewForm').addEventListener('submit', function(e) {
+$('#reviewForm').on('submit', function(e) {
     e.preventDefault();
     
-    var rating = document.getElementById('reviewRating').value;
+    var rating = $('#reviewRating').val();
     if (rating == 0) {
         alert('Please select a rating');
         return;
     }
     
-    var isEditMode = document.getElementById('isEditMode').value === '1';
+    var isEditMode = $('#isEditMode').val() === '1';
     var url = isEditMode ? baseUrl + 'php/endpoints/update-review.php' : baseUrl + 'php/endpoints/submit-review.php';
     
     $.ajax({
@@ -531,10 +530,10 @@ document.getElementById('reviewForm').addEventListener('submit', function(e) {
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-            order_id: document.getElementById('reviewOrderId').value,
-            seller_id: document.getElementById('reviewSellerId').value,
+            order_id: $('#reviewOrderId').val(),
+            seller_id: $('#reviewSellerId').val(),
             rating: rating,
-            comment: document.getElementById('reviewComment').value
+            comment: $('#reviewComment').val()
         }),
         success: function(data) {
             if (data.success) {

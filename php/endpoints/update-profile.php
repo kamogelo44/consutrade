@@ -3,7 +3,7 @@
  * ConsuTrade - Update Profile Handler
  * Author: Kamogelo Phale
  * 
- * Handles profile updates and profile image uploads for all user types
+ * Handles profile updates and profile image uploads for all user types using OOP
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -12,12 +12,14 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!$is_logged_in) {
+// Check if user is logged in using Auth class
+if (!$auth->isLoggedIn()) {
     $response['message'] = 'Please login.';
     echo json_encode($response);
     exit;
 }
 
+$current_user_id = $auth->getCurrentUser()['user_id'];
 $action = $_POST['action'] ?? '';
 
 // ------------------------------------------------------------------
@@ -59,6 +61,12 @@ if ($action === 'upload_image') {
 
         if ($result) {
             $_SESSION['profile_image'] = $imagePath;
+            
+            // Update the current user object in session if it exists
+            if (isset($currentUser) && method_exists($currentUser, 'getProfileImage')) {
+                // The user object will be recreated on next page load
+            }
+            
             $response['success'] = true;
             $response['message'] = 'Profile image updated.';
             $response['image_url'] = getBaseUrl() . $imagePath;
@@ -107,7 +115,15 @@ if ($action === 'update_profile') {
     $result = $userRepo->updateProfile($current_user_id, $updateData);
 
     if ($result) {
+        // Update session data
         $_SESSION['full_name'] = $fullName;
+        if (!empty($cleanPhone)) {
+            $_SESSION['phone'] = $cleanPhone;
+        }
+        if (!empty($location)) {
+            $_SESSION['location'] = $location;
+        }
+        
         $response['success'] = true;
         $response['message'] = 'Profile updated.';
     } else {

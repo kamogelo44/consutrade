@@ -14,7 +14,7 @@ header('Cache-Control: no-cache, must-revalidate');
 $response = ['success' => false, 'users' => [], 'total_pages' => 1, 'current_page' => 1];
 
 // Check if admin is logged in
-if (!isAdminLoggedIn()) {
+if (!$auth->isAdminLoggedIn()) {
     echo json_encode($response);
     exit;
 }

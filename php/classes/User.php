@@ -125,6 +125,36 @@ abstract class User
     }
 
     /**
+     * Returns the user's creation date.
+     *
+     * @return string
+     */
+    public function getCreatedAt(): string
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * Returns the user's location.
+     *
+     * @return string
+     */
+    public function getLocation(): string
+    {
+        return $this->location;
+    }
+
+    /**
+     * Returns the user's phone number.
+     *
+     * @return string
+     */
+    public function getPhone(): string
+    {
+        return $this->phone;
+    }
+
+    /**
      * Returns the user's profile image path.
      *
      * @return string

@@ -3,7 +3,7 @@
  * ConsuTrade - User Profile Page (Buyer)
  * Author: Kamogelo Phale
  * 
- * This page allows buyers to view and edit their profile information
+ * This page allows buyers to view and edit their profile information using OOP
  */
 
 require_once __DIR__ . '/init.php';
@@ -12,10 +12,8 @@ $breadcrumbItems = [
     ['label' => 'My Profile']
 ];
 
-$baseUrl = getBaseUrl();
-
-// Check if user is logged in using centralized auth
-if (!$is_logged_in) {
+// Check if user is logged in using Auth class
+if (!$auth->isLoggedIn()) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
@@ -26,18 +24,22 @@ if (($current_user['role'] ?? '') === 'seller') {
     exit;
 }
 
-$user_id = $current_user_id;
+// Get user data from session
+$userData = $auth->getCurrentUser();
+$user_id = $userData['user_id'];
+$full_name = $userData['full_name'];
+$email = $userData['email'];
+$phone = $userData['phone'] ?? '';
+$location = $userData['location'] ?? '';
+$created_at = $userData['created_at'] ?? date('Y-m-d');
+$profile_image_path = $userData['profile_image'] ?? '';
 
-// Get user data using helper
-$user = getUserById($conn, $user_id);
-
-if (!$user) {
-    header('Location: ' . $baseUrl . 'index.php');
-    exit;
+// Set profile image URL
+if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $profile_image_path)) {
+    $profile_image = $baseUrl . $profile_image_path;
+} else {
+    $profile_image = $baseUrl . 'images/default-avatar.png';
 }
-
-// Set profile image path using helper
-$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,11 +51,11 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     
     <!-- Master Stylesheet -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     
     <style>
         /* ========== PROFILE PAGE SPECIFIC STYLES ========== */
-        .profile-container { width: 100%; max-width: 100%; padding: var(--spacing-xl); min-height: calc(100vh - 200px); }
-        
+        .profile-container { width: 100%; padding: var(--spacing-xl); min-height: calc(100vh - 200px); }        
         /* User Header */
         .profile-user-header { display: flex; align-items: center; gap: var(--spacing-xl); background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); border-radius: var(--radius-lg); padding: var(--spacing-2xl) var(--spacing-xl); margin-bottom: var(--spacing-xl); color: var(--white); }
         .profile-user-avatar { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
@@ -63,13 +65,13 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         .avatar-upload-btn img { width: 16px; height: 16px; filter: brightness(0) invert(1); margin: 0; border: none; }
         .profile-user-info { flex: 1; }
         .profile-user-info h1 { font-size: var(--font-3xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-sm); color: var(--white); }
-        .profile-user-meta { display: flex; align-items: center; gap: var(--spacing-md); flex-wrap: wrap; }
+        .profile-user-meta { display: flex; align-items: center; gap: var(--spacing-md); flex-wrap: wrap; margin-top: var(--spacing-sm); }
         .role-badge { padding: 4px 12px; border-radius: var(--radius-round); font-size: var(--font-sm); font-weight: var(--font-medium); }
         .role-buyer { background: rgba(76, 175, 80, 0.9); color: var(--white); }
         .member-since { background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: var(--radius-round); font-size: var(--font-sm); }
         
         /* Messages */
-        .success-message, .error-message { padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); text-align: center; }
+        .success-message, .error-message { padding: var(--spacing-md); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); text-align: center; display: none; }
         .success-message { background: var(--success-light); color: var(--success); border-left: 4px solid var(--success); }
         .error-message { background: var(--error-light); color: var(--error); border-left: 4px solid var(--error); }
         
@@ -97,7 +99,7 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         .form-actions { display: flex; gap: var(--spacing-md); margin-top: var(--spacing-md); }
         .save-btn { flex: 1; padding: 12px; background: var(--primary-color); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: var(--font-bold); cursor: pointer; transition: all var(--transition-fast); }
         .save-btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
-        .change-password-btn { flex: 1; padding: 12px; background: var(--white); color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: var(--radius-md); font-weight: var(--font-bold); text-align: center; text-decoration: none; transition: all var(--transition-fast); }
+        .change-password-btn { flex: 1; padding: 12px; background: var(--white); color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: var(--radius-md); font-weight: var(--font-bold); text-align: center; text-decoration: none; transition: all var(--transition-fast); display: inline-block; }
         .change-password-btn:hover { background: var(--primary-fade); transform: translateY(-2px); }
         
         /* Danger Zone */
@@ -107,6 +109,23 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         .danger-info p { color: var(--gray-dark); font-size: var(--font-sm); }
         .delete-account-btn { padding: 10px 24px; background: var(--error); color: var(--white); border: none; border-radius: var(--radius-md); font-weight: var(--font-bold); cursor: pointer; transition: all var(--transition-fast); }
         .delete-account-btn:hover { background: var(--error-dark); transform: translateY(-2px); }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: var(--z-modal); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--white); border-radius: var(--radius-lg); max-width: 500px; width: 90%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-light); }
+        .modal-header h1 { font-size: var(--font-xl); font-weight: var(--font-bold); margin: 0; }
+        .btn-close { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--gray-light); line-height: 1; padding: 0; width: 30px; height: 30px; }
+        .btn-close:hover { color: var(--error); }
+        .password-field-wrapper { position: relative; }
+        .password-field-wrapper input { width: 100%; padding-right: 40px; }
+        .password-toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 0; }
+        .warning-text { color: var(--error); font-weight: var(--font-medium); margin-top: var(--spacing-sm); }
+        .delete-cancel-btn { padding: 10px 20px; background: var(--gray-bg); border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; }
+        .delete-confirm-btn { padding: 10px 20px; background: var(--error); color: var(--white); border: none; border-radius: var(--radius-md); cursor: pointer; }
+        .delete-cancel-btn:hover { background: var(--gray-light); }
+        .delete-confirm-btn:hover { background: var(--error-dark); }
         
         /* Responsive */
         @media (max-width: 992px) {
@@ -143,10 +162,10 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             </label>
         </div>
         <div class="profile-user-info">
-            <h1><?php echo htmlspecialchars($user['full_name']); ?></h1>
+            <h1><?php echo htmlspecialchars($full_name); ?></h1>
             <div class="profile-user-meta">
                 <span class="role-badge role-buyer">Buyer</span>
-                <span class="member-since">Member since <?php echo formatDate($user['created_at']); ?></span>
+                <span class="member-since">Member since <?php echo date('d M Y', strtotime($created_at)); ?></span>
             </div>
         </div>
     </div>
@@ -157,8 +176,8 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     </form>
 
     <!-- Flash Messages -->
-    <div id="flash-message" class="success-message" style="display: none;"></div>
-    <div id="error-message" class="error-message" style="display: none;"></div>
+    <div id="flash-message" class="success-message"></div>
+    <div id="error-message" class="error-message"></div>
 
     <!-- Profile Content -->
     <div class="profile-content">
@@ -168,20 +187,20 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             <div class="stats-list">
                 <div class="stat-row">
                     <span class="stat-label">Email Address</span>
-                    <span class="stat-value"><?php echo htmlspecialchars($user['email']); ?></span>
+                    <span class="stat-value"><?php echo htmlspecialchars($email); ?></span>
                 </div>
                 
-                <?php if ($user['location']): ?>
+                <?php if (!empty($location)): ?>
                 <div class="stat-row">
                     <span class="stat-label">Location</span>
-                    <span class="stat-value"><?php echo htmlspecialchars($user['location']); ?></span>
+                    <span class="stat-value"><?php echo htmlspecialchars($location); ?></span>
                 </div>
                 <?php endif; ?>
                 
-                <?php if ($user['phone']): ?>
+                <?php if (!empty($phone)): ?>
                 <div class="stat-row">
                     <span class="stat-label">Phone Number</span>
-                    <span class="stat-value"><?php echo htmlspecialchars($user['phone']); ?></span>
+                    <span class="stat-value"><?php echo htmlspecialchars($phone); ?></span>
                 </div>
                 <?php endif; ?>
                 
@@ -211,24 +230,30 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             <form id="profile-edit-form" class="profile-edit-form">
                 <div class="form-group">
                     <label for="full_name">Full Name</label>
-                    <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
+                    <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($full_name); ?>" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled>
+                    <input type="email" id="email" value="<?php echo htmlspecialchars($email); ?>" disabled>
                     <small>Email cannot be changed</small>
                 </div>
                 
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="e.g., 071 234 5678">
+                    <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($phone); ?>" placeholder="e.g., 071 234 5678">
                     <small>Optional but recommended for order updates</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" value="<?php echo htmlspecialchars($location); ?>" placeholder="e.g., Johannesburg, South Africa">
+                    <small>Your city or region</small>
                 </div>
                 
                 <div class="form-actions">
                     <button type="submit" class="save-btn">Save Changes</button>
-                    <a href="<?php echo $baseUrl; ?>change-password.php" class="change-password-btn">Change Password</a>
+                    <button type="button" class="change-password-btn" onclick="openChangePasswordModal()">Change Password</button>
                 </div>
             </form>
         </div>
@@ -250,23 +275,70 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         <div class="modal-content">
             <div class="modal-header">
                 <h1>Delete Account</h1>
-                <button class="btn-close" onclick="closeDeleteModal()"></button>
+                <button class="btn-close" onclick="closeDeleteModal()">&times;</button>
             </div>
-            <form id="delete-account-form">
+            <form id="delete-account-form" style="padding: var(--spacing-lg);">
                 <p>Are you sure you want to delete your account?</p>
                 <p class="warning-text">This action cannot be undone. All your data will be permanently removed.</p>
-                <div class="input-group">
+                <div class="form-group">
                     <label for="delete-password">Enter your password to confirm</label>
                     <div class="password-field-wrapper">
                         <input type="password" id="delete-password" name="password" required>
                         <button type="button" class="password-toggle-btn" onclick="togglePassword('delete-password', this)">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18" alt="Show password">
+                        </button>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: var(--spacing-lg);">
+                    <button type="button" class="delete-cancel-btn" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="submit" class="delete-confirm-btn">Confirm Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="change-password-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1>Change Password</h1>
+                <button class="btn-close" onclick="closeChangePasswordModal()">&times;</button>
+            </div>
+            <form id="change-password-form" style="padding: var(--spacing-lg);">
+                <div class="form-group">
+                    <label for="current_password">Current Password</label>
+                    <div class="password-field-wrapper">
+                        <input type="password" id="current_password" name="current_password" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('current_password', this)">
                             <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
                         </button>
                     </div>
                 </div>
-                <div class="form-actions">
-                    <button type="button" class="delete-cancel-btn" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="submit" class="delete-confirm-btn">Confirm Delete</button>
+                
+                <div class="form-group">
+                    <label for="new_password">New Password</label>
+                    <div class="password-field-wrapper">
+                        <input type="password" id="new_password" name="new_password" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('new_password', this)">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
+                        </button>
+                    </div>
+                    <small>Minimum 6 characters</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <div class="password-field-wrapper">
+                        <input type="password" id="confirm_password" name="confirm_password" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('confirm_password', this)">
+                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-actions" style="margin-top: var(--spacing-lg);">
+                    <button type="button" class="delete-cancel-btn" onclick="closeChangePasswordModal()">Cancel</button>
+                    <button type="submit" class="save-btn">Update Password</button>
                 </div>
             </form>
         </div>
@@ -281,25 +353,88 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
  * Author: Kamogelo Phale
  */
 var baseUrl = '<?php echo $baseUrl; ?>';
-var currentUserId = <?php echo $current_user_id; ?>;
+var currentUserId = <?php echo $user_id; ?>;
 
 function showDeleteModal() {
-    openModal($('#delete-modal'));
+    $('#delete-modal').addClass('active');
 }
 
 function closeDeleteModal() {
-    closeModal($('#delete-modal'));
+    $('#delete-modal').removeClass('active');
+    $('#delete-password').val('');
+}
+
+function openChangePasswordModal() {
+    $('#change-password-modal').addClass('active');
+    $('#current_password, #new_password, #confirm_password').val('');
+}
+
+function closeChangePasswordModal() {
+    $('#change-password-modal').removeClass('active');
+}
+
+$('#change-password-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    var currentPassword = $('#current_password').val();
+    var newPassword = $('#new_password').val();
+    var confirmPassword = $('#confirm_password').val();
+    
+    if (newPassword.length < 6) {
+        alert('New password must be at least 6 characters');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match');
+        return;
+    }
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/change-password.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword
+        }),
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                alert('Password changed successfully!');
+                closeChangePasswordModal();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        },
+        error: function() {
+            alert('Something went wrong. Please try again.');
+        }
+    });
+});
+
+function togglePassword(fieldId, button) {
+    var $input = $('#' + fieldId);
+    var $img = $(button).find('img');
+    
+    if ($input.attr('type') === 'password') {
+        $input.attr('type', 'text');
+        $img.attr('src', baseUrl + 'images/icons/eye-close-svgrepo-com.svg');
+        $img.attr('alt', 'Hide password');
+    } else {
+        $input.attr('type', 'password');
+        $img.attr('src', baseUrl + 'images/icons/eye-open-svgrepo-com.svg');
+        $img.attr('alt', 'Show password');
+    }
 }
 
 $(function() {
     function showMessage(message, isError) {
-        if (isError) {
-            $('#error-message').text(message).show();
-            setTimeout(function() { $('#error-message').fadeOut(); }, 5000);
-        } else {
-            $('#flash-message').text(message).show();
-            setTimeout(function() { $('#flash-message').fadeOut(); }, 5000);
-        }
+        var $msg = isError ? $('#error-message') : $('#flash-message');
+        $msg.text(message).show();
+        setTimeout(function() { 
+            $msg.fadeOut(500, function() { $msg.hide().text(''); });
+        }, 5000);
     }
     
     function loadUserStats() {
@@ -319,14 +454,7 @@ $(function() {
                         $('#stat-reviews').text(data.reviews_written);
                         $('#reviews-row').show();
                     }
-                } else {
-                    $('#stat-orders').text('0');
-                    $('#stat-spent').text('R 0.00');
                 }
-            },
-            error: function() {
-                $('#stat-orders').text('0');
-                $('#stat-spent').text('R 0.00');
             }
         });
     }
@@ -356,7 +484,7 @@ $(function() {
                         showMessage(data.message, false);
                     } else {
                         showMessage(data.message, true);
-                        location.reload();
+                        setTimeout(function() { location.reload(); }, 2000);
                     }
                 },
                 error: function() {

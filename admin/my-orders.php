@@ -96,8 +96,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         .complete-btn:hover { background: var(--success); color: white; transform: translateY(-2px); }
         .cancel-btn { background: var(--error-light); color: var(--error); border: 1px solid var(--error); }
         .cancel-btn:hover { background: var(--error); color: white; transform: translateY(-2px); }
-
-        .order-modal-footer {padding: var(--spacing-lg); border-top: 1px solid var(--border-light); display: flex; gap: var(--spacing-md); justify-content: flex-end; background: var(--white);border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
         
         /* Empty State */
         .empty-orders { text-align: center; padding: 60px var(--spacing-xl); background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-light); }
@@ -105,6 +103,120 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         .empty-orders h3 { font-size: var(--font-xl); font-weight: var(--font-bold); margin-bottom: var(--spacing-sm); }
         .empty-orders p { color: var(--gray-medium); margin-bottom: var(--spacing-lg); }
         .clear-btn, .back-btn { display: inline-block; padding: 10px 24px; background: var(--primary-color); color: white; text-decoration: none; border-radius: var(--radius-md); }
+        
+        /* ========== ORDER MODAL STYLES ========== */
+        .order-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: var(--z-modal);
+            justify-content: center;
+            align-items: center;
+        }
+        .order-modal.active { display: flex; }
+        .order-modal-content {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .order-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+        }
+        .order-modal-header h2 {
+            font-size: var(--font-xl);
+            font-weight: var(--font-bold);
+            margin: 0;
+        }
+        .order-modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--gray-light);
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+        .order-modal-close:hover { color: var(--error); }
+        .order-details-content { padding: var(--spacing-lg); }
+        .order-modal-footer {
+            padding: var(--spacing-lg);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+            background: var(--white);
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+        
+        /* Order Items Styles */
+        .order-info-section { margin-bottom: var(--spacing-lg); }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-xs) 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .info-label { font-weight: var(--font-medium); color: var(--gray-dark); }
+        .info-value { color: var(--gray-medium); }
+        .order-items-list { margin: var(--spacing-lg) 0; }
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .order-item-img {
+            width: 60px;
+            height: 60px;
+            background: var(--gray-bg);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .order-item-img img { width: 100%; height: 100%; object-fit: cover; }
+        .order-item-details { flex: 1; }
+        .order-item-details h4 {
+            font-size: var(--font-sm);
+            font-weight: var(--font-medium);
+            margin-bottom: var(--spacing-xs);
+        }
+        .order-item-price {
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
+        }
+        .order-total-section {
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-md);
+            border-top: 2px solid var(--border-light);
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-xs) 0;
+        }
+        .grand-total {
+            font-weight: var(--font-bold);
+            font-size: var(--font-lg);
+            color: var(--dark-bg);
+        }
+        .status-pending { color: var(--warning); }
+        .status-processing { color: var(--info); }
+        .status-shipped { color: var(--primary-color); }
+        .status-completed { color: var(--success); }
+        .status-cancelled { color: var(--error); }
         
         /* Responsive */
         @media (max-width: 1024px) { 
@@ -122,6 +234,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             .customer-info { width: 100%; }
             .order-amount { text-align: left; width: 100%; margin-top: var(--spacing-sm); padding-top: var(--spacing-sm); border-top: 1px dashed var(--border-light); }
             .order-footer { justify-content: center; }
+            .order-modal-content { width: 95%; }
+            .info-row { flex-direction: column; gap: var(--spacing-xs); }
         }
         @media (max-width: 480px) {
             .seller-main-content { padding: var(--spacing-sm); padding-top: 60px; }
@@ -129,6 +243,10 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             .order-footer button { width: 100%; }
             .amount-value { font-size: var(--font-xl); }
             .order-header { flex-direction: column; text-align: center; }
+            .order-modal-footer { flex-direction: column; }
+            .order-modal-footer button { width: 100%; }
+            .order-item { flex-wrap: wrap; }
+            .order-item-price { width: 100%; margin-top: var(--spacing-xs); text-align: right; }
         }
     </style>
 </head>
@@ -235,17 +353,16 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
 </main>
 
 <!-- Order Details Modal -->
-<div id="orderModal" class="modal-overlay">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h3>Order Details</h3>
-            <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+<div id="orderModal" class="order-modal">
+    <div class="order-modal-content">
+        <div class="order-modal-header">
+            <h2>Order Details</h2>
+            <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
         </div>
-        <div class="modal-body" id="orderModalBody">
+        <div id="orderModalBody" class="order-details-content">
             <div class="loading-spinner">Loading order details...</div>
         </div>
-        <div class="modal-footer" id="orderModalFooter">
-        </div>
+        <div id="orderModalFooter" class="order-modal-footer"></div>
     </div>
 </div>
 

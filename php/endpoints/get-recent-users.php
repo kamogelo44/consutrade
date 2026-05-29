@@ -13,7 +13,7 @@ header('Content-Type: application/json');
 $response = ['success' => false, 'users' => [], 'message' => ''];
 
 // Check if admin is logged in
-if (!isAdminLoggedIn()) {
+if (!$auth->isAdminLoggedIn()) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
