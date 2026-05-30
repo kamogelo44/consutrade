@@ -1,0 +1,28 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Uploaded files
+uploads/products/*.webp
+uploads/profiles/*.jpg
+uploads/profiles/*.png
+uploads/verifications/*
+
+# Database and Payfast credentials
+
+*.env 
+
+# Logs
+*.log
+error_log
+
+# Backup files
+*.sql
+*.bak
+*.zip

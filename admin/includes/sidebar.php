@@ -86,10 +86,12 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dash
 <!-- Menu Overlay -->
 <div class="<?php echo $role_class; ?>-menu-overlay" id="<?php echo $role_class; ?>MenuOverlay"></div>
 
-<script src="<?php echo getBaseUrl(); ?>js/jquery-3.7.1.min.js"></script>
-<script src="<?php echo getBaseUrl(); ?>js/main.js"></script>
+<!-- Scripts -->
+<script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+<script src="<?php echo $baseUrl; ?>js/main.js"></script>
+<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
-var baseUrl = '<?php echo getBaseUrl(); ?>';
+var baseUrl = '<?php echo rtrim($baseUrl, '/'); ?>';
 var currentUserId = <?php echo $current_user_id ?: 0; ?>;
 var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
 var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;

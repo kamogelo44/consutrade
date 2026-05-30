@@ -8,8 +8,16 @@
 
 require_once dirname(__DIR__, 2) . '/init.php';
 
+// Detect AJAX request
+$is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+           strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
 // If user is already logged in, redirect to homepage
 if ($auth->isLoggedIn()) {
+    if ($is_ajax) {
+        echo json_encode(['success' => false, 'message' => 'Already logged in']);
+        exit;
+    }
     header('Location: ' . getBaseUrl() . 'index.php');
     exit;
 }
@@ -75,14 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $existing_user = $userRepo->getByEmail($email);
         
         if ($existing_user) {
-            // Generic error for security
             $errors['email'] = 'Unable to register with this email. Please contact support if you believe this is an error.';
         }
     }
     
     // Check if phone already exists - using UserRepository method
     if (empty($errors) && !empty($clean_phone)) {
-        // public function getByPhone(string $phone): ?array
         $existing_phone = $userRepo->getByPhone($clean_phone);
         
         if ($existing_phone) {
@@ -113,18 +119,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['flash'] = 'Welcome to ConsuTrade, ' . $full_name . '!';
             
             if ($role === 'seller') {
-                header('Location: ' . getBaseUrl() . 'admin/seller-dashboard.php');
+                $redirect_url = getBaseUrl() . 'admin/seller-dashboard.php';
             } else {
-                header('Location: ' . getBaseUrl() . 'index.php');
+                $redirect_url = getBaseUrl() . 'index.php';
             }
+            
+            if ($is_ajax) {
+                echo json_encode(['success' => true, 'redirect' => $redirect_url]);
+                exit;
+            }
+            header('Location: ' . $redirect_url);
             exit;
         } else {
             $errors['general'] = 'Registration failed. Please try again.';
         }
     }
     
-    // If we have errors, store them and redirect back
+    // If we have errors, return them
     if (!empty($errors)) {
+        if ($is_ajax) {
+            echo json_encode([
+                'success' => false,
+                'errors' => $errors,
+                'form_data' => $_POST
+            ]);
+            exit;
+        }
         $_SESSION['register_errors'] = $errors;
         $_SESSION['register_form_data'] = $_POST;
         header('Location: ' . getBaseUrl() . 'index.php');

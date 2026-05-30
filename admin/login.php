@@ -19,7 +19,7 @@ if ($auth->isAdminLoggedIn()) {
     exit;
 }
 
-// Retrieve any errors from session
+// Retrieve any errors from session (fallback for non-AJAX)
 $error = $_SESSION['login_error'] ?? '';
 $saved_email = $_SESSION['login_email'] ?? '';
 unset($_SESSION['login_error'], $_SESSION['login_email']);
@@ -64,6 +64,7 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             text-align: center;
             font-size: var(--font-sm);
             border-left: 4px solid var(--error);
+            display: none;
         }
         .login-form { display: flex; flex-direction: column; gap: var(--spacing-lg); }
         .input-group { display: flex; flex-direction: column; gap: var(--spacing-xs); }
@@ -116,6 +117,11 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
         }
+        .login-btn:disabled {
+            background: var(--gray-light);
+            cursor: not-allowed;
+            transform: none;
+        }
         .login-footer {
             text-align: center;
             margin-top: var(--spacing-xl);
@@ -143,13 +149,11 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
                 <p>Dashboard Access</p>
             </div>
             
-            <?php if ($error): ?>
-                <div class="login-error">
-                    <?php echo htmlspecialchars($error); ?>
-                </div>
-            <?php endif; ?>
+            <div id="login-error" class="login-error">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
             
-            <form action="<?php echo $baseUrl; ?>php/endpoints/login.php" method="post" class="login-form">
+            <form id="dashboard-login-form" class="login-form">
                 <div class="input-group">
                     <label for="role_type">Login As</label>
                     <select id="role_type" name="role_type" required>
@@ -181,5 +185,50 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             </div>
         </div>
     </div>
+
+    <script>
+    // Set baseUrl for admin login page (since footer.php is not included)
+    var baseUrl = '<?php echo rtrim($baseUrl, '/') . '/'; ?>';
+    </script>
+
+    <script>
+    // Dashboard Login AJAX Handler
+    $(function() {
+        $('#dashboard-login-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = $(this).serialize();
+            var $submitBtn = $(this).find('button[type="submit"]');
+            var originalText = $submitBtn.text();
+            var $errorDiv = $('#login-error');
+            
+            $errorDiv.hide().empty();
+            $submitBtn.prop('disabled', true).text('Logging in...');
+            
+            $.ajax({
+                url: baseUrl + 'php/endpoints/login.php',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = response.redirect;
+                    } else {
+                        $errorDiv.show().text(response.message);
+                        $submitBtn.prop('disabled', false).text(originalText);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error:', error);
+                    $errorDiv.show().text('Something went wrong. Please try again.');
+                    $submitBtn.prop('disabled', false).text(originalText);
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>

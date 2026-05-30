@@ -409,6 +409,87 @@ function initErrorClearingOnInput() {
     $('#switch-to-login').on('click', function() { clearRegisterErrors(); });
 }
 
+// ========== AJAX LOGIN HANDLER ==========
+function initAjaxLogin() {
+    $('#login-form').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        var $submitBtn = $(this).find('button[type="submit"]');
+        var originalText = $submitBtn.text();
+        
+        $submitBtn.prop('disabled', true).text('Logging in...');
+        
+        $.ajax({
+            url: baseUrl + 'php/endpoints/login.php',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Login successful - redirect
+                    window.location.href = response.redirect;
+                } else {
+                    // Show error in modal
+                    $('#login-error-container').show().text(response.message);
+                    $('#login-error-container').css('display', 'block');
+                    $submitBtn.prop('disabled', false).text(originalText);
+                }
+            },
+            error: function() {
+                $('#login-error-container').show().text('Something went wrong. Please try again.');
+                $('#login-error-container').css('display', 'block');
+                $submitBtn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+}
+
+// ========== AJAX REGISTER HANDLER ==========
+function initAjaxRegister() {
+    $('#register-form').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        var $submitBtn = $(this).find('button[type="submit"]');
+        var originalText = $submitBtn.text();
+        
+        $submitBtn.prop('disabled', true).text('Creating account...');
+        
+        $.ajax({
+            url: baseUrl + 'php/endpoints/register.php',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Registration successful - redirect
+                    window.location.href = response.redirect;
+                } else {
+                    // Show errors in modal
+                    displayModalErrors('#register-modal', response.errors, response.form_data);
+                    if (response.errors && response.errors.general) {
+                        $('#register-error-container').show().text(response.errors.general);
+                        $('#register-error-container').css('display', 'block');
+                    }
+                    $submitBtn.prop('disabled', false).text(originalText);
+                }
+            },
+            error: function() {
+                $('#register-error-container').show().text('Something went wrong. Please try again.');
+                $('#register-error-container').css('display', 'block');
+                $submitBtn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+}
+
 // ========== DOCUMENT READY ==========
 $(function() {
     // Mobile Menu Toggle
@@ -569,6 +650,8 @@ $(function() {
     
     setActiveLink();
     initErrorClearingOnInput();
+    initAjaxLogin();
+    initAjaxRegister();
     updateCartCount();
     loadCart();
 });

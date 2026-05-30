@@ -6,19 +6,22 @@
 
 // Base URL for the site
 function getBaseUrl() {
-    return "/www/consutrade/";
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'];
+    return $protocol . '://' . $host . '/www/consutrade/';
 }
 
+// Load environment variables
+$env = parse_ini_file(__DIR__ . '/../.env');
 // Database credentials
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'consutrade');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-
+define('DB_HOST', $env['DB_HOST']);
+define('DB_NAME', $env['DB_NAME']);
+define('DB_USER', $env['DB_USER']);
+define('DB_PASS', $env['DB_PASS']);
 // PayFast Credentials
-define('PAYFAST_MERCHANT_ID', '10047996');
-define('PAYFAST_MERCHANT_KEY', 'f6r9pv9pnq6so');
-define('PAYFAST_SANDBOX', true);  // Set to false for production
+define('PAYFAST_MERCHANT_ID', 'PAYFAST_MERCHANT_ID');
+define('PAYFAST_MERCHANT_KEY', 'PAYFAST_MERCHANT_KEY');
+define('PAYFAST_SANDBOX', 'PAYFAST_SANDBOX'); 
 
 // PayFast URLs
 if (PAYFAST_SANDBOX) {
