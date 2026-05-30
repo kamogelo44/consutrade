@@ -6,23 +6,21 @@
  * Reusable header component with dynamic cart count and user menu
  */
 
-$baseUrl = getBaseUrl();
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// Use Auth class for all user data
+// Use the User object from init.php (no fallbacks)
 $is_logged_in = $auth->isLoggedIn();
-$current_user = $auth->getCurrentUser();
 
-$user_role = null;
-$user_name = 'User';
-$user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
-
-if ($is_logged_in && $current_user) {
-    $user_role = $current_user['role'] ?? null;
-    $user_name = $current_user['full_name'] ?? 'User';
-    if (!empty($current_user['profile_image'])) {
-        $user_profile_image = $baseUrl . $current_user['profile_image'];
-    }
+// Get user data from the User object
+if ($is_logged_in && isset($currentUser) && $currentUser instanceof User) {
+    $user_role = $currentUser->getRole();
+    $user_name = $currentUser->getDisplayName();
+    $user_profile_image = $currentUser->getProfileImageUrl();
+} else {
+    // Not logged in - no user data needed
+    $user_role = null;
+    $user_name = 'User';
+    $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
 }
 
 $show_sell_link = !$is_logged_in;
@@ -71,7 +69,7 @@ $show_sell_link = !$is_logged_in;
             </a>
             
             <!-- User Menu (Logged In) -->
-            <?php if ($is_logged_in): ?>
+            <?php if ($is_logged_in && isset($currentUser) && $currentUser instanceof User): ?>
                 <div class="user-menu">
                     <button class="user-menu-btn" id="userMenuBtn">
                         <img src="<?php echo $user_profile_image; ?>" alt="Profile" class="user-avatar-icon" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
@@ -135,7 +133,7 @@ $show_sell_link = !$is_logged_in;
         </div>
         
         <!-- Mobile Profile Section (Logged In) -->
-        <?php if ($is_logged_in): ?>
+        <?php if ($is_logged_in && isset($currentUser) && $currentUser instanceof User): ?>
             <div class="mobile-profile-section">
                 <div class="mobile-profile-info">
                     <img src="<?php echo $user_profile_image; ?>" alt="Profile" class="mobile-profile-avatar" width="40" height="40" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
@@ -162,7 +160,7 @@ $show_sell_link = !$is_logged_in;
                 </a>
             </li>
             
-            <?php if ($is_logged_in): ?>
+            <?php if ($is_logged_in && isset($currentUser) && $currentUser instanceof User): ?>
                 <li class="mobile-menu-divider"></li>
                 <?php if ($user_role === 'seller'): ?>
                     <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Dashboard</a></li>

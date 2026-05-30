@@ -125,6 +125,20 @@ abstract class User
     }
 
     /**
+     * Get profile image URL with fallback to default
+     *
+     * @return string
+     */
+    public function getProfileImageUrl(): string
+    {
+        $baseUrl = getBaseUrl();
+        if (!empty($this->profileImage)) {
+            return $baseUrl . $this->profileImage;
+        }
+        return $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+    }
+
+    /**
      * Returns the user's creation date.
      *
      * @return string
