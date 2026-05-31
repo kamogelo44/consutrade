@@ -3,7 +3,7 @@
  * Author: Kamogelo Phale
  * 
  * Handles product listings, filtering, pagination, and product details
- * Relies on main.js for escapeHtml, toast notifications, and addToCart
+ * Relies on main.js for escapeHtml, toast notifications, addToCart, and renderPagination
  */
 
 // ========== HELPER FUNCTIONS ==========
@@ -67,6 +67,7 @@ function loadProducts() {
     let params = new URLSearchParams();
     params.append('page', currentPage);
     params.append('sort', currentSort);
+    params.append('limit', 12);
     
     if (currentFilters.categories && currentFilters.categories.length > 0) {
         params.append('categories', currentFilters.categories.join(','));
@@ -83,6 +84,7 @@ function loadProducts() {
             displayPagination();
         } else {
             $('#products-grid').html('<div class="empty-state"><p>No products found.</p></div>');
+            $('#pagination').empty();
         }
     }).fail(function() {
         $('#products-grid').html('<p class="error">Error loading products. Please try again.</p>');
@@ -165,41 +167,13 @@ function displayProducts(products) {
     });
 }
 
+// Uses the shared renderPagination function from main.js
 function displayPagination() {
-    let $pagination = $('#pagination');
-    if (!$pagination.length || totalPages <= 1) {
-        $pagination.empty();
-        return;
-    }
-    
-    let html = '';
-    if (currentPage > 1) html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Previous</button>`;
-    
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === currentPage) {
-            html += `<button class="page-btn active" disabled>${i}</button>`;
-        } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-            html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
-        } else if (Math.abs(i - currentPage) === 3) {
-            html += '<span class="page-dots">...</span>';
-        }
-    }
-    
-    if (currentPage < totalPages) html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
-    $pagination.html(html);
-}
-
-function goToPage(page) {
-    currentPage = page;
-    loadProducts();
-    $('html, body').animate({ scrollTop: 0 }, 'smooth');
-}
-
-function resetFilters() {
-    $('#filterForm')[0].reset();
-    currentFilters = {};
-    currentPage = 1;
-    loadProducts();
+    renderPagination($('#pagination'), currentPage, totalPages, function(page) {
+        currentPage = page;
+        loadProducts();
+        $('html, body').animate({ scrollTop: 0 }, 'smooth');
+    });
 }
 
 // ========== PRODUCT DETAILS PAGE FUNCTIONS ==========

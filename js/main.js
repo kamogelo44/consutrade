@@ -14,6 +14,47 @@ function escapeHtml(text) {
     return $('<div>').text(text).html();
 }
 
+// ========== PAGINATION FUNCTIONS ==========
+function renderPagination($container, currentPage, totalPages, onPageChange) {
+    if (!$container.length || totalPages <= 1) {
+        $container.empty();
+        return;
+    }
+
+    var html = '';
+    
+    // Previous button
+    if (currentPage > 1) {
+        html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">← Previous</button>';
+    }
+
+    // Page numbers
+    for (var i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            html += '<button class="page-btn active" disabled>' + i + '</button>';
+        } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
+            html += '<button class="page-btn" data-page="' + i + '">' + i + '</button>';
+        } else if (Math.abs(i - currentPage) === 3) {
+            html += '<span class="page-dots">...</span>';
+        }
+    }
+
+    // Next button
+    if (currentPage < totalPages) {
+        html += '<button class="page-btn" data-page="' + (currentPage + 1) + '">Next →</button>';
+    }
+
+    $container.html(html);
+    
+    // Attach click handlers
+    $container.find('.page-btn[data-page]').off('click').on('click', function() {
+        var page = parseInt($(this).data('page'));
+        if (!isNaN(page) && typeof onPageChange === 'function') {
+            onPageChange(page);
+        }
+    });
+}
+
 // ========== TOAST NOTIFICATIONS ==========
 function showToast(message, type = 'success') {
     $('.toast-notification').remove();
@@ -66,7 +107,7 @@ function clearModalErrors(modalId) {
     $modal.find('.error-container').hide().empty();
     $modal.find('.input-group').removeClass('error');
     $modal.find('.error-text').remove();
-}
+}    
 
 function displayModalErrors(modalId, errors, formData) {
     var $modal = $(modalId);
@@ -647,7 +688,6 @@ $(function() {
             if (hrefPage === currentPage) $link.addClass('active');
         });
     }
-    
     setActiveLink();
     initErrorClearingOnInput();
     initAjaxLogin();

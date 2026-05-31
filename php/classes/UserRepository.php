@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ConsuTrade - UserRepository
  *
@@ -45,12 +46,12 @@ class UserRepository
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             return $row;
         }
-        
+
         $stmt->close();
         return null;
     }
@@ -70,16 +71,16 @@ class UserRepository
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             return $row;
         }
-        
+
         $stmt->close();
         return null;
     }
-    
+
     /**
      * Get user by phone number.
      *
@@ -95,12 +96,12 @@ class UserRepository
         $stmt->bind_param('s', $phone);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             return $row;
         }
-        
+
         $stmt->close();
         return null;
     }
@@ -123,13 +124,13 @@ class UserRepository
             $userData['password'],
             $userData['role']
         );
-        
+
         if ($stmt->execute()) {
             $userId = $stmt->insert_id;
             $stmt->close();
             return $userId;
         }
-        
+
         $stmt->close();
         return false;
     }
@@ -334,12 +335,12 @@ class UserRepository
         $stmt->bind_param('i', $sellerId);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             return $row;
         }
-        
+
         $stmt->close();
         return null;
     }
@@ -439,12 +440,192 @@ class UserRepository
             $sql = "SELECT COUNT(*) as total FROM users";
             $stmt = $this->db->prepare($sql);
         }
-        
+
         $stmt->execute();
         $result = $stmt->get_result();
         $total = (int)($result->fetch_assoc()['total'] ?? 0);
         $stmt->close();
-        
+
         return $total;
+    }
+
+    // ============================================================
+    //  PENDING SELLER VERIFICATIONS (Admin)
+    // ============================================================
+
+    /**
+     * Get pending seller verifications with pagination.
+     *
+     * @param int $limit Results per page
+     * @param int $offset Pagination offset
+     * @return array
+     */
+    public function getPendingVerificationsWithPagination(int $limit = 10, int $offset = 0): array
+    {
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, 
+                       DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
+                       sv.document_path, sv.document_type, sv.submitted_at
+                FROM users u
+                INNER JOIN seller_verification sv ON u.user_id = sv.seller_id
+                WHERE u.role = 'seller' AND sv.document_verified = 0
+                ORDER BY sv.submitted_at ASC
+                LIMIT ? OFFSET ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $limit, $offset);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = [
+                'user_id'      => (int) $row['user_id'],
+                'full_name'    => $row['full_name'],
+                'email'        => $row['email'],
+                'phone'        => $row['phone'] ?? '-',
+                'role'         => $row['role'],
+                'is_verified'  => false,
+                'created_at'   => $row['created_at'],
+                'has_document' => true,
+                'document_type' => $row['document_type']
+            ];
+        }
+        $stmt->close();
+
+        return $users;
+    }
+
+    /**
+     * Get total count of pending seller verifications.
+     *
+     * @return int
+     */
+    public function getPendingVerificationsCount(): int
+    {
+        $sql = "SELECT COUNT(*) as total FROM users u 
+                INNER JOIN seller_verification sv ON u.user_id = sv.seller_id 
+                WHERE u.role = 'seller' AND sv.document_verified = 0";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+
+        return $total;
+    }
+
+    // ============================================================
+    //  ADVANCED USER QUERIES (Admin)
+    // ============================================================
+
+    /**
+     * Get users by role with pagination and search.
+     *
+     * @param string $role User role (buyer, seller, admin)
+     * @param string $search Search term
+     * @param int $limit Results per page
+     * @param int $offset Pagination offset
+     * @return array
+     */
+    public function getUsersByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
+    {
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at 
+                FROM users 
+                WHERE role = ?";
+        $params = [$role];
+        $types = "s";
+
+        if (!empty($search)) {
+            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+        $stmt->close();
+
+        return $users;
+    }
+
+    /**
+     * Get count of users by role with search.
+     *
+     * @param string $role User role (buyer, seller, admin)
+     * @param string $search Search term
+     * @return int
+     */
+    public function countUsersByRole(string $role, string $search = ''): int
+    {
+        $sql = "SELECT COUNT(*) as total FROM users WHERE role = ?";
+        $params = [$role];
+        $types = "s";
+
+        if (!empty($search)) {
+            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+
+        return $total;
+    }
+
+    /**
+     * Get recent users for dashboard.
+     *
+     * @param int $limit Number of users to return
+     * @return array
+     */
+    public function getRecentUsers(int $limit = 5): array
+    {
+        $sql = "SELECT user_id, full_name, email, role, id_verified, created_at 
+                FROM users 
+                ORDER BY created_at DESC 
+                LIMIT ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = [
+                'user_id'     => (int) $row['user_id'],
+                'full_name'   => $row['full_name'],
+                'email'       => $row['email'],
+                'role'        => $row['role'],
+                'role_class'  => $row['role'] === 'admin' ? 'role-admin' : ($row['role'] === 'seller' ? 'role-seller' : 'role-buyer'),
+                'is_verified' => (bool) $row['id_verified'],
+                'created_at'  => date('d M Y', strtotime($row['created_at']))
+            ];
+        }
+        $stmt->close();
+
+        return $users;
     }
 }

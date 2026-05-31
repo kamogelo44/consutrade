@@ -373,12 +373,33 @@ function loadAdminStats() {
     });
 }
 
+// ========== LOAD PENDING VERIFICATIONS ==========
+function loadPendingVerifications() {
+    $.ajax({
+        url: baseUrl + 'php/endpoints/get-users.php',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                var count = data.count || 0;
+                $('#pendingVerifications').text(count);
+                
+                if (count > 0) {
+                    $('#pendingNotice').show();
+                    $('#pendingMessage').html('<strong>' + count + '</strong> seller(s) waiting for document verification.');
+                }
+            }
+        },
+        error: function() {}
+    });
+}
+
 function loadRecentUsers() {
     var $tbody = $('#recent-users-table');
     if (!$tbody.length) return;
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-recent-users.php',
+        url: baseUrl + 'php/endpoints/get-users.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -443,6 +464,7 @@ function loadAdminDashboard() {
     loadAdminStats();
     loadRecentUsers();
     loadRecentOrders(5);
+    loadPendingVerifications();
 }
 
 // ========== SELLER DASHBOARD FUNCTIONS ==========

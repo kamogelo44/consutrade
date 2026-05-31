@@ -6,12 +6,12 @@
  * Returns search results for the search page with filters and pagination
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
 
-$response = ['success' => false, 'products' => [], 'total_pages' => 1, 'current_page' => 1];
+$response = ['success' => false, 'products' => [], 'total_pages' => 1, 'current_page' => 1, 'total_results' => 0];
 
 // Get search parameters
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -24,12 +24,13 @@ $categories  = isset($_GET['categories']) ? explode(',', $_GET['categories']) : 
 $price_range = $_GET['price_range'] ?? '';
 $location    = isset($_GET['location']) ? trim($_GET['location']) : '';
 
-// If no search term, return empty
+// If no search term, return empty result
 if (empty($search)) {
     echo json_encode($response);
     exit;
 }
 
+// Build filters array for ProductRepository
 $filters = [
     'categories'  => $categories,
     'price_range' => $price_range,
@@ -39,8 +40,10 @@ $filters = [
     'offset'      => ($page - 1) * $limit,
 ];
 
+// Use ProductRepository to search products
 $result = $productRepo->searchProducts($search, $filters);
 
+// Format response
 $response['success']       = true;
 $response['products']      = $result['products'];
 $response['total_pages']   = ceil($result['total'] / $limit);
@@ -48,3 +51,4 @@ $response['current_page']  = $page;
 $response['total_results'] = $result['total'];
 
 echo json_encode($response);
+exit;

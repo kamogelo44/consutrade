@@ -162,18 +162,20 @@ $search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
     </main>
 
     <?php include 'includes/footer.php'; ?>
+    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 
     <script>
         // Search results functionality
-        var searchQuery = <?php echo json_encode($search_query_js); ?>;
-        var currentPage = 1;
-        var currentSort = 'newest';
-        var currentFilters = {
+        // These variables are already declared in products.js, just so I just assign values
+        searchQuery = <?php echo json_encode($search_query_js); ?>;
+        currentPage = 1;
+        currentSort = 'newest';
+        currentFilters = {
             categories: [],
             price_range: '',
             location: ''
         };
-        var totalPages = 1;
+        totalPages = 1;
 
         $(function() {
             loadSearchResults();
@@ -234,77 +236,62 @@ $search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
 
         // Load search results from API
         function loadSearchResults() {
-            var params = new URLSearchParams();
-            params.append('search', searchQuery);
-            params.append('page', currentPage);
-            params.append('sort', currentSort);
-            params.append('limit', 12);
+            var params = $.param({
+                search: searchQuery,
+                page: currentPage,
+                sort: currentSort,
+                limit: 12
+            });
 
             if (currentFilters.categories && currentFilters.categories.length > 0) {
-                params.append('categories', currentFilters.categories.join(','));
+                params += '&categories=' + encodeURIComponent(currentFilters.categories.join(','));
             }
             if (currentFilters.price_range) {
-                params.append('price_range', currentFilters.price_range);
+                params += '&price_range=' + encodeURIComponent(currentFilters.price_range);
             }
             if (currentFilters.location) {
-                params.append('location', currentFilters.location);
+                params += '&location=' + encodeURIComponent(currentFilters.location);
             }
 
             $('#products-grid').html('<div class="loading-spinner">Searching for products...</div>');
 
-            $.get(baseUrl + 'php/endpoints/search-products.php?' + params.toString(), function(data) {
-                if (data.success && data.products && data.products.length > 0) {
-                    if (typeof displayProducts === 'function') {
-                        displayProducts(data.products);
+            $.ajax({
+                url: baseUrl + 'php/endpoints/search-products.php',
+                type: 'GET',
+                data: params,
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success && data.products && data.products.length > 0) {
+                        if (typeof displayProducts === 'function') {
+                            displayProducts(data.products);
+                        } else {
+                            $('#products-grid').html('<p class="error">Error displaying products.</p>');
+                        }
+                        totalPages = data.total_pages || 1;
+                        displayPagination();
                     } else {
-                        $('#products-grid').html('<p class="error">Error displaying products.</p>');
+                        $('#products-grid').html(
+                            '<div class="no-products">' +
+                            '<img src="' + baseUrl + 'images/icons/search-svgrepo-com.svg" width="64" height="64" alt="No results" style="opacity: 0.5; margin-bottom: 20px;">' +
+                            '<h3>No products found</h3>' +
+                            '<p>We couldn\'t find any products matching "' + escapeHtml(searchQuery) + '"</p>' +
+                            '<button onclick="window.location.href=\'product-listings.php\'" class="reset-btn">Browse All Products</button>' +
+                            '</div>'
+                        );
+                        $('#pagination').empty();
                     }
-                    totalPages = data.total_pages || 1;
-                    displayPagination();
-                } else {
-                    $('#products-grid').html(`
-                <div class="no-products">
-                    <img src="${baseUrl}images/icons/search-svgrepo-com.svg" width="64" height="64" alt="No results" style="opacity: 0.5; margin-bottom: 20px;">
-                    <h3>No products found</h3>
-                    <p>We couldn't find any products matching "${escapeHtml(searchQuery)}"</p>
-                    <button onclick="window.location.href='product-listings.php'" class="reset-btn">Browse All Products</button>
-                </div>
-            `);
-                    $('#pagination').empty();
+                },
+                error: function() {
+                    $('#products-grid').html('<p class="error">Error loading search results. Please try again.</p>');
                 }
-            }).fail(function() {
-                $('#products-grid').html('<p class="error">Error loading search results. Please try again.</p>');
             });
         }
 
         // Display pagination controls
         function displayPagination() {
-            var $pagination = $('#pagination');
-            if (!$pagination.length || totalPages <= 1) {
-                $pagination.empty();
-                return;
-            }
-
-            var html = '';
-            if (currentPage > 1) {
-                html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous</button>';
-            }
-
-            for (var i = 1; i <= totalPages; i++) {
-                if (i === currentPage) {
-                    html += '<button class="page-btn active" disabled>' + i + '</button>';
-                } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
-                } else if (Math.abs(i - currentPage) === 3) {
-                    html += '<span class="page-dots">...</span>';
-                }
-            }
-
-            if (currentPage < totalPages) {
-                html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →</button>';
-            }
-
-            $pagination.html(html);
+            renderPagination($('#pagination'), currentPage, totalPages, function(page) {
+                goToPage(page);
+            });
         }
 
         // Navigate to specific page
