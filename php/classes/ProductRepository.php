@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ConsuTrade - ProductRepository
  *
@@ -44,12 +45,12 @@ class ProductRepository
                        p.status, p.created_at
                 FROM products p
                 WHERE p.product_id = ? AND p.status != 'deleted'";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $productId);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             return new Product($row);
@@ -172,7 +173,7 @@ class ProductRepository
     {
         $sql = "INSERT INTO products (seller_id, category_id, title, description, price, stock_quantity, `condition`, location, image_url, status, created_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param(
             'iissdissss',
@@ -187,7 +188,7 @@ class ProductRepository
             $product->getImageUrl(),
             $product->getStatus()
         );
-        
+
         if ($stmt->execute()) {
             $productId = $stmt->insert_id;
             $stmt->close();
@@ -288,12 +289,12 @@ class ProductRepository
         $sql = "SELECT p.product_id, p.title, p.image_url
                 FROM products p
                 WHERE p.product_id = ? AND p.status = 'active'";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $productId);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             return [
@@ -302,7 +303,7 @@ class ProductRepository
                 'image_url' => $row['image_url']
             ];
         }
-        
+
         $stmt->close();
         return null;
     }
@@ -702,10 +703,16 @@ class ProductRepository
             }
 
             imagecopyresampled(
-                $resized, $image,
-                0, 0, 0, 0,
-                $newWidth, $newHeight,
-                $origWidth, $origHeight
+                $resized,
+                $image,
+                0,
+                0,
+                0,
+                0,
+                $newWidth,
+                $newHeight,
+                $origWidth,
+                $origHeight
             );
             $image = $resized;
         }
@@ -763,10 +770,18 @@ class ProductRepository
 
         if (!empty($priceRange)) {
             switch ($priceRange) {
-                case 'under100':  $sql .= " AND p.price < 100"; break;
-                case '100-500':   $sql .= " AND p.price BETWEEN 100 AND 500"; break;
-                case '500-1000':  $sql .= " AND p.price BETWEEN 500 AND 1000"; break;
-                case 'over1000':  $sql .= " AND p.price > 1000"; break;
+                case 'under100':
+                    $sql .= " AND p.price < 100";
+                    break;
+                case '100-500':
+                    $sql .= " AND p.price BETWEEN 100 AND 500";
+                    break;
+                case '500-1000':
+                    $sql .= " AND p.price BETWEEN 500 AND 1000";
+                    break;
+                case 'over1000':
+                    $sql .= " AND p.price > 1000";
+                    break;
             }
         }
 
@@ -781,9 +796,14 @@ class ProductRepository
         $countTypes = $types;
 
         switch ($sort) {
-            case 'price_low':  $sql .= " ORDER BY p.price ASC"; break;
-            case 'price_high': $sql .= " ORDER BY p.price DESC"; break;
-            default:           $sql .= " ORDER BY p.created_at DESC";
+            case 'price_low':
+                $sql .= " ORDER BY p.price ASC";
+                break;
+            case 'price_high':
+                $sql .= " ORDER BY p.price DESC";
+                break;
+            default:
+                $sql .= " ORDER BY p.created_at DESC";
         }
 
         $sql    .= " LIMIT ? OFFSET ?";
@@ -870,10 +890,18 @@ class ProductRepository
 
         if (!empty($priceRange)) {
             switch ($priceRange) {
-                case 'under100':  $sql .= " AND p.price < 100"; break;
-                case '100-500':   $sql .= " AND p.price BETWEEN 100 AND 500"; break;
-                case '500-1000':  $sql .= " AND p.price BETWEEN 500 AND 1000"; break;
-                case 'over1000':  $sql .= " AND p.price > 1000"; break;
+                case 'under100':
+                    $sql .= " AND p.price < 100";
+                    break;
+                case '100-500':
+                    $sql .= " AND p.price BETWEEN 100 AND 500";
+                    break;
+                case '500-1000':
+                    $sql .= " AND p.price BETWEEN 500 AND 1000";
+                    break;
+                case 'over1000':
+                    $sql .= " AND p.price > 1000";
+                    break;
             }
         }
 
@@ -884,9 +912,14 @@ class ProductRepository
         }
 
         switch ($sort) {
-            case 'price_low':  $sql .= " ORDER BY p.price ASC"; break;
-            case 'price_high': $sql .= " ORDER BY p.price DESC"; break;
-            default:           $sql .= " ORDER BY p.created_at DESC";
+            case 'price_low':
+                $sql .= " ORDER BY p.price ASC";
+                break;
+            case 'price_high':
+                $sql .= " ORDER BY p.price DESC";
+                break;
+            default:
+                $sql .= " ORDER BY p.created_at DESC";
         }
 
         $sql    .= " LIMIT ? OFFSET ?";
@@ -945,10 +978,18 @@ class ProductRepository
         }
         if (!empty($priceRange)) {
             switch ($priceRange) {
-                case 'under100':  $countSql .= " AND p.price < 100"; break;
-                case '100-500':   $countSql .= " AND p.price BETWEEN 100 AND 500"; break;
-                case '500-1000':  $countSql .= " AND p.price BETWEEN 500 AND 1000"; break;
-                case 'over1000':  $countSql .= " AND p.price > 1000"; break;
+                case 'under100':
+                    $countSql .= " AND p.price < 100";
+                    break;
+                case '100-500':
+                    $countSql .= " AND p.price BETWEEN 100 AND 500";
+                    break;
+                case '500-1000':
+                    $countSql .= " AND p.price BETWEEN 500 AND 1000";
+                    break;
+                case 'over1000':
+                    $countSql .= " AND p.price > 1000";
+                    break;
             }
         }
         if (!empty($location)) {
@@ -1085,4 +1126,85 @@ class ProductRepository
         return $total;
     }
 
+    // ============================================================
+    //  SELLER DASHBOARD PRODUCT DISPLAY
+    // ============================================================
+
+    /**
+     * Get seller products for dashboard or public view.
+     *
+     * @param int $sellerId Seller ID
+     * @param bool $isOwner Whether the viewer is the seller themselves
+     * @param int $limit Maximum products to return (0 for all)
+     * @return array
+     */
+    public function getSellerProductsForDisplay(int $sellerId, bool $isOwner = false, int $limit = 0): array
+    {
+        if ($isOwner) {
+            // Owner sees all products except deleted
+            $sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,
+                    p.condition, p.stock_quantity, p.created_at, p.status,
+                    COALESCE(pi.image_url, p.image_url) AS display_image,
+                    c.category_name
+                    FROM products p
+                    LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                    LEFT JOIN categories c ON p.category_id = c.category_id
+                    WHERE p.seller_id = ? AND p.status != 'deleted'
+                    ORDER BY p.created_at DESC";
+        } else {
+            // Public view - only active products
+            $sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,
+                    p.condition, p.stock_quantity, p.created_at,
+                    COALESCE(pi.image_url, p.image_url) AS display_image,
+                    c.category_name
+                    FROM products p
+                    LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                    LEFT JOIN categories c ON p.category_id = c.category_id
+                    WHERE p.seller_id = ? AND p.status = 'active'
+                    ORDER BY p.created_at DESC";
+        }
+
+        if ($limit > 0) {
+            $sql .= " LIMIT ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('ii', $sellerId, $limit);
+        } else {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $sellerId);
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $products = [];
+        while ($row = $result->fetch_assoc()) {
+            $imagePath = $row['display_image'] ?? $row['image'];
+            if ($imagePath && !preg_match('/^http/', $imagePath)) {
+                $imagePath = getBaseUrl() . $imagePath;
+            }
+
+            $productData = [
+                'id' => (int)$row['id'],
+                'name' => $row['name'],
+                'price' => (float)$row['price'],
+                'image' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
+                'image_url' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
+                'display_image' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
+                'condition' => ucfirst($row['condition'] ?? 'Good'),
+                'stock_quantity' => (int)($row['stock_quantity'] ?? 0),
+                'created_at' => $row['created_at'],
+                'category_name' => $row['category_name'] ?? 'General'
+            ];
+
+            // Include status for owner's dashboard
+            if ($isOwner && isset($row['status'])) {
+                $productData['status'] = $row['status'];
+            }
+
+            $products[] = $productData;
+        }
+        $stmt->close();
+
+        return $products;
+    }
 }

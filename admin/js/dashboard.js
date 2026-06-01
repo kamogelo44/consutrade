@@ -268,9 +268,7 @@ window.updateOrderStatus = function(orderId, newStatus) {
                     if (typeof showSuccessToast === 'function') {
                         showSuccessToast(data.message || 'Order status updated successfully!');
                     }
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1500);
+                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
                     if (typeof showErrorToast === 'function') {
                         showErrorToast('Error: ' + (data.message || 'Unknown error'));
@@ -298,8 +296,9 @@ window.loadSellerProducts = function(limit) {
     
     $grid.html('<div class="loading-spinner">Loading your products...</div>');
     
-    var url = baseUrl + 'php/endpoints/get-seller-products.php';
-    if (limit) url += '?limit=' + limit;
+    var sellerId = (typeof currentUserId !== 'undefined') ? currentUserId : 0;
+    var url = baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + sellerId;
+    if (limit) url += '&limit=' + limit;
     
     $.ajax({
         url: url,
@@ -334,6 +333,11 @@ function displaySellerProducts($grid, products) {
             stockBadge = '<span class="stock-badge low-stock">Only ' + product.stock_quantity + ' left</span>';
         }
         
+        var statusBadge = '';
+        if (product.status === 'suspended') {
+            statusBadge = '<span class="status-badge suspended">Suspended</span>';
+        }
+        
         var productTitle = product.title || product.name;
         
         var card = $('<div>').addClass('listing-card product-card');
@@ -345,6 +349,7 @@ function displaySellerProducts($grid, products) {
             '<h3 class="listing-title product-title">' + escapeHtml(productTitle) + '</h3>' +
             '<p class="listing-price product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
             stockBadge +
+            statusBadge +
             '<div class="listing-actions product-actions">' +
             '<button class="edit-btn" onclick="editProduct(' + product.id + ')">Edit</button>' +
             '<button class="delete-btn" onclick="deleteProduct(' + product.id + ')">Delete</button>' +
@@ -376,21 +381,25 @@ function loadAdminStats() {
 // ========== LOAD PENDING VERIFICATIONS ==========
 function loadPendingVerifications() {
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-users.php',
+        url: baseUrl + 'php/endpoints/get-users.php?role=pending',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success) {
-                var count = data.count || 0;
+                var count = data.users ? data.users.length : 0;
                 $('#pendingVerifications').text(count);
                 
                 if (count > 0) {
                     $('#pendingNotice').show();
                     $('#pendingMessage').html('<strong>' + count + '</strong> seller(s) waiting for document verification.');
+                } else {
+                    $('#pendingNotice').hide();
                 }
             }
         },
-        error: function() {}
+        error: function() {
+            $('#pendingVerifications').text('0');
+        }
     });
 }
 
@@ -399,7 +408,7 @@ function loadRecentUsers() {
     if (!$tbody.length) return;
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-users.php',
+        url: baseUrl + 'php/endpoints/get-users.php?recent=true',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -417,11 +426,11 @@ function loadRecentUsers() {
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="4" class="loading-cell">No users found</td></tr>');
+                $tbody.html('<tr><td colspan="4" class="loading-cell">No users found</td</tr>');
             }
         },
         error: function() {
-            $tbody.html('<tr><td colspan="4" class="loading-cell">Error loading users</td></tr>');
+            $tbody.html('<td><td colspan="4" class="loading-cell">Error loading users</td</tr>');
         }
     });
 }
@@ -451,11 +460,11 @@ function loadRecentOrders(limit) {
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="5" class="loading-cell">No orders found</td></tr>');
+                $tbody.html('<tr><td colspan="5" class="loading-cell">No orders found</td</tr>');
             }
         },
         error: function() {
-            $tbody.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td></tr>');
+            $tbody.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td</tr>');
         }
     });
 }

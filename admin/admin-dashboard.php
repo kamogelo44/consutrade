@@ -24,7 +24,7 @@ $user_name = $user_data['full_name'] ?? 'Admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/sidebar-clean.css">
+    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/sidebar.css">
     <script src="<?php echo getBaseUrl(); ?>js/jquery-3.7.1.min.js"></script>
     <style>
         /* ========== ADMIN DASHBOARD SPECIFIC STYLES ========== */

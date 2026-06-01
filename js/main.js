@@ -180,8 +180,7 @@ function addToCart(productId, productName, productPrice) {
         success: function(data) {
             if (data.success) {
                 var newCount = data.cart_count || 0;
-                $('.cart-count').text(newCount);
-                $('.item-num').text(newCount);
+                $('.cart-count, .item-num').text(newCount);
                 if (window.sessionStorage) sessionStorage.setItem('cart_count', newCount);
                 showSuccessToast(data.message || 'Item added to cart');
             } else {
@@ -203,8 +202,7 @@ function removeFromCart(productId) {
         success: function(data) {
             if (data.success) {
                 var newCount = data.cart_count || 0;
-                $('.cart-count').text(newCount);
-                $('.item-num').text(newCount);
+                $('.cart-count, .item-num').text(newCount);
                 if (window.sessionStorage) sessionStorage.setItem('cart_count', newCount);
                 if (window.location.pathname.includes('cart.php')) location.reload();
                 else showSuccessToast(data.message || 'Item removed from cart');
@@ -217,21 +215,17 @@ function removeFromCart(productId) {
 }
 
 function updateCartCount() {
-    if (window.sessionStorage && sessionStorage.getItem('cart_count')) {
-        var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
-        if (!isNaN(cachedCount)) {
-            $('.cart-count').text(cachedCount);
-            $('.item-num').text(cachedCount);
-        }
+    var cachedCount = sessionStorage.getItem('cart_count');
+    if (cachedCount && !isNaN(parseInt(cachedCount))) {
+        $('.cart-count, .item-num').text(parseInt(cachedCount));
+    } else {
+        $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
+            if (data.success) {
+                $('.cart-count, .item-num').text(data.item_count);
+                if (window.sessionStorage) sessionStorage.setItem('cart_count', data.item_count);
+            }
+        }).fail(function() {});
     }
-    
-    $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
-        if (data.success) {
-            $('.cart-count').text(data.item_count);
-            $('.item-num').text(data.item_count);
-            if (window.sessionStorage) sessionStorage.setItem('cart_count', data.item_count);
-        }
-    }).fail(function() {});
 }
 
 function loadCart() {
@@ -471,18 +465,14 @@ function initAjaxLogin() {
             },
             success: function(response) {
                 if (response.success) {
-                    // Login successful - redirect
                     window.location.href = response.redirect;
                 } else {
-                    // Show error in modal
                     $('#login-error-container').show().text(response.message);
-                    $('#login-error-container').css('display', 'block');
                     $submitBtn.prop('disabled', false).text(originalText);
                 }
             },
             error: function() {
                 $('#login-error-container').show().text('Something went wrong. Please try again.');
-                $('#login-error-container').css('display', 'block');
                 $submitBtn.prop('disabled', false).text(originalText);
             }
         });
@@ -510,21 +500,17 @@ function initAjaxRegister() {
             },
             success: function(response) {
                 if (response.success) {
-                    // Registration successful - redirect
                     window.location.href = response.redirect;
                 } else {
-                    // Show errors in modal
                     displayModalErrors('#register-modal', response.errors, response.form_data);
                     if (response.errors && response.errors.general) {
                         $('#register-error-container').show().text(response.errors.general);
-                        $('#register-error-container').css('display', 'block');
                     }
                     $submitBtn.prop('disabled', false).text(originalText);
                 }
             },
             error: function() {
                 $('#register-error-container').show().text('Something went wrong. Please try again.');
-                $('#register-error-container').css('display', 'block');
                 $submitBtn.prop('disabled', false).text(originalText);
             }
         });

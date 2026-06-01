@@ -7,8 +7,19 @@
  * Mobile behavior: Hamburger opens sidebar, X button inside closes it
  */
 
-$role_class = $_SESSION['role'] === 'admin' ? 'admin' : 'seller';
-$profile_image = $profile_image ?? $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+// Use the User object from init.php
+if (!isset($currentUser) || !$currentUser instanceof User) {
+    // Fallback - should not happen on protected pages
+    $role_class = 'seller';
+    $user_name = 'User';
+    $user_role = 'seller';
+    $profile_image_url = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+} else {
+    $role_class = $currentUser->getRole() === 'admin' ? 'admin' : 'seller';
+    $user_name = $currentUser->getFullName();
+    $user_role = $currentUser->getRole();
+    $profile_image_url = $currentUser->getProfileImageUrl();
+}
 
 // Map current page for active link highlighting
 $current_file = basename($_SERVER['PHP_SELF']);
@@ -17,7 +28,7 @@ $current_file = basename($_SERVER['PHP_SELF']);
 $is_products_subpage = in_array($current_file, ['add-product.php', 'edit-product.php']);
 
 // Dashboard home link based on role
-$dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dashboard.php' : $baseUrl . 'admin/seller-dashboard.php';
+$dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.php' : $baseUrl . 'admin/seller-dashboard.php';
 ?>
 
 <div class="<?php echo $role_class; ?>-sidebar" id="<?php echo $role_class; ?>SideMenu">
@@ -30,22 +41,22 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dash
             <span></span><span></span>
         </button>
     </div>
-    
+
     <!-- User Profile Section -->
     <div class="<?php echo $role_class; ?>-sidebar-profile">
         <div class="<?php echo $role_class; ?>-sidebar-avatar">
-            <img src="<?php echo $profile_image; ?>" alt="Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
+            <img src="<?php echo $profile_image_url; ?>" alt="Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
         </div>
         <div class="<?php echo $role_class; ?>-sidebar-user-info">
-            <span class="<?php echo $role_class; ?>-sidebar-name"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?></span>
-            <span class="<?php echo $role_class; ?>-sidebar-role"><?php echo ucfirst($_SESSION['role'] ?? 'User'); ?></span>
+            <span class="<?php echo $role_class; ?>-sidebar-name"><?php echo htmlspecialchars($user_name); ?></span>
+            <span class="<?php echo $role_class; ?>-sidebar-role"><?php echo ucfirst($user_role); ?></span>
         </div>
     </div>
-    
+
     <!-- Navigation Menu -->
     <div class="<?php echo $role_class; ?>-sidebar-nav">
         <ul>
-            <?php if ($_SESSION['role'] === 'admin'): ?>
+            <?php if ($user_role === 'admin'): ?>
                 <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php" class="<?php echo $current_file == 'admin-dashboard.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard"> Dashboard</a></li>
                 <li><a href="<?php echo $baseUrl; ?>admin/users.php" class="<?php echo $current_file == 'users.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users"> Users</a></li>
                 <li><a href="<?php echo $baseUrl; ?>admin/all-products.php" class="<?php echo $current_file == 'all-products.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products"> All Products</a></li>
@@ -57,10 +68,10 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dash
             <?php endif; ?>
         </ul>
     </div>
-    
+
     <!-- Footer Links -->
     <div class="<?php echo $role_class; ?>-sidebar-footer">
-        <?php if ($_SESSION['role'] === 'admin'): ?>
+        <?php if ($user_role === 'admin'): ?>
             <a href="<?php echo $baseUrl; ?>admin/admin-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'admin-profile.php' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Profile Settings
             </a>
@@ -69,7 +80,7 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dash
             </a>
         <?php else: ?>
             <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'seller-profile.php' ? 'active' : ''; ?>">
-                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> My Profile
+                <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Profile Settings
             </a>
             <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
                 <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
@@ -91,8 +102,8 @@ $dashboard_home = ($_SESSION['role'] === 'admin') ? $baseUrl . 'admin/admin-dash
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 <script>
-var baseUrl = '<?php echo rtrim($baseUrl, '/'); ?>';
-var currentUserId = <?php echo $current_user_id ?: 0; ?>;
-var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
-var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+    var baseUrl = '<?php echo rtrim($baseUrl, '/') . '/'; ?>';
+    var currentUserId = <?php echo $current_user_id ?: 0; ?>;
+    var currentUserRole = '<?php echo $user_role; ?>';
+    var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 </script>

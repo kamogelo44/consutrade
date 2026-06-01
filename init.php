@@ -45,9 +45,9 @@ require_once __DIR__ . '/php/classes/User.php';
 require_once __DIR__ . '/php/classes/Buyer.php';
 require_once __DIR__ . '/php/classes/Seller.php';
 require_once __DIR__ . '/php/classes/Admin.php';
-
+//
 // ------------------------------------------------------------------
-// Instantiate shared services
+// Instantiation of shared services
 // ------------------------------------------------------------------
 
 $auth = new Auth($conn);
@@ -74,6 +74,16 @@ $current_user    = $session_data['current_user'];
 $is_logged_in    = $session_data['is_logged_in'];
 $current_user_id = $session_data['current_user_id'];
 $baseUrl         = getBaseUrl();
+
+// ------------------------------------------------------------------
+// Prevent browser caching for logged-in users
+// ------------------------------------------------------------------
+if ($is_logged_in) {
+    // Prevent browser from caching authenticated pages
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}
 
 // ------------------------------------------------------------------
 // Create the current user object based on role
@@ -111,4 +121,3 @@ if ($is_logged_in && $current_user) {
             break;
     }
 }
-?>

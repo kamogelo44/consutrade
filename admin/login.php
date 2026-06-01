@@ -2,25 +2,19 @@
 /*
  * ConsuTrade - Admin/Seller Login Page
  * Author: Kamogelo Phale
- * 
- * Login page for administrators and sellers to access dashboards
  */
 
 require_once dirname(__DIR__) . '/init.php';
 
-// If already logged in, redirect to appropriate dashboard
+// Redirect if already logged in
 if ($auth->isAdminLoggedIn()) {
     header('Location: admin-dashboard.php');
     exit;
-} elseif ($auth->isSellerLoggedIn()) {
+}
+if ($auth->isSellerLoggedIn()) {
     header('Location: seller-dashboard.php');
     exit;
 }
-
-// Retrieve any errors from session (fallback for non-AJAX)
-$error = $_SESSION['login_error'] ?? '';
-$saved_email = $_SESSION['login_email'] ?? '';
-unset($_SESSION['login_error'], $_SESSION['login_email']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -45,7 +39,6 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: system-ui, -apple-system, sans-serif;
             padding: var(--spacing-md);
         }
 
@@ -70,7 +63,6 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             font-size: var(--font-3xl);
             font-weight: var(--font-bold);
             color: var(--dark-bg);
-            margin-bottom: var(--spacing-xs);
         }
 
         .login-header h1 span {
@@ -118,8 +110,8 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
             font-size: var(--font-md);
-            transition: all var(--transition-fast);
             background: var(--white);
+            width: 100%;
         }
 
         .input-group select:focus,
@@ -147,10 +139,7 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             border: none;
             cursor: pointer;
             padding: 0;
-            display: flex;
-            align-items: center;
             opacity: 0.6;
-            transition: opacity var(--transition-fast);
         }
 
         .toggle-password:hover {
@@ -173,12 +162,12 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             cursor: pointer;
             transition: all var(--transition-fast);
             margin-top: var(--spacing-sm);
+            width: 100%;
         }
 
         .login-btn:hover {
             background: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
         }
 
         .login-btn:disabled {
@@ -198,7 +187,6 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
             color: var(--primary-color);
             text-decoration: none;
             font-size: var(--font-sm);
-            transition: color var(--transition-fast);
         }
 
         .login-footer a:hover {
@@ -225,11 +213,7 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
                 <h1>Consu<span>Trade</span></h1>
                 <p>Dashboard Access</p>
             </div>
-
-            <div id="login-error" class="login-error">
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-
+            <div id="login-error" class="login-error"></div>
             <form id="dashboard-login-form" class="login-form">
                 <div class="input-group">
                     <label for="role_type">Login As</label>
@@ -238,12 +222,10 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
                         <option value="seller">Seller</option>
                     </select>
                 </div>
-
                 <div class="input-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" value="<?php echo htmlspecialchars($saved_email); ?>" required autocomplete="email" autofocus>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required autocomplete="email" autofocus>
                 </div>
-
                 <div class="input-group">
                     <label for="password">Password</label>
                     <div class="password-field-wrapper">
@@ -253,10 +235,8 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
                         </button>
                     </div>
                 </div>
-
                 <button type="submit" class="login-btn">Login to Dashboard</button>
             </form>
-
             <div class="login-footer">
                 <a href="<?php echo $baseUrl; ?>index.php">← Back to Homepage</a>
             </div>
@@ -264,12 +244,8 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
     </div>
 
     <script>
-        // Set baseUrl for admin login page (since footer.php is not included)
         var baseUrl = '<?php echo rtrim($baseUrl, '/') . '/'; ?>';
-    </script>
 
-    <script>
-        // Dashboard Login AJAX Handler
         $(function() {
             $('#dashboard-login-form').on('submit', function(e) {
                 e.preventDefault();
@@ -298,9 +274,13 @@ unset($_SESSION['login_error'], $_SESSION['login_email']);
                             $submitBtn.prop('disabled', false).text(originalText);
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.log('AJAX Error:', error);
-                        $errorDiv.show().text('Something went wrong. Please try again.');
+                    error: function(xhr) {
+                        var errorMsg = 'Login failed. Please try again.';
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            errorMsg = response.message || errorMsg;
+                        } catch (e) {}
+                        $errorDiv.show().text(errorMsg);
                         $submitBtn.prop('disabled', false).text(originalText);
                     }
                 });
