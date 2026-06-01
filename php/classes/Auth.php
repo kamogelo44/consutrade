@@ -2,25 +2,19 @@
 
 /**
  * ConsuTrade - Auth Class
- * Author: Kamogelo Phale
  * 
  * Handles ALL authentication and session management.
  * This is the SINGLE SOURCE OF TRUTH for login/logout/session.
+ * 
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class Auth
 {
-    /** @var mysqli Database connection */
-    private $db;
+    private mysqli $db;
+    private UserRepository $userRepo;
 
-    /** @var UserRepository */
-    private $userRepo;
-
-    /**
-     * Constructor.
-     *
-     * @param mysqli $db Database connection
-     */
     public function __construct(mysqli $db)
     {
         $this->db = $db;
@@ -28,162 +22,110 @@ class Auth
     }
 
     /**
-     * Get user repository instance.
-     *
-     * @return UserRepository
-     */
-    public function getUserRepo(): UserRepository
-    {
-        return $this->userRepo;
-    }
-
-    /**
-     * Login user - handles session, role validation, and returns result.
-     *
+     * Authenticate user and start session
+     * 
      * @param string $email User email
      * @param string $password User password
-     * @param string $role_type Requested role (buyer, seller, admin)
-     * @return array ['success' => bool, 'message' => string, 'redirect' => string|null]
+     * @param string $roleType Requested role (buyer, seller, admin)
+     * @return array{success: bool, message: string, redirect: ?string}
      */
-    public function login(string $email, string $password, string $role_type): array
+    public function login(string $email, string $password, string $roleType): array
     {
-        $user = $this->userRepo->getByEmail($email);
-        $genericError = 'Invalid email or password.';
+        $user = $this->userRepo->findByEmail($email);
 
         if (!$user) {
-            return ['success' => false, 'message' => $genericError, 'redirect' => null];
+            return $this->loginFailed();
         }
 
-        if (!password_verify($password, $user['password'])) {
-            return ['success' => false, 'message' => $genericError, 'redirect' => null];
+        if (!password_verify($password, $user->getPassword())) {
+            return $this->loginFailed();
         }
 
-        // Check user status
-        $status = $user['status'] ?? 'active';
-        if ($status === 'suspended') {
-            return ['success' => false, 'message' => 'Your account has been suspended. Please contact support.', 'redirect' => null];
-        }
-        if ($status === 'banned') {
-            return ['success' => false, 'message' => 'Your account has been banned.', 'redirect' => null];
+        if (!$user->canLogin()) {
+            return $this->accountDisabled($user->getStatus());
         }
 
-        // Validate role matches request
-        if ($role_type !== $user['role']) {
-            return ['success' => false, 'message' => $genericError, 'redirect' => null];
+        if ($roleType !== $user->getRole()) {
+            return $this->loginFailed();
         }
 
-        // Close any existing session
+        $this->startSession($user);
+        $redirect = $this->getRedirectUrl($user->getRole());
+
+        return [
+            'success' => true,
+            'message' => 'Login successful',
+            'redirect' => $redirect
+        ];
+    }
+
+    private function loginFailed(): array
+    {
+        return [
+            'success' => false,
+            'message' => 'Invalid email or password.',
+            'redirect' => null
+        ];
+    }
+
+    private function accountDisabled(string $status): array
+    {
+        $message = $status === 'suspended'
+            ? 'Your account has been suspended. Please contact support.'
+            : 'Your account has been banned.';
+
+        return [
+            'success' => false,
+            'message' => $message,
+            'redirect' => null
+        ];
+    }
+
+    private function startSession(User $user): void
+    {
         if (session_status() !== PHP_SESSION_NONE) {
             session_write_close();
         }
 
-        // Set session name based on role
-        if ($user['role'] === 'admin') {
-            session_name('CONSUTRADE_ADMIN_SESSION');
-        } elseif ($user['role'] === 'seller') {
-            session_name('CONSUTRADE_SELLER_SESSION');
-        } else {
-            session_name('CONSUTRADE_USER_SESSION');
-        }
-
+        $sessionName = $this->getSessionName($user->getRole());
+        session_name($sessionName);
         session_start();
         session_regenerate_id(true);
 
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['full_name'] = $user['full_name'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['profile_image'] = $user['profile_image'] ?? '';
+        $_SESSION['user_id'] = $user->getUserId();
+        $_SESSION['full_name'] = $user->getFullName();
+        $_SESSION['email'] = $user->getEmail();
+        $_SESSION['role'] = $user->getRole();
+        $_SESSION['profile_image'] = $user->getProfileImage();
         $_SESSION['logged_in'] = true;
+        $_SESSION['user_object'] = serialize($user);
 
-        // Update cart count for buyers
-        if ($user['role'] === 'buyer') {
-            $this->updateCartCountInSession($user['user_id']);
+        if ($user->getRole() === 'buyer') {
+            $this->updateCartCount($user->getUserId());
         }
 
         session_write_close();
-
-        // Determine redirect URL
-        if ($user['role'] === 'admin') {
-            $redirect = getBaseUrl() . 'admin/admin-dashboard.php';
-        } elseif ($user['role'] === 'seller') {
-            $redirect = getBaseUrl() . 'admin/seller-dashboard.php';
-        } else {
-            $redirect = getBaseUrl() . 'index.php';
-        }
-
-        return ['success' => true, 'message' => 'Login successful', 'redirect' => $redirect];
     }
 
-    /**
-     * Process login and return appropriate response for AJAX or form submission.
-     *
-     * @param string $email User email
-     * @param string $password User password
-     * @param string $role_type Requested role type (buyer, seller, admin)
-     * @param bool $is_ajax Whether this is an AJAX request
-     * @return array
-     */
-    public function processLogin(string $email, string $password, string $role_type, bool $is_ajax = false): array
+    private function getSessionName(string $role): string
     {
-        $result = $this->login($email, $password, $role_type);
-
-        if (!$result['success']) {
-            if ($is_ajax) {
-                return ['success' => false, 'message' => $result['message']];
-            }
-            $_SESSION['login_error'] = $result['message'];
-            $_SESSION['login_email'] = $email;
-            return ['success' => false, 'redirect' => $this->getLoginRedirectUrl($role_type)];
-        }
-
-        if ($is_ajax) {
-            return ['success' => true, 'redirect' => $result['redirect']];
-        }
-
-        $_SESSION['flash'] = 'Welcome back, ' . ($_SESSION['full_name'] ?? 'User') . '!';
-        header('Location: ' . $result['redirect']);
-        exit;
+        return match ($role) {
+            'admin' => 'CONSUTRADE_ADMIN_SESSION',
+            'seller' => 'CONSUTRADE_SELLER_SESSION',
+            default => 'CONSUTRADE_USER_SESSION'
+        };
     }
 
-    private function getLoginRedirectUrl(string $role_type): string
+    private function getRedirectUrl(string $role): string
     {
-        if ($role_type === 'admin' || $role_type === 'seller') {
-            return getBaseUrl() . 'admin/login.php';
-        }
-        return getBaseUrl() . 'index.php';
+        return match ($role) {
+            'admin' => getBaseUrl() . 'admin/admin-dashboard.php',
+            'seller' => getBaseUrl() . 'admin/seller-dashboard.php',
+            default => getBaseUrl() . 'index.php'
+        };
     }
 
-    /**
-     * Start appropriate session based on user role.
-     *
-     * @param string $role User role
-     */
-    private function startSessionForRole(string $role): void
-    {
-        // Close any existing session
-        if (session_status() !== PHP_SESSION_NONE) {
-            session_write_close();
-        }
-
-        // Set session name based on role
-        if ($role === 'admin') {
-            session_name('CONSUTRADE_ADMIN_SESSION');
-        } elseif ($role === 'seller') {
-            session_name('CONSUTRADE_SELLER_SESSION');
-        } else {
-            session_name('CONSUTRADE_USER_SESSION');
-        }
-
-        session_start();
-    }
-
-    /**
-     * Update cart count in session.
-     *
-     * @param int $userId User ID
-     */
-    public function updateCartCountInSession(int $userId): void
+    private function updateCartCount(int $userId): void
     {
         $stmt = $this->db->prepare("SELECT SUM(quantity) as total FROM cart WHERE user_id = ?");
         $stmt->bind_param('i', $userId);
@@ -195,118 +137,82 @@ class Auth
     }
 
     /**
-     * Update cart count (public method for endpoints).
+     * Get the currently logged in user as a User object
+     * 
+     * @return User|null
      */
-    public function updateCartCount(): void
-    {
-        if ($this->isLoggedIn() && isset($_SESSION['user_id'])) {
-            $this->updateCartCountInSession($_SESSION['user_id']);
-        }
-    }
-
-    /**
-     * Get current user data from session.
-     *
-     * @return array|null
-     */
-    public function getCurrentUser(): ?array
+    public function getCurrentUser(): ?User
     {
         if (!$this->isLoggedIn()) {
             return null;
         }
 
-        return [
-            'user_id' => $_SESSION['user_id'] ?? null,
-            'full_name' => $_SESSION['full_name'] ?? null,
-            'email' => $_SESSION['email'] ?? null,
-            'role' => $_SESSION['role'] ?? null,
-            'profile_image' => $_SESSION['profile_image'] ?? null
-        ];
-    }
-
-    /**
-     * Get current user role without destroying session.
-     * Tries each session name to find the active one.
-     *
-     * @return string|null
-     */
-    public function getCurrentUserRole(): ?string
-    {
-        $session_names = ['CONSUTRADE_ADMIN_SESSION', 'CONSUTRADE_SELLER_SESSION', 'CONSUTRADE_USER_SESSION'];
-        $original_name = session_name();
-
-        foreach ($session_names as $name) {
-            // Close current session if open
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                session_write_close();
-            }
-
-            session_name($name);
-            session_start();
-
-            if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
-                $role = $_SESSION['role'] ?? null;
-                session_write_close();
-
-                // Restore original session name if needed
-                if ($original_name && $original_name !== $name) {
-                    session_name($original_name);
-                }
-                return $role;
-            }
-            session_write_close();
+        if (isset($_SESSION['user_object'])) {
+            return unserialize($_SESSION['user_object']);
         }
 
-        // Restore original session name
-        if ($original_name) {
-            session_name($original_name);
+        $userId = $_SESSION['user_id'] ?? 0;
+        if ($userId > 0) {
+            $user = $this->userRepo->findById($userId);
+            if ($user) {
+                $_SESSION['user_object'] = serialize($user);
+                return $user;
+            }
         }
 
         return null;
     }
 
-    /**
-     * Check if any user is logged in.
-     *
-     * @return bool
-     */
+    public function getCurrentUserId(): int
+    {
+        return $_SESSION['user_id'] ?? 0;
+    }
+
+    public function getCurrentUserRole(): ?string
+    {
+        return $_SESSION['role'] ?? null;
+    }
+
     public function isLoggedIn(): bool
     {
         return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
     }
 
-    /**
-     * Check if admin is logged in.
-     *
-     * @return bool
-     */
-    public function isAdminLoggedIn(): bool
+    public function isAdmin(): bool
     {
         return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'admin';
     }
 
-    /**
-     * Check if seller is logged in.
-     *
-     * @return bool
-     */
-    public function isSellerLoggedIn(): bool
+    public function isSeller(): bool
     {
         return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'seller';
     }
 
-    /**
-     * Check if buyer is logged in.
-     *
-     * @return bool
-     */
-    public function isBuyerLoggedIn(): bool
+    public function isBuyer(): bool
     {
         return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'buyer';
     }
 
     /**
-     * Logout user (any role).
+     * Require a specific role, redirect if not met
+     */
+    public function requireRole(string $role): void
+    {
+        $currentRole = $this->getCurrentUserRole();
+
+        if ($currentRole !== $role) {
+            $redirect = match ($role) {
+                'admin' => getBaseUrl() . 'admin/login.php',
+                'seller' => getBaseUrl() . 'admin/login.php',
+                default => getBaseUrl() . 'index.php'
+            };
+            header('Location: ' . $redirect);
+            exit;
+        }
+    }
+
+    /**
+     * Logout current user
      */
     public function logout(): void
     {
@@ -314,115 +220,133 @@ class Auth
             session_start();
         }
 
+        $_SESSION = [];
         session_unset();
         session_destroy();
 
-        // Also clear session cookie
-        if (isset($_COOKIE[session_name()])) {
-            setcookie(session_name(), '', time() - 3600, '/');
-        }
+        $cookieParams = session_get_cookie_params();
+        setcookie(
+            session_name(),
+            '',
+            time() - 3600,
+            $cookieParams['path'],
+            $cookieParams['domain'],
+            $cookieParams['secure'],
+            $cookieParams['httponly']
+        );
     }
 
     /**
-     * Auto-detect and initialize appropriate session based on page.
-     *
-     * @return array Session data
+     * Initialize session based on current page
+     * 
+     * @return array{user: User|null, is_logged_in: bool}
      */
-    public function initAppSession(): array
+    public function initSession(): array
     {
-        $script_path = $_SERVER['SCRIPT_NAME'];
+        $scriptPath = $_SERVER['SCRIPT_NAME'];
 
-        // Admin login page - no session
-        if (strpos($script_path, 'admin/login.php') !== false) {
-            return ['current_user' => null, 'is_logged_in' => false, 'current_user_id' => null];
+        // Admin login page - no session needed
+        if (strpos($scriptPath, 'admin/login.php') !== false) {
+            return ['user' => null, 'is_logged_in' => false];
         }
 
-        // ========== MAIN WEBSITE PAGES ==========
-        $is_main_website = (strpos($script_path, '/admin/') === false);
+        // Determine session type from page
+        $sessionName = $this->determineSessionName($scriptPath);
 
-        if ($is_main_website) {
-            // Only start user session - DO NOT destroy other sessions
-            if (session_status() === PHP_SESSION_NONE) {
-                session_name('CONSUTRADE_USER_SESSION');
-                session_start();
-            }
-
-            $user = $this->getCurrentUser();
-            $is_logged_in = $this->isLoggedIn();
-            $user_id = $user['user_id'] ?? null;
-
-            if ($is_logged_in && $user_id && ($user['role'] ?? '') === 'buyer') {
-                $this->updateCartCountInSession($user_id);
-            }
-
-            return [
-                'current_user' => $user,
-                'is_logged_in' => $is_logged_in && ($user['role'] ?? '') === 'buyer',
-                'current_user_id' => $user_id
-            ];
-        }
-
-        // ========== SELLER PAGES ==========
-        $is_seller_page = (
-            strpos($script_path, 'seller-dashboard.php') !== false ||
-            strpos($script_path, 'seller-profile.php') !== false ||
-            strpos($script_path, 'admin/my-orders.php') !== false ||
-            strpos($script_path, 'my-products.php') !== false ||
-            strpos($script_path, 'add-product.php') !== false ||
-            strpos($script_path, 'edit-product.php') !== false
-        );
-
-        if ($is_seller_page) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_name('CONSUTRADE_SELLER_SESSION');
-                session_start();
-            }
-            if ($this->isSellerLoggedIn()) {
-                $user = $this->getCurrentUser();
-                return [
-                    'current_user' => $user,
-                    'is_logged_in' => true,
-                    'current_user_id' => $user['user_id'] ?? null
-                ];
-            }
-            return ['current_user' => null, 'is_logged_in' => false, 'current_user_id' => null];
-        }
-
-        // ========== ADMIN PAGES ==========
-        if (strpos($script_path, '/admin/') !== false) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_name('CONSUTRADE_ADMIN_SESSION');
-                session_start();
-            }
-            if ($this->isAdminLoggedIn()) {
-                $user = $this->getCurrentUser();
-                return [
-                    'current_user' => $user,
-                    'is_logged_in' => true,
-                    'current_user_id' => $user['user_id'] ?? null
-                ];
-            }
-            return ['current_user' => null, 'is_logged_in' => false, 'current_user_id' => null];
-        }
-
-        // Fallback
         if (session_status() === PHP_SESSION_NONE) {
-            session_name('CONSUTRADE_USER_SESSION');
+            session_name($sessionName);
             session_start();
         }
 
         $user = $this->getCurrentUser();
-        $is_logged_in = $this->isLoggedIn();
-        $user_id = $user['user_id'] ?? null;
+        $isLoggedIn = $user !== null;
 
-        if ($is_logged_in && $user_id && ($user['role'] ?? '') === 'buyer') {
-            $this->updateCartCountInSession($user_id);
+        // Validate session matches page type
+        if ($isLoggedIn && !$this->sessionMatchesPage($user->getRole(), $scriptPath)) {
+            $this->logout();
+            $this->redirectToCorrectLogin($user->getRole());
+            exit;
         }
 
-        return [
-            'current_user' => $user,
-            'is_logged_in' => $is_logged_in && ($user['role'] ?? '') === 'buyer',
-            'current_user_id' => $user_id
+        return ['user' => $user, 'is_logged_in' => $isLoggedIn];
+    }
+
+    private function determineSessionName(string $scriptPath): string
+    {
+        if (strpos($scriptPath, '/admin/') !== false && $this->isAdminPage($scriptPath)) {
+            return 'CONSUTRADE_ADMIN_SESSION';
+        }
+
+        if ($this->isSellerPage($scriptPath)) {
+            return 'CONSUTRADE_SELLER_SESSION';
+        }
+
+        return 'CONSUTRADE_USER_SESSION';
+    }
+
+    private function isAdminPage(string $scriptPath): bool
+    {
+        $adminPages = ['admin-dashboard.php', 'users.php', 'all-orders.php', 'all-products.php'];
+        foreach ($adminPages as $page) {
+            if (strpos($scriptPath, $page) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function isSellerPage(string $scriptPath): bool
+    {
+        $sellerPages = [
+            'seller-dashboard.php',
+            'seller-profile.php',
+            'my-products.php',
+            'add-product.php',
+            'edit-product.php',
+            'my-orders.php'
         ];
+        foreach ($sellerPages as $page) {
+            if (strpos($scriptPath, $page) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function sessionMatchesPage(string $userRole, string $scriptPath): bool
+    {
+        if ($userRole === 'admin' && !$this->isAdminPage($scriptPath)) {
+            return false;
+        }
+
+        if ($userRole === 'seller' && !$this->isSellerPage($scriptPath)) {
+            return false;
+        }
+
+        if ($userRole === 'buyer' && (strpos($scriptPath, '/admin/') !== false)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function redirectToCorrectLogin(string $role): void
+    {
+        if ($role === 'admin' || $role === 'seller') {
+            header('Location: ' . getBaseUrl() . 'admin/login.php');
+        } else {
+            header('Location: ' . getBaseUrl() . 'index.php');
+        }
+        exit;
+    }
+
+    /**
+     * Update cart count in session (public endpoint method)
+     */
+    public function refreshCartCount(): void
+    {
+        if ($this->isLoggedIn() && isset($_SESSION['user_id'])) {
+            $this->updateCartCount($_SESSION['user_id']);
+        }
     }
 }

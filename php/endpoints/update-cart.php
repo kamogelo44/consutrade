@@ -4,61 +4,62 @@
  * Author: Kamogelo Phale
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!$auth->isLoggedIn()) {
+if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     $response['message'] = 'Please login to update cart';
     echo json_encode($response);
     exit;
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-$cart_id  = isset($input['cart_id']) ? (int)$input['cart_id'] : 0;
-$quantity = isset($input['quantity']) ? (int)$input['quantity'] : 1;
-$user_id  = $current_user_id;
+$cartId = (int) ($input['cart_id'] ?? 0);
+$quantity = (int) ($input['quantity'] ?? 1);
+$userId = $currentUser->getUserId();
 
-if ($cart_id <= 0) {
+if ($cartId <= 0) {
     $response['message'] = 'Invalid cart item';
     echo json_encode($response);
     exit;
 }
 
-if ($quantity < 1) $quantity = 1;
-if ($quantity > 99) $quantity = 99;
+$quantity = max(1, min(99, $quantity));
 
-// Get product_id from cart to check stock
-$product_stmt = $conn->prepare(
-    "SELECT c.product_id FROM cart c WHERE c.cart_id = ? AND c.user_id = ?"
-);
-$product_stmt->bind_param('ii', $cart_id, $user_id);
-$product_stmt->execute();
-$product_result = $product_stmt->get_result();
-$product_row = $product_result->fetch_assoc();
-$product_stmt->close();
+$productStmt = $conn->prepare("SELECT product_id FROM cart WHERE cart_id = ? AND user_id = ?");
+$productStmt->bind_param('ii', $cartId, $userId);
+$productStmt->execute();
+$productResult = $productStmt->get_result();
+$productRow = $productResult->fetch_assoc();
+$productStmt->close();
 
-if (!$product_row) {
+if (!$productRow) {
     $response['message'] = 'Cart item not found';
     echo json_encode($response);
     exit;
 }
 
-// Check stock using repository
-$available_stock = $productRepo->getProductStock($product_row['product_id']);
+$product = $productRepo->getProductObject($productRow['product_id']);
 
-if ($quantity > $available_stock) {
-    $response['message'] = 'Only ' . $available_stock . ' available in stock.';
+if (!$product) {
+    $response['message'] = 'Product not found';
     echo json_encode($response);
     exit;
 }
 
-$result = $cartRepo->updateCartQuantity($cart_id, $user_id, $quantity);
+if (!$product->canDecreaseStock($quantity)) {
+    $response['message'] = 'Only ' . $product->getStockQuantity() . ' available in stock.';
+    echo json_encode($response);
+    exit;
+}
+
+$result = $cartRepo->updateCartQuantity($cartId, $userId, $quantity);
 
 if ($result) {
-    $auth->updateCartCount();
+    $auth->refreshCartCount();
     $response['success'] = true;
     $response['message'] = 'Cart updated';
 } else {

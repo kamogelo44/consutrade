@@ -2,68 +2,56 @@
 /*
  * ConsuTrade - Place Order / Checkout Handler
  * Author: Kamogelo Phale
- * 
- * Processes checkout: verifies stock, creates orders, clears cart,
- * then redirects to checkout page for PayFast payment.
  */
 
 require_once __DIR__ . '/../init.php';
 
 $baseUrl = getBaseUrl();
 
-if (!$is_logged_in) {
+if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-$user_id = $current_user_id;
+$userId = $currentUser->getUserId();
+$cartItems = $cartRepo->getCartItems($userId);
 
-// Get cart items
-$cart_items = $cartRepo->getCartItems($user_id);
-
-if (empty($cart_items)) {
+if (empty($cartItems)) {
     header('Location: ' . $baseUrl . 'cart.php');
     exit;
 }
 
-// Verify stock
-$stock_errors = $cartRepo->verifyCartStock($cart_items);
+$stockErrors = $cartRepo->verifyCartStock($cartItems);
 
-if (!empty($stock_errors)) {
-    $_SESSION['checkout_errors'] = $stock_errors;
+if (!empty($stockErrors)) {
+    $_SESSION['checkout_errors'] = $stockErrors;
     header('Location: ' . $baseUrl . 'cart.php');
     exit;
 }
 
-// Process checkout
-$checkout_result = $cartRepo->processCheckout($user_id, $cart_items);
+$checkoutResult = $cartRepo->processCheckout($userId, $cartItems);
 
-if (!$checkout_result['success']) {
-    $_SESSION['checkout_errors'] = $checkout_result['errors'];
+if (!$checkoutResult['success']) {
+    $_SESSION['checkout_errors'] = $checkoutResult['errors'];
     header('Location: ' . $baseUrl . 'cart.php');
     exit;
 }
 
-// Get user info for PayFast
-$user = $cartRepo->getUserCheckoutInfo($user_id);
+$userInfo = $cartRepo->getUserCheckoutInfo($userId);
+$totals = $cartRepo->calculateCartTotals($cartItems);
 
-// Calculate totals
-$totals = $cartRepo->calculateCartTotals($cart_items);
-
-// Store checkout data in session for the checkout page
 $_SESSION['checkout_data'] = [
-    'payment_id'        => $checkout_result['payment_id'],
-    'primary_order_id'  => $checkout_result['primary_order_id'],
-    'order_ids'         => $checkout_result['order_ids'],
-    'total'             => $totals['total'],
-    'subtotal'          => $totals['subtotal'],
-    'delivery_fee'      => $totals['delivery_fee'],
-    'buyer_name'        => $user['full_name'],
-    'buyer_email'       => $user['email'],
-    'buyer_phone'       => $user['phone'] ?? '',
-    'cart_items'        => $cart_items,
+    'payment_id' => $checkoutResult['payment_id'],
+    'primary_order_id' => $checkoutResult['primary_order_id'],
+    'order_ids' => $checkoutResult['order_ids'],
+    'total' => $totals['total'],
+    'subtotal' => $totals['subtotal'],
+    'delivery_fee' => $totals['delivery_fee'],
+    'buyer_name' => $userInfo['full_name'],
+    'buyer_email' => $userInfo['email'],
+    'buyer_phone' => $userInfo['phone'] ?? '',
+    'cart_items' => $cartItems,
 ];
 
-// Redirect to checkout page
 header('Location: ' . $baseUrl . 'checkout.php');
 exit;

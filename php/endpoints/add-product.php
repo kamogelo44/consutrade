@@ -6,7 +6,7 @@
 
 require_once dirname(__DIR__, 2) . '/init.php';
 
-if (!$auth->isSellerLoggedIn()) {
+if (!$isLoggedIn || !$currentUser instanceof Seller) {
     $_SESSION['error'] = 'Unauthorized. Please login as a seller.';
     header('Location: ' . getBaseUrl() . 'admin/add-product.php');
     exit;
@@ -17,24 +17,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$seller_id = $current_user_id;
+$sellerId = $currentUser->getUserId();
 $title = trim($_POST['title'] ?? '');
-$category_id = isset($_POST['category_id']) ? (int)$_POST['category_id'] : 0;
-$price = isset($_POST['price']) ? (float)$_POST['price'] : 0;
-$stock_quantity = isset($_POST['stock_quantity']) ? (int)$_POST['stock_quantity'] : 1;
+$categoryId = isset($_POST['category_id']) ? (int) $_POST['category_id'] : 0;
+$price = isset($_POST['price']) ? (float) $_POST['price'] : 0;
+$stockQuantity = isset($_POST['stock_quantity']) ? (int) $_POST['stock_quantity'] : 1;
 $condition = $_POST['condition'] ?? '';
 $location = trim($_POST['location'] ?? '');
 $description = trim($_POST['description'] ?? '');
 
-// Validation
 $errors = [];
 if (empty($title)) $errors[] = 'Product title is required';
-if ($category_id <= 0) $errors[] = 'Please select a category';
+if ($categoryId <= 0) $errors[] = 'Please select a category';
 if ($price <= 0) $errors[] = 'Valid price is required';
-if ($stock_quantity < 1) $errors[] = 'Stock quantity must be at least 1';
+if ($stockQuantity < 1) $errors[] = 'Stock quantity must be at least 1';
 if (empty($description)) $errors[] = 'Description is required';
 
-// Handle main image
 if (!isset($_FILES['main_image']) || $_FILES['main_image']['error'] !== UPLOAD_ERR_OK) {
     $errors[] = 'Main product image is required';
 }
@@ -45,56 +43,61 @@ if (!empty($errors)) {
     exit;
 }
 
-// Convert main image to WebP
-$main_image_path = $productRepo->convertToWebP($_FILES['main_image'], $seller_id, $title, 'main');
-if (!$main_image_path) {
+$mainImagePath = $productRepo->convertToWebP($_FILES['main_image'], $sellerId, $title, 'main');
+if (!$mainImagePath) {
     $_SESSION['error'] = 'Failed to upload main image. Please try again.';
     header('Location: ' . getBaseUrl() . 'admin/add-product.php');
     exit;
 }
 
-// Insert product
-$sql = "INSERT INTO products (seller_id, category_id, title, description, price, stock_quantity, `condition`, location, image_url, status, created_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('iissdiss', $seller_id, $category_id, $title, $description, $price, $stock_quantity, $condition, $location, $main_image_path);
-$stmt->execute();
-$product_id = $stmt->insert_id;
-$stmt->close();
+$productData = [
+    'seller_id' => $sellerId,
+    'category_id' => $categoryId,
+    'title' => $title,
+    'description' => $description,
+    'price' => $price,
+    'stock_quantity' => $stockQuantity,
+    'condition' => $condition,
+    'location' => $location,
+    'image_url' => $mainImagePath,
+    'status' => 'active'
+];
 
-if (!$product_id) {
+$product = new Product($productData);
+$productId = $productRepo->createProduct($product);
+
+if (!$productId) {
     $_SESSION['error'] = 'Failed to create product. Please try again.';
     header('Location: ' . getBaseUrl() . 'admin/add-product.php');
     exit;
 }
 
-// Handle gallery images
 if (isset($_FILES['gallery_images']) && !empty($_FILES['gallery_images']['name'][0])) {
-    $gallery_urls = [];
+    $galleryUrls = [];
     $files = $_FILES['gallery_images'];
-    $max_images = min(count($files['name']), 4);
-    
-    for ($i = 0; $i < $max_images; $i++) {
-        $file = [
-            'name' => $files['name'][$i],
-            'type' => $files['type'][$i],
-            'tmp_name' => $files['tmp_name'][$i],
-            'error' => $files['error'][$i],
-            'size' => $files['size'][$i]
-        ];
-        
-        $image_path = $productRepo->convertToWebP($file, $seller_id, $title, 'thumb_' . $i);
-        if ($image_path) {
-            $gallery_urls[] = $image_path;
+    $maxImages = min(count($files['name']), 4);
+
+    for ($i = 0; $i < $maxImages; $i++) {
+        if ($files['error'][$i] === UPLOAD_ERR_OK) {
+            $file = [
+                'name' => $files['name'][$i],
+                'type' => $files['type'][$i],
+                'tmp_name' => $files['tmp_name'][$i],
+                'error' => $files['error'][$i],
+                'size' => $files['size'][$i]
+            ];
+            $imagePath = $productRepo->convertToWebP($file, $sellerId, $title, 'thumb_' . $i);
+            if ($imagePath) {
+                $galleryUrls[] = $imagePath;
+            }
         }
     }
-    
-    if (!empty($gallery_urls)) {
-        $productRepo->addProductGalleryImages($product_id, $gallery_urls);
+
+    if (!empty($galleryUrls)) {
+        $productImageRepo->addMultiple($productId, $galleryUrls);
     }
 }
 
 $_SESSION['success'] = 'Product added successfully!';
 header('Location: ' . getBaseUrl() . 'admin/my-products.php');
 exit;
-?>

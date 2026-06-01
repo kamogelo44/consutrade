@@ -10,69 +10,76 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
-if (!$auth->isLoggedIn()) {
-    $response['message'] = 'Please login to add items to cart';
+if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+    $response['message'] = 'Please login as a buyer to add items to cart';
     echo json_encode($response);
     exit;
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-$product_id = isset($input['product_id']) ? (int)$input['product_id'] : 0;
-$user_id = $current_user_id;
+$productId = (int) ($input['product_id'] ?? 0);
 
-if ($product_id <= 0) {
+if ($productId <= 0) {
     $response['message'] = 'Invalid product';
     echo json_encode($response);
     exit;
 }
 
-// Get product stock using ProductRepository
-$available_stock = $productRepo->getProductStock($product_id);
+$product = $productRepo->getProductObject($productId);
 
-if ($available_stock <= 0) {
-    $response['message'] = 'This product is out of stock.';
+if (!$product) {
+    $response['message'] = 'Product not found';
     echo json_encode($response);
     exit;
 }
 
-// Check if product already in cart
-$cart_items = $cartRepo->getCartItems($user_id);
-$existing_item = null;
+if (!$product->isAvailable()) {
+    $response['message'] = 'This product is not available for purchase.';
+    echo json_encode($response);
+    exit;
+}
 
-foreach ($cart_items as $item) {
-    if ($item['product_id'] == $product_id) {
-        $existing_item = $item;
+$availableStock = $product->getStockQuantity();
+$userId = $currentUser->getUserId();
+
+$cartItems = $cartRepo->getCartItems($userId);
+$existingItem = null;
+
+foreach ($cartItems as $item) {
+    if ($item['product_id'] == $productId) {
+        $existingItem = $item;
         break;
     }
 }
 
-if ($existing_item) {
-    $new_qty = $existing_item['quantity'] + 1;
-    
-    if ($new_qty > $available_stock) {
-        $response['message'] = 'Cannot add more. Only ' . $available_stock 
-            . ' available. You have ' . $existing_item['quantity'] . ' in cart.';
+if ($existingItem) {
+    $newQuantity = $existingItem['quantity'] + 1;
+
+    if ($newQuantity > $availableStock) {
+        $response['message'] = 'Cannot add more. Only ' . $availableStock
+            . ' available. You have ' . $existingItem['quantity'] . ' in cart.';
         echo json_encode($response);
         exit;
     }
-    
-    $success = $cartRepo->updateCartQuantity($existing_item['cart_id'], $user_id, $new_qty);
+
+    $success = $cartRepo->updateCartQuantity($existingItem['cart_id'], $userId, $newQuantity);
     $response['message'] = 'Quantity updated!';
 } else {
-    $success = $cartRepo->addItem($user_id, $product_id, 1);
+    if ($availableStock < 1) {
+        $response['message'] = 'Out of stock.';
+        echo json_encode($response);
+        exit;
+    }
+    $success = $cartRepo->addItem($userId, $productId, 1);
     $response['message'] = 'Item added to cart';
 }
 
 if ($success) {
-    // Update session cart count
-    $auth->updateCartCount();
-    
-    // Get fresh cart count from session (not another DB query)
+    $auth->refreshCartCount();
     $response['success'] = true;
-    $response['cart_count'] = $_SESSION['cart_count'] ?? $cartRepo->getCartCount($user_id);
+    $response['cart_count'] = $_SESSION['cart_count'] ?? 0;
 } else {
-    $response['message'] = 'Failed to add item';
+    $response['message'] = 'Failed to add item to cart';
 }
 
 echo json_encode($response);
-?>
