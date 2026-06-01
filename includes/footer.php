@@ -2,8 +2,6 @@
 /*
  * ConsuTrade - Site Footer Component
  * Author: Kamogelo Phale
- * 
- * Simplified version - Clean footer with scripts
  */
 ?>
 <footer class="site-footer">
@@ -49,32 +47,51 @@
 <!-- Scripts -->
 <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
+
 <script>
-var isLoggedIn = <?php echo isset($is_logged_in) ? json_encode($is_logged_in) : 'false'; ?>;
-var currentUserRole = <?php echo isset($user_role) ? json_encode($user_role) : 'null'; ?>;
-var baseUrl = <?php echo json_encode($baseUrl); ?>;
-var currentUserId = <?php echo isset($_SESSION['user_id']) ? json_encode($_SESSION['user_id']) : '0'; ?>;
+    // Pass PHP variables to JavaScript
+    var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
+    var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
+    var baseUrl = <?php echo json_encode($baseUrl); ?>;
+    var currentUserId = <?php echo isset($currentUser) ? json_encode($currentUser->getUserId()) : '0'; ?>;
+    var cartCount = <?php echo $_SESSION['cart_count'] ?? 0; ?>;
 </script>
 
-<!-- Cart count initialization moved from header.php -->
 <script>
-$(function() {
-    function initCartCount() {
+    $(function() {
+        function updateCartCountDisplay() {
+            $.ajax({
+                url: baseUrl + 'php/endpoints/get-cart.php',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        var count = parseInt(response.item_count) || 0;
+                        $('.cart-count').text(count);
+                        if (window.sessionStorage) {
+                            sessionStorage.setItem('cart_count', count);
+                        }
+                    }
+                }
+            });
+        }
+
+        if (isLoggedIn && currentUserRole === 'buyer') {
+            updateCartCountDisplay();
+        }
+
+        // Set initial cart count from session storage or PHP
         if (window.sessionStorage && sessionStorage.getItem('cart_count')) {
             var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
             if (!isNaN(cachedCount)) {
                 $('.cart-count').text(cachedCount);
-            } else {
-                updateCartCount();
             }
-        } else {
-            updateCartCount();
+        } else if (cartCount > 0) {
+            $('.cart-count').text(cartCount);
         }
-    }
-    initCartCount();
-});
+    });
 </script>
 
 <?php if (isset($load_products_js) && $load_products_js): ?>
-<script src="<?php echo $baseUrl; ?>js/products.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 <?php endif; ?>

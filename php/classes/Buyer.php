@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ConsuTrade - Buyer
  *
@@ -9,17 +10,6 @@
  * @institution Eduvos
  * @version    2.0.0
  * @since      2026
- *
- * References:
- * - Pressman, R.S. and Maxim, B.R., 2015. Software Engineering:
- *   A Practitioner's Approach. 8th ed. McGraw-Hill.
- * - Dennis, A., Wixom, B.H. and Tegarden, D., 2015. Systems Analysis
- *   and Design: An Object-Oriented Approach with UML. 6th ed.
- *   John Wiley and Sons.
- * - PHP Group, 2025. Classes and Objects. Available at:
- *   https://www.php.net/manual/en/language.oop5.php
- * - PHP-FIG, 2023. PSR-12: Extended Coding Style. Available at:
- *   https://www.php.fig.org/psr/psr-12/
  */
 
 class Buyer extends User
@@ -43,9 +33,22 @@ class Buyer extends User
     public function __construct(array $data, CartRepository $cartRepo, OrderRepository $orderRepo)
     {
         parent::__construct($data);
-        $this->cartRepo  = $cartRepo;
+        $this->cartRepo = $cartRepo;
         $this->orderRepo = $orderRepo;
         $this->cartCount = 0;
+    }
+
+    /**
+     * Ensure repositories are available (fixes unserialized objects)
+     */
+    private function ensureRepositories(): void
+    {
+        if ($this->orderRepo === null && isset($GLOBALS['orderRepo'])) {
+            $this->orderRepo = $GLOBALS['orderRepo'];
+        }
+        if ($this->cartRepo === null && isset($GLOBALS['cartRepo'])) {
+            $this->cartRepo = $GLOBALS['cartRepo'];
+        }
     }
 
     public function getDisplayName(): string
@@ -60,11 +63,13 @@ class Buyer extends User
 
     public function refreshCartCount(): void
     {
+        $this->ensureRepositories();
         $this->cartCount = $this->cartRepo->getCartCount($this->userId);
     }
 
     public function placeOrder(array $cartItems): array
     {
+        $this->ensureRepositories();
         $result = $this->cartRepo->processCheckout($this->userId, $cartItems);
 
         if ($result['success']) {
@@ -76,21 +81,24 @@ class Buyer extends User
 
     public function cancelOrder(int $orderId): bool
     {
+        $this->ensureRepositories();
         return $this->orderRepo->cancelBuyerOrder($orderId, $this->userId);
     }
 
     public function submitReview(array $data): bool
     {
-        return true; // Handled by ReviewRepository via endpoint
+        return true;
     }
 
     public function getOrders(string $filter = 'all', string $search = ''): array
     {
+        $this->ensureRepositories();
         return $this->orderRepo->getBuyerOrders($this->userId, $filter, $search);
     }
 
     public function getOrderDetails(int $orderId): ?array
     {
+        $this->ensureRepositories();
         return $this->orderRepo->getOrderDetails($orderId, $this->userId, 'buyer');
     }
 }

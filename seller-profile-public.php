@@ -22,20 +22,16 @@ if ($seller_id <= 0) {
     exit;
 }
 
-// Use UserRepository to get seller data
-$seller = $userRepo->getById($seller_id);
+// Use UserRepository to get seller as User object
+$seller = $userRepo->findById($seller_id);
 
-if (!$seller || $seller['role'] !== 'seller') {
+if (!$seller || !$seller instanceof Seller) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
 // Get profile image URL
-if (!empty($seller['profile_image']) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $seller['profile_image'])) {
-    $profile_image = $baseUrl . $seller['profile_image'];
-} else {
-    $profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
-}
+$profile_image = $seller->getProfileImageUrl();
 
 // Breadcrumb setup
 $from_product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
@@ -45,11 +41,11 @@ if ($from_product_id > 0 && $from_product_name) {
     $breadcrumbItems = [
         ['url' => 'product-listings.php', 'label' => 'Products'],
         ['url' => 'product-details.php?id=' . $from_product_id, 'label' => htmlspecialchars($from_product_name)],
-        ['label' => htmlspecialchars($seller['full_name'])]
+        ['label' => htmlspecialchars($seller->getFullName())]
     ];
 } else {
     $breadcrumbItems = [
-        ['label' => htmlspecialchars($seller['full_name'])]
+        ['label' => htmlspecialchars($seller->getFullName())]
     ];
 }
 ?>
@@ -58,7 +54,7 @@ if ($from_product_id > 0 && $from_product_name) {
 
 <head>
     <meta charset="UTF-8">
-    <title><?php echo htmlspecialchars($seller['full_name']); ?> - Seller Profile | ConsuTrade</title>
+    <title><?php echo htmlspecialchars($seller->getFullName()); ?> - Seller Profile | ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
         /* ========== PUBLIC SELLER PROFILE SPECIFIC STYLES ========== */
@@ -479,22 +475,22 @@ if ($from_product_id > 0 && $from_product_name) {
 
         <div class="seller-public-header">
             <div class="seller-public-avatar">
-                <img src="<?php echo $profile_image; ?>" alt="<?php echo htmlspecialchars($seller['full_name']); ?>">
+                <img src="<?php echo $profile_image; ?>" alt="<?php echo htmlspecialchars($seller->getFullName()); ?>">
             </div>
             <div class="seller-public-info">
-                <h1><?php echo htmlspecialchars($seller['full_name']); ?></h1>
+                <h1><?php echo htmlspecialchars($seller->getFullName()); ?></h1>
                 <div class="seller-public-meta">
-                    <?php if ($seller['id_verified'] == 1): ?>
+                    <?php if ($seller->isVerified()): ?>
                         <span class="verified-badge"><img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16" height="16" alt="Verified"> Verified Seller</span>
                     <?php else: ?>
                         <span class="unverified-badge"><img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="16" height="16" alt="Unverified"> Unverified Seller</span>
                     <?php endif; ?>
-                    <span class="member-since">Member since <?php echo date('d M Y', strtotime($seller['created_at'])); ?></span>
+                    <span class="member-since">Member since <?php echo date('d M Y', strtotime($seller->getCreatedAt())); ?></span>
                 </div>
-                <?php if ($seller['location']): ?>
+                <?php if ($seller->getLocation()): ?>
                     <div class="seller-location">
                         <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14" height="14" alt="Location">
-                        <?php echo htmlspecialchars($seller['location']); ?>
+                        <?php echo htmlspecialchars($seller->getLocation()); ?>
                     </div>
                 <?php endif; ?>
             </div>
@@ -511,12 +507,12 @@ if ($from_product_id > 0 && $from_product_name) {
             </div>
             <div class="stat-card">
                 <h3>Member Since</h3>
-                <p class="stat-text"><?php echo date('d M Y', strtotime($seller['created_at'])); ?></p>
+                <p class="stat-text"><?php echo date('d M Y', strtotime($seller->getCreatedAt())); ?></p>
             </div>
         </div>
 
         <div class="seller-public-products">
-            <h2>Products from <?php echo htmlspecialchars($seller['full_name']); ?></h2>
+            <h2>Products from <?php echo htmlspecialchars($seller->getFullName()); ?></h2>
             <div class="products-grid" id="products-grid">
                 <div class="loading-spinner">Loading products...</div>
             </div>
@@ -553,104 +549,116 @@ if ($from_product_id > 0 && $from_product_name) {
         </script>
     <?php endif; ?>
 
-    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
+    <?php $load_products_js = true; ?>
+    <?php include 'includes/footer.php'; ?>
     <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
         var sellerId = <?php echo $seller_id; ?>;
-        var currentUserId = <?php echo $current_user_id ?: 0; ?>;
-        var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
-        var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 
-        $(function() {
-            loadSellerStats();
-            loadSellerProducts();
-            loadSellerReviews();
-
-            function loadSellerStats() {
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + sellerId,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        $('#stat-products').text(data.success ? (data.total_products || 0) : '0');
-                        $('#stat-sales').text(data.success ? (data.total_sales || 0) : '0');
-                    },
-                    error: function() {
-                        $('#stat-products, #stat-sales').text('0');
+        $(document).ready(function() {
+            // Load stats
+            $.ajax({
+                url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + sellerId,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        $('#stat-products').text(data.total_products);
+                        $('#stat-sales').text(data.total_sales);
+                    } else {
+                        $('#stat-products').text('0');
+                        $('#stat-sales').text('0');
                     }
-                });
-            }
+                },
+                error: function() {
+                    $('#stat-products').text('0');
+                    $('#stat-sales').text('0');
+                }
+            });
 
-            function loadSellerProducts() {
-                var $grid = $('#products-grid');
-                $grid.html('<div class="loading-spinner">Loading products...</div>');
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + sellerId,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success && data.products && data.products.length > 0) {
-                            var productsWithSellerInfo = data.products.map(function(product) {
-                                return {
-                                    id: product.id,
-                                    name: product.name,
-                                    price: product.price,
-                                    image: product.image,
-                                    status: 'active',
-                                    condition: product.condition || 'Good',
-                                    seller_name: '<?php echo addslashes($seller['full_name']); ?>',
-                                    location: '<?php echo addslashes($seller['location'] ?? 'Not specified'); ?>',
-                                    profile_image: '<?php echo addslashes($seller['profile_image'] ?? null); ?>',
-                                    is_verified: <?php echo $seller['id_verified'] == 1 ? 'true' : 'false'; ?>,
-                                    seller_id: sellerId,
-                                    stock_quantity: product.stock_quantity || 1
-                                };
-                            });
-                            if (typeof displayProducts === 'function') displayProducts(productsWithSellerInfo);
-                            else $grid.html('<div class="error-message">Error displaying products.</div>');
+            // Load products
+            $.ajax({
+                url: baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + sellerId,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success && data.products && data.products.length > 0) {
+                        var productsWithSellerInfo = data.products.map(function(product) {
+                            return {
+                                id: product.id,
+                                name: product.name,
+                                price: product.price,
+                                image: product.image,
+                                status: 'active',
+                                condition: product.condition || 'Good',
+                                seller_name: '<?php echo addslashes($seller->getFullName()); ?>',
+                                location: '<?php echo addslashes($seller->getLocation() ?? 'Not specified'); ?>',
+                                profile_image: '<?php echo addslashes($seller->getProfileImage()); ?>',
+                                is_verified: <?php echo $seller->isVerified() ? 'true' : 'false'; ?>,
+                                seller_id: sellerId,
+                                stock_quantity: product.stock_quantity || 1
+                            };
+                        });
+
+                        if (typeof displayProducts === 'function') {
+                            displayProducts(productsWithSellerInfo);
                         } else {
-                            $grid.html('<div class="no-products"><p>This seller has no products yet.</p></div>');
+                            console.error('displayProducts function not found');
+                            $('#products-grid').html('<div class="error-message">Error displaying products.</div>');
                         }
-                    },
-                    error: function() {
-                        $grid.html('<div class="error-message">Error loading products. Please try again.</div>');
+                    } else {
+                        $('#products-grid').html('<div class="no-products"><p>This seller has no products yet.</p></div>');
                     }
-                });
-            }
+                },
+                error: function() {
+                    $('#products-grid').html('<div class="error-message">Error loading products.</div>');
+                }
+            });
 
-            function loadSellerReviews() {
-                var $container = $('#reviews-container');
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/get-reviews.php?seller_id=' + sellerId,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success && data.reviews && data.reviews.length > 0) {
-                            var html = '<div class="reviews-list">';
-                            for (var i = 0; i < data.reviews.length; i++) {
-                                var review = data.reviews[i];
-                                var starsHtml = '';
-                                for (var s = 1; s <= 5; s++) {
-                                    starsHtml += (s <= review.rating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
-                                }
-                                var date = new Date(review.created_at).toLocaleDateString('en-ZA', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                });
-                                html += '<div class="review-card"><div class="review-header"><div class="reviewer-info"><div class="reviewer-avatar"><img src="' + baseUrl + 'images/icons/profile-svgrepo-com.svg" alt="' + escapeHtml(review.buyer_name) + '"></div><div><div class="reviewer-name">' + escapeHtml(review.buyer_name) + '</div><div class="review-stars">' + starsHtml + '</div></div></div><div class="review-date">' + date + '</div></div><div class="review-comment">' + escapeHtml(review.comment || 'No comment provided.') + '</div></div>';
+            // Load reviews
+            $.ajax({
+                url: baseUrl + 'php/endpoints/get-reviews.php?seller_id=' + sellerId,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success && data.reviews && data.reviews.length > 0) {
+                        var html = '<div class="reviews-list">';
+                        for (var i = 0; i < data.reviews.length; i++) {
+                            var review = data.reviews[i];
+                            var starsHtml = '';
+                            for (var s = 1; s <= 5; s++) {
+                                starsHtml += (s <= review.rating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
                             }
-                            html += '</div>';
-                            $container.html(html);
-                        } else {
-                            $container.html('<div class="empty-reviews"><img src="' + baseUrl + 'images/icons/comment-svgrepo-com.svg" width="48" height="48" alt="No reviews"><p>No reviews yet for this seller.</p></div>');
+                            var date = new Date(review.created_at).toLocaleDateString('en-ZA', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            html += '<div class="review-card">' +
+                                '<div class="review-header">' +
+                                '<div class="reviewer-info">' +
+                                '<div class="reviewer-avatar">' +
+                                '<img src="' + baseUrl + 'images/icons/profile-svgrepo-com.svg" alt="' + escapeHtml(review.buyer_name) + '">' +
+                                '</div>' +
+                                '<div>' +
+                                '<div class="reviewer-name">' + escapeHtml(review.buyer_name) + '</div>' +
+                                '<div class="review-stars">' + starsHtml + '</div>' +
+                                '</div>' +
+                                '</div>' +
+                                '<div class="review-date">' + date + '</div>' +
+                                '</div>' +
+                                '<div class="review-comment">' + escapeHtml(review.comment || 'No comment provided.') + '</div>' +
+                                '</div>';
                         }
-                    },
-                    error: function() {
-                        $container.html('<div class="error-message">Error loading reviews.</div>');
+                        html += '</div>';
+                        $('#reviews-container').html(html);
+                    } else {
+                        $('#reviews-container').html('<div class="empty-reviews"><img src="' + baseUrl + 'images/icons/comment-svgrepo-com.svg" width="48" height="48" alt="No reviews"><p>No reviews yet for this seller.</p></div>');
                     }
-                });
-            }
+                },
+                error: function() {
+                    $('#reviews-container').html('<div class="error-message">Error loading reviews.</div>');
+                }
+            });
         });
     </script>
 </body>

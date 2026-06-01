@@ -2,9 +2,6 @@
 
 /**
  * ConsuTrade - Application Initialization
- * 
- * @author Kamogelo Phale
- * @version 2.0.0
  */
 
 // Session settings
@@ -63,8 +60,12 @@ $session = $auth->initSession();
 $currentUser = $session['user'];
 $isLoggedIn = $session['is_logged_in'];
 
-// Global variables for endpoints
+// Base URL
+$baseUrl = getBaseUrl();
+
+// Set all global variables
 $GLOBALS['conn'] = $conn;
+$GLOBALS['db'] = $db;
 $GLOBALS['auth'] = $auth;
 $GLOBALS['userRepo'] = $userRepo;
 $GLOBALS['categoryRepo'] = $categoryRepo;
@@ -75,7 +76,7 @@ $GLOBALS['cartRepo'] = $cartRepo;
 $GLOBALS['reviewRepo'] = $reviewRepo;
 $GLOBALS['currentUser'] = $currentUser;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;
-$GLOBALS['baseUrl'] = getBaseUrl();
+$GLOBALS['baseUrl'] = $baseUrl;
 
 // Prevent caching for authenticated pages
 if ($isLoggedIn) {

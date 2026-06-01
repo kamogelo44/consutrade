@@ -18,7 +18,6 @@ if (!$auth->isLoggedIn()) {
 
 $input = json_decode(file_get_contents('php://input'), true);
 $product_id = isset($input['product_id']) ? (int)$input['product_id'] : 0;
-$user_id = $current_user_id;
 
 if ($product_id <= 0) {
     $response['message'] = 'Invalid product';
@@ -26,16 +25,18 @@ if ($product_id <= 0) {
     exit;
 }
 
+// Use User object to get user ID
+$user_id = $currentUser->getUserId();
+
 $result = $cartRepo->removeCartItemByProductId($product_id, $user_id);
 
 if ($result) {
-    $auth->updateCartCount();
+    $auth->refreshCartCount();
     $response['success'] = true;
     $response['message'] = 'Item removed from cart';
-    $response['cart_count'] = $_SESSION['cart_count'] ?? $cartRepo->getCartCount($user_id);
+    $response['cart_count'] = $_SESSION['cart_count'] ?? 0;
 } else {
     $response['message'] = 'Failed to remove item';
 }
 
 echo json_encode($response);
-?>

@@ -19,12 +19,11 @@ if (!$auth->isLoggedIn()) {
     exit;
 }
 
-$current_user_id = $auth->getCurrentUser()['user_id'];
+// Get current user ID from User object
+$current_user_id = $currentUser->getUserId();
 $action = $_POST['action'] ?? '';
 
-// ------------------------------------------------------------------
 // Upload profile image
-// ------------------------------------------------------------------
 if ($action === 'upload_image') {
     if (!isset($_FILES['profile_image']) || $_FILES['profile_image']['error'] !== UPLOAD_ERR_OK) {
         $response['message'] = 'No image uploaded.';
@@ -32,7 +31,7 @@ if ($action === 'upload_image') {
         exit;
     }
 
-    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/uploads/profiles/';
+    $uploadDir = dirname(__DIR__, 3) . '/uploads/profiles/';
 
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0777, true);
@@ -43,11 +42,11 @@ if ($action === 'upload_image') {
     $filename = 'user_' . $current_user_id . '_' . time() . '.' . $ext;
     $dest = $uploadDir . $filename;
 
-    // Get current profile image using UserRepository
-    $current_user_data = $userRepo->getById($current_user_id);
-    
-    if ($current_user_data && !empty($current_user_data['profile_image'])) {
-        $oldPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $current_user_data['profile_image'];
+    // Get current profile image using User object
+    $current_profile_image = $currentUser->getProfileImage();
+
+    if (!empty($current_profile_image)) {
+        $oldPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $current_profile_image;
         if (file_exists($oldPath) && basename($oldPath) !== 'default-avatar.png') {
             unlink($oldPath);
         }
@@ -55,18 +54,17 @@ if ($action === 'upload_image') {
 
     if (move_uploaded_file($file['tmp_name'], $dest)) {
         $imagePath = 'uploads/profiles/' . $filename;
-        
+
         // Update using UserRepository
         $result = $userRepo->updateProfileImage($current_user_id, $imagePath);
 
         if ($result) {
             $_SESSION['profile_image'] = $imagePath;
-            
-            // Update the current user object in session if it exists
-            if (isset($currentUser) && method_exists($currentUser, 'getProfileImage')) {
-                // The user object will be recreated on next page load
-            }
-            
+
+            // Update session user object
+            $updatedUser = $userRepo->findById($current_user_id);
+            $_SESSION['user_object'] = serialize($updatedUser);
+
             $response['success'] = true;
             $response['message'] = 'Profile image updated.';
             $response['image_url'] = getBaseUrl() . $imagePath;
@@ -81,9 +79,7 @@ if ($action === 'upload_image') {
     exit;
 }
 
-// ------------------------------------------------------------------
 // Update profile info
-// ------------------------------------------------------------------
 if ($action === 'update_profile') {
     $fullName = trim($_POST['full_name'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
@@ -111,7 +107,7 @@ if ($action === 'update_profile') {
     if (!empty($location)) {
         $updateData['location'] = $location;
     }
-    
+
     $result = $userRepo->updateProfile($current_user_id, $updateData);
 
     if ($result) {
@@ -123,7 +119,11 @@ if ($action === 'update_profile') {
         if (!empty($location)) {
             $_SESSION['location'] = $location;
         }
-        
+
+        // Update session user object
+        $updatedUser = $userRepo->findById($current_user_id);
+        $_SESSION['user_object'] = serialize($updatedUser);
+
         $response['success'] = true;
         $response['message'] = 'Profile updated.';
     } else {
@@ -135,4 +135,3 @@ if ($action === 'update_profile') {
 
 $response['message'] = 'Invalid action.';
 echo json_encode($response);
-?>

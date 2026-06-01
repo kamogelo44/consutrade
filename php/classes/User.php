@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ConsuTrade - User
  *
@@ -55,6 +56,9 @@ abstract class User
     /** @var string */
     protected $createdAt;
 
+    /** @var string */
+    protected $status;
+
     /**
      * Constructor.
      *
@@ -72,6 +76,7 @@ abstract class User
         $this->idVerified   = (bool) ($data['id_verified']   ?? false);
         $this->profileImage = (string) ($data['profile_image'] ?? '');
         $this->createdAt    = (string) ($data['created_at']   ?? '');
+        $this->status       = (string) ($data['status']       ?? 'active');
     }
 
     /**
@@ -105,6 +110,16 @@ abstract class User
     }
 
     /**
+     * Returns the user's password hash.
+     *
+     * @return string
+     */
+    public function getPassword(): string
+    {
+        return $this->password;
+    }
+
+    /**
      * Returns the user's role.
      *
      * @return string
@@ -122,6 +137,26 @@ abstract class User
     public function isVerified(): bool
     {
         return $this->idVerified;
+    }
+
+    /**
+     * Returns the user's account status.
+     *
+     * @return string
+     */
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    /**
+     * Checks if the user can log in (account is active).
+     *
+     * @return bool
+     */
+    public function canLogin(): bool
+    {
+        return $this->status === 'active';
     }
 
     /**
@@ -176,6 +211,47 @@ abstract class User
     public function getProfileImage(): string
     {
         return $this->profileImage;
+    }
+
+    /**
+     * Returns serializable data for session storage.
+     *
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        return [
+            'user_id' => $this->userId,
+            'full_name' => $this->fullName,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'location' => $this->location,
+            'role' => $this->role,
+            'id_verified' => $this->idVerified,
+            'profile_image' => $this->profileImage,
+            'created_at' => $this->createdAt,
+            'status' => $this->status
+        ];
+    }
+
+    /**
+     * Restores object from serialized data.
+     *
+     * @param array $data
+     * @return void
+     */
+    public function __unserialize(array $data): void
+    {
+        $this->userId = $data['user_id'];
+        $this->fullName = $data['full_name'];
+        $this->email = $data['email'];
+        $this->phone = $data['phone'];
+        $this->location = $data['location'];
+        $this->role = $data['role'];
+        $this->idVerified = $data['id_verified'];
+        $this->profileImage = $data['profile_image'];
+        $this->createdAt = $data['created_at'];
+        $this->status = $data['status'];
     }
 
     /**

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Reusable Breadcrumb Component
  * 
@@ -10,10 +11,9 @@
  * include __DIR__ . '/includes/breadcrumb.php';
  */
 
-// Only render if breadcrumb items are defined
 if (isset($breadcrumbItems) && !empty($breadcrumbItems)) {
     $baseUrl = getBaseUrl();
-    ?>
+?>
     <div class="breadcrumb">
         <a href="<?php echo $baseUrl; ?>index.php">Home</a>
         <?php foreach ($breadcrumbItems as $index => $item): ?>
@@ -25,6 +25,6 @@ if (isset($breadcrumbItems) && !empty($breadcrumbItems)) {
             <?php endif; ?>
         <?php endforeach; ?>
     </div>
-    <?php
+<?php
 }
 ?>
