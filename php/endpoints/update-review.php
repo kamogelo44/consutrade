@@ -13,14 +13,8 @@ header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!$is_logged_in) {
-    $response['message'] = 'Please login to update a review';
-    echo json_encode($response);
-    exit;
-}
-
-if ($current_user['role'] !== 'buyer') {
-    $response['message'] = 'Only buyers can update reviews';
+if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+    $response['message'] = 'Unauthorized. Only buyers can update reviews.';
     echo json_encode($response);
     exit;
 }
@@ -45,12 +39,9 @@ if ($rating < 1 || $rating > 5) {
 $comment = substr($comment, 0, 500);
 $comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
 
-// Initialize ReviewRepository
-$reviewRepo = new ReviewRepository($conn);
-$result = $reviewRepo->updateReview($order_id, $current_user_id, $rating, $comment);
+$result = $reviewRepo->updateReview($order_id, $currentUser->getUserId(), $rating, $comment);
 
 $response['success'] = $result['success'];
 $response['message'] = $result['message'];
 
 echo json_encode($response);
-?>

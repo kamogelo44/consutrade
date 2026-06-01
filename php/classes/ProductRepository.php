@@ -583,9 +583,35 @@ class ProductRepository
         return $total;
     }
 
-    // ============================================================
-    //  IMAGE FILE OPERATIONS (Product image deletion)
-    // ============================================================
+// ============================================================
+//  IMAGE FILE OPERATIONS (Product image deletion)
+// ============================================================
+
+    /**
+     * Helper to get full system path for an image (works on both localhost and InfinityFree)
+     *
+     * @param string $imagePath Relative image path
+     * @return string
+     */
+    private function getFullPath(string $imagePath): string
+    {
+        // Try multiple possible base paths
+        $basePaths = [
+            $_SERVER['DOCUMENT_ROOT'] . '/',
+            $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/',
+            dirname(__DIR__, 2) . '/',
+            __DIR__ . '/../../',
+        ];
+
+        foreach ($basePaths as $basePath) {
+            $fullPath = rtrim($basePath, '/') . '/' . ltrim($imagePath, '/');
+            if (file_exists(dirname($fullPath))) {
+                return $fullPath;
+            }
+        }
+
+        return $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($imagePath, '/');
+    }
 
     /**
      * Delete a product image file from disk.
@@ -599,7 +625,7 @@ class ProductRepository
             return true;
         }
 
-        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
+        $fullPath = $this->getFullPath($imagePath);
 
         if (file_exists($fullPath)) {
             return unlink($fullPath);
@@ -622,7 +648,18 @@ class ProductRepository
             return $baseUrl . 'images/default-product.png';
         }
 
-        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $imagePath;
+        // If already has http, return as is
+        if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://')) {
+            return $imagePath;
+        }
+
+        // Remove leading slash if present
+        if (str_starts_with($imagePath, '/')) {
+            $imagePath = ltrim($imagePath, '/');
+        }
+
+        // Check if file exists on server
+        $fullPath = $this->getFullPath($imagePath);
         if (file_exists($fullPath)) {
             return $baseUrl . $imagePath;
         }
@@ -641,7 +678,25 @@ class ProductRepository
      */
     public function convertToWebP(array $file, int $sellerId, string $productTitle, string $prefix = 'main')
     {
-        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/uploads/products/';
+        // Try multiple possible upload directories
+        $uploadPaths = [
+            $_SERVER['DOCUMENT_ROOT'] . '/uploads/products/',
+            $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/uploads/products/',
+            dirname(__DIR__, 2) . '/uploads/products/',
+            __DIR__ . '/../../uploads/products/',
+        ];
+
+        $uploadDir = '';
+        foreach ($uploadPaths as $path) {
+            if (is_dir(dirname($path)) || mkdir(dirname($path), 0777, true)) {
+                $uploadDir = $path;
+                break;
+            }
+        }
+
+        if (empty($uploadDir)) {
+            $uploadDir = __DIR__ . '/../../uploads/products/';
+        }
 
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
@@ -718,7 +773,6 @@ class ProductRepository
         }
 
         $success = imagewebp($image, $destination, 80);
-        imagedestroy($image);
 
         if ($success) {
             return 'uploads/products/' . $filename;

@@ -35,11 +35,13 @@ $location = $currentUser->getLocation();
 $created_at = $currentUser->getCreatedAt();
 $profile_image_path = $currentUser->getProfileImage();
 
+
 // Set profile image URL
 if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $profile_image_path)) {
     $profile_image = $baseUrl . $profile_image_path;
 } else {
-    $profile_image = $baseUrl . 'images/default-avatar.png';
+    // Set profile image URL - use the object method
+    $profile_image = $currentUser->getProfileImageUrl();
 }
 ?>
 <!DOCTYPE html>

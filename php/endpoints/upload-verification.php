@@ -12,13 +12,13 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!$is_logged_in || ($current_user['role'] ?? '') !== 'seller') {
-    $response['message'] = 'Unauthorized.';
+if (!$isLoggedIn || !$currentUser instanceof Seller) {
+    $response['message'] = 'Unauthorized. Only sellers can upload verification documents.';
     echo json_encode($response);
     exit;
 }
 
-$seller_id = $current_user_id;
+$seller_id = $currentUser->getUserId();
 
 if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
     $response['message'] = 'No document uploaded.';
@@ -26,9 +26,9 @@ if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_O
     exit;
 }
 
-$file    = $_FILES['document'];
+$file = $_FILES['document'];
 $docType = $_POST['document_type'] ?? 'id';
-$maxSize = 5 * 1024 * 1024; // 5MB
+$maxSize = 5 * 1024 * 1024;
 $allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
 
 if (!in_array($file['type'], $allowed)) {
@@ -43,16 +43,32 @@ if ($file['size'] > $maxSize) {
     exit;
 }
 
-// Create upload directory
-$uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/uploads/verifications/';
-if (!file_exists($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
+// Helper function for upload directory
+function getVerificationUploadDir()
+{
+    $paths = [
+        dirname(__DIR__, 2) . '/uploads/verifications/',
+        __DIR__ . '/../../uploads/verifications/',
+        $_SERVER['DOCUMENT_ROOT'] . '/uploads/verifications/',
+    ];
+
+    foreach ($paths as $path) {
+        if (is_dir(dirname($path)) || mkdir(dirname($path), 0777, true)) {
+            if (!file_exists($path)) {
+                mkdir($path, 0777, true);
+            }
+            return $path;
+        }
+    }
+
+    return __DIR__ . '/../../uploads/verifications/';
 }
 
-// Generate filename
-$ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+$uploadDir = getVerificationUploadDir();
+
+$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 $filename = 'seller_' . $seller_id . '_' . time() . '.' . $ext;
-$dest     = $uploadDir . $filename;
+$dest = $uploadDir . $filename;
 
 if (!move_uploaded_file($file['tmp_name'], $dest)) {
     $response['message'] = 'Could not upload file.';
@@ -62,7 +78,6 @@ if (!move_uploaded_file($file['tmp_name'], $dest)) {
 
 $docPath = 'uploads/verifications/' . $filename;
 
-// Insert or update verification record
 $checkSql = "SELECT verification_id FROM seller_verification WHERE seller_id = ?";
 $checkStmt = $conn->prepare($checkSql);
 $checkStmt->bind_param('i', $seller_id);
@@ -70,14 +85,12 @@ $checkStmt->execute();
 $checkResult = $checkStmt->get_result();
 
 if ($checkResult->num_rows > 0) {
-    // Update existing record
     $sql = "UPDATE seller_verification
             SET document_path = ?, document_type = ?, document_verified = 0, last_check = NOW()
             WHERE seller_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('ssi', $docPath, $docType, $seller_id);
 } else {
-    // Insert new record
     $sql = "INSERT INTO seller_verification (seller_id, document_path, document_type, last_check)
             VALUES (?, ?, ?, NOW())";
     $stmt = $conn->prepare($sql);

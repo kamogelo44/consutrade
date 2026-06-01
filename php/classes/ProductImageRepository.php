@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ConsuTrade - ProductImageRepository
  *
@@ -24,6 +25,33 @@ class ProductImageRepository
     public function __construct(mysqli $db)
     {
         $this->db = $db;
+    }
+
+    /**
+     * Helper to get full file path for an image
+     *
+     * @param string $imageUrl Relative image path
+     * @return string Full system path
+     */
+    private function getFullPath(string $imageUrl): string
+    {
+        // Try multiple possible base paths
+        $basePaths = [
+            $_SERVER['DOCUMENT_ROOT'] . '/',
+            $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/',
+            dirname(__DIR__, 2) . '/',
+            __DIR__ . '/../../',
+        ];
+
+        foreach ($basePaths as $basePath) {
+            $fullPath = rtrim($basePath, '/') . '/' . ltrim($imageUrl, '/');
+            if (file_exists(dirname($fullPath))) {
+                return $fullPath;
+            }
+        }
+
+        // Fallback
+        return $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($imageUrl, '/');
     }
 
     // ============================================================
@@ -124,7 +152,7 @@ class ProductImageRepository
             "INSERT INTO product_images (product_id, image_url, is_primary, sort_order) VALUES (?, ?, ?, ?)"
         );
         $stmt->bind_param('isii', $productId, $imageUrl, $primaryInt, $sortOrder);
-        
+
         if ($stmt->execute()) {
             $imageId = $stmt->insert_id;
             $stmt->close();
@@ -144,8 +172,7 @@ class ProductImageRepository
     public function addMultiple(int $productId, array $imageUrls): int
     {
         $count = 0;
-        
-        // Get current max sort order
+
         $maxSql = "SELECT MAX(sort_order) as max_sort FROM product_images WHERE product_id = ?";
         $maxStmt = $this->db->prepare($maxSql);
         $maxStmt->bind_param('i', $productId);
@@ -162,7 +189,7 @@ class ProductImageRepository
                 $sortOrder++;
             }
         }
-        
+
         return $count;
     }
 
@@ -179,18 +206,16 @@ class ProductImageRepository
      */
     public function setPrimary(int $productId, int $imageId): bool
     {
-        // Remove primary flag from all images of this product
         $clearStmt = $this->db->prepare("UPDATE product_images SET is_primary = 0 WHERE product_id = ?");
         $clearStmt->bind_param('i', $productId);
         $clearStmt->execute();
         $clearStmt->close();
 
-        // Set the selected image as primary
         $setStmt = $this->db->prepare("UPDATE product_images SET is_primary = 1 WHERE image_id = ? AND product_id = ?");
         $setStmt->bind_param('ii', $imageId, $productId);
         $result = $setStmt->execute();
         $setStmt->close();
-        
+
         return $result;
     }
 
@@ -223,21 +248,19 @@ class ProductImageRepository
      */
     public function delete(int $imageId, int $productId): bool
     {
-        // Get image path first to delete file
         $image = $this->getById($imageId);
         if ($image && $image['product_id'] == $productId) {
-            // Delete file from disk
-            $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $image['image_url'];
+            $fullPath = $this->getFullPath($image['image_url']);
             if (file_exists($fullPath)) {
                 unlink($fullPath);
             }
         }
-        
+
         $stmt = $this->db->prepare("DELETE FROM product_images WHERE image_id = ? AND product_id = ?");
         $stmt->bind_param('ii', $imageId, $productId);
         $result = $stmt->execute();
         $stmt->close();
-        
+
         return $result;
     }
 
@@ -249,20 +272,19 @@ class ProductImageRepository
      */
     public function deleteByProductId(int $productId): bool
     {
-        // Get all image paths to delete files
         $images = $this->getByProductId($productId);
         foreach ($images as $image) {
-            $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $image['image_url'];
+            $fullPath = $this->getFullPath($image['image_url']);
             if (file_exists($fullPath)) {
                 unlink($fullPath);
             }
         }
-        
+
         $stmt = $this->db->prepare("DELETE FROM product_images WHERE product_id = ?");
         $stmt->bind_param('i', $productId);
         $result = $stmt->execute();
         $stmt->close();
-        
+
         return $result;
     }
 }

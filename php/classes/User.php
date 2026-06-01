@@ -167,10 +167,41 @@ abstract class User
     public function getProfileImageUrl(): string
     {
         $baseUrl = getBaseUrl();
+
         if (!empty($this->profileImage)) {
-            return $baseUrl . $this->profileImage;
+            // Check if file exists using dynamic path detection
+            $fullPath = $this->getFullPath($this->profileImage);
+            if (file_exists($fullPath)) {
+                return $baseUrl . $this->profileImage;
+            }
         }
+
         return $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+    }
+
+    /**
+     * Helper to get full system path for a file
+     *
+     * @param string $filePath Relative file path
+     * @return string
+     */
+    private function getFullPath(string $filePath): string
+    {
+        $basePaths = [
+            $_SERVER['DOCUMENT_ROOT'] . '/',
+            $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/',
+            dirname(__DIR__, 2) . '/',
+            __DIR__ . '/../../',
+        ];
+
+        foreach ($basePaths as $basePath) {
+            $fullPath = rtrim($basePath, '/') . '/' . ltrim($filePath, '/');
+            if (file_exists(dirname($fullPath))) {
+                return $fullPath;
+            }
+        }
+
+        return $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($filePath, '/');
     }
 
     /**

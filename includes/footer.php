@@ -44,17 +44,15 @@
     </div>
 </footer>
 
-<!-- Scripts -->
 <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 
 <script>
-    // Pass PHP variables to JavaScript
     var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
     var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
     var baseUrl = <?php echo json_encode($baseUrl); ?>;
     var currentUserId = <?php echo isset($currentUser) ? json_encode($currentUser->getUserId()) : '0'; ?>;
-    var cartCount = <?php echo $_SESSION['cart_count'] ?? 0; ?>;
+    var cartCount = <?php echo ($isLoggedIn && $currentUser instanceof Buyer) ? ($_SESSION['cart_count'] ?? 0) : 0; ?>;
 </script>
 
 <script>
@@ -78,16 +76,15 @@
 
         if (isLoggedIn && currentUserRole === 'buyer') {
             updateCartCountDisplay();
+        } else {
+            $('.cart-count').text('0');
         }
 
-        // Set initial cart count from session storage or PHP
-        if (window.sessionStorage && sessionStorage.getItem('cart_count')) {
+        if (window.sessionStorage && sessionStorage.getItem('cart_count') && isLoggedIn && currentUserRole === 'buyer') {
             var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
             if (!isNaN(cachedCount)) {
                 $('.cart-count').text(cachedCount);
             }
-        } else if (cartCount > 0) {
-            $('.cart-count').text(cartCount);
         }
     });
 </script>
