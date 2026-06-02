@@ -48,42 +48,77 @@
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 
 <script>
-    var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
-    var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
-    var baseUrl = <?php echo json_encode($baseUrl); ?>;
-    var currentUserId = <?php echo isset($currentUser) ? json_encode($currentUser->getUserId()) : '0'; ?>;
-    var cartCount = <?php echo ($isLoggedIn && $currentUser instanceof Buyer) ? ($_SESSION['cart_count'] ?? 0) : 0; ?>;
-</script>
+    // ========== CACHED DOM ELEMENTS ==========
+    var $cartCountElements = null;
 
-<script>
-    $(function() {
-        function updateCartCountDisplay() {
-            $.ajax({
-                url: baseUrl + 'php/endpoints/get-cart.php',
-                type: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        var count = parseInt(response.item_count) || 0;
-                        $('.cart-count').text(count);
-                        if (window.sessionStorage) {
-                            sessionStorage.setItem('cart_count', count);
-                        }
+    // ========== CACHE FUNCTION ==========
+    function cacheFooterElements() {
+        $cartCountElements = $('.cart-count');
+    }
+
+    // ========== UPDATE CART COUNT DISPLAY ==========
+    function updateCartCountDisplay() {
+        cacheFooterElements();
+
+        $.ajax({
+            url: baseUrl + 'php/endpoints/get-cart.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    var count = parseInt(response.item_count) || 0;
+                    if ($cartCountElements.length) {
+                        $cartCountElements.text(count);
+                    }
+                    if (window.sessionStorage) {
+                        sessionStorage.setItem('cart_count', count);
                     }
                 }
-            });
+            },
+            error: function() {
+                // Silent fail - cart count just shows 0
+                if ($cartCountElements.length) {
+                    $cartCountElements.text('0');
+                }
+            }
+        });
+    }
+
+    // ========== LOAD CACHED CART COUNT ==========
+    function loadCachedCartCount() {
+        cacheFooterElements();
+
+        if (window.sessionStorage) {
+            var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
+            if (!isNaN(cachedCount) && $cartCountElements.length) {
+                $cartCountElements.text(cachedCount);
+            }
+        }
+    }
+
+    // ========== INITIALIZE ==========
+    $(function() {
+        // Global variables passed from PHP
+        var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
+        var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
+        var baseUrl = <?php echo json_encode($baseUrl); ?>;
+        var currentUserId = <?php echo isset($currentUser) ? json_encode($currentUser->getUserId()) : '0'; ?>;
+        var cartCount = <?php echo ($isLoggedIn && $currentUser instanceof Buyer) ? ($_SESSION['cart_count'] ?? 0) : 0; ?>;
+
+        cacheFooterElements();
+
+        // Set initial cart count from session
+        if ($cartCountElements.length && cartCount > 0) {
+            $cartCountElements.text(cartCount);
         }
 
+        // Load cart count from server for buyers
         if (isLoggedIn && currentUserRole === 'buyer') {
             updateCartCountDisplay();
+            loadCachedCartCount();
         } else {
-            $('.cart-count').text('0');
-        }
-
-        if (window.sessionStorage && sessionStorage.getItem('cart_count') && isLoggedIn && currentUserRole === 'buyer') {
-            var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
-            if (!isNaN(cachedCount)) {
-                $('.cart-count').text(cachedCount);
+            if ($cartCountElements.length) {
+                $cartCountElements.text('0');
             }
         }
     });

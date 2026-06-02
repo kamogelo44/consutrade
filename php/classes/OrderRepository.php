@@ -141,6 +141,28 @@ class OrderRepository
     }
 
     /**
+     * Get total number of completed orders for a seller
+     *
+     * @param int $sellerId
+     * @return int
+     */
+    public function getSellerTotalOrders(int $sellerId): int
+    {
+        $sql = "SELECT COUNT(*) as total 
+                FROM orders 
+                WHERE seller_id = ? AND status = 'completed'";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $sellerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return (int)($row['total'] ?? 0);
+    }
+
+    /**
      * Get total revenue for a seller from completed orders
      *
      * @param int $sellerId

@@ -132,19 +132,53 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
     <?php endif; ?>
 
     <script>
-        // Function to open register modal with seller role pre-selected
-        function openSellerRegisterModal() {
-            // Select the seller radio button
-            $('#seller').prop('checked', true);
+        // ========== CACHED DOM ELEMENTS ==========
+        var $sellerRegisterBtn = null;
+        var $createSellerBtn = null;
+        var $registerModal = null;
+        var $sellerRadio = null;
 
-            // Open the register modal
-            $('#register-modal').addClass('active');
-            $('#register-modal').css('visibility', 'visible');
+        // ========== CACHE FUNCTION ==========
+        function cacheSellPageElements() {
+            $sellerRegisterBtn = $('#sellerRegisterBtn');
+            $createSellerBtn = $('#createSellerBtn');
+            $registerModal = $('#register-modal');
+            $sellerRadio = $('#seller');
         }
 
-        // Attach click handlers to seller registration buttons
-        document.getElementById('sellerRegisterBtn').addEventListener('click', openSellerRegisterModal);
-        document.getElementById('createSellerBtn').addEventListener('click', openSellerRegisterModal);
+        // ========== OPEN SELLER REGISTER MODAL ==========
+        function openSellerRegisterModal() {
+            cacheSellPageElements();
+
+            // Select the seller radio button
+            if ($sellerRadio.length) {
+                $sellerRadio.prop('checked', true);
+            }
+
+            // Open the register modal using the shared function from main.js
+            if (typeof openModal === 'function') {
+                openModal($registerModal);
+            } else {
+                // Fallback if openModal is not available
+                $registerModal.addClass('active');
+                $registerModal.css('visibility', 'visible');
+                $('body').css('overflow', 'hidden');
+            }
+        }
+
+        // ========== INITIALIZE ==========
+        $(document).ready(function() {
+            cacheSellPageElements();
+
+            // Attach click handlers to seller registration buttons
+            if ($sellerRegisterBtn.length) {
+                $sellerRegisterBtn.on('click', openSellerRegisterModal);
+            }
+
+            if ($createSellerBtn.length) {
+                $createSellerBtn.on('click', openSellerRegisterModal);
+            }
+        });
     </script>
 
 </body>
