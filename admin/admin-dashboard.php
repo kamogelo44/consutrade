@@ -6,7 +6,6 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-// Check if admin is logged in using Auth class
 if (!$auth->isAdmin()) {
     header('Location: login.php');
     exit;
@@ -20,11 +19,267 @@ $user_name = $currentUser->getFullName();
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Admin Dashboard - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <style>
+        .admin-main-content {
+            margin-left: 280px;
+            padding: var(--spacing-xl);
+            min-height: 100vh;
+            background: var(--gray-bg);
+            transition: margin-left var(--transition-normal);
+        }
+
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .welcome-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .welcome-section h1 {
+            font-size: var(--font-2xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--spacing-xs);
+            color: var(--dark-bg);
+        }
+
+        .welcome-section p {
+            color: var(--gray-medium);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition-fast);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-info h3 {
+            font-size: var(--font-sm);
+            color: var(--gray-medium);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stat-number {
+            font-size: var(--font-3xl);
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
+        }
+
+        .stat-number.pending {
+            color: var(--warning);
+        }
+
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--primary-fade);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon img {
+            width: 28px;
+            height: 28px;
+            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
+        }
+
+        .pending-verification-notice {
+            background: var(--warning-light);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .section-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .section-header h2 {
+            font-size: var(--font-lg);
+            font-weight: var(--font-semibold);
+            color: var(--dark-bg);
+        }
+
+        .view-all-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: var(--font-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .view-all-link:hover {
+            transform: translateX(4px);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-table th {
+            font-weight: var(--font-semibold);
+            color: var(--gray-dark);
+            background: var(--gray-bg-light);
+            font-size: var(--font-sm);
+        }
+
+        .data-table tr:hover td {
+            background: var(--gray-bg-light);
+        }
+
+        .loading-cell {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--gray-medium);
+        }
+
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: var(--spacing-md);
+            }
+
+            .stat-number {
+                font-size: var(--font-2xl);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .admin-main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: var(--spacing-md);
+                padding-top: 70px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-main-content {
+                padding: var(--spacing-md);
+                padding-top: 70px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-sm);
+            }
+
+            .stat-card {
+                padding: var(--spacing-md);
+            }
+
+            .stat-icon {
+                width: 44px;
+                height: 44px;
+            }
+
+            .stat-icon img {
+                width: 22px;
+                height: 22px;
+            }
+
+            .stat-number {
+                font-size: var(--font-xl);
+            }
+
+            .section-card {
+                padding: var(--spacing-md);
+            }
+
+            .section-header h2 {
+                font-size: var(--font-base);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-main-content {
+                padding: var(--spacing-sm);
+                padding-top: 60px;
+            }
+
+            .welcome-section h1 {
+                font-size: var(--font-xl);
+            }
+
+            .stat-number {
+                font-size: var(--font-lg);
+            }
+        }
+    </style>
 </head>
 
 <body class="admin-dashboard-page">
@@ -86,7 +341,7 @@ $user_name = $currentUser->getFullName();
                 </div>
             </div>
 
-            <div class="pending-verification-notice" id="pendingNotice" style="display: none; background: var(--warning-light); padding: var(--spacing-md); border-radius: var(--radius-lg); margin-bottom: var(--spacing-xl); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm);">
+            <div class="pending-verification-notice" id="pendingNotice" style="display: none;">
                 <span id="pendingMessage"></span>
                 <a href="users.php?role=seller&filter=pending" class="view-all-link">Review Now →</a>
             </div>

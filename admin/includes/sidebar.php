@@ -77,3 +77,10 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
 </button>
 
 <div class="<?php echo $role_class; ?>-menu-overlay" id="<?php echo $role_class; ?>MenuOverlay"></div>
+
+<script>
+    var baseUrl = '<?php echo $baseUrl; ?>';
+    var currentUserId = <?php echo isset($currentUser) ? $currentUser->getUserId() : 0; ?>;
+    var currentUserRole = '<?php echo isset($currentUser) ? $currentUser->getRole() : ''; ?>';
+    var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+</script>
