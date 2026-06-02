@@ -2,14 +2,9 @@
 /*
  * ConsuTrade - Unified Sidebar Component
  * Author: Kamogelo Phale
- * 
- * This sidebar is used for both Admin and Seller dashboards.
- * Mobile behavior: Hamburger opens sidebar, X button inside closes it
  */
 
-// Use the User object from init.php
 if (!isset($currentUser) || !$currentUser instanceof User) {
-    // Fallback - should not happen on protected pages
     $role_class = 'seller';
     $user_name = 'User';
     $user_role = 'seller';
@@ -21,18 +16,12 @@ if (!isset($currentUser) || !$currentUser instanceof User) {
     $profile_image_url = $currentUser->getProfileImageUrl();
 }
 
-// Map current page for active link highlighting
 $current_file = basename($_SERVER['PHP_SELF']);
-
-// Check if we're on a sub-page of My Products (keep active state)
 $is_products_subpage = in_array($current_file, ['add-product.php', 'edit-product.php']);
-
-// Dashboard home link based on role
 $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.php' : $baseUrl . 'admin/seller-dashboard.php';
 ?>
 
 <div class="<?php echo $role_class; ?>-sidebar" id="<?php echo $role_class; ?>SideMenu">
-    <!-- Sidebar Header -->
     <div class="<?php echo $role_class; ?>-sidebar-header">
         <div class="<?php echo $role_class; ?>-sidebar-logo">
             <a href="<?php echo $dashboard_home; ?>">Consu<span>Trade</span></a>
@@ -42,7 +31,6 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
         </button>
     </div>
 
-    <!-- User Profile Section -->
     <div class="<?php echo $role_class; ?>-sidebar-profile">
         <div class="<?php echo $role_class; ?>-sidebar-avatar">
             <img src="<?php echo $profile_image_url; ?>" alt="Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
@@ -53,7 +41,6 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
         </div>
     </div>
 
-    <!-- Navigation Menu -->
     <div class="<?php echo $role_class; ?>-sidebar-nav">
         <ul>
             <?php if ($user_role === 'admin'): ?>
@@ -69,41 +56,24 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
         </ul>
     </div>
 
-    <!-- Footer Links -->
     <div class="<?php echo $role_class; ?>-sidebar-footer">
         <?php if ($user_role === 'admin'): ?>
             <a href="<?php echo $baseUrl; ?>admin/admin-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'admin-profile.php' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Profile Settings
             </a>
-            <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
-                <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
-            </a>
         <?php else: ?>
             <a href="<?php echo $baseUrl; ?>admin/seller-profile.php" class="<?php echo $role_class; ?>-sidebar-link <?php echo $current_file == 'seller-profile.php' ? 'active' : ''; ?>">
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Profile Settings
             </a>
-            <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
-                <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
-            </a>
         <?php endif; ?>
+        <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
+            <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
+        </a>
     </div>
 </div>
 
-<!-- Mobile Toggle Button (Hamburger) -->
 <button class="<?php echo $role_class; ?>-mobile-toggle" id="<?php echo $role_class; ?>Hamburger">
     <span></span><span></span><span></span>
 </button>
 
-<!-- Menu Overlay -->
 <div class="<?php echo $role_class; ?>-menu-overlay" id="<?php echo $role_class; ?>MenuOverlay"></div>
-
-<!-- Scripts -->
-<script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-<script src="<?php echo $baseUrl; ?>js/main.js"></script>
-<script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
-<script>
-    var baseUrl = '<?php echo rtrim($baseUrl, '/') . '/'; ?>';
-    var currentUserId = <?php echo $current_user_id ?: 0; ?>;
-    var currentUserRole = '<?php echo $user_role; ?>';
-    var isLoggedIn = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
-</script>

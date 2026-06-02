@@ -368,7 +368,7 @@ function loadAdminStats() {
         dataType: 'json',
         success: function(data) {
             if (data.success) {
-                setText('totalRevenue', 'R ' + (data.total_earnings || 0).toFixed(2));
+                setText('totalRevenue', 'R ' + (data.total_revenue || 0).toFixed(2));
                 setText('totalUsers', data.total_users || 0);
                 setText('totalProducts', data.total_products || 0);
                 setText('pendingOrders', data.pending_orders || 0);
@@ -575,6 +575,38 @@ function initMobileSidebar(prefix) {
     
     $('.' + prefix + '-sidebar-nav a, .' + prefix + '-sidebar-link').on('click', function() {
         if ($(window).width() <= 1024) closeSidebar();
+    });
+}
+
+// ========== GALLERY IMAGE FUNCTIONS ==========
+
+function removeGalleryImage(imageId, productId) {
+    if (!confirm('Remove this image from the gallery? This action cannot be undone.')) {
+        return;
+    }
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/remove-gallery-image.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            image_id: imageId,
+            product_id: productId
+        }),
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                $('.gallery-item[data-image-id="' + imageId + '"]').fadeOut(300, function() {
+                    $(this).remove();
+                    showSuccessToast('Image removed successfully');
+                });
+            } else {
+                showErrorToast(data.message || 'Could not remove image');
+            }
+        },
+        error: function() {
+            showErrorToast('Something went wrong. Please try again.');
+        }
     });
 }
 

@@ -1,0 +1,6 @@
+/* ========== TABLE MASTER CSS ========== */
+/* For users.php, all-products.php, all-orders.php */
+
+@import url("sidebar.css");
+@import url("dashboard.css");
+@import url("tables.css");

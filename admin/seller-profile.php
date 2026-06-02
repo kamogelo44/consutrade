@@ -2,30 +2,24 @@
 /*
  * ConsuTrade - Seller Profile Page
  * Author: Kamogelo Phale
- * 
- * Allows sellers to view and edit their profile information
  */
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!$auth->isSellerLoggedIn()) {
+if (!$auth->isSeller()) {
     header('Location: login.php');
     exit;
 }
 
-$baseUrl = getBaseUrl();
-$user_id = $current_user_id;
-$user = getUserById($conn, $user_id);
-$profile_image = getUserProfileImage($user['profile_image'] ?? null);
-
-// Get verification status
-$verSql = "SELECT * FROM seller_verification WHERE seller_id = ?";
-$verStmt = $conn->prepare($verSql);
-$verStmt->bind_param('i', $user_id);
-$verStmt->execute();
-$verResult = $verStmt->get_result();
-$verification = $verResult->fetch_assoc();
-$verStmt->close();
+$user_id = $currentUser->getUserId();
+$user_name = $currentUser->getFullName();
+$user_email = $currentUser->getEmail();
+$user_phone = $currentUser->getPhone();
+$user_location = $currentUser->getLocation();
+$user_created_at = $currentUser->getCreatedAt();
+$profile_image = $currentUser->getProfileImageUrl();
+$is_verified = $currentUser->isIdVerified();
+$verification = $currentUser->viewVerificationStatus();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -35,509 +29,10 @@ $verStmt->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seller Profile - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
-    <style>
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
-        .profile-header-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            padding: var(--spacing-xl);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .profile-avatar-section {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .profile-avatar-container {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .profile-avatar-large {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            background: var(--primary-fade);
-            border: 3px solid var(--primary-color);
-        }
-
-        .avatar-upload-btn {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            background: var(--primary-color);
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-
-        .avatar-upload-btn:hover {
-            background: var(--primary-dark);
-            transform: scale(1.05);
-        }
-
-        .avatar-upload-btn img {
-            width: 16px;
-            height: 16px;
-            filter: brightness(0) invert(1);
-        }
-
-        .profile-header-info h2 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .profile-badges {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .role-badge {
-            padding: 4px 12px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .seller-badge {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-        }
-
-        .verification-badge {
-            padding: 4px 12px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .verification-badge.verified {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .verification-badge.not-verified {
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        .member-since {
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .profile-email {
-            color: var(--gray-medium);
-            font-size: var(--font-md);
-        }
-
-        .flash-message,
-        .error-message {
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            display: none;
-        }
-
-        .flash-message {
-            background: var(--success-light);
-            color: var(--success);
-            border-left: 4px solid var(--success);
-        }
-
-        .error-message {
-            background: var(--error-light);
-            color: var(--error);
-            border-left: 4px solid var(--error);
-        }
-
-        .profile-two-columns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-xl);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .profile-stats-card,
-        .profile-edit-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            padding: var(--spacing-xl);
-        }
-
-        .profile-stats-card h3,
-        .profile-edit-card h3 {
-            font-size: var(--font-lg);
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-lg);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--primary-color);
-        }
-
-        .stats-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-        }
-
-        .stat-label {
-            font-weight: var(--font-semibold);
-            color: var(--gray-dark);
-        }
-
-        .stat-value {
-            color: var(--gray-medium);
-        }
-
-        .stat-value.highlight {
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-            font-size: var(--font-lg);
-        }
-
-        .stat-divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: var(--spacing-sm) 0;
-        }
-
-        .profile-edit-form .form-group {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .profile-edit-form label {
-            display: block;
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .profile-edit-form input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-            transition: all var(--transition-fast);
-        }
-
-        .profile-edit-form input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .profile-edit-form input:disabled {
-            background: var(--gray-bg-light);
-            cursor: not-allowed;
-        }
-
-        .profile-edit-form small {
-            display: block;
-            margin-top: var(--spacing-xs);
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-        }
-
-        .form-actions {
-            display: flex;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .save-btn,
-        .change-password-btn {
-            padding: 10px 24px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-
-        .save-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-        }
-
-        .save-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .change-password-btn {
-            background: var(--gray-bg-light);
-            color: var(--gray-dark);
-            border: 1px solid var(--border-light);
-        }
-
-        .change-password-btn:hover {
-            background: var(--gray-lighter);
-        }
-
-        .quick-actions-section {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            padding: var(--spacing-xl);
-        }
-
-        .quick-actions-section h3 {
-            font-size: var(--font-lg);
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-lg);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--primary-color);
-        }
-
-        .quick-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: var(--spacing-md);
-        }
-
-        .quick-action-card {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            transition: all var(--transition-fast);
-            border: 1px solid transparent;
-        }
-
-        .quick-action-card:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-light);
-            transform: translateX(4px);
-        }
-
-        .quick-action-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .quick-action-icon img {
-            width: 24px;
-            height: 24px;
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
-        }
-
-        .quick-action-info {
-            flex: 1;
-        }
-
-        .quick-action-info h4 {
-            font-size: var(--font-base);
-            font-weight: var(--font-semibold);
-            color: var(--dark-bg);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .quick-action-info p {
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-            margin: 0;
-        }
-
-        .quick-action-arrow {
-            font-size: var(--font-xl);
-            color: var(--gray-light);
-            transition: all var(--transition-fast);
-        }
-
-        .quick-action-card:hover .quick-action-arrow {
-            transform: translateX(4px);
-            color: var(--primary-color);
-        }
-
-        .verification-status-card {
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-lg);
-        }
-
-        .verification-checks {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .check-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-sm) var(--spacing-md);
-            background: var(--white);
-            border-radius: var(--radius-sm);
-        }
-
-        .check-label {
-            font-weight: var(--font-medium);
-            color: var(--gray-dark);
-        }
-
-        .check-status {
-            font-weight: var(--font-bold);
-            font-size: var(--font-lg);
-        }
-
-        .check-status.verified {
-            color: var(--success);
-        }
-
-        .check-status.not-verified {
-            color: var(--gray-light);
-        }
-
-        .current-document {
-            margin-bottom: var(--spacing-lg);
-            padding: var(--spacing-md);
-            background: var(--white);
-            border-radius: var(--radius-sm);
-        }
-
-        .text-success {
-            color: var(--success);
-        }
-
-        .text-warning {
-            color: var(--warning);
-        }
-
-        .upload-document-section h4 {
-            font-size: var(--font-base);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .upload-document-section p {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .upload-document-section select,
-        .upload-document-section input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        @media (max-width: 1024px) {
-            .profile-two-columns {
-                grid-template-columns: 1fr;
-                gap: var(--spacing-lg);
-            }
-
-            .quick-actions-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .verification-checks {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .profile-avatar-section {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .profile-badges {
-                justify-content: center;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .save-btn,
-            .change-password-btn {
-                width: 100%;
-            }
-
-            .stat-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        @media (max-width: 480px) {
-
-            .profile-header-card,
-            .profile-stats-card,
-            .profile-edit-card,
-            .quick-actions-section {
-                padding: var(--spacing-md);
-            }
-
-            .profile-header-info h2 {
-                font-size: var(--font-xl);
-            }
-        }
-    </style>
 </head>
 
 <body>
@@ -563,17 +58,17 @@ $verStmt->close();
                         </label>
                     </div>
                     <div class="profile-header-info">
-                        <h2><?php echo htmlspecialchars($user['full_name']); ?></h2>
+                        <h2><?php echo htmlspecialchars($user_name); ?></h2>
                         <div class="profile-badges">
                             <span class="role-badge seller-badge">Seller</span>
-                            <?php if ($user['id_verified'] == 1): ?>
+                            <?php if ($is_verified == 1): ?>
                                 <span class="verification-badge verified">Verified Seller</span>
                             <?php else: ?>
                                 <span class="verification-badge not-verified">Not Verified</span>
                             <?php endif; ?>
-                            <span class="member-since">Member since <?php echo formatDate($user['created_at']); ?></span>
+                            <span class="member-since">Member since <?php echo date($user_created_at); ?></span>
                         </div>
-                        <p class="profile-email"><?php echo htmlspecialchars($user['email']); ?></p>
+                        <p class="profile-email"><?php echo htmlspecialchars($user_email); ?></p>
                     </div>
                 </div>
             </div>
@@ -588,11 +83,11 @@ $verStmt->close();
                     <div class="stats-list">
                         <div class="stat-row">
                             <span class="stat-label">Location</span>
-                            <span class="stat-value"><?php echo htmlspecialchars($user['location'] ?? 'Not specified'); ?></span>
+                            <span class="stat-value"><?php echo htmlspecialchars($user_location ?? 'Not specified'); ?></span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">Phone Number</span>
-                            <span class="stat-value"><?php echo htmlspecialchars($user['phone'] ?? 'Not specified'); ?></span>
+                            <span class="stat-value"><?php echo htmlspecialchars($user_phone ?? 'Not specified'); ?></span>
                         </div>
                         <div class="stat-divider"></div>
                         <div class="stat-row">
@@ -615,7 +110,7 @@ $verStmt->close();
                         <div class="stat-row">
                             <span class="stat-label">Account Status</span>
                             <span class="stat-value">
-                                <?php if ($user['id_verified'] == 1): ?>
+                                <?php if ($is_verified == 1): ?>
                                     <span style="color: var(--success);">Verified</span>
                                 <?php else: ?>
                                     <span style="color: var(--warning);">Pending Verification</span>
@@ -630,21 +125,21 @@ $verStmt->close();
                     <form id="profileEditForm" class="profile-edit-form">
                         <div class="form-group">
                             <label for="fullName">Full Name</label>
-                            <input type="text" id="fullName" name="full_name" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
+                            <input type="text" id="fullName" name="full_name" value="<?php echo htmlspecialchars($user_name); ?>" required>
                         </div>
                         <div class="form-group">
                             <label for="email">Email Address</label>
-                            <input type="email" id="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled>
+                            <input type="email" id="email" value="<?php echo htmlspecialchars($user_email); ?>" disabled>
                             <small>Email cannot be changed</small>
                         </div>
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="e.g., 071 234 5678">
+                            <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user_phone ?? ''); ?>" placeholder="e.g., 071 234 5678">
                             <small>Optional but recommended for order updates</small>
                         </div>
                         <div class="form-group">
                             <label for="location">Location (City, Province)</label>
-                            <input type="text" id="location" name="location" value="<?php echo htmlspecialchars($user['location'] ?? ''); ?>" placeholder="e.g., Johannesburg, Gauteng">
+                            <input type="text" id="location" name="location" value="<?php echo htmlspecialchars($user_location ?? ''); ?>" placeholder="e.g., Johannesburg, Gauteng">
                             <small>Your location helps buyers find your products</small>
                         </div>
                         <div class="form-actions">

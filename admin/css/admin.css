@@ -1,0 +1,8 @@
+/* ========== ADMIN PANEL MASTER CSS ========== */
+/* Author: Kamogelo Phale */
+
+@import url("sidebar.css");
+@import url("dashboard.css");
+@import url("forms.css");
+@import url("tables.css");
+@import url("modal.css");

@@ -2,18 +2,16 @@
 /*
  * ConsuTrade - Edit Product Page
  * Author: Kamogelo Phale
- * 
- * Sellers can edit products and manage gallery images
  */
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!$auth->isSellerLoggedIn()) {
+if (!$auth->isSeller()) {
     header('Location: login.php');
     exit;
 }
 
-$seller_id = $current_user_id;
+$seller_id = $currentUser->getUserId();
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
@@ -21,7 +19,6 @@ if ($product_id <= 0) {
     exit;
 }
 
-// Get product as Product object using ProductRepository
 $product = $productRepo->getProductObject($product_id);
 
 if (!$product || $product->getSellerId() != $seller_id) {
@@ -29,15 +26,8 @@ if (!$product || $product->getSellerId() != $seller_id) {
     exit;
 }
 
-// Get gallery images using ProductImageRepository
 $gallery_images = $productImageRepo->getByProductId($product_id);
-
-// Get categories using CategoryRepository
 $categories = $categoryRepo->getAll();
-
-// Get user data using UserRepository
-$user_data = $userRepo->getById($seller_id);
-$profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data['profile_image'] : getBaseUrl() . 'images/icons/profile-svgrepo-com.svg';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,12 +36,114 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/dashboard-clean.css">
-    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/sidebar.css">
-    <script src="<?php echo getBaseUrl(); ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo getBaseUrl(); ?>js/main.js"></script>
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <style>
+        /* ========== EDIT PRODUCT PAGE SPECIFIC STYLES ========== */
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-md);
+        }
+
+        .gallery-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: var(--gray-bg);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Remove Button (×) */
+        .gallery-item .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: var(--error);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 18px;
+            font-size: 12px;
+            text-decoration: none;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .gallery-item .remove-btn:hover {
+            background: var(--error-dark);
+            transform: scale(1.1);
+        }
+
+        /* Primary Badge */
+        .primary-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            font-weight: var(--font-medium);
+            z-index: 1;
+        }
+
+        /* Set as Primary Button */
+        .set-primary-btn {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .set-primary-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.02);
+        }
+
+        /* Current Image Section */
+        .current-image {
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--gray-bg-light);
+            border-radius: var(--radius-md);
+        }
+
+        .current-image img {
+            max-width: 150px;
+            border-radius: var(--radius-md);
+        }
+
+        .current-image p {
+            font-size: var(--font-sm);
+            color: var(--gray-medium);
+            margin-top: var(--spacing-sm);
+        }
+
+        /* Form Container */
         .form-container {
             max-width: 800px;
             margin: 0 auto;
@@ -61,6 +153,7 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
             border: 1px solid var(--border-light);
         }
 
+        /* Form Groups */
         .form-group {
             margin-bottom: var(--spacing-lg);
         }
@@ -90,12 +183,36 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
             box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
         }
 
+        /* Form Row (2 columns) */
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: var(--spacing-md);
         }
 
+        /* Form Help Text */
+        .form-group small {
+            display: block;
+            margin-top: var(--spacing-xs);
+            font-size: var(--font-xs);
+            color: var(--gray-medium);
+        }
+
+        /* Gallery Section Separator */
+        .gallery-section {
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--border-light);
+        }
+
+        .gallery-section>label {
+            display: block;
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--spacing-sm);
+            color: var(--dark-bg);
+        }
+
+        /* Buttons */
         .btn-submit {
             background: var(--primary-color);
             color: var(--white);
@@ -121,81 +238,15 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
             text-decoration: none;
             margin-left: var(--spacing-sm);
             transition: all var(--transition-fast);
+            display: inline-block;
+            text-align: center;
         }
 
         .btn-cancel:hover {
             background: var(--border-light);
         }
 
-        .current-image {
-            margin-bottom: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-        }
-
-        .current-image img {
-            max-width: 150px;
-            border-radius: var(--radius-md);
-        }
-
-        .gallery-section {
-            margin-top: var(--spacing-lg);
-            padding-top: var(--spacing-lg);
-            border-top: 1px solid var(--border-light);
-        }
-
-        .gallery-grid {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-            margin-top: var(--spacing-md);
-        }
-
-        .gallery-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            background: var(--gray-bg);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .gallery-item .remove-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: var(--error);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 12px;
-            line-height: 18px;
-            text-decoration: none;
-            z-index: 1;
-        }
-
-        .gallery-item .primary-badge {
-            position: absolute;
-            bottom: 4px;
-            left: 4px;
-            background: var(--primary-color);
-            color: white;
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            font-size: 10px;
-        }
-
+        /* Error and Success Messages */
         .error-msg {
             background: var(--error-light);
             color: var(--error);
@@ -214,13 +265,47 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
             border-left: 4px solid var(--success);
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
+                gap: var(--spacing-md);
             }
 
             .form-container {
                 padding: var(--spacing-lg);
+            }
+
+            .gallery-grid {
+                justify-content: center;
+            }
+
+            .btn-cancel {
+                margin-left: 0;
+                margin-top: var(--spacing-sm);
+            }
+
+            .form-actions {
+                display: flex;
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-container {
+                padding: var(--spacing-md);
+            }
+
+            .gallery-item {
+                width: 80px;
+                height: 80px;
+            }
+
+            .primary-badge,
+            .set-primary-btn {
+                font-size: 8px;
+                padding: 1px 4px;
             }
         }
     </style>
@@ -232,8 +317,10 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
 
     <main class="admin-main-content">
         <div class="dashboard-content">
-            <h1 style="margin-bottom: var(--spacing-sm); font-size: var(--font-3xl); font-weight: var(--font-bold)">Edit Product</h1>
-            <p style="margin-bottom: var(--spacing-xl); color: var(--gray-medium)">Update your product information</p>
+            <div class="page-header">
+                <h1>Edit Product</h1>
+                <p>Update your product information</p>
+            </div>
 
             <?php if (isset($_SESSION['error'])): ?>
                 <div class="error-msg"><?php echo htmlspecialchars($_SESSION['error']);
@@ -310,26 +397,18 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
                     </div>
 
                     <!-- Gallery Images Section -->
-                    <div class="gallery-section">
-                        <label>Product Gallery Images</label>
-                        <div class="gallery-grid" id="existing-gallery">
-                            <?php foreach ($gallery_images as $img): ?>
-                                <div class="gallery-item" data-image-id="<?php echo $img['image_id']; ?>">
-                                    <img src="<?php echo $productRepo->getProductImageUrl($img['image_url']); ?>" alt="Gallery image">
-                                    <a href="javascript:void(0)" class="remove-btn" onclick="removeGalleryImage(<?php echo $img['image_id']; ?>, <?php echo $product->getProductId(); ?>)">×</a>
-                                    <?php if ($img['is_primary']): ?>
-                                        <span class="primary-badge">Primary</span>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <div class="form-group" style="margin-top: var(--spacing-md)">
-                            <label>Add More Images (Optional)</label>
-                            <input type="file" name="new_gallery_images[]" accept="image/*" multiple>
-                            <small style="color: var(--gray-medium)">You can select multiple images at once</small>
-                            <div id="new-gallery-preview" class="gallery-grid" style="margin-top: var(--spacing-md)"></div>
-                        </div>
+                    <div class="gallery-grid" id="existing-gallery">
+                        <?php foreach ($gallery_images as $img): ?>
+                            <div class="gallery-item" data-image-id="<?php echo $img['image_id']; ?>">
+                                <img src="<?php echo $productRepo->getProductImageUrl($img['image_url']); ?>" alt="Gallery image">
+                                <a href="javascript:void(0)" class="remove-btn" onclick="removeGalleryImage(<?php echo $img['image_id']; ?>, <?php echo $product->getProductId(); ?>)">×</a>
+                                <?php if ($img['is_primary']): ?>
+                                    <span class="primary-badge">Primary</span>
+                                <?php else: ?>
+                                    <a href="javascript:void(0)" class="set-primary-btn" onclick="setPrimaryImage(<?php echo $img['image_id']; ?>, <?php echo $product->getProductId(); ?>)">Set as Primary</a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
 
                     <div style="margin-top: var(--spacing-xl); display: flex; gap: var(--spacing-sm)">
@@ -342,10 +421,10 @@ $profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data
     </main>
 
     <script>
-        var baseUrl = '<?php echo getBaseUrl(); ?>';
-        var currentUserId = <?php echo $current_user_id ?: 0; ?>;
-        var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
-        var isLoggedIn = true;
+        var baseUrl = '<?php echo $baseUrl; ?>';
+        var currentUserId = <?php echo $currentUser ? $currentUser->getUserId() : 0; ?>;
+        var currentUserRole = '<?php echo $currentUser ? $currentUser->getRole() : ''; ?>';
+        var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
 
         $('input[name="new_gallery_images[]"]').on('change', function(e) {
             var preview = $('#new-gallery-preview');

@@ -7,11 +7,11 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Redirect if already logged in
-if ($auth->isAdminLoggedIn()) {
+if ($auth->isAdmin()) {
     header('Location: admin-dashboard.php');
     exit;
 }
-if ($auth->isSellerLoggedIn()) {
+if ($auth->isSeller()) {
     header('Location: seller-dashboard.php');
     exit;
 }

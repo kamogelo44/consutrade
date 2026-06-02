@@ -9,7 +9,22 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
     ini_set('session.cookie_secure', isset($_SERVER['HTTPS']));
-    ini_set('session.cookie_samesite', 'Strict');
+    ini_set('session.cookie_samesite', 'Lax');
+}
+
+// Dynamic session save path - I am testing this but it should work on both localhost and InfinityFree
+if (session_status() === PHP_SESSION_NONE) {
+    $savePath = ini_get('session.save_path');
+    if (empty($savePath) || !is_writable($savePath)) {
+        // Try common writable locations
+        $possiblePaths = ['/tmp', sys_get_temp_dir(), __DIR__ . '/../sessions'];
+        foreach ($possiblePaths as $path) {
+            if (is_writable($path) || (!file_exists($path) && mkdir($path, 0777, true))) {
+                session_save_path($path);
+                break;
+            }
+        }
+    }
 }
 
 require_once __DIR__ . '/php/config.php';
@@ -60,7 +75,7 @@ $session = $auth->initSession();
 $currentUser = $session['user'];
 $isLoggedIn = $session['is_logged_in'];
 
-// Base URL
+// Base URL - dynamic detection
 $baseUrl = getBaseUrl();
 
 // Set all global variables

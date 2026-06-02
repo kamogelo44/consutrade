@@ -208,21 +208,26 @@ class Auth
             strpos($scriptPath, 'seller-profile.php') === false &&
             strpos($scriptPath, 'my-products.php') === false &&
             strpos($scriptPath, 'add-product.php') === false &&
-            strpos($scriptPath, 'edit-product.php') === false;
+            strpos($scriptPath, 'edit-product.php') === false &&
+            strpos($scriptPath, 'my-orders.php') === false;
 
         $isSellerPage = strpos($scriptPath, 'seller-dashboard.php') !== false ||
             strpos($scriptPath, 'seller-profile.php') !== false ||
             strpos($scriptPath, 'my-products.php') !== false ||
             strpos($scriptPath, 'add-product.php') !== false ||
+            strpos($scriptPath, 'my-orders.php') !== false ||
             strpos($scriptPath, 'edit-product.php') !== false;
 
+        // Set session name BEFORE any session start
         if ($isAdminPage) {
-            session_name('CONSUTRADE_ADMIN_SESSION');
+            $sessionName = 'CONSUTRADE_ADMIN_SESSION';
         } elseif ($isSellerPage) {
-            session_name('CONSUTRADE_SELLER_SESSION');
+            $sessionName = 'CONSUTRADE_SELLER_SESSION';
         } else {
-            session_name('CONSUTRADE_USER_SESSION');
+            $sessionName = 'CONSUTRADE_USER_SESSION';
         }
+
+        session_name($sessionName);
 
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

@@ -6,16 +6,14 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!$auth->isSellerLoggedIn()) {
+if (!$auth->isSeller()) {
     header('Location: login.php');
     exit;
 }
 
-$seller_id = $current_user_id;
-$user_data = $userRepo->getById($seller_id);
-$user_name = $user_data['full_name'] ?? 'Seller';
-$profile_image = !empty($user_data['profile_image']) ? getBaseUrl() . $user_data['profile_image'] : getBaseUrl() . 'images/icons/profile-svgrepo-com.svg';
-
+$seller_id = $currentUser->getUserId();
+$user_name = $currentUser->getFullName();
+$profile_image = $currentUser->getProfileImageUrl();
 $categories = $categoryRepo->getAll();
 ?>
 <!DOCTYPE html>
@@ -25,137 +23,10 @@ $categories = $categoryRepo->getAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Product - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/dashboard-clean.css">
-    <link rel="stylesheet" href="<?php echo getBaseUrl(); ?>admin/css/sidebar.css">
-    <script src="<?php echo getBaseUrl(); ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo getBaseUrl(); ?>js/main.js"></script>
-    <style>
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-xl);
-            border: 1px solid var(--border-light);
-        }
-
-        .form-group {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-        }
-
-        .btn-submit {
-            background: var(--primary-color);
-            color: var(--white);
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-bold);
-            transition: all var(--transition-fast);
-        }
-
-        .btn-submit:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .btn-cancel {
-            background: var(--gray-bg-light);
-            color: var(--gray-dark);
-            padding: 12px 24px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            margin-left: var(--spacing-sm);
-            transition: all var(--transition-fast);
-        }
-
-        .btn-cancel:hover {
-            background: var(--border-light);
-        }
-
-        .gallery-preview {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-            margin-top: var(--spacing-md);
-        }
-
-        .gallery-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .error-msg {
-            background: var(--error-light);
-            color: var(--error);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--error);
-        }
-
-        .success-msg {
-            background: var(--success-light);
-            color: var(--success);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--success);
-        }
-
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .form-container {
-                padding: var(--spacing-lg);
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/form-master.css">
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 </head>
 
 <body>
@@ -164,8 +35,10 @@ $categories = $categoryRepo->getAll();
 
     <main class="admin-main-content">
         <div class="dashboard-content">
-            <h1 style="margin-bottom: var(--spacing-sm); font-size: var(--font-3xl); font-weight: var(--font-bold)">Add New Product</h1>
-            <p style="margin-bottom: var(--spacing-xl); color: var(--gray-medium)">Fill in the details below to list your product</p>
+            <div class="page-header">
+                <h1>Add New Product</h1>
+                <p>Fill in the details below to list your product</p>
+            </div>
 
             <?php if (isset($_SESSION['error'])): ?>
                 <div class="error-msg"><?php echo htmlspecialchars($_SESSION['error']);
