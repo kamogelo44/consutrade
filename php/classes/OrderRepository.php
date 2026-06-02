@@ -141,6 +141,24 @@ class OrderRepository
     }
 
     /**
+     * Get total revenue for a seller from completed orders
+     *
+     * @param int $sellerId
+     * @return float
+     */
+    public function getSellerTotalRevenue(int $sellerId): float
+    {
+        $sql = "SELECT SUM(total_price) as total FROM orders WHERE seller_id = ? AND status = 'completed'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $sellerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return (float)($row['total'] ?? 0);
+    }
+
+    /**
      * Get all orders for admin
      *
      * @return array
@@ -163,6 +181,50 @@ class OrderRepository
         $orders = [];
         while ($row = $result->fetch_assoc()) {
             $orders[] = $row;
+        }
+        $stmt->close();
+
+        return $orders;
+    }
+
+    /**
+     * Get recent orders for admin dashboard
+     *
+     * @param int $limit Number of orders to return
+     * @return array
+     */
+    public function getRecentOrders(int $limit = 5): array
+    {
+        $sql = "SELECT o.order_id as id, o.total_price as total, o.status, 
+            DATE_FORMAT(o.created_at, '%d %b %Y') as created_at,
+            DATE_FORMAT(o.created_at, '%d %b %Y, %h:%i %p') as full_created_at,
+            buyer.full_name as buyer_name,
+            seller.full_name as seller_name,
+            (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+            FROM orders o
+            JOIN users buyer ON o.buyer_id = buyer.user_id
+            JOIN users seller ON o.seller_id = seller.user_id
+            ORDER BY o.created_at DESC 
+            LIMIT ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $orders = [];
+        while ($row = $result->fetch_assoc()) {
+            $orders[] = [
+                'id' => (int)$row['id'],
+                'order_id' => (int)$row['id'],
+                'total' => (float)$row['total'],
+                'status' => $row['status'],
+                'created_at' => $row['created_at'],
+                'full_created_at' => $row['full_created_at'],
+                'buyer_name' => $row['buyer_name'],
+                'seller_name' => $row['seller_name'],
+                'item_count' => (int)($row['item_count'] ?? 0)
+            ];
         }
         $stmt->close();
 

@@ -291,13 +291,12 @@ window.cancelOrder = function(orderId) { updateOrderStatus(orderId, 'cancelled')
 
 // ========== SELLER PRODUCTS FUNCTION ==========
 window.loadSellerProducts = function(limit) {
-    var $grid = $('#listings-grid, #products-grid');
+    var $grid = $('#listings-grid'); 
     if (!$grid.length) return;
     
     $grid.html('<div class="loading-spinner">Loading your products...</div>');
     
-    var sellerId = (typeof currentUserId !== 'undefined') ? currentUserId : 0;
-    var url = baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + sellerId;
+    var url = baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + currentUserId;
     if (limit) url += '&limit=' + limit;
     
     $.ajax({
@@ -321,37 +320,21 @@ function displaySellerProducts($grid, products) {
     $grid.empty();
     
     $.each(products, function(i, product) {
-        var imagePath = product.display_image || product.image || product.image_url;
-        if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/') && !imagePath.startsWith(baseUrl)) {
+        var imagePath = product.display_image || product.image;
+        if (imagePath && !imagePath.startsWith('http')) {
             imagePath = baseUrl + imagePath;
         }
         
-        var stockBadge = '';
-        if (product.stock_quantity <= 0) {
-            stockBadge = '<span class="stock-badge out-of-stock">Out of Stock</span>';
-        } else if (product.stock_quantity <= 5) {
-            stockBadge = '<span class="stock-badge low-stock">Only ' + product.stock_quantity + ' left</span>';
-        }
-        
-        var statusBadge = '';
-        if (product.status === 'suspended') {
-            statusBadge = '<span class="status-badge suspended">Suspended</span>';
-        }
-        
-        var productTitle = product.title || product.name;
-        
-        var card = $('<div>').addClass('listing-card product-card');
+        var card = $('<div>').addClass('product-card');
         card.html(
-            '<div class="listing-img product-image">' +
-            '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(productTitle) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+            '<div class="product-image">' +
+            '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
             '</div>' +
-            '<div class="listing-info product-details">' +
-            '<h3 class="listing-title product-title">' + escapeHtml(productTitle) + '</h3>' +
-            '<p class="listing-price product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
-            stockBadge +
-            statusBadge +
-            '<div class="listing-actions product-actions">' +
-            '<button class="edit-btn" onclick="editProduct(' + product.id + ')">Edit</button>' +
+            '<div class="product-details">' +
+            '<h4 class="product-title">' + escapeHtml(product.name) + '</h4>' +
+            '<p class="product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
+            '<div class="product-actions">' +
+            '<a href="edit-product.php?id=' + product.id + '" class="edit-btn">Edit</a>' +
             '<button class="delete-btn" onclick="deleteProduct(' + product.id + ')">Delete</button>' +
             '</div>' +
             '</div>'
@@ -426,11 +409,11 @@ function loadRecentUsers() {
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="4" class="loading-cell">No users found</td</tr>');
+                $tbody.html('<tr><td colspan="4" class="loading-cell">No users found</td></tr>');
             }
         },
         error: function() {
-            $tbody.html('<td><td colspan="4" class="loading-cell">Error loading users</td</tr>');
+            $tbody.html('<tr><td colspan="4" class="loading-cell">Error loading users</td></tr>');
         }
     });
 }
@@ -460,11 +443,11 @@ function loadRecentOrders(limit) {
                     );
                 });
             } else {
-                $tbody.html('<tr><td colspan="5" class="loading-cell">No orders found</td</tr>');
+                $tbody.html('<tr><td colspan="5" class="loading-cell">No orders found</td></tr>');
             }
         },
         error: function() {
-            $tbody.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td</tr>');
+            $tbody.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td></tr>');
         }
     });
 }
@@ -479,12 +462,12 @@ function loadAdminDashboard() {
 // ========== SELLER DASHBOARD FUNCTIONS ==========
 function loadSellerStats() {
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-user-stats.php',
+        url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + currentUserId,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success) {
-                setText('stat-earnings', 'R ' + parseFloat(data.total_earnings || 0).toFixed(2));
+                setText('stat-earnings', 'R ' + parseFloat(data.total_sales || 0).toFixed(2));
                 setText('stat-products', data.total_products || 0);
                 setText('stat-pending', data.pending_orders || 0);
             }
@@ -503,7 +486,7 @@ function loadSellerRecentOrders(limit) {
         type: 'GET',
         dataType: 'json',
         success: function(data) {
-            if (data.success && data.orders && data.orders.length) {
+            if (data.success && data.orders && data.orders.length > 0) {
                 $ordersList.empty();
                 $.each(data.orders, function(i, order) {
                     var statusClass = getStatusClass(order.status);
@@ -529,11 +512,11 @@ function loadSellerRecentOrders(limit) {
                     );
                 });
             } else {
-                $ordersList.html('<p class="placeholder-text">No recent orders to display.</p>');
+                $ordersList.html('<div class="empty-state"><p>No recent orders to display.</p></div>');
             }
         },
         error: function() {
-            $ordersList.html('<p class="placeholder-text">Error loading orders.</p>');
+            $ordersList.html('<div class="error-message"><p>Error loading orders. Please refresh the page.</p></div>');
         }
     });
 }
@@ -579,7 +562,6 @@ function initMobileSidebar(prefix) {
 }
 
 // ========== GALLERY IMAGE FUNCTIONS ==========
-
 function removeGalleryImage(imageId, productId) {
     if (!confirm('Remove this image from the gallery? This action cannot be undone.')) {
         return;

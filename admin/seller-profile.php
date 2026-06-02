@@ -31,8 +31,6 @@ $verification = $currentUser->viewVerificationStatus();
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 </head>
 
 <body>

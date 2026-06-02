@@ -398,8 +398,6 @@ $user_name = $currentUser->getFullName();
             </div>
         </div>
     </main>
-
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
     <script>
         $(document).on('click', '[data-modal-open], .view-details-btn, .process-btn, .ship-btn, .complete-btn, .cancel-btn, .delete-btn, .edit-btn', function() {
             var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';

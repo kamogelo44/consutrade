@@ -40,7 +40,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <style>
         .seller-main-content {
             margin-left: 280px;
@@ -478,7 +477,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
         </div>
     </main>
 
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
     <script>
         var baseUrl = '<?php echo $baseUrl; ?>';
 

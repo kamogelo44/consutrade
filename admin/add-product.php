@@ -26,7 +26,6 @@ $categories = $categoryRepo->getAll();
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/form-master.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 </head>
 
 <body>
@@ -51,7 +50,7 @@ $categories = $categoryRepo->getAll();
             <?php endif; ?>
 
             <div class="form-container">
-                <form id="product-form" action="<?php echo getBaseUrl(); ?>php/endpoints/add-product.php" method="post" enctype="multipart/form-data">
+                <form id="product-form" action="<?php echo $baseUrl; ?>php/endpoints/add-product.php" method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <label>Product Title *</label>
                         <input type="text" name="title" required>
@@ -121,14 +120,6 @@ $categories = $categoryRepo->getAll();
             </div>
         </div>
     </main>
-
-    <script>
-        var baseUrl = '<?php echo getBaseUrl(); ?>';
-        var currentUserId = <?php echo $current_user_id ?: 0; ?>;
-        var currentUserRole = '<?php echo $current_user ? $current_user['role'] : ''; ?>';
-        var isLoggedIn = true;
-    </script>
-    <script src="<?php echo getBaseUrl(); ?>admin/js/dashboard.js"></script>
     <script>
         $('input[name="gallery_images[]"]').on('change', function(e) {
             var preview = $('#gallery-preview');

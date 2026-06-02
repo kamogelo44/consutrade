@@ -30,12 +30,12 @@ if (!$targetUser) {
 
 if ($targetUser instanceof Seller) {
     $totalProducts = $productRepo->countUserProducts($targetId);
-    $totalSales = $orderRepo->countSellerCompletedOrders($targetId);
+    $totalRevenue = $orderRepo->getSellerTotalRevenue($targetId);
 
     $response = [
         'success' => true,
         'total_products' => $totalProducts,
-        'total_sales' => $totalSales
+        'total_sales' => $totalRevenue
     ];
 } elseif ($targetUser instanceof Buyer) {
     $isAuthenticated = ($isLoggedIn && $currentUser instanceof Buyer && $currentUser->getUserId() === $targetId);

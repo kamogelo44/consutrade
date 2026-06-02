@@ -15,15 +15,16 @@
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   transition: transform var(--transition-normal);
   transform: translateX(0);
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
-/* Custom scrollbar */
 .admin-sidebar::-webkit-scrollbar,
 .seller-sidebar::-webkit-scrollbar {
   width: 4px;
@@ -68,7 +69,6 @@
   color: var(--primary-color);
 }
 
-/* Close button - visible only on mobile */
 .admin-sidebar-close,
 .seller-sidebar-close {
   display: none;
@@ -209,7 +209,6 @@
   border-left-color: var(--primary-color);
 }
 
-/* Navigation icons */
 .admin-sidebar-nav li a img,
 .seller-sidebar-nav li a img {
   width: 20px;
@@ -230,9 +229,10 @@
 
 .admin-sidebar-footer,
 .seller-sidebar-footer {
-  padding: var(--spacing-md) 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
   margin-top: auto;
+  padding: var(--spacing-md) 0;
+  padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom, 16px));
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-sidebar-link,
@@ -263,13 +263,12 @@
   border-left-color: var(--primary-color);
 }
 
-/* Footer icons */
 .admin-sidebar-link img,
 .seller-sidebar-link img {
   width: 20px;
   height: 20px;
-  filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg)
-    brightness(95%) contrast(90%);
+  filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) brightness(95%)
+    contrast(90%);
   transition: filter var(--transition-fast);
 }
 
@@ -280,7 +279,6 @@
   filter: brightness(0) invert(1);
 }
 
-/* Logout link */
 .admin-sidebar-link.logout,
 .seller-sidebar-link.logout {
   color: #ff6b6b;
@@ -381,8 +379,6 @@
   .seller-sidebar {
     transform: translateX(-100%);
     box-shadow: none;
-    height: 100vh;
-    overflow-y: auto;
   }
 
   .admin-sidebar.active,

@@ -26,6 +26,7 @@ $profile_image = $currentUser->getProfileImageUrl();
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
+        /* ========== DASHBOARD LAYOUT ========== */
         .seller-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -39,6 +40,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             margin: 0 auto;
         }
 
+        /* ========== PAGE HEADER ========== */
         .page-header {
             margin-bottom: var(--spacing-xl);
         }
@@ -54,16 +56,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             color: var(--gray-medium);
         }
 
-        .flash-message {
-            background: var(--success-light);
-            color: var(--success);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--success);
-            text-align: center;
-        }
-
+        /* ========== STATS CARDS ========== */
         .stats-grid-seller {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -123,6 +116,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
         }
 
+        /* ========== DASHBOARD GRID ========== */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -130,6 +124,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             margin-bottom: var(--spacing-xl);
         }
 
+        /* ========== SECTION CARDS ========== */
         .section-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -153,20 +148,10 @@ $profile_image = $currentUser->getProfileImageUrl();
             color: var(--dark-bg);
         }
 
-        .view-all-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: var(--font-sm);
-            transition: all var(--transition-fast);
-        }
-
-        .view-all-link:hover {
-            transform: translateX(4px);
-        }
-
+        /* ========== PRODUCTS GRID ========== */
         .listings-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: var(--spacing-md);
             margin-bottom: var(--spacing-lg);
             max-height: 380px;
@@ -181,7 +166,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             transition: all var(--transition-fast);
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: 200px;
         }
 
         .product-card:hover {
@@ -192,11 +177,11 @@ $profile_image = $currentUser->getProfileImageUrl();
 
         .product-image {
             width: 100%;
-            height: 130px;
+            height: 100px;
             background: var(--gray-bg);
             border-radius: var(--radius-md);
             overflow: hidden;
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: 8px;
             flex-shrink: 0;
         }
 
@@ -207,39 +192,42 @@ $profile_image = $currentUser->getProfileImageUrl();
         }
 
         .product-details {
-            flex: 1;
             display: flex;
             flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            padding: 2px 0;
         }
 
         .product-title {
             font-size: var(--font-sm);
             font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-xs);
             color: var(--dark-bg);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin: 0;
         }
 
         .product-price {
             font-size: var(--font-md);
             font-weight: var(--font-bold);
             color: var(--primary-color);
-            margin-bottom: var(--spacing-sm);
+            margin: 0;
         }
 
         .product-actions {
-            margin-top: auto;
             display: flex;
             gap: var(--spacing-sm);
+            margin-top: 6px;
+            padding-top: 4px;
         }
 
         .edit-btn,
         .delete-btn {
             flex: 1;
-            padding: 5px var(--spacing-sm);
-            font-size: var(--font-xs);
+            padding: 5px 6px;
+            font-size: 10px;
             font-weight: var(--font-medium);
             border-radius: var(--radius-md);
             cursor: pointer;
@@ -272,6 +260,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             color: var(--white);
         }
 
+        /* ========== ADD PRODUCT BUTTON ========== */
         .add-product-btn-container {
             margin-top: var(--spacing-lg);
             padding-top: var(--spacing-md);
@@ -305,6 +294,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             filter: brightness(0) invert(1);
         }
 
+        /* ========== ORDERS LIST ========== */
         .orders-list {
             display: flex;
             flex-direction: column;
@@ -417,6 +407,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             margin-top: var(--spacing-xs);
         }
 
+        /* ========== STORE SUMMARY CARD ========== */
         .store-summary-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -506,14 +497,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             height: 18px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px var(--spacing-xl);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-        }
-
+        /* ========== RESPONSIVE TABLET ========== */
         @media (max-width: 1024px) {
             .seller-main-content {
                 margin-left: 0;
@@ -532,6 +516,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             }
         }
 
+        /* ========== RESPONSIVE MOBILE ========== */
         @media (max-width: 768px) {
             .seller-main-content {
                 padding: var(--spacing-md);
@@ -593,6 +578,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             }
         }
 
+        /* ========== RESPONSIVE SMALL MOBILE ========== */
         @media (max-width: 480px) {
             .seller-main-content {
                 padding: var(--spacing-sm);
@@ -634,6 +620,7 @@ $profile_image = $currentUser->getProfileImageUrl();
                                             unset($_SESSION['flash']); ?></div>
             <?php endif; ?>
 
+            <!-- ========== STATISTICS CARDS ========== -->
             <div class="stats-grid-seller">
                 <div class="stat-card">
                     <div class="stat-icon"><img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" alt="Earnings"></div>
@@ -658,7 +645,9 @@ $profile_image = $currentUser->getProfileImageUrl();
                 </div>
             </div>
 
+            <!-- ========== DASHBOARD MAIN GRID ========== -->
             <div class="dashboard-grid">
+                <!-- My Listings Section -->
                 <div class="section-card">
                     <div class="section-header">
                         <h2>My Listings</h2>
@@ -675,17 +664,19 @@ $profile_image = $currentUser->getProfileImageUrl();
                     </div>
                 </div>
 
+                <!-- Recent Orders Section -->
                 <div class="section-card">
                     <div class="section-header">
                         <h2>Recent Orders</h2>
                         <a href="my-orders.php" class="view-all-link">View All →</a>
                     </div>
-                    <div class="orders-list" id="orders-list">
+                    <div class="orders-list" id="recent-orders-list">
                         <div class="loading-spinner">Loading recent orders...</div>
                     </div>
                 </div>
             </div>
 
+            <!-- ========== STORE SUMMARY CARD ========== -->
             <div class="store-summary-card">
                 <div class="store-summary-header">
                     <div class="store-avatar">
@@ -709,7 +700,6 @@ $profile_image = $currentUser->getProfileImageUrl();
         </div>
     </main>
 
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
 </body>
 
 </html>
