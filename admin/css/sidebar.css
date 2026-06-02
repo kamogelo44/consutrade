@@ -5,6 +5,15 @@
  * Shared sidebar navigation for admin and seller dashboards.
  */
 
+/*Don't want to create seperate styles for the breadcrumb*/
+/* ========== Breadcrumb ========== */
+
+/* Override breadcrumb margin for admin pages */
+.admin-main-content .breadcrumb,
+.seller-main-content .breadcrumb {
+  margin-left: 0;
+}
+
 /* ========== SIDEBAR CONTAINER ========== */
 
 .admin-sidebar,

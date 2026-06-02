@@ -179,14 +179,6 @@ $breadcrumbItems = [
 
     <script src="js/products.js"></script>
 
-    <script>
-        // Pass session data to JavaScript 
-        var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
-        var currentUserId = <?php echo $currentUser ? $currentUser->getUserId() : 0; ?>;
-        var currentUserRole = '<?php echo $currentUser ? $currentUser->getRole() : ''; ?>';
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
-
 </body>
 
 </html>

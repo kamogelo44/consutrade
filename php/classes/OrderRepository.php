@@ -451,18 +451,19 @@ class OrderRepository
     public function getSellerRecentOrders(int $sellerId, int $limit = 5): array
     {
         $sql = "SELECT o.order_id as id, o.total_price as total, o.status,
-                DATE_FORMAT(o.created_at, '%d %b %Y') as created_at,
-                u.full_name as buyer_name,
-                GROUP_CONCAT(DISTINCT p.title SEPARATOR ', ') as product_names,
-                COUNT(DISTINCT oi.order_item_id) as item_count
-                FROM orders o
-                JOIN users u ON o.buyer_id = u.user_id
-                JOIN order_items oi ON o.order_id = oi.order_id
-                JOIN products p ON oi.product_id = p.product_id
-                WHERE o.seller_id = ?
-                GROUP BY o.order_id
-                ORDER BY o.created_at DESC 
-                LIMIT ?";
+            DATE_FORMAT(o.created_at, '%d %b %Y') as created_at,
+            u.full_name as buyer_name,
+            GROUP_CONCAT(DISTINCT p.title SEPARATOR ', ') as product_names,
+            COUNT(DISTINCT oi.item_id) as item_count
+            FROM orders o
+            JOIN users u ON o.buyer_id = u.user_id
+            JOIN order_items oi ON o.order_id = oi.order_id
+            JOIN products p ON oi.product_id = p.product_id
+            WHERE o.seller_id = ?
+            GROUP BY o.order_id
+            ORDER BY o.created_at DESC 
+            LIMIT ?";
+
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('ii', $sellerId, $limit);
         $stmt->execute();

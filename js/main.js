@@ -1,3 +1,4 @@
+// main.js
 /*
  * ConsuTrade - Main JavaScript File (jQuery Version)
  * Author: Kamogelo Phale
@@ -14,6 +15,42 @@ function escapeHtml(text) {
     return $('<div>').text(text).html();
 }
 
+// ========== HELPER: CAPITALIZE FIRST LETTER ==========
+function capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// ========== HELPER: GET STATUS CLASS ==========
+function getStatusClass(status) {
+    var classes = {
+        'pending': 'status-pending',
+        'processing': 'status-processing',
+        'shipped': 'status-shipped',
+        'completed': 'status-completed',
+        'cancelled': 'status-cancelled'
+    };
+    return classes[status] || '';
+}
+
+// ========== HELPER: FIX IMAGE URL ==========
+function fixImageUrl(url, defaultPath) {
+    defaultPath = defaultPath || 'images/default-product.png';
+    if (!url || url === '') return baseUrl + defaultPath;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    
+    var parts = url.split('/');
+    var filename = parts[parts.length - 1];
+    
+    if (url.includes('/products/')) return baseUrl + 'uploads/products/' + filename;
+    if (url.includes('/profiles/')) return baseUrl + 'uploads/profiles/' + filename;
+    
+    var uploadsIndex = url.indexOf('uploads/');
+    if (uploadsIndex !== -1) return baseUrl + url.substring(uploadsIndex);
+    
+    return baseUrl + defaultPath;
+}
+
 // ========== PAGINATION FUNCTIONS ==========
 function renderPagination($container, currentPage, totalPages, onPageChange) {
     if (!$container.length || totalPages <= 1) {
@@ -23,12 +60,10 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
 
     var html = '';
     
-    // Previous button
     if (currentPage > 1) {
         html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">← Previous</button>';
     }
 
-    // Page numbers
     for (var i = 1; i <= totalPages; i++) {
         if (i === currentPage) {
             html += '<button class="page-btn active" disabled>' + i + '</button>';
@@ -39,14 +74,12 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
         }
     }
 
-    // Next button
     if (currentPage < totalPages) {
         html += '<button class="page-btn" data-page="' + (currentPage + 1) + '">Next →</button>';
     }
 
     $container.html(html);
     
-    // Attach click handlers
     $container.find('.page-btn[data-page]').off('click').on('click', function() {
         var page = parseInt($(this).data('page'));
         if (!isNaN(page) && typeof onPageChange === 'function') {
@@ -55,9 +88,20 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     });
 }
 
-// ========== TOAST NOTIFICATIONS ==========
-function showToast(message, type = 'success') {
-    $('.toast-notification').remove();
+// ========== TOAST NOTIFICATIONS (Globally accessible) ==========
+var $toastContainer = null;
+var $existingToasts = null;
+
+function showToast(message, type) {
+    type = type || 'success';
+    
+    $existingToasts = $('.toast-notification');
+    $existingToasts.remove();
+    
+    if (!$toastContainer) {
+        $toastContainer = $('<div class="toast-container"></div>');
+        $('body').append($toastContainer);
+    }
     
     var toast = $(`
         <div class="toast-notification toast-${type}">
@@ -65,7 +109,7 @@ function showToast(message, type = 'success') {
         </div>
     `);
     
-    $('body').append(toast);
+    $toastContainer.append(toast);
     
     toast.on('click', function() {
         toast.addClass('hiding');
@@ -101,12 +145,185 @@ function togglePassword(fieldId, button) {
     }
 }
 
+// ========== ORDER MODAL FUNCTIONS (Globally accessible) ==========
+var $orderModal = null;
+var $orderModalBody = null;
+var $orderModalFooter = null;
+
+function cacheOrderModalElements() {
+    if (!$orderModal) {
+        $orderModal = $('#orderModal');
+        $orderModalBody = $('#orderModalBody');
+        $orderModalFooter = $('#orderModalFooter');
+    }
+}
+
+function openOrderModal(orderId) {
+    cacheOrderModalElements();
+    
+    if (!$orderModal.length) return;
+    
+    $orderModal.addClass('active');
+    $orderModalBody.html('<div class="loading-spinner">Loading order details...</div>');
+    $orderModalFooter.empty();
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.success && data.order) {
+                displayOrderDetailsInModal(data.order);
+            } else {
+                $orderModalBody.html('<p class="error">Unable to load order details.</p>');
+            }
+        },
+        error: function() {
+            $orderModalBody.html('<p class="error">Error loading order details.</p>');
+        }
+    });
+}
+
+function closeOrderModal() {
+    if ($orderModal) $orderModal.removeClass('active');
+}
+
+function displayOrderDetailsInModal(order) {
+    cacheOrderModalElements();
+    
+    var isAdmin = window.location.pathname.includes('all-orders.php');
+    
+    var itemsHtml = '';
+    if (order.items && order.items.length > 0) {
+        for (var i = 0; i < order.items.length; i++) {
+            var item = order.items[i];
+            var imagePath = fixImageUrl(item.image_url);
+            itemsHtml += `
+                <div class="order-item">
+                    <div class="order-item-img">
+                        <img src="${imagePath}" onerror="this.src='${baseUrl}images/default-product.png'">
+                    </div>
+                    <div class="order-item-details">
+                        <h4>${escapeHtml(item.product_name)}</h4>
+                        <p>Quantity: ${item.quantity}</p>
+                    </div>
+                    <div class="order-item-price">R ${parseFloat(item.price).toFixed(2)}</div>
+                </div>
+            `;
+        }
+    }
+    
+    $orderModalBody.html(`
+        <div class="order-info-section">
+            <div class="info-row">
+                <span class="info-label">Order Number:</span>
+                <span class="info-value">#${order.order_id}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Order Date:</span>
+                <span class="info-value">${order.created_at}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Order Status:</span>
+                <span class="info-value status-${order.status}">${order.status ? order.status.toUpperCase() : 'UNKNOWN'}</span>
+            </div>
+            ${isAdmin ? `
+                <div class="info-row">
+                    <span class="info-label">Customer:</span>
+                    <span class="info-value">${escapeHtml(order.buyer_name || order.other_party_name || 'N/A')}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Seller:</span>
+                    <span class="info-value">${escapeHtml(order.seller_name || order.other_party_name || 'N/A')}</span>
+                </div>
+            ` : `
+                <div class="info-row">
+                    <span class="info-label">${order.buyer_name ? 'Seller' : 'Customer'}:</span>
+                    <span class="info-value">${escapeHtml(order.other_party_name)}</span>
+                </div>
+            `}
+            ${order.shipping_address ? `
+            <div class="info-row">
+                <span class="info-label">Shipping Address:</span>
+                <span class="info-value">${escapeHtml(order.shipping_address)}</span>
+            </div>
+            ` : ''}
+        </div>
+        
+        <h4>Order Items</h4>
+        <div class="order-items-list">
+            ${itemsHtml || '<p>No items found.</p>'}
+        </div>
+        
+        <div class="order-total-section">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span>R ${parseFloat(order.subtotal || 0).toFixed(2)}</span>
+            </div>
+            <div class="total-row">
+                <span>Delivery Fee:</span>
+                <span>R ${parseFloat(order.delivery_fee || 0).toFixed(2)}</span>
+            </div>
+            <div class="total-row grand-total">
+                <span>Total:</span>
+                <span>R ${parseFloat(order.total || 0).toFixed(2)}</span>
+            </div>
+        </div>
+    `);
+    
+    var actionButtons = '';
+    if (order.status === 'pending') {
+        actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
+    } else if (order.status === 'processing') {
+        actionButtons = '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\'); closeOrderModal();">Mark as Shipped</button>';
+    } else if (order.status === 'shipped') {
+        actionButtons = '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\'); closeOrderModal();">Mark as Completed</button>';
+    }
+    if (order.status === 'pending' || order.status === 'processing') {
+        actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
+    }
+    
+    $orderModalFooter.html(actionButtons);
+}
+
+function updateOrderStatus(orderId, newStatus) {
+    var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
+    if (newStatus === 'cancelled') {
+        confirmMsg = 'Are you sure you want to cancel this order? This action cannot be undone.';
+    }
+    
+    if (confirm(confirmMsg)) {
+        $.ajax({
+            url: baseUrl + 'php/endpoints/update-order-status.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ order_id: orderId, status: newStatus }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    showSuccessToast(data.message || 'Order status updated successfully!');
+                    setTimeout(function() { location.reload(); }, 1500);
+                } else {
+                    showErrorToast('Error: ' + (data.message || 'Unknown error'));
+                }
+            },
+            error: function() {
+                showErrorToast('Something went wrong. Please try again.');
+            }
+        });
+    }
+}
+
 // ========== MODAL ERROR HANDLING ==========
 function clearModalErrors(modalId) {
     var $modal = $(modalId);
-    $modal.find('.error-container').hide().empty();
-    $modal.find('.input-group').removeClass('error');
-    $modal.find('.error-text').remove();
+    var $modalErrorContainer = $modal.find('.error-container');
+    var $modalInputGroups = $modal.find('.input-group');
+    var $modalErrorTexts = $modal.find('.error-text');
+    
+    $modalErrorContainer.hide().empty();
+    $modalInputGroups.removeClass('error');
+    $modalErrorTexts.remove();
 }    
 
 function displayModalErrors(modalId, errors, formData) {
@@ -114,37 +331,46 @@ function displayModalErrors(modalId, errors, formData) {
     
     if (!formData) formData = {};
     
+    var $registerFullName = $('#register-full-name');
+    var $registerEmail = $('#register-email');
+    var $registerPhone = $('#register-phone');
+    var $registerErrorContainer = $('#register-error-container');
+    var $loginEmail = $('#login-email');
+    var $loginErrorContainer = $('#login-error-container');
+    
     if (modalId === '#register-modal') {
-        if (formData.full_name) $('#register-full-name').val(formData.full_name);
-        if (formData.email) $('#register-email').val(formData.email);
-        if (formData.phone) $('#register-phone').val(formData.phone);
+        if (formData.full_name) $registerFullName.val(formData.full_name);
+        if (formData.email) $registerEmail.val(formData.email);
+        if (formData.phone) $registerPhone.val(formData.phone);
         
         if (errors.general && errors.general.trim()) {
-            $('#register-error-container').show().text(errors.general);
+            $registerErrorContainer.show().text(errors.general);
         }
         
         $.each(errors, function(field, message) {
             if (field !== 'general' && message && message.trim()) {
                 var $input = $('#register-' + field);
                 if ($input.length) {
-                    $input.closest('.input-group').addClass('error');
-                    $input.closest('.input-group').append('<small class="error-text">' + message + '</small>');
+                    var $closestInputGroup = $input.closest('.input-group');
+                    $closestInputGroup.addClass('error');
+                    $closestInputGroup.append('<small class="error-text">' + message + '</small>');
                 }
             }
         });
     } else if (modalId === '#login-modal') {
-        if (formData.email) $('#login-email').val(formData.email);
+        if (formData.email) $loginEmail.val(formData.email);
         
         if (errors.general && errors.general.trim()) {
-            $('#login-error-container').show().text(errors.general);
+            $loginErrorContainer.show().text(errors.general);
         }
         
         $.each(errors, function(field, message) {
             if (field !== 'general' && message && message.trim()) {
                 var $input = $('#login-' + field);
                 if ($input.length) {
-                    $input.closest('.input-group').addClass('error');
-                    $input.closest('.input-group').append('<small class="error-text">' + message + '</small>');
+                    var $closestInputGroup = $input.closest('.input-group');
+                    $closestInputGroup.addClass('error');
+                    $closestInputGroup.append('<small class="error-text">' + message + '</small>');
                 }
             }
         });
@@ -152,25 +378,68 @@ function displayModalErrors(modalId, errors, formData) {
 }
 
 // ========== ERROR CLEARING ==========
+var $loginErrorContainer = null;
+var $loginFormInputGroups = null;
+var $loginFormErrorTexts = null;
+var $registerErrorContainer = null;
+var $registerFormInputGroups = null;
+var $registerFormErrorTexts = null;
+
+function cacheLoginErrorElements() {
+    $loginErrorContainer = $('#login-error-container');
+    $loginFormInputGroups = $('#login-form .input-group');
+    $loginFormErrorTexts = $('#login-form .error-text');
+}
+
+function cacheRegisterErrorElements() {
+    $registerErrorContainer = $('#register-error-container');
+    $registerFormInputGroups = $('#register-form .input-group');
+    $registerFormErrorTexts = $('#register-form .error-text');
+}
+
 function clearLoginErrors() {
-    $('#login-error-container').hide().empty();
-    $('#login-form .input-group').removeClass('error');
-    $('#login-form .error-text').remove();
+    cacheLoginErrorElements();
+    if ($loginErrorContainer) $loginErrorContainer.hide().empty();
+    if ($loginFormInputGroups) $loginFormInputGroups.removeClass('error');
+    if ($loginFormErrorTexts) $loginFormErrorTexts.remove();
 }
 
 function clearRegisterErrors() {
-    $('#register-error-container').hide().empty();
-    $('#register-form .input-group').removeClass('error');
-    $('#register-form .error-text').remove();
+    cacheRegisterErrorElements();
+    if ($registerErrorContainer) $registerErrorContainer.hide().empty();
+    if ($registerFormInputGroups) $registerFormInputGroups.removeClass('error');
+    if ($registerFormErrorTexts) $registerFormErrorTexts.remove();
 }
 
 function clearModalErrorsOld($modal) {
-    $modal.find('.error-container').hide().empty();
-    $modal.find('.input-group').removeClass('error');
-    $modal.find('.error-text').remove();
+    var $modalErrorContainer = $modal.find('.error-container');
+    var $modalInputGroups = $modal.find('.input-group');
+    var $modalErrorTexts = $modal.find('.error-text');
+    
+    $modalErrorContainer.hide().empty();
+    $modalInputGroups.removeClass('error');
+    $modalErrorTexts.remove();
 }
 
 // ========== CART FUNCTIONS ==========
+var $cartCountElements = null;
+var $subTotalVal = null;
+var $delivFeeVal = null;
+var $totalVal = null;
+
+function getCartCountElements() {
+    if (!$cartCountElements) {
+        $cartCountElements = $('.cart-count, .item-num');
+    }
+    return $cartCountElements;
+}
+
+function updateCartCountDisplay(count) {
+    var $elements = getCartCountElements();
+    $elements.text(count);
+    if (window.sessionStorage) sessionStorage.setItem('cart_count', count);
+}
+
 function addToCart(productId, productName, productPrice) {
     $.ajax({
         url: baseUrl + 'php/endpoints/add-to-cart.php',
@@ -179,9 +448,7 @@ function addToCart(productId, productName, productPrice) {
         data: JSON.stringify({ product_id: productId, product_name: productName, product_price: productPrice }),
         success: function(data) {
             if (data.success) {
-                var newCount = data.cart_count || 0;
-                $('.cart-count, .item-num').text(newCount);
-                if (window.sessionStorage) sessionStorage.setItem('cart_count', newCount);
+                updateCartCountDisplay(data.cart_count || 0);
                 showSuccessToast(data.message || 'Item added to cart');
             } else {
                 showErrorToast(data.message || 'Error adding item to cart');
@@ -201,9 +468,7 @@ function removeFromCart(productId) {
         data: JSON.stringify({ product_id: productId }),
         success: function(data) {
             if (data.success) {
-                var newCount = data.cart_count || 0;
-                $('.cart-count, .item-num').text(newCount);
-                if (window.sessionStorage) sessionStorage.setItem('cart_count', newCount);
+                updateCartCountDisplay(data.cart_count || 0);
                 if (window.location.pathname.includes('cart.php')) location.reload();
                 else showSuccessToast(data.message || 'Item removed from cart');
             } else {
@@ -217,12 +482,11 @@ function removeFromCart(productId) {
 function updateCartCount() {
     var cachedCount = sessionStorage.getItem('cart_count');
     if (cachedCount && !isNaN(parseInt(cachedCount))) {
-        $('.cart-count, .item-num').text(parseInt(cachedCount));
+        updateCartCountDisplay(parseInt(cachedCount));
     } else {
         $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
             if (data.success) {
-                $('.cart-count, .item-num').text(data.item_count);
-                if (window.sessionStorage) sessionStorage.setItem('cart_count', data.item_count);
+                updateCartCountDisplay(data.item_count);
             }
         }).fail(function() {});
     }
@@ -265,10 +529,7 @@ function displayCartItems(cartData) {
             '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' : 
             '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
         
-        var imagePath = item.image;
-        if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-            imagePath = baseUrl + imagePath;
-        }
+        var imagePath = fixImageUrl(item.image);
         
         if ($desktopTableBody.length) {
             var row = $('<tr>').html(`
@@ -332,8 +593,14 @@ function displayCartItems(cartData) {
 }
 
 function attachCartEventHandlers() {
-    $('.qty-increase').off('click').on('click', function() {
-        var cartId = $(this).data('cart-id');
+    var $qtyIncrease = $('.qty-increase');
+    var $qtyDecrease = $('.qty-decrease');
+    var $qtyInput = $('.qty-input');
+    var $removeBtns = $('.remove-btn');
+    
+    $qtyIncrease.off('click').on('click', function() {
+        var $btn = $(this);
+        var cartId = $btn.data('cart-id');
         var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
         var currentVal = parseInt($input.val());
         var maxVal = parseInt($input.attr('max'));
@@ -343,8 +610,9 @@ function attachCartEventHandlers() {
         }
     });
     
-    $('.qty-decrease').off('click').on('click', function() {
-        var cartId = $(this).data('cart-id');
+    $qtyDecrease.off('click').on('click', function() {
+        var $btn = $(this);
+        var cartId = $btn.data('cart-id');
         var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
         var currentVal = parseInt($input.val());
         if (!isNaN(currentVal) && currentVal > 1) {
@@ -353,21 +621,23 @@ function attachCartEventHandlers() {
         }
     });
     
-    $('.qty-input').off('change').on('change', function() {
-        var cartId = $(this).data('cart-id');
-        var quantity = parseInt($(this).val());
-        var maxVal = parseInt($(this).attr('max'));
+    $qtyInput.off('change').on('change', function() {
+        var $input = $(this);
+        var cartId = $input.data('cart-id');
+        var quantity = parseInt($input.val());
+        var maxVal = parseInt($input.attr('max'));
         if (isNaN(quantity) || quantity < 1) quantity = 1;
         if (quantity > maxVal) {
             quantity = maxVal;
             alert('Only ' + maxVal + ' available in stock.');
         }
-        $(this).val(quantity);
+        $input.val(quantity);
         updateCartQuantity(cartId, quantity);
     });
     
-    $('.remove-btn').off('click').on('click', function() {
-        var productId = $(this).data('product-id');
+    $removeBtns.off('click').on('click', function() {
+        var $btn = $(this);
+        var productId = $btn.data('product-id');
         if (confirm('Remove this item from your cart?')) {
             removeFromCart(productId);
         }
@@ -375,9 +645,13 @@ function attachCartEventHandlers() {
 }
 
 function updateOrderSummary(cartData) {
-    if ($('.sub-total-val').length) $('.sub-total-val').text(cartData.subtotal);
-    if ($('.deliv-fee-val').length) $('.deliv-fee-val').text(cartData.delivery_fee);
-    if ($('.total-val').length) $('.total-val').text(cartData.total);
+    $subTotalVal = $('.sub-total-val');
+    $delivFeeVal = $('.deliv-fee-val');
+    $totalVal = $('.total-val');
+    
+    if ($subTotalVal.length) $subTotalVal.text(cartData.subtotal);
+    if ($delivFeeVal.length) $delivFeeVal.text(cartData.delivery_fee);
+    if ($totalVal.length) $totalVal.text(cartData.total);
 }
 
 function updateCartQuantity(cartId, quantity) {
@@ -396,6 +670,18 @@ function updateCartQuantity(cartId, quantity) {
 }
 
 // ========== MODAL FUNCTIONS ==========
+var $registerModal = null;
+var $loginModal = null;
+var $deleteModal = null;
+var $bodyElement = null;
+
+function cacheModalElements() {
+    if (!$registerModal) $registerModal = $('#register-modal');
+    if (!$loginModal) $loginModal = $('#login-modal');
+    if (!$deleteModal) $deleteModal = $('#delete-modal');
+    if (!$bodyElement) $bodyElement = $('body');
+}
+
 function openModal($modal) {
     if (!$modal.length) return;
     
@@ -410,7 +696,7 @@ function openModal($modal) {
     
     $modal[0].offsetHeight;
     $content.addClass('animate-in');
-    $('body').css('overflow', 'hidden');
+    $bodyElement.css('overflow', 'hidden');
     
     setTimeout(function() { $content.removeClass('animate-in'); }, 350);
 }
@@ -428,29 +714,74 @@ function closeModal($modal) {
         $modal.removeClass('active');
         $modal.css('visibility', 'hidden');
         $content.removeClass('animate-out');
-        $('body').css('overflow', '');
+        $bodyElement.css('overflow', '');
     }, 280);
 }
 
 // ========== ERROR CLEARING ON INPUT ==========
+var $loginEmailInput = null;
+var $loginPasswordInput = null;
+var $registerFullNameInput = null;
+var $registerEmailInput = null;
+var $registerPhoneInput = null;
+var $registerPasswordInput = null;
+var $registerConfirmPasswordInput = null;
+var $switchToRegisterBtn = null;
+var $switchToLoginBtn = null;
+
+function cacheErrorClearingElements() {
+    $loginEmailInput = $('#login-email');
+    $loginPasswordInput = $('#login-password');
+    $registerFullNameInput = $('#register-full-name');
+    $registerEmailInput = $('#register-email');
+    $registerPhoneInput = $('#register-phone');
+    $registerPasswordInput = $('#register-password');
+    $registerConfirmPasswordInput = $('#register-confirm-password');
+    $switchToRegisterBtn = $('#switch-to-register');
+    $switchToLoginBtn = $('#switch-to-login');
+}
+
 function initErrorClearingOnInput() {
-    $('#login-email, #login-password').on('input', function() { clearLoginErrors(); });
-    $('#register-full-name, #register-email, #register-phone, #register-password, #register-confirm-password').on('input', function() {
-        clearRegisterErrors();
-        $(this).closest('.input-group').removeClass('error');
-        $(this).closest('.input-group').find('.error-text').remove();
+    cacheErrorClearingElements();
+    
+    $loginEmailInput.add($loginPasswordInput).on('input', function() { 
+        clearLoginErrors(); 
     });
-    $('#switch-to-register').on('click', function() { clearLoginErrors(); });
-    $('#switch-to-login').on('click', function() { clearRegisterErrors(); });
+    
+    $registerFullNameInput.add($registerEmailInput).add($registerPhoneInput).add($registerPasswordInput).add($registerConfirmPasswordInput).on('input', function() {
+        clearRegisterErrors();
+        var $this = $(this);
+        var $closestInputGroup = $this.closest('.input-group');
+        $closestInputGroup.removeClass('error');
+        $closestInputGroup.find('.error-text').remove();
+    });
+    
+    $switchToRegisterBtn.on('click', function() { 
+        clearLoginErrors(); 
+    });
+    
+    $switchToLoginBtn.on('click', function() { 
+        clearRegisterErrors(); 
+    });
 }
 
 // ========== AJAX LOGIN HANDLER ==========
+var $loginForm = null;
+var $loginFormSubmitBtn = null;
+
+function cacheLoginFormElements() {
+    $loginForm = $('#login-form');
+}
+
 function initAjaxLogin() {
-    $('#login-form').off('submit').on('submit', function(e) {
+    cacheLoginFormElements();
+    
+    $loginForm.off('submit').on('submit', function(e) {
         e.preventDefault();
         
-        var formData = $(this).serialize();
-        var $submitBtn = $(this).find('button[type="submit"]');
+        var $form = $(this);
+        var formData = $form.serialize();
+        var $submitBtn = $form.find('button[type="submit"]');
         var originalText = $submitBtn.text();
         
         $submitBtn.prop('disabled', true).text('Logging in...');
@@ -467,12 +798,14 @@ function initAjaxLogin() {
                 if (response.success) {
                     window.location.href = response.redirect;
                 } else {
-                    $('#login-error-container').show().text(response.message);
+                    var $loginErrorContainer = $('#login-error-container');
+                    $loginErrorContainer.show().text(response.message);
                     $submitBtn.prop('disabled', false).text(originalText);
                 }
             },
             error: function() {
-                $('#login-error-container').show().text('Something went wrong. Please try again.');
+                var $loginErrorContainer = $('#login-error-container');
+                $loginErrorContainer.show().text('Something went wrong. Please try again.');
                 $submitBtn.prop('disabled', false).text(originalText);
             }
         });
@@ -480,12 +813,21 @@ function initAjaxLogin() {
 }
 
 // ========== AJAX REGISTER HANDLER ==========
+var $registerForm = null;
+
+function cacheRegisterFormElements() {
+    $registerForm = $('#register-form');
+}
+
 function initAjaxRegister() {
-    $('#register-form').off('submit').on('submit', function(e) {
+    cacheRegisterFormElements();
+    
+    $registerForm.off('submit').on('submit', function(e) {
         e.preventDefault();
         
-        var formData = $(this).serialize();
-        var $submitBtn = $(this).find('button[type="submit"]');
+        var $form = $(this);
+        var formData = $form.serialize();
+        var $submitBtn = $form.find('button[type="submit"]');
         var originalText = $submitBtn.text();
         
         $submitBtn.prop('disabled', true).text('Creating account...');
@@ -504,71 +846,102 @@ function initAjaxRegister() {
                 } else {
                     displayModalErrors('#register-modal', response.errors, response.form_data);
                     if (response.errors && response.errors.general) {
-                        $('#register-error-container').show().text(response.errors.general);
+                        var $registerErrorContainer = $('#register-error-container');
+                        $registerErrorContainer.show().text(response.errors.general);
                     }
                     $submitBtn.prop('disabled', false).text(originalText);
                 }
             },
             error: function() {
-                $('#register-error-container').show().text('Something went wrong. Please try again.');
+                var $registerErrorContainer = $('#register-error-container');
+                $registerErrorContainer.show().text('Something went wrong. Please try again.');
                 $submitBtn.prop('disabled', false).text(originalText);
             }
         });
     });
 }
 
-// ========== DOCUMENT READY ==========
-$(function() {
-    // Mobile Menu Toggle
-    var $mainToggle = $('#mobileMenuToggle');
-    var $sideClose = $('#sideMenuClose');
-    var $mobileNav = $('#mobileNav');
-    var $overlay = $('#mobileMenuOverlay');
-    
-    function openMenu() {
-        $mainToggle.addClass('active');
-        $mobileNav.addClass('active');
-        $overlay.addClass('active');
-        $('body').addClass('menu-open').css('overflow', 'hidden');
-    }
-    
-    function closeMenu() {
-        $mainToggle.removeClass('active');
-        $mobileNav.removeClass('active');
-        $overlay.removeClass('active');
-        $('body').removeClass('menu-open').css('overflow', '');
-    }
+// ========== MOBILE MENU FUNCTIONS ==========
+var $mainToggle = null;
+var $sideClose = null;
+var $mobileNav = null;
+var $overlay = null;
+var $mobileNavLinks = null;
+var $mobileNavBtns = null;
+
+function cacheMobileMenuElements() {
+    $mainToggle = $('#mobileMenuToggle');
+    $sideClose = $('#sideMenuClose');
+    $mobileNav = $('#mobileNav');
+    $overlay = $('#mobileMenuOverlay');
+    $mobileNavLinks = $('.mobile-nav-links a');
+    $mobileNavBtns = $('.mobile-nav-btn');
+}
+
+function openMobileMenu() {
+    cacheMobileMenuElements();
+    $mainToggle.addClass('active');
+    $mobileNav.addClass('active');
+    $overlay.addClass('active');
+    $('body').addClass('menu-open').css('overflow', 'hidden');
+}
+
+function closeMobileMenu() {
+    cacheMobileMenuElements();
+    $mainToggle.removeClass('active');
+    $mobileNav.removeClass('active');
+    $overlay.removeClass('active');
+    $('body').removeClass('menu-open').css('overflow', '');
+}
+
+function initMobileMenu() {
+    cacheMobileMenuElements();
     
     if ($mainToggle.length) {
         $mainToggle.on('click', function() {
-            if ($mobileNav.hasClass('active')) closeMenu();
-            else openMenu();
+            if ($mobileNav.hasClass('active')) closeMobileMenu();
+            else openMobileMenu();
         });
     }
     
-    if ($sideClose.length) $sideClose.on('click', closeMenu);
-    if ($overlay.length) $overlay.on('click', closeMenu);
+    if ($sideClose.length) $sideClose.on('click', closeMobileMenu);
+    if ($overlay.length) $overlay.on('click', closeMobileMenu);
     
-    $('.mobile-nav-links a, .mobile-nav-btn').on('click', function() {
-        if ($(window).width() <= 768) closeMenu();
+    $mobileNavLinks.add($mobileNavBtns).on('click', function() {
+        var $windowWidth = $(window).width();
+        if ($windowWidth <= 768) closeMobileMenu();
     });
     
     $(window).on('resize', function() {
-        if ($(window).width() > 768 && $mobileNav.hasClass('active')) closeMenu();
+        var $windowWidth = $(window).width();
+        if ($windowWidth > 768 && $mobileNav.hasClass('active')) closeMobileMenu();
     });
-    
-    // Mobile Search
-    var $mobileSearchIcon = $('#mobileSearchIcon');
-    var $mobileSearchContainer = $('#mobileSearchContainer');
+}
+
+// ========== MOBILE SEARCH FUNCTIONS ==========
+var $mobileSearchIcon = null;
+var $mobileSearchContainer = null;
+var $mobileSearchInput = null;
+var $document = null;
+
+function cacheMobileSearchElements() {
+    $mobileSearchIcon = $('#mobileSearchIcon');
+    $mobileSearchContainer = $('#mobileSearchContainer');
+    $mobileSearchInput = $('#mobile-search');
+    $document = $(document);
+}
+
+function initMobileSearch() {
+    cacheMobileSearchElements();
     
     if ($mobileSearchIcon.length && $mobileSearchContainer.length) {
         $mobileSearchIcon.on('click', function(e) {
             e.stopPropagation();
             $mobileSearchContainer.toggleClass('active');
-            if ($mobileSearchContainer.hasClass('active')) $('#mobile-search').focus();
+            if ($mobileSearchContainer.hasClass('active')) $mobileSearchInput.focus();
         });
         
-        $(document).on('click', function(event) {
+        $document.on('click', function(event) {
             if ($mobileSearchContainer.length && $mobileSearchContainer.hasClass('active') &&
                 !$mobileSearchContainer.is(event.target) && !$mobileSearchIcon.is(event.target) &&
                 !$mobileSearchContainer.has(event.target).length) {
@@ -576,18 +949,60 @@ $(function() {
             }
         });
     }
+}
+
+// ========== USER DROPDOWN FUNCTIONS ==========
+var $userMenuBtn = null;
+var $userDropdown = null;
+
+function cacheUserDropdownElements() {
+    $userMenuBtn = $('#userMenuBtn');
+    $userDropdown = $('#userDropdown');
+}
+
+function initUserDropdown() {
+    cacheUserDropdownElements();
     
-    // Modal Controls
-    var $registerModal = $('#register-modal');
-    var $loginModal = $('#login-modal');
-    var $deleteModal = $('#delete-modal');
-    var $registerBtns = $('#registerBtn, #mobile-register-btn');
-    var $loginBtns = $('#loginBtn, #mobile-login-btn');
-    var $registerClose = $('#register-modal .btn-close, #register-modal .modal-close');
-    var $loginClose = $('#login-modal .btn-close, #login-modal .modal-close');
-    var $deleteClose = $('#delete-modal .btn-close, #delete-modal .modal-close, #delete-modal .delete-cancel-btn');
-    var $switchToRegister = $('#switch-to-register');
-    var $switchToLogin = $('#switch-to-login');
+    if ($userMenuBtn.length && $userDropdown.length) {
+        $userMenuBtn.on('click', function(e) {
+            e.stopPropagation();
+            $userDropdown.toggleClass('active');
+            $userMenuBtn.toggleClass('active');
+        });
+        
+        $(document).on('click', function(e) {
+            if (!$userMenuBtn.is(e.target) && !$userDropdown.is(e.target) &&
+                !$userMenuBtn.has(e.target).length && !$userDropdown.has(e.target).length) {
+                $userDropdown.removeClass('active');
+                $userMenuBtn.removeClass('active');
+            }
+        });
+    }
+}
+
+// ========== MODAL CONTROLS INIT ==========
+var $registerBtns = null;
+var $loginBtns = null;
+var $registerClose = null;
+var $loginClose = null;
+var $deleteClose = null;
+var $switchToRegister = null;
+var $switchToLogin = null;
+
+function cacheModalControlElements() {
+    cacheModalElements();
+    
+    $registerBtns = $('#registerBtn, #mobile-register-btn');
+    $loginBtns = $('#loginBtn, #mobile-login-btn');
+    $registerClose = $('#register-modal .btn-close, #register-modal .modal-close');
+    $loginClose = $('#login-modal .btn-close, #login-modal .modal-close');
+    $deleteClose = $('#delete-modal .btn-close, #delete-modal .modal-close, #delete-modal .delete-cancel-btn');
+    $switchToRegister = $('#switch-to-register');
+    $switchToLogin = $('#switch-to-login');
+}
+
+function initModalControls() {
+    cacheModalControlElements();
     
     if ($registerBtns.length) {
         $registerBtns.on('click', function(e) {
@@ -609,9 +1024,19 @@ $(function() {
     if ($loginClose.length) $loginClose.on('click', function() { closeModal($loginModal); });
     if ($deleteClose.length) $deleteClose.on('click', function() { closeModal($deleteModal); });
     
-    $registerModal.on('click', function(e) { if ($(e.target).is($registerModal)) closeModal($registerModal); });
-    $loginModal.on('click', function(e) { if ($(e.target).is($loginModal)) closeModal($loginModal); });
-    if ($deleteModal.length) $deleteModal.on('click', function(e) { if ($(e.target).is($deleteModal)) closeModal($deleteModal); });
+    $registerModal.on('click', function(e) { 
+        if ($(e.target).is($registerModal)) closeModal($registerModal); 
+    });
+    
+    $loginModal.on('click', function(e) { 
+        if ($(e.target).is($loginModal)) closeModal($loginModal); 
+    });
+    
+    if ($deleteModal.length) {
+        $deleteModal.on('click', function(e) { 
+            if ($(e.target).is($deleteModal)) closeModal($deleteModal); 
+        });
+    }
     
     if ($switchToRegister.length) {
         $switchToRegister.on('click', function(e) {
@@ -630,54 +1055,76 @@ $(function() {
             setTimeout(function() { openModal($loginModal); }, 300);
         });
     }
+}
+
+// ========== SET ACTIVE NAVIGATION LINK ==========
+var $mainNavLinks = null;
+var $mobileNavLinksForActive = null;
+
+function cacheActiveLinkElements() {
+    $mainNavLinks = $('.main-nav a');
+    $mobileNavLinksForActive = $('.mobile-nav-links a');
+}
+
+function setActiveLink() {
+    cacheActiveLinkElements();
     
-    // User Dropdown
-    var $userMenuBtn = $('#userMenuBtn');
-    var $userDropdown = $('#userDropdown');
+    var path = window.location.pathname;
+    var currentPage = path.substring(path.lastIndexOf('/') + 1) || 'index.php';
     
-    if ($userMenuBtn.length && $userDropdown.length) {
-        $userMenuBtn.on('click', function(e) {
-            e.stopPropagation();
-            $userDropdown.toggleClass('active');
-            $userMenuBtn.toggleClass('active');
-        });
+    var $allNavLinks = $mainNavLinks.add($mobileNavLinksForActive);
+    
+    $allNavLinks.each(function() {
+        var $link = $(this);
+        var href = $link.attr('href');
+        if (!href) return;
         
-        $(document).on('click', function(e) {
-            if (!$userMenuBtn.is(e.target) && !$userDropdown.is(e.target) &&
-                !$userMenuBtn.has(e.target).length && !$userDropdown.has(e.target).length) {
-                $userDropdown.removeClass('active');
-                $userMenuBtn.removeClass('active');
-            }
-        });
-    }
-    
-    // Auto-hide flash messages
-    var $flashMsg = $('.flash-message');
+        var hrefPage = href.substring(href.lastIndexOf('/') + 1);
+        if (hrefPage.indexOf('?') !== -1) hrefPage = hrefPage.substring(0, hrefPage.indexOf('?'));
+        
+        $link.removeClass('active');
+        if (hrefPage === currentPage) $link.addClass('active');
+    });
+}
+
+// ========== INIT FLASH MESSAGES ==========
+var $flashMsg = null;
+
+function initFlashMessages() {
+    $flashMsg = $('.flash-message');
     if ($flashMsg.length) {
         setTimeout(function() { $flashMsg.fadeOut(500); }, 4000);
     }
+}
+
+// ========== DOCUMENT READY ==========
+$(function() {
+    // Mobile Menu Toggle
+    initMobileMenu();
+    
+    // Mobile Search
+    initMobileSearch();
+    
+    // Modal Controls
+    initModalControls();
+    
+    // User Dropdown
+    initUserDropdown();
+    
+    // Auto-hide flash messages
+    initFlashMessages();
     
     // Active Navigation Link
-    function setActiveLink() {
-        var path = window.location.pathname;
-        var currentPage = path.substring(path.lastIndexOf('/') + 1) || 'index.php';
-        
-        $('.main-nav a, .mobile-nav-links a').each(function() {
-            var $link = $(this);
-            var href = $link.attr('href');
-            if (!href) return;
-            
-            var hrefPage = href.substring(href.lastIndexOf('/') + 1);
-            if (hrefPage.indexOf('?') !== -1) hrefPage = hrefPage.substring(0, hrefPage.indexOf('?'));
-            
-            $link.removeClass('active');
-            if (hrefPage === currentPage) $link.addClass('active');
-        });
-    }
     setActiveLink();
+    
+    // Error clearing on input
     initErrorClearingOnInput();
+    
+    // AJAX handlers
     initAjaxLogin();
     initAjaxRegister();
+    
+    // Cart functions
     updateCartCount();
     loadCart();
 });

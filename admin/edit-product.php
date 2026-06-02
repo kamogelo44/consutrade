@@ -28,122 +28,52 @@ if (!$product || $product->getSellerId() != $seller_id) {
 
 $gallery_images = $productImageRepo->getByProductId($product_id);
 $categories = $categoryRepo->getAll();
+
+// Breadcrumb for subpage navigation
+$breadcrumbItems = [
+    ['url' => 'admin/my-products.php', 'label' => 'My Products'],
+    ['label' => 'Edit Product']
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Edit Product - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/admin.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <style>
-        /* ========== EDIT PRODUCT PAGE SPECIFIC STYLES ========== */
-
-        /* Gallery Grid */
-        .gallery-grid {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-            margin-top: var(--spacing-md);
-        }
-
-        .gallery-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            overflow: hidden;
+        .admin-main-content {
+            margin-left: 280px;
+            padding: var(--spacing-xl);
+            min-height: 100vh;
             background: var(--gray-bg);
+            transition: margin-left var(--transition-normal);
         }
 
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        /* Remove Button (×) */
-        .gallery-item .remove-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: var(--error);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            text-align: center;
-            line-height: 18px;
-            font-size: 12px;
-            text-decoration: none;
-            cursor: pointer;
-            z-index: 1;
+        .page-header {
+            margin-bottom: var(--spacing-xl);
         }
 
-        .gallery-item .remove-btn:hover {
-            background: var(--error-dark);
-            transform: scale(1.1);
+        .page-header h1 {
+            font-size: var(--font-2xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--spacing-xs);
+            color: var(--dark-bg);
         }
 
-        /* Primary Badge */
-        .primary-badge {
-            position: absolute;
-            bottom: 4px;
-            left: 4px;
-            background: var(--primary-color);
-            color: white;
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            font-size: 10px;
-            font-weight: var(--font-medium);
-            z-index: 1;
-        }
-
-        /* Set as Primary Button */
-        .set-primary-btn {
-            position: absolute;
-            bottom: 4px;
-            left: 4px;
-            background: var(--primary-color);
-            color: white;
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            font-size: 10px;
-            text-decoration: none;
-            cursor: pointer;
-            z-index: 1;
-        }
-
-        .set-primary-btn:hover {
-            background: var(--primary-dark);
-            transform: scale(1.02);
-        }
-
-        /* Current Image Section */
-        .current-image {
-            margin-bottom: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-        }
-
-        .current-image img {
-            max-width: 150px;
-            border-radius: var(--radius-md);
-        }
-
-        .current-image p {
-            font-size: var(--font-sm);
+        .page-header p {
             color: var(--gray-medium);
-            margin-top: var(--spacing-sm);
         }
 
-        /* Form Container */
         .form-container {
             max-width: 800px;
             margin: 0 auto;
@@ -153,7 +83,6 @@ $categories = $categoryRepo->getAll();
             border: 1px solid var(--border-light);
         }
 
-        /* Form Groups */
         .form-group {
             margin-bottom: var(--spacing-lg);
         }
@@ -183,14 +112,12 @@ $categories = $categoryRepo->getAll();
             box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
         }
 
-        /* Form Row (2 columns) */
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: var(--spacing-md);
         }
 
-        /* Form Help Text */
         .form-group small {
             display: block;
             margin-top: var(--spacing-xs);
@@ -198,7 +125,101 @@ $categories = $categoryRepo->getAll();
             color: var(--gray-medium);
         }
 
-        /* Gallery Section Separator */
+        .gallery-grid {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-md);
+        }
+
+        .gallery-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: var(--gray-bg);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-item .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: var(--error);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 18px;
+            font-size: 12px;
+            text-decoration: none;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .gallery-item .remove-btn:hover {
+            background: var(--error-dark);
+            transform: scale(1.1);
+        }
+
+        .primary-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            font-weight: var(--font-medium);
+            z-index: 1;
+        }
+
+        .set-primary-btn {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .set-primary-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.02);
+        }
+
+        .current-image {
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--gray-bg-light);
+            border-radius: var(--radius-md);
+        }
+
+        .current-image img {
+            max-width: 150px;
+            border-radius: var(--radius-md);
+        }
+
+        .current-image p {
+            font-size: var(--font-sm);
+            color: var(--gray-medium);
+            margin-top: var(--spacing-sm);
+        }
+
         .gallery-section {
             margin-top: var(--spacing-lg);
             padding-top: var(--spacing-lg);
@@ -212,7 +233,6 @@ $categories = $categoryRepo->getAll();
             color: var(--dark-bg);
         }
 
-        /* Buttons */
         .btn-submit {
             background: var(--primary-color);
             color: var(--white);
@@ -246,7 +266,6 @@ $categories = $categoryRepo->getAll();
             background: var(--border-light);
         }
 
-        /* Error and Success Messages */
         .error-msg {
             background: var(--error-light);
             color: var(--error);
@@ -265,8 +284,21 @@ $categories = $categoryRepo->getAll();
             border-left: 4px solid var(--success);
         }
 
-        /* Responsive */
+        @media (max-width: 1024px) {
+            .admin-main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: var(--spacing-md);
+                padding-top: 70px;
+            }
+        }
+
         @media (max-width: 768px) {
+            .admin-main-content {
+                padding: var(--spacing-md);
+                padding-top: 70px;
+            }
+
             .form-row {
                 grid-template-columns: 1fr;
                 gap: var(--spacing-md);
@@ -293,6 +325,11 @@ $categories = $categoryRepo->getAll();
         }
 
         @media (max-width: 480px) {
+            .admin-main-content {
+                padding: var(--spacing-sm);
+                padding-top: 60px;
+            }
+
             .form-container {
                 padding: var(--spacing-md);
             }
@@ -318,6 +355,7 @@ $categories = $categoryRepo->getAll();
     <main class="admin-main-content">
         <div class="dashboard-content">
             <div class="page-header">
+                <?php include dirname(__DIR__) . '/includes/breadcrumb.php'; ?>
                 <h1>Edit Product</h1>
                 <p>Update your product information</p>
             </div>
@@ -332,7 +370,7 @@ $categories = $categoryRepo->getAll();
             <?php endif; ?>
 
             <div class="form-container">
-                <form action="<?php echo getBaseUrl(); ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
+                <form action="<?php echo $baseUrl; ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="product_id" value="<?php echo $product->getProductId(); ?>">
 
                     <div class="form-group">
@@ -391,12 +429,11 @@ $categories = $categoryRepo->getAll();
                         <?php if (!empty($product->getImageUrl())): ?>
                             <div class="current-image">
                                 <img src="<?php echo $productRepo->getProductImageUrl($product->getImageUrl()); ?>" alt="Current main image">
-                                <p style="font-size: var(--font-sm); color: var(--gray-medium); margin-top: var(--spacing-sm)">Leave empty to keep current image</p>
+                                <p>Leave empty to keep current image</p>
                             </div>
                         <?php endif; ?>
                     </div>
 
-                    <!-- Gallery Images Section -->
                     <div class="gallery-grid" id="existing-gallery">
                         <?php foreach ($gallery_images as $img): ?>
                             <div class="gallery-item" data-image-id="<?php echo $img['image_id']; ?>">
@@ -421,27 +458,6 @@ $categories = $categoryRepo->getAll();
     </main>
 
     <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-        var currentUserId = <?php echo $currentUser ? $currentUser->getUserId() : 0; ?>;
-        var currentUserRole = '<?php echo $currentUser ? $currentUser->getRole() : ''; ?>';
-        var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
-
-        $('input[name="new_gallery_images[]"]').on('change', function(e) {
-            var preview = $('#new-gallery-preview');
-            preview.empty();
-            var files = this.files;
-
-            for (var i = 0; i < files.length; i++) {
-                var reader = new FileReader();
-                reader.onload = (function(fileIndex) {
-                    return function(event) {
-                        preview.append('<div class="gallery-item"><img src="' + event.target.result + '" alt="Preview ' + (fileIndex + 1) + '"></div>');
-                    };
-                })(i);
-                reader.readAsDataURL(files[i]);
-            }
-        });
-
         function removeGalleryImage(imageId, productId) {
             if (confirm('Remove this image from the gallery?')) {
                 $.ajax({
@@ -456,19 +472,42 @@ $categories = $categoryRepo->getAll();
                     success: function(data) {
                         if (data.success) {
                             $('.gallery-item[data-image-id="' + imageId + '"]').remove();
+                            showSuccessToast('Image removed');
                         } else {
-                            alert('Could not remove image: ' + data.message);
+                            showErrorToast(data.message || 'Could not remove image');
                         }
                     },
                     error: function() {
-                        alert('Something went wrong.');
+                        showErrorToast('Something went wrong');
                     }
                 });
             }
         }
-    </script>
-    <script src="<?php echo getBaseUrl(); ?>admin/js/dashboard.js"></script>
 
+        function setPrimaryImage(imageId, productId) {
+            $.ajax({
+                url: baseUrl + 'php/endpoints/set-primary-image.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    image_id: imageId,
+                    product_id: productId
+                }),
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success) {
+                        showSuccessToast('Primary image updated');
+                        location.reload();
+                    } else {
+                        showErrorToast(data.message || 'Could not set primary image');
+                    }
+                },
+                error: function() {
+                    showErrorToast('Something went wrong');
+                }
+            });
+        }
+    </script>
 </body>
 
 </html>

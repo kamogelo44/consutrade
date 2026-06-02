@@ -2,8 +2,6 @@
 /*
  * ConsuTrade - Get Order Details (AJAX)
  * Author: Kamogelo Phale
- * 
- * Returns detailed order information for the logged-in user
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -11,9 +9,10 @@ require_once dirname(__DIR__, 2) . '/init.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
 
-$response = ['success' => false, 'order' => null];
+$response = ['success' => false, 'order' => null, 'debug' => []];
 
 if (!$isLoggedIn) {
+    $response['debug']['error'] = 'Not logged in';
     echo json_encode($response);
     exit;
 }
@@ -21,18 +20,56 @@ if (!$isLoggedIn) {
 $order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
 
 if ($order_id <= 0) {
+    $response['debug']['error'] = 'Invalid order ID';
     echo json_encode($response);
     exit;
 }
 
-// Get user info from User object
 $user_id = $currentUser->getUserId();
 $role = $currentUser->getRole();
 
-// Get order details using repository
+$response['debug']['order_id'] = $order_id;
+$response['debug']['user_id'] = $user_id;
+$response['debug']['role'] = $role;
+
+// Direct query to check if order exists
+$checkSql = "SELECT order_id, buyer_id, seller_id, status FROM orders WHERE order_id = ?";
+$checkStmt = $conn->prepare($checkSql);
+$checkStmt->bind_param('i', $order_id);
+$checkStmt->execute();
+$checkResult = $checkStmt->get_result();
+$orderExists = $checkResult->fetch_assoc();
+$checkStmt->close();
+
+if (!$orderExists) {
+    $response['debug']['error'] = 'Order does not exist in database';
+    echo json_encode($response);
+    exit;
+}
+
+$response['debug']['order_data'] = $orderExists;
+
+// Check permission
+$hasPermission = false;
+if ($role === 'buyer' && $orderExists['buyer_id'] == $user_id) {
+    $hasPermission = true;
+} elseif ($role === 'seller' && $orderExists['seller_id'] == $user_id) {
+    $hasPermission = true;
+}
+
+$response['debug']['has_permission'] = $hasPermission;
+
+if (!$hasPermission) {
+    $response['debug']['error'] = 'User does not have permission to view this order';
+    echo json_encode($response);
+    exit;
+}
+
+// Now get full order details
 $order = $orderRepo->getOrderDetails($order_id, $user_id, $role);
 
 if (!$order) {
+    $response['debug']['error'] = 'getOrderDetails returned null';
     echo json_encode($response);
     exit;
 }
@@ -49,7 +86,6 @@ unset($item);
 $delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
 $total = $subtotal + $delivery_fee;
 
-// Get shipping address from order if available
 $shipping_address = isset($order['shipping_address']) && !empty($order['shipping_address'])
     ? $order['shipping_address']
     : 'Not provided';

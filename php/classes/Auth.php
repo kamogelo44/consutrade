@@ -198,36 +198,35 @@ class Auth
     public function initSession(): array
     {
         $scriptPath = $_SERVER['SCRIPT_NAME'];
+        $fileName = basename($scriptPath);
 
-        if (strpos($scriptPath, 'admin/login.php') !== false) {
+        if ($fileName === 'login.php' && strpos($scriptPath, '/admin/') !== false) {
             return ['user' => null, 'is_logged_in' => false];
         }
 
-        $isAdminPage = strpos($scriptPath, '/admin/') !== false &&
-            strpos($scriptPath, 'seller-dashboard.php') === false &&
-            strpos($scriptPath, 'seller-profile.php') === false &&
-            strpos($scriptPath, 'my-products.php') === false &&
-            strpos($scriptPath, 'add-product.php') === false &&
-            strpos($scriptPath, 'edit-product.php') === false &&
-            strpos($scriptPath, 'my-orders.php') === false;
+        // Admin only pages
+        $adminPages = ['admin-dashboard.php', 'users.php', 'all-products.php', 'all-orders.php'];
 
-        $isSellerPage = strpos($scriptPath, 'seller-dashboard.php') !== false ||
-            strpos($scriptPath, 'seller-profile.php') !== false ||
-            strpos($scriptPath, 'my-products.php') !== false ||
-            strpos($scriptPath, 'add-product.php') !== false ||
-            strpos($scriptPath, 'my-orders.php') !== false ||
-            strpos($scriptPath, 'edit-product.php') !== false;
+        // Seller pages (including endpoints called from seller area)
+        $sellerPages = [
+            'seller-dashboard.php',
+            'seller-profile.php',
+            'my-products.php',
+            'seller-orders.php',
+            'add-product.php',
+            'edit-product.php',
+            'get-seller-products.php',
+            'get-seller-recent-orders.php',
+            'delete-product.php'
+        ];
 
-        // Set session name BEFORE any session start
-        if ($isAdminPage) {
-            $sessionName = 'CONSUTRADE_ADMIN_SESSION';
-        } elseif ($isSellerPage) {
-            $sessionName = 'CONSUTRADE_SELLER_SESSION';
+        if (in_array($fileName, $adminPages)) {
+            session_name('CONSUTRADE_ADMIN_SESSION');
+        } elseif (in_array($fileName, $sellerPages)) {
+            session_name('CONSUTRADE_SELLER_SESSION');
         } else {
-            $sessionName = 'CONSUTRADE_USER_SESSION';
+            session_name('CONSUTRADE_USER_SESSION');
         }
-
-        session_name($sessionName);
 
         if (session_status() === PHP_SESSION_NONE) {
             session_start();

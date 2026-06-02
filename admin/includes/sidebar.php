@@ -51,7 +51,7 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
             <?php else: ?>
                 <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo $current_file == 'seller-dashboard.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard"> Dashboard</a></li>
                 <li><a href="<?php echo $baseUrl; ?>admin/my-products.php" class="<?php echo ($current_file == 'my-products.php' || $is_products_subpage) ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products"> My Products</a></li>
-                <li><a href="<?php echo $baseUrl; ?>admin/my-orders.php" class="<?php echo $current_file == 'my-orders.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders"> My Orders</a></li>
+                <li><a href="<?php echo $baseUrl; ?>admin/seller-orders.php" class="<?php echo $current_file == 'seller-orders.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders"> My Orders</a></li>
             <?php endif; ?>
         </ul>
     </div>

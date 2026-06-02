@@ -866,111 +866,9 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
 
     <?php include 'includes/footer.php'; ?>
 
+    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-        var currentUserId = <?php echo $currentUser->getUserId(); ?>;
-
-        function openOrderModal(orderId) {
-            var $modal = $('#orderModal');
-            var $body = $('#orderModalBody');
-
-            $modal.addClass('active');
-            $body.html('<div class="loading-spinner">Loading order details...</div>');
-
-            $.ajax({
-                url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success && data.order) {
-                        displayOrderDetails(data.order);
-                    } else {
-                        $body.html('<p class="error">Unable to load order details.</p>');
-                    }
-                },
-                error: function() {
-                    $body.html('<p class="error">Error loading order details.</p>');
-                }
-            });
-        }
-
-        function closeOrderModal() {
-            $('#orderModal').removeClass('active');
-        }
-
-        function displayOrderDetails(order) {
-            var $body = $('#orderModalBody');
-            var $footer = $('#orderModalFooter');
-
-            var itemsHtml = '';
-            if (order.items && order.items.length > 0) {
-                for (var i = 0; i < order.items.length; i++) {
-                    var item = order.items[i];
-                    var imagePath = item.image_url;
-                    if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-                        imagePath = baseUrl + imagePath;
-                    }
-                    itemsHtml += `
-                <div class="order-item">
-                    <div class="order-item-img">
-                        <img src="${imagePath || baseUrl + 'images/default-product.png'}" onerror="this.src='${baseUrl}images/default-product.png'">
-                    </div>
-                    <div class="order-item-details">
-                        <h4>${escapeHtml(item.product_name)}</h4>
-                        <p>Quantity: ${item.quantity}</p>
-                    </div>
-                    <div class="order-item-price">R ${parseFloat(item.price).toFixed(2)}</div>
-                </div>
-            `;
-                }
-            }
-
-            $body.html(`
-        <div class="info-row">
-            <span class="info-label">Order Number:</span>
-            <span class="info-value">#${order.order_id}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Order Date:</span>
-            <span class="info-value">${order.created_at}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Order Status:</span>
-            <span class="info-value status-${order.status}">${order.status.toUpperCase()}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Seller:</span>
-            <span class="info-value">${escapeHtml(order.other_party_name)}</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Shipping Address:</span>
-            <span class="info-value">${escapeHtml(order.shipping_address) || 'Not provided'}</span>
-        </div>
-        
-        <h4>Order Items</h4>
-        <div class="order-items-list">
-            ${itemsHtml || '<p>No items found.</p>'}
-        </div>
-        
-        <div class="order-total-section">
-            <div class="total-row">
-                <span>Subtotal:</span>
-                <span>R ${parseFloat(order.subtotal || 0).toFixed(2)}</span>
-            </div>
-            <div class="total-row">
-                <span>Delivery Fee:</span>
-                <span>R ${parseFloat(order.delivery_fee || 0).toFixed(2)}</span>
-            </div>
-            <div class="total-row grand-total">
-                <span>Total:</span>
-                <span>R ${parseFloat(order.total || 0).toFixed(2)}</span>
-            </div>
-        </div>
-    `);
-
-            $footer.empty();
-        }
-
+        // Cancel order function
         function cancelOrder(orderId) {
             if (confirm('Are you sure you want to cancel this order?')) {
                 $.ajax({
@@ -982,19 +880,20 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                     }),
                     success: function(data) {
                         if (data.success) {
-                            alert('Order cancelled.');
+                            showSuccessToast('Order cancelled');
                             location.reload();
                         } else {
-                            alert(data.message);
+                            showErrorToast(data.message);
                         }
                     },
                     error: function() {
-                        alert('Something went wrong.');
+                        showErrorToast('Something went wrong');
                     }
                 });
             }
         }
 
+        // Review modal functions
         function openReviewModal(orderId, sellerId, sellerName) {
             $('#isEditMode').val('0');
             $('#reviewModalTitle').text('Review Seller');
@@ -1032,26 +931,19 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
         function setRating(rating) {
             $('#reviewRating').val(rating);
             $('.rating-stars .star').each(function(index) {
-                if (index < rating) {
-                    $(this).addClass('active');
-                } else {
-                    $(this).removeClass('active');
-                }
+                $(this).toggleClass('active', index < rating);
             });
         }
 
         $('#reviewForm').on('submit', function(e) {
             e.preventDefault();
-
             var rating = $('#reviewRating').val();
             if (rating == 0) {
                 alert('Please select a rating');
                 return;
             }
-
             var isEditMode = $('#isEditMode').val() === '1';
             var url = isEditMode ? baseUrl + 'php/endpoints/update-review.php' : baseUrl + 'php/endpoints/submit-review.php';
-
             $.ajax({
                 url: url,
                 method: 'POST',
@@ -1064,15 +956,15 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                 }),
                 success: function(data) {
                     if (data.success) {
-                        alert(isEditMode ? 'Your review has been updated!' : 'Thank you for your review!');
+                        showSuccessToast(isEditMode ? 'Review updated!' : 'Thank you for your review!');
                         closeReviewModal();
                         location.reload();
                     } else {
-                        alert(data.message);
+                        showErrorToast(data.message);
                     }
                 },
                 error: function() {
-                    alert('Something went wrong.');
+                    showErrorToast('Something went wrong');
                 }
             });
         });

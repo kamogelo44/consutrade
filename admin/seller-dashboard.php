@@ -668,7 +668,7 @@ $profile_image = $currentUser->getProfileImageUrl();
                 <div class="section-card">
                     <div class="section-header">
                         <h2>Recent Orders</h2>
-                        <a href="my-orders.php" class="view-all-link">View All →</a>
+                        <a href="seller-orders.php" class="view-all-link">View All →</a>
                     </div>
                     <div class="orders-list" id="recent-orders-list">
                         <div class="loading-spinner">Loading recent orders...</div>
