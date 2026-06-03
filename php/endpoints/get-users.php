@@ -2,6 +2,8 @@
 /*
  * ConsuTrade - Get Users (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * Handles user listing for admin panel with filtering, pagination, and search.
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -9,81 +11,63 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'users' => [], 'total_pages' => 1, 'current_page' => 1];
 
-if (!$auth->isAdminLoggedIn()) {
+if (!$auth->isAdmin()) {
+    $response['error'] = 'Unauthorized. Admin access required.';
     echo json_encode($response);
     exit;
 }
 
-$page        = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$role_filter = $_GET['role'] ?? 'all';
-$search_term = isset($_GET['search']) ? trim($_GET['search']) : '';
-$recent_only = isset($_GET['recent']) && $_GET['recent'] === 'true';
-$limit       = $recent_only ? 5 : (isset($_GET['limit']) ? (int)$_GET['limit'] : 10);
-$offset      = ($page - 1) * $limit;
+try {
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $roleFilter = $_GET['role'] ?? 'all';
+    $searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $recentOnly = isset($_GET['recent']) && $_GET['recent'] === 'true';
 
-// ===== RECENT USERS (Dashboard) =====
-if ($recent_only) {
-    $users = $userRepo->getRecentUsers($limit);
+    $limit = $recentOnly ? 5 : (isset($_GET['limit']) ? (int)$_GET['limit'] : 10);
+    $offset = ($page - 1) * $limit;
 
-    $response['success'] = true;
-    $response['users'] = $users;
-    echo json_encode($response);
-    exit;
-}
-
-// ===== PENDING VERIFICATIONS =====
-if ($role_filter === 'pending') {
-    $total_rows = $userRepo->getPendingVerificationsCount();
-    $total_pages = ceil($total_rows / $limit);
-    $users = $userRepo->getPendingVerificationsWithPagination($limit, $offset);
-
-    $response['success'] = true;
-    $response['users'] = $users;
-    $response['total_pages'] = $total_pages;
-    $response['current_page'] = $page;
-    echo json_encode($response);
-    exit;
-}
-
-// ===== REGULAR ROLE FILTERS =====
-if ($role_filter !== 'all') {
-    $total_rows = $userRepo->countUsersByRole($role_filter, $search_term);
-    $total_pages = ceil($total_rows / $limit);
-    $users = $userRepo->getUsersByRoleWithPagination($role_filter, $search_term, $limit, $offset);
-} else {
-    // All users - need to add getAllWithPagination method if you want
-    // For now, keep existing logic or add method
-    $all_users = $userRepo->getAll();
-
-    if (!empty($search_term)) {
-        $search_lower = strtolower($search_term);
-        $all_users = array_filter($all_users, function ($user) use ($search_lower) {
-            return strpos(strtolower($user['full_name']), $search_lower) !== false ||
-                strpos(strtolower($user['email']), $search_lower) !== false;
-        });
+    if ($recentOnly) {
+        $users = $userRepo->getRecentUsers($limit);
+        $response['success'] = true;
+        $response['users'] = $users;
+        $response['total_pages'] = 1;
+        $response['current_page'] = 1;
+        echo json_encode($response);
+        exit;
     }
 
-    $total_rows = count($all_users);
-    $total_pages = ceil($total_rows / $limit);
-    $users = array_slice($all_users, $offset, $limit);
-}
+    if ($roleFilter === 'pending') {
+        $totalRows = $userRepo->getPendingVerificationsCount();
+        $totalPages = ceil($totalRows / $limit);
+        $users = $userRepo->getPendingVerificationsWithPagination($limit, $offset);
 
-$formatted_users = [];
-foreach ($users as $user) {
-    $formatted_users[] = [
-        'user_id'     => (int) $user['user_id'],
-        'full_name'   => $user['full_name'],
-        'email'       => $user['email'],
-        'phone'       => $user['phone'] ?? '-',
-        'role'        => $user['role'],
-        'is_verified' => (bool) ($user['id_verified'] ?? false),
-        'created_at'  => date('d M Y', strtotime($user['created_at']))
-    ];
-}
+        $response['success'] = true;
+        $response['users'] = $users;
+        $response['total_pages'] = $totalPages;
+        $response['current_page'] = $page;
+        echo json_encode($response);
+        exit;
+    }
 
-$response['success'] = true;
-$response['users'] = $formatted_users;
-$response['total_pages'] = $total_pages;
-$response['current_page'] = $page;
+    if ($roleFilter !== 'all') {
+        $totalRows = $userRepo->countUsersByRole($roleFilter, $searchTerm);
+        $totalPages = ceil($totalRows / $limit);
+        $users = $userRepo->getUsersByRoleWithPagination($roleFilter, $searchTerm, $limit, $offset);
+    } else {
+        $allUsers = $userRepo->getAll('all', $searchTerm, 0, 0);
+        $totalRows = count($allUsers);
+        $totalPages = ceil($totalRows / $limit);
+        $users = $userRepo->getAll('all', $searchTerm, $limit, $offset);
+    }
+
+    $response['success'] = true;
+    $response['users'] = $users;
+    $response['total_pages'] = $totalPages;
+    $response['current_page'] = $page;
+} catch (Exception $e) {
+    $response['error'] = $e->getMessage();
+    $response['file'] = $e->getFile();
+    $response['line'] = $e->getLine();
+}
 
 echo json_encode($response);

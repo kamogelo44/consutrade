@@ -2,6 +2,10 @@
 /*
  * ConsuTrade - My Products (Seller)
  * Author: Kamogelo Phale
+ * 
+ * Displays all products for the logged-in seller with filtering and search.
+ * Allows sellers to edit, suspend, activate, or delete their products.
+ * If a product was suspended by admin, the seller cannot reactivate it.
  */
 
 require_once dirname(__DIR__) . '/init.php';
@@ -12,20 +16,6 @@ if (!$auth->isSeller()) {
 }
 
 $seller_id = $currentUser->getUserId();
-
-if (isset($_GET['action']) && isset($_GET['id'])) {
-    $product_id = (int)$_GET['id'];
-    $action = $_GET['action'];
-    $result = $productRepo->updateProductStatus($product_id, $seller_id, $action);
-    if ($result['success']) {
-        $_SESSION['flash'] = $result['message'];
-    } else {
-        $_SESSION['error'] = $result['message'];
-    }
-    header("Location: my-products.php");
-    exit;
-}
-
 $status = $_GET['status'] ?? 'all';
 $search = $_GET['search'] ?? '';
 $products = $productRepo->getSellerProducts($seller_id, $status, $search);
@@ -41,6 +31,12 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
+        /* ========== SELLER DASHBOARD LAYOUT ========== */
+
+        /**
+         * Main content area for seller dashboard
+         * Offset by sidebar width (280px) on desktop
+         */
         .seller-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -53,6 +49,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             max-width: 1400px;
             margin: 0 auto;
         }
+
+        /* ========== PAGE HEADER ========== */
 
         .page-header {
             margin-bottom: var(--spacing-xl);
@@ -68,6 +66,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
         .page-header p {
             color: var(--gray-medium);
         }
+
+        /* ========== FLASH MESSAGES ========== */
 
         .flash-message,
         .error-message {
@@ -88,6 +88,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             color: var(--error);
             border-left: 4px solid var(--error);
         }
+
+        /* ========== ACTION BAR (Add Product, Filters, Search) ========== */
 
         .action-bar {
             display: flex;
@@ -120,6 +122,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             font-size: 18px;
         }
 
+        /* ========== FILTER BUTTONS ========== */
+
         .filter-buttons {
             display: flex;
             gap: var(--spacing-sm);
@@ -150,6 +154,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             border-color: var(--primary-color);
         }
 
+        /* ========== SEARCH FORM ========== */
+
         .search-form {
             display: flex;
             gap: var(--spacing-sm);
@@ -169,12 +175,21 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
         }
 
         .search-form button {
-            padding: 8px 16px;
+            padding: 8px 12px;
             background: var(--primary-color);
             color: var(--white);
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-form button img {
+            width: 16px;
+            height: 16px;
+            filter: brightness(0) invert(1);
         }
 
         .clear-search {
@@ -185,6 +200,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             color: var(--gray-dark);
             font-size: var(--font-sm);
         }
+
+        /* ========== PRODUCTS GRID ========== */
 
         .products-grid {
             display: grid;
@@ -211,6 +228,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             object-fit: cover;
             background: var(--gray-bg);
         }
+
+        /* ========== PRODUCT INFORMATION ========== */
 
         .product-info {
             padding: var(--spacing-md);
@@ -258,6 +277,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             background: var(--warning-light);
             color: var(--warning);
         }
+
+        /* ========== ACTION BUTTON GROUP ========== */
 
         .btn-group {
             display: flex;
@@ -322,23 +343,47 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             color: var(--white);
         }
 
+        /* ========== EMPTY STATE (Full Width) ========== */
+
         .empty-state {
-            text-align: center;
-            padding: 60px var(--spacing-xl);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
+            grid-column: 1 / -1;
         }
 
-        .empty-state p {
+        /* ========== ADMIN SUSPENSION NOTICE ========== */
+
+        .admin-suspension-notice {
+            background: var(--error-light);
+            color: var(--error);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid var(--error);
+        }
+
+        .admin-suspension-notice img {
+            flex-shrink: 0;
+        }
+
+        .suspension-reason {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        /* ========== DISABLED BUTTON STATE ========== */
+
+        .btn-activate:disabled {
+            background: var(--gray-bg-light);
             color: var(--gray-medium);
-            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--border-light);
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
-        .empty-state a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
+        /* ========== RESPONSIVE STYLES ========== */
 
         @media (max-width: 1024px) {
             .seller-main-content {
@@ -424,20 +469,18 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             <?php endif; ?>
 
             <div class="action-bar">
-                <a href="add-product.php" class="add-product-btn">
-                    <span>+</span> Add Product
-                </a>
-
+                <a href="add-product.php" class="add-product-btn"><span>+</span> Add Product</a>
                 <div class="filter-buttons">
                     <a href="?status=all" class="filter-btn <?php echo $status == 'all' ? 'active' : ''; ?>">All</a>
                     <a href="?status=active" class="filter-btn <?php echo $status == 'active' ? 'active' : ''; ?>">Active</a>
                     <a href="?status=suspended" class="filter-btn <?php echo $status == 'suspended' ? 'active' : ''; ?>">Suspended</a>
                 </div>
-
                 <form method="GET" class="search-form">
                     <input type="hidden" name="status" value="<?php echo $status; ?>">
                     <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search); ?>">
-                    <button type="submit">Go</button>
+                    <button type="submit">
+                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                    </button>
                     <?php if (!empty($search)): ?>
                         <a href="?status=<?php echo $status; ?>" class="clear-search">Clear</a>
                     <?php endif; ?>
@@ -447,8 +490,10 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             <div class="products-grid">
                 <?php if (empty($products)): ?>
                     <div class="empty-state">
-                        <p>No products found.</p>
-                        <a href="add-product.php">Add your first product →</a>
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
+                        <h3>No products found</h3>
+                        <p>You haven't listed any products yet.</p>
+                        <a href="add-product.php" class="view-all-btn">Add Your First Product</a>
                     </div>
                 <?php else: ?>
                     <?php foreach ($products as $product): ?>
@@ -460,14 +505,31 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
                                 <p class="product-stock">Stock: <?php echo $product['stock_quantity']; ?></p>
                                 <p class="product-status">Status: <span class="status-badge status-<?php echo $product['status']; ?>"><?php echo ucfirst($product['status']); ?></span></p>
 
+                                <?php if (isset($product['suspended_by']) && $product['suspended_by'] == 'admin'): ?>
+                                    <div class="admin-suspension-notice">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" width="14" height="14" alt="Warning">
+                                        <span class="suspension-reason">
+                                            <?php if (!empty($product['suspended_reason'])): ?>
+                                                Suspended by admin: <?php echo htmlspecialchars($product['suspended_reason']); ?>
+                                            <?php else: ?>
+                                                Suspended by admin. Only an admin can reactivate.
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
+
                                 <div class="btn-group">
                                     <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn-edit">Edit</a>
                                     <?php if ($product['status'] == 'active'): ?>
-                                        <a href="?action=suspend&id=<?php echo $product['id']; ?>&status=<?php echo $status; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="btn-suspend" onclick="return confirm('Suspend this product? It will be hidden from buyers.')">Suspend</a>
+                                        <button class="btn-suspend" onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'active', function() { location.reload(); })">Suspend</button>
                                     <?php else: ?>
-                                        <a href="?action=activate&id=<?php echo $product['id']; ?>&status=<?php echo $status; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="btn-activate" onclick="return confirm('Activate this product? It will be visible to buyers.')">Activate</a>
+                                        <?php if (isset($product['suspended_by']) && $product['suspended_by'] == 'admin'): ?>
+                                            <button class="btn-activate" disabled>Activate</button>
+                                        <?php else: ?>
+                                            <button class="btn-activate" onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'suspended', function() { location.reload(); })">Activate</button>
+                                        <?php endif; ?>
                                     <?php endif; ?>
-                                    <button class="btn-delete" onclick="deleteProduct(<?php echo $product['id']; ?>)">Delete</button>
+                                    <button class="btn-delete" onclick="deleteProduct(<?php echo $product['id']; ?>, '<?php echo addslashes(htmlspecialchars($product['title'])); ?>', function() { location.reload(); })">Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -476,35 +538,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             </div>
         </div>
     </main>
-
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-
-        function deleteProduct(id) {
-            if (confirm('Delete this product? This action cannot be undone.')) {
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/delete-product.php',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        product_id: id
-                    }),
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success) {
-                            showSuccessToast('Product deleted successfully');
-                            location.reload();
-                        } else {
-                            showErrorToast(data.message || 'Error deleting product');
-                        }
-                    },
-                    error: function() {
-                        showErrorToast('Something went wrong');
-                    }
-                });
-            }
-        }
-    </script>
 </body>
 
 </html>

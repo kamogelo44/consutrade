@@ -20,24 +20,128 @@ var baseUrl = baseUrl || '';
  * @param {string} id - Element ID
  * @param {*} value - Value to set as text
  * @returns {void}
- * 
- * @example
- * setText('totalUsers', 42);
  */
 function setText(id, value) {
     $('#' + id).text(value);
 }
 
+/**
+ * Generates HTML for an empty state message
+ * 
+ * @param {string} icon - Icon filename from images/icons/
+ * @param {string} title - Heading text
+ * @param {string} message - Description text
+ * @param {string} buttonText - Button text (optional)
+ * @param {string} buttonLink - Button link URL (optional)
+ * @returns {string} HTML for empty state
+ */
+function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
+    var html = '<div class="empty-state">' +
+        '<img src="' + baseUrl + 'images/icons/' + icon + '" width="64" height="64" alt="' + title + '">' +
+        '<h3>' + escapeHtml(title) + '</h3>' +
+        '<p>' + escapeHtml(message) + '</p>';
+    
+    if (buttonText && buttonLink) {
+        html += '<a href="' + buttonLink + '" class="view-all-btn">' + escapeHtml(buttonText) + '</a>';
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+// ========== PRODUCT MANAGEMENT FUNCTIONS (Shared between admin and seller) ==========
+
+/**
+ * Toggle product status (suspend/activate)
+ * @param {number} productId - Product ID
+ * @param {string} currentStatus - Current status ('active' or 'suspended')
+ * @param {function} callback - Optional callback function after success
+ */
+window.toggleProductStatus = function(productId, currentStatus, callback) {
+    var newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    var action = newStatus === 'active' ? 'activate' : 'suspend';
+    var confirmMsg = action === 'suspend' 
+        ? 'Suspend this product? It will be hidden from buyers.' 
+        : 'Activate this product? It will be visible to buyers.';
+    
+    if (!confirm(confirmMsg)) return;
+    
+    var requestData = { product_id: productId, status: newStatus };
+    
+    // Ask for reason if suspending (optional for sellers, recommended for admins)
+    if (action === 'suspend') {
+        var reason = prompt('Reason for suspension (optional):', '');
+        if (reason !== null && reason.trim() !== '') {
+            requestData.reason = reason.trim();
+        }
+    }
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/update-product-status.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(requestData),
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                showSuccessToast(data.message || 'Product status updated');
+                if (typeof callback === 'function') {
+                    callback();
+                } else {
+                    location.reload();
+                }
+            } else {
+                showErrorToast('Error: ' + data.message);
+            }
+        },
+        error: function() {
+            showErrorToast('Something went wrong');
+        }
+    });
+};
+
+/**
+ * Delete a product
+ * @param {number} productId - Product ID
+ * @param {string} productName - Product name for confirmation message
+ * @param {function} callback - Optional callback function after success
+ */
+window.deleteProduct = function(productId, productName, callback) {
+    var confirmMsg = productName 
+        ? 'Delete "' + productName + '"? This action cannot be undone.'
+        : 'Delete this product? This action cannot be undone.';
+    
+    if (confirm(confirmMsg)) {
+        $.ajax({
+            url: baseUrl + 'php/endpoints/delete-product.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ product_id: productId }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    showSuccessToast(data.message || 'Product deleted successfully');
+                    if (typeof callback === 'function') {
+                        callback();
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    showErrorToast('Error: ' + data.message);
+                }
+            },
+            error: function() {
+                showErrorToast('Something went wrong');
+            }
+        });
+    }
+};
+
 // ========== SHARED MODAL FUNCTIONS ==========
-// Note: order modal functions (openOrderModal, closeOrderModal) are defined in main.js
-// updateOrderStatus is also defined in main.js
-// These shortcut functions call the main.js version
 
 /**
  * Shortcut to process an order (set status to 'processing')
- * 
  * @param {number} orderId - Order ID to process
- * @returns {void}
  */
 window.processOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
@@ -47,9 +151,7 @@ window.processOrder = function(orderId) {
 
 /**
  * Shortcut to mark order as shipped (set status to 'shipped')
- * 
  * @param {number} orderId - Order ID to ship
- * @returns {void}
  */
 window.shipOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
@@ -59,9 +161,7 @@ window.shipOrder = function(orderId) {
 
 /**
  * Shortcut to complete an order (set status to 'completed')
- * 
  * @param {number} orderId - Order ID to complete
- * @returns {void}
  */
 window.completeOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
@@ -71,9 +171,7 @@ window.completeOrder = function(orderId) {
 
 /**
  * Shortcut to cancel an order (set status to 'cancelled')
- * 
  * @param {number} orderId - Order ID to cancel
- * @returns {void}
  */
 window.cancelOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
@@ -81,13 +179,9 @@ window.cancelOrder = function(orderId) {
     }
 };
 
-// ========== PRODUCT FUNCTIONS ==========
-
 /**
  * Redirects to edit product page
- * 
  * @param {number} productId - Product ID to edit
- * @returns {void}
  */
 window.editProduct = function(productId) {
     if (productId) {
@@ -96,55 +190,8 @@ window.editProduct = function(productId) {
 };
 
 /**
- * Deletes a product via AJAX
- * 
- * @param {number} productId - Product ID to delete
- * @returns {void}
- * 
- * @fires AJAX POST request to delete-product.php
- * @fires showSuccessToast or showErrorToast on completion
- * @sideeffect Reloads seller products or refreshes page
- */
-window.deleteProduct = function(productId) {
-    if (!productId) return;
-    
-    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-        $.ajax({
-            url: baseUrl + 'php/endpoints/delete-product.php',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ product_id: productId }),
-            dataType: 'json',
-            success: function(data) {
-                if (data.success) {
-                    if (typeof showSuccessToast === 'function') {
-                        showSuccessToast('Product deleted successfully');
-                    }
-                    if (typeof window.loadSellerProducts === 'function') {
-                        window.loadSellerProducts();
-                    } else {
-                        location.reload();
-                    }
-                } else {
-                    if (typeof showErrorToast === 'function') {
-                        showErrorToast('Error: ' + data.message);
-                    }
-                }
-            },
-            error: function() {
-                if (typeof showErrorToast === 'function') {
-                    showErrorToast('Something went wrong. Please try again.');
-                }
-            }
-        });
-    }
-};
-
-/**
  * Redirects to order details page
- * 
  * @param {number} orderId - Order ID to view
- * @returns {void}
  */
 window.viewOrder = function(orderId) {
     if (orderId) {
@@ -162,31 +209,19 @@ window.viewOrder = function(orderId) {
 /** @type {jQuery|null} Listings grid container */
 var $listingsGrid = null;
 
-/**
- * Caches seller dashboard DOM elements
- * 
- * @returns {void}
- */
 function cacheSellerElements() {
     $listingsGrid = $('#listings-grid');
 }
 
 /**
  * Loads seller's products from the server
- * 
  * @param {number} [limit] - Optional limit for number of products to load
- * @returns {void}
- * 
- * @fires AJAX GET request to get-seller-products.php
- * @sideeffect Populates the listings grid with seller's products
  */
 window.loadSellerProducts = function(limit) {
     cacheSellerElements();
-    
     if (!$listingsGrid.length) return;
     
     $listingsGrid.html('<div class="loading-spinner">Loading your products...</div>');
-    
     var url = baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + currentUserId;
     if (limit) url += '&limit=' + limit;
     
@@ -198,42 +233,40 @@ window.loadSellerProducts = function(limit) {
             if (data.success && data.products && data.products.length) {
                 displaySellerProducts(data.products);
             } else {
-                $listingsGrid.html('<div class="empty-state"><p>You haven\'t listed any products yet.</p></div>');
+                // Enhanced empty state for seller products
+                $listingsGrid.html(getEmptyStateHTML(
+                    'product-catalog-svgrepo-com.svg',
+                    'No products found',
+                    'You haven\'t listed any products yet.',
+                    'Add Your First Product',
+                    baseUrl + 'admin/add-product.php'
+                ));
             }
         },
         error: function() {
-            $listingsGrid.html('<p class="error">Error loading products. Please refresh the page.</p>');
+            $listingsGrid.html('<div class="error-message"><p>Error loading products. Please refresh the page.</p></div>');
         }
     });
 };
 
-/**
- * Displays seller products in the listings grid
- * 
- * @param {Array} products - Array of product objects
- * @returns {void}
- * 
- * @sideeffect Populates the listings grid with product cards
- */
 function displaySellerProducts(products) {
     cacheSellerElements();
     $listingsGrid.empty();
     
     $.each(products, function(i, product) {
         var imagePath = fixImageUrl(product.display_image || product.image);
-        
         var $card = $('<div>').addClass('product-card');
         $card.html(
             '<div class="product-image">' +
-            '<img src="' + (imagePath) + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                '<img src="' + (imagePath) + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
             '</div>' +
             '<div class="product-details">' +
-            '<h4 class="product-title">' + escapeHtml(product.name) + '</h4>' +
-            '<p class="product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
-            '<div class="product-actions">' +
-            '<a href="edit-product.php?id=' + product.id + '" class="edit-btn">Edit</a>' +
-            '<button class="delete-btn" onclick="deleteProduct(' + product.id + ')">Delete</button>' +
-            '</div>' +
+                '<h4 class="product-title">' + escapeHtml(product.name) + '</h4>' +
+                '<p class="product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
+                '<div class="product-actions">' +
+                    '<a href="edit-product.php?id=' + product.id + '" class="edit-btn">Edit</a>' +
+                    '<button class="delete-btn" onclick="deleteProduct(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', function() { location.reload(); })">Delete</button>' +
+                '</div>' +
             '</div>'
         );
         $listingsGrid.append($card);
@@ -244,21 +277,10 @@ function displaySellerProducts(products) {
 
 /** @type {jQuery|null} Total revenue element */
 var $totalRevenue = null;
-
-/** @type {jQuery|null} Total users element */
 var $totalUsers = null;
-
-/** @type {jQuery|null} Total products element */
 var $totalProducts = null;
-
-/** @type {jQuery|null} Pending orders element */
 var $pendingOrders = null;
 
-/**
- * Caches admin stats DOM elements
- * 
- * @returns {void}
- */
 function cacheAdminStatsElements() {
     $totalRevenue = $('#totalRevenue');
     $totalUsers = $('#totalUsers');
@@ -266,17 +288,8 @@ function cacheAdminStatsElements() {
     $pendingOrders = $('#pendingOrders');
 }
 
-/**
- * Loads admin dashboard statistics from the server
- * 
- * @returns {void}
- * 
- * @fires AJAX GET request to get-user-stats.php
- * @sideeffect Updates dashboard stat displays
- */
 function loadAdminStats() {
     cacheAdminStatsElements();
-    
     $.ajax({
         url: baseUrl + 'php/endpoints/get-user-stats.php',
         type: 'GET',
@@ -295,37 +308,18 @@ function loadAdminStats() {
 
 // ========== LOAD PENDING VERIFICATIONS ==========
 
-/** @type {jQuery|null} Pending verifications count element */
 var $pendingVerifications = null;
-
-/** @type {jQuery|null} Pending notice container */
 var $pendingNotice = null;
-
-/** @type {jQuery|null} Pending message element */
 var $pendingMessage = null;
 
-/**
- * Caches pending verification DOM elements
- * 
- * @returns {void}
- */
 function cachePendingVerificationElements() {
     $pendingVerifications = $('#pendingVerifications');
     $pendingNotice = $('#pendingNotice');
     $pendingMessage = $('#pendingMessage');
 }
 
-/**
- * Loads and displays pending seller verifications
- * 
- * @returns {void}
- * 
- * @fires AJAX GET request to get-users.php?role=pending
- * @sideeffect Updates verification count and shows/hides notice
- */
 function loadPendingVerifications() {
     cachePendingVerificationElements();
-    
     $.ajax({
         url: baseUrl + 'php/endpoints/get-users.php?role=pending',
         type: 'GET',
@@ -334,7 +328,6 @@ function loadPendingVerifications() {
             if (data.success) {
                 var count = data.users ? data.users.length : 0;
                 if ($pendingVerifications.length) $pendingVerifications.text(count);
-                
                 if (count > 0) {
                     if ($pendingNotice.length) $pendingNotice.show();
                     if ($pendingMessage.length) $pendingMessage.html('<strong>' + count + '</strong> seller(s) waiting for document verification.');
@@ -349,14 +342,6 @@ function loadPendingVerifications() {
     });
 }
 
-/**
- * Loads recent users for admin dashboard
- * 
- * @returns {void}
- * 
- * @fires AJAX GET request to get-users.php?recent=true
- * @sideeffect Populates recent users table
- */
 function loadRecentUsers() {
     var $recentUsersTable = $('#recent-users-table');
     if (!$recentUsersTable.length) return;
@@ -372,32 +357,23 @@ function loadRecentUsers() {
                     var roleClass = user.role === 'admin' ? 'role-admin' : (user.role === 'seller' ? 'role-seller' : 'role-buyer');
                     $recentUsersTable.append(
                         '<tr>' +
-                        '<td>' + escapeHtml(user.full_name) + '</td>' +
-                        '<td>' + escapeHtml(user.email) + '</td>' +
-                        '<td><span class="role-badge ' + roleClass + '">' + capitalizeFirst(user.role) + '</span></td>' +
-                        '<td>' + escapeHtml(user.created_at) + '</td>' +
+                            '<td>' + escapeHtml(user.full_name) + '</td>' +
+                            '<td>' + escapeHtml(user.email) + '</td>' +
+                            '<td><span class="role-badge ' + roleClass + '">' + capitalizeFirst(user.role) + '</span></td>' +
+                            '<td>' + escapeHtml(user.created_at) + '</td>' +
                         '</tr>'
                     );
                 });
             } else {
-                $recentUsersTable.html('<tr><td colspan="4" class="loading-cell">No users found</td></tr>');
+                $recentUsersTable.html('<tr><td colspan="4" class="empty-cell">No users found</td></tr>');
             }
         },
         error: function() {
-            $recentUsersTable.html('<tr><td colspan="4" class="loading-cell">Error loading users</td></tr>');
+            $recentUsersTable.html('<tr><td colspan="4" class="error-cell">Error loading users</td></tr>');
         }
     });
 }
 
-/**
- * Loads recent orders for admin dashboard
- * 
- * @param {number} [limit=5] - Number of orders to load
- * @returns {void}
- * 
- * @fires AJAX GET request to get-recent-orders.php
- * @sideeffect Populates recent orders table
- */
 function loadRecentOrders(limit) {
     limit = limit || 5;
     var $recentOrdersTable = $('#recent-orders-table');
@@ -414,31 +390,24 @@ function loadRecentOrders(limit) {
                     var statusClass = getStatusClass(order.status);
                     $recentOrdersTable.append(
                         '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
-                        '<td>#' + order.id + '</td>' +
-                        '<td>' + escapeHtml(order.buyer_name) + '</td>' +
-                        '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
-                        '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
-                        '<td>' + escapeHtml(order.created_at) + '</td>' +
+                            '<td>#' + order.id + '</td>' +
+                            '<td>' + escapeHtml(order.buyer_name) + '</td>' +
+                            '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
+                            '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
+                            '<td>' + escapeHtml(order.created_at) + '</td>' +
                         '</tr>'
                     );
                 });
             } else {
-                $recentOrdersTable.html('<tr><td colspan="5" class="loading-cell">No orders found</td></tr>');
+                $recentOrdersTable.html('<tr><td colspan="5" class="empty-cell">No orders found</td></tr>');
             }
         },
         error: function() {
-            $recentOrdersTable.html('</table><td colspan="5" class="loading-cell">Error loading orders</td></tr>');
+            $recentOrdersTable.html('<tr><td colspan="5" class="error-cell">Error loading orders</td></tr>');
         }
     });
 }
 
-/**
- * Loads all admin dashboard components
- * 
- * @returns {void}
- * 
- * @fires loadAdminStats, loadRecentUsers, loadRecentOrders, loadPendingVerifications
- */
 function loadAdminDashboard() {
     loadAdminStats();
     loadRecentUsers();
@@ -448,37 +417,18 @@ function loadAdminDashboard() {
 
 // ========== SELLER DASHBOARD FUNCTIONS ==========
 
-/** @type {jQuery|null} Seller earnings stat element */
 var $statEarnings = null;
-
-/** @type {jQuery|null} Seller products stat element */
 var $statProducts = null;
-
-/** @type {jQuery|null} Seller pending orders stat element */
 var $statPending = null;
 
-/**
- * Caches seller stats DOM elements
- * 
- * @returns {void}
- */
 function cacheSellerStatsElements() {
     $statEarnings = $('#stat-earnings');
     $statProducts = $('#stat-products');
     $statPending = $('#stat-pending');
 }
 
-/**
- * Loads seller dashboard statistics
- * 
- * @returns {void}
- * 
- * @fires AJAX GET request to get-user-stats.php?seller_id
- * @sideeffect Updates seller stat displays
- */
 function loadSellerStats() {
     cacheSellerStatsElements();
-    
     $.ajax({
         url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + currentUserId,
         type: 'GET',
@@ -494,15 +444,6 @@ function loadSellerStats() {
     });
 }
 
-/**
- * Loads seller's recent orders
- * 
- * @param {number} [limit=5] - Number of orders to load
- * @returns {void}
- * 
- * @fires AJAX GET request to get-seller-recent-orders.php
- * @sideeffect Populates recent orders list
- */
 function loadSellerRecentOrders(limit) {
     limit = limit || 5;
     var $recentOrdersList = $('#recent-orders-list');
@@ -523,23 +464,30 @@ function loadSellerRecentOrders(limit) {
                     }
                     $recentOrdersList.append(
                         '<div class="order-item" onclick="viewOrder(' + order.id + ')">' +
-                        '<div class="order-info">' +
-                        '<span class="order-number">#' + order.id + '</span>' +
-                        '<span class="order-status ' + statusClass + '">' + capitalizeFirst(order.status) + '</span>' +
-                        '</div>' +
-                        '<div class="order-products">' +
-                        '<span class="product-names" title="' + escapeHtml(order.product_names) + '">' + escapeHtml(productNames) + '</span>' +
-                        '<span class="product-count">' + order.item_count + ' item(s)</span>' +
-                        '</div>' +
-                        '<div class="order-details">' +
-                        '<span class="order-total">R ' + parseFloat(order.total).toFixed(2) + '</span>' +
-                        '<span class="order-date">' + order.created_at + '</span>' +
-                        '</div>' +
+                            '<div class="order-info">' +
+                                '<span class="order-number">#' + order.id + '</span>' +
+                                '<span class="order-status ' + statusClass + '">' + capitalizeFirst(order.status) + '</span>' +
+                            '</div>' +
+                            '<div class="order-products">' +
+                                '<span class="product-names" title="' + escapeHtml(order.product_names) + '">' + escapeHtml(productNames) + '</span>' +
+                                '<span class="product-count">' + order.item_count + ' item(s)</span>' +
+                            '</div>' +
+                            '<div class="order-details">' +
+                                '<span class="order-total">R ' + parseFloat(order.total).toFixed(2) + '</span>' +
+                                '<span class="order-date">' + order.created_at + '</span>' +
+                            '</div>' +
                         '</div>'
                     );
                 });
             } else {
-                $recentOrdersList.html('<div class="empty-state"><p>No recent orders to display.</p></div>');
+                // Enhanced empty state for recent orders
+                $recentOrdersList.html(getEmptyStateHTML(
+                    'shopping-cart-01-svgrepo-com.svg',
+                    'No recent orders',
+                    'You haven\'t received any orders yet.',
+                    'Browse Products',
+                    baseUrl + 'product-listings.php'
+                ));
             }
         },
         error: function() {
@@ -548,13 +496,6 @@ function loadSellerRecentOrders(limit) {
     });
 }
 
-/**
- * Loads all seller dashboard components
- * 
- * @returns {void}
- * 
- * @fires loadSellerStats, loadSellerProducts, loadSellerRecentOrders
- */
 function loadSellerDashboard() {
     loadSellerStats();
     if (typeof window.loadSellerProducts === 'function') {
@@ -565,14 +506,6 @@ function loadSellerDashboard() {
 
 // ========== MOBILE SIDEBAR TOGGLE ==========
 
-/**
- * Initializes mobile sidebar toggle functionality for admin/seller dashboards
- * 
- * @param {string} prefix - Sidebar prefix ('admin' or 'seller')
- * @returns {void}
- * 
- * @sideeffect Binds click events for hamburger menu and close button
- */
 function initMobileSidebar(prefix) {
     var $hamburger = $('#' + prefix + 'Hamburger');
     var $sideMenu = $('#' + prefix + 'SideMenu');
@@ -584,11 +517,6 @@ function initMobileSidebar(prefix) {
     
     if (!$hamburger.length || !$sideMenu.length) return;
     
-    /**
-     * Opens the sidebar
-     * 
-     * @returns {void}
-     */
     function openSidebar() {
         $sideMenu.addClass('active');
         if ($overlay.length) $overlay.addClass('active');
@@ -596,11 +524,6 @@ function initMobileSidebar(prefix) {
         $body.css('overflow', 'hidden');
     }
     
-    /**
-     * Closes the sidebar
-     * 
-     * @returns {void}
-     */
     function closeSidebar() {
         $sideMenu.removeClass('active');
         if ($overlay.length) $overlay.removeClass('active');
@@ -617,23 +540,11 @@ function initMobileSidebar(prefix) {
     });
 }
 
-/** @type {jQuery|null} Admin side menu element */
 var $adminSideMenu = null;
-
-/** @type {jQuery|null} Admin menu overlay element */
 var $adminMenuOverlay = null;
-
-/** @type {jQuery|null} Seller side menu element */
 var $sellerSideMenu = null;
-
-/** @type {jQuery|null} Seller menu overlay element */
 var $sellerMenuOverlay = null;
 
-/**
- * Caches sidebar handler DOM elements
- * 
- * @returns {void}
- */
 function cacheModalSidebarHandlerElements() {
     $adminSideMenu = $('#adminSideMenu');
     $adminMenuOverlay = $('#adminMenuOverlay');
@@ -641,20 +552,11 @@ function cacheModalSidebarHandlerElements() {
     $sellerMenuOverlay = $('#sellerMenuOverlay');
 }
 
-/**
- * Initializes modal sidebar handler to manage sidebar state when modals open
- * 
- * @returns {void}
- * 
- * @sideeffect Tracks sidebar state and restores it after modal closes
- */
 function initModalSidebarHandler() {
     cacheModalSidebarHandlerElements();
-    
     var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
     var $sideMenu = (prefix === 'admin') ? $adminSideMenu : $sellerSideMenu;
     var $menuOverlay = (prefix === 'admin') ? $adminMenuOverlay : $sellerMenuOverlay;
-    
     var $viewDetailsBtns = $('.view-details-btn, .view-btn, [data-modal-open]');
     var $modalCloseBtns = $('.modal-close');
     
@@ -677,31 +579,16 @@ function initModalSidebarHandler() {
 
 // ========== GALLERY IMAGE FUNCTIONS ==========
 
-/**
- * Removes a gallery image from a product
- * 
- * @param {number} imageId - Gallery image ID
- * @param {number} productId - Product ID
- * @returns {void}
- * 
- * @fires AJAX POST request to remove-gallery-image.php
- * @sideeffect Fades out and removes the gallery item
- */
 function removeGalleryImage(imageId, productId) {
     if (!confirm('Remove this image from the gallery? This action cannot be undone.')) {
         return;
     }
-    
     var $galleryItem = $('.gallery-item[data-image-id="' + imageId + '"]');
-    
     $.ajax({
         url: baseUrl + 'php/endpoints/remove-gallery-image.php',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({
-            image_id: imageId,
-            product_id: productId
-        }),
+        data: JSON.stringify({ image_id: imageId, product_id: productId }),
         dataType: 'json',
         success: function(data) {
             if (data.success) {
@@ -727,23 +614,11 @@ function removeGalleryImage(imageId, productId) {
 
 // ========== DOCUMENT READY ==========
 
-/** @type {jQuery|null} Total users element for dashboard detection */
 var $totalUsersElement = null;
-
-/** @type {jQuery|null} Recent users table element for dashboard detection */
 var $recentUsersTableElement = null;
-
-/** @type {jQuery|null} Stat products element for dashboard detection */
 var $statProductsElement = null;
-
-/** @type {jQuery|null} Listings grid element for dashboard detection */
 var $listingsGridElement = null;
 
-/**
- * Caches dashboard page detection elements
- * 
- * @returns {void}
- */
 function cacheDashboardPageElements() {
     $totalUsersElement = $('#totalUsers');
     $recentUsersTableElement = $('#recent-users-table');
@@ -751,14 +626,6 @@ function cacheDashboardPageElements() {
     $listingsGridElement = $('#listings-grid');
 }
 
-/**
- * Initializes the dashboard based on page type
- * 
- * @returns {void}
- * 
- * @fires initMobileSidebar, initModalSidebarHandler
- * @fires loadAdminDashboard or loadSellerDashboard based on page elements
- */
 $(function() {
     cacheDashboardPageElements();
     

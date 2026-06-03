@@ -83,7 +83,7 @@ class UserRepository
 
         switch ($role) {
             case 'admin':
-                return new Admin($data);
+                return new Admin($data, $this->db);
             case 'seller':
                 $verification = $this->getSellerVerification($data['user_id']);
                 $productRepo = new ProductRepository($this->db);
@@ -231,9 +231,9 @@ class UserRepository
      */
     public function getAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at, status
-                FROM users 
-                WHERE 1=1";
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at
+        FROM users 
+        WHERE 1=1";
         $params = [];
         $types = "";
 
@@ -379,13 +379,13 @@ class UserRepository
     public function getPendingVerificationsWithPagination(int $limit = 10, int $offset = 0): array
     {
         $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, 
-                       DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
-                       sv.document_path, sv.document_type, sv.submitted_at
-                FROM users u
-                INNER JOIN seller_verification sv ON u.user_id = sv.seller_id
-                WHERE u.role = 'seller' AND sv.document_verified = 0
-                ORDER BY sv.submitted_at ASC
-                LIMIT ? OFFSET ?";
+                   DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
+                   sv.document_path, sv.document_type
+            FROM users u
+            INNER JOIN seller_verification sv ON u.user_id = sv.seller_id
+            WHERE u.role = 'seller' AND sv.document_verified = 0
+            ORDER BY u.created_at ASC
+            LIMIT ? OFFSET ?";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('ii', $limit, $offset);

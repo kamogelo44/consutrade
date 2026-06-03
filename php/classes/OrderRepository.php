@@ -258,18 +258,59 @@ class OrderRepository
      *
      * @param int $orderId Order ID
      * @param int $userId User ID for verification
-     * @param string $role User role (buyer or seller)
+     * @param string $role User role (buyer, seller, or admin)
      * @return array|null
      */
     public function getOrderDetails(int $orderId, int $userId, string $role): ?array
     {
+        // Admin can view any order without buyer/seller restriction
+        if ($role === 'admin') {
+            $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
+                       buyer.full_name as buyer_name, seller.full_name as seller_name
+                FROM orders o
+                JOIN users buyer ON o.buyer_id = buyer.user_id
+                JOIN users seller ON o.seller_id = seller.user_id
+                WHERE o.order_id = ?";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('i', $orderId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                $itemsSql = "SELECT oi.quantity, oi.price,
+                                p.title as product_name, p.image_url
+                         FROM order_items oi
+                         JOIN products p ON oi.product_id = p.product_id
+                         WHERE oi.order_id = ?";
+                $itemsStmt = $this->db->prepare($itemsSql);
+                $itemsStmt->bind_param('i', $orderId);
+                $itemsStmt->execute();
+                $itemsResult = $itemsStmt->get_result();
+
+                $items = [];
+                while ($item = $itemsResult->fetch_assoc()) {
+                    $items[] = $item;
+                }
+                $itemsStmt->close();
+
+                $row['items'] = $items;
+                $row['other_party_name'] = $row['buyer_name']; // For consistency with frontend
+                $stmt->close();
+                return $row;
+            }
+            $stmt->close();
+            return null;
+        }
+
+        // Original logic for buyer and seller
         $idColumn = ($role === 'buyer') ? 'buyer_id' : 'seller_id';
 
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
-                       u.full_name as other_party_name
-                FROM orders o
-                JOIN users u ON " . ($role === 'buyer' ? "o.seller_id = u.user_id" : "o.buyer_id = u.user_id") . "
-                WHERE o.order_id = ? AND o.$idColumn = ?";
+                   u.full_name as other_party_name
+            FROM orders o
+            JOIN users u ON " . ($role === 'buyer' ? "o.seller_id = u.user_id" : "o.buyer_id = u.user_id") . "
+            WHERE o.order_id = ? AND o.$idColumn = ?";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('ii', $orderId, $userId);
@@ -278,10 +319,10 @@ class OrderRepository
 
         if ($row = $result->fetch_assoc()) {
             $itemsSql = "SELECT oi.quantity, oi.price,
-                                p.title as product_name, p.image_url
-                         FROM order_items oi
-                         JOIN products p ON oi.product_id = p.product_id
-                         WHERE oi.order_id = ?";
+                            p.title as product_name, p.image_url
+                     FROM order_items oi
+                     JOIN products p ON oi.product_id = p.product_id
+                     WHERE oi.order_id = ?";
             $itemsStmt = $this->db->prepare($itemsSql);
             $itemsStmt->bind_param('i', $orderId);
             $itemsStmt->execute();
@@ -358,6 +399,7 @@ class OrderRepository
 
     /**
      * Create orders from cart items
+     * NOTE: Stock is NOT decreased here - that happens after payment confirmation in payfast-notify.php
      *
      * @param int $buyerId Buyer user ID
      * @param array $items Cart items
@@ -391,6 +433,7 @@ class OrderRepository
 
             $orderId = $orderStmt->insert_id;
             $orderIds[] = $orderId;
+            $orderStmt->close();
 
             foreach ($items as $item) {
                 if ($item['seller_id'] == $sellerId) {
@@ -401,11 +444,10 @@ class OrderRepository
                     $itemStmt->execute();
                     $itemStmt->close();
 
-                    $productRepo = new ProductRepository($this->db);
-                    $productRepo->decreaseProductStock($item['product_id'], $item['quantity']);
+                    // STOCK IS NOT DECREASED HERE
+                    // Stock decrease happens ONLY in payfast-notify.php after payment confirmation
                 }
             }
-            $orderStmt->close();
         }
 
         return ['order_ids' => $orderIds, 'payment_id' => $paymentId];
@@ -498,5 +540,27 @@ class OrderRepository
         $stmt->close();
 
         return $orders;
+    }
+
+    /**
+     * Update order status directly (for PayFast payment confirmation)
+     * No seller verification needed - called from payment gateway
+     *
+     * @param int $orderId Order ID
+     * @param string $status New status
+     * @return bool
+     */
+    public function updateOrderStatusDirect(int $orderId, string $status): bool
+    {
+        $validStatuses = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
+        if (!in_array($status, $validStatuses)) {
+            return false;
+        }
+
+        $stmt = $this->db->prepare("UPDATE orders SET status = ? WHERE order_id = ?");
+        $stmt->bind_param('si', $status, $orderId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 }

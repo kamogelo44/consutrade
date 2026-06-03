@@ -4,6 +4,19 @@
  * Author: Kamogelo Phale
  */
 
+// Detect which session is active before initializing
+$possibleSessions = ['CONSUTRADE_ADMIN_SESSION', 'CONSUTRADE_SELLER_SESSION', 'CONSUTRADE_USER_SESSION'];
+foreach ($possibleSessions as $sessionName) {
+    session_name($sessionName);
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
+        // Found active session, break out
+        break;
+    }
+}
+
 require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Cache-Control: no-cache, no-store, must-revalidate');

@@ -8,13 +8,11 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!$auth->isAdminLoggedIn()) {
+if (!$auth->isAdmin()) {
     header('Location: login.php');
     exit;
 }
 
-$baseUrl = getBaseUrl();
-$user_id = $current_user_id;
 $success_message = '';
 $error_message = '';
 
@@ -29,20 +27,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $update_sql = "UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?";
         $update_stmt = $conn->prepare($update_sql);
-        $update_stmt->bind_param('ssi', $full_name, $clean_phone, $user_id);
+        $update_stmt->bind_param('ssi', $full_name, $clean_phone, $currentUser->getUserId());
 
         if ($update_stmt->execute()) {
             $_SESSION['full_name'] = $full_name;
-            $success_message = 'Profile updated.';
+            $success_message = 'Profile updated successfully.';
+            $updatedUser = $userRepo->findById($currentUser->getUserId());
+            $_SESSION['user_object'] = serialize($updatedUser);
         } else {
-            $error_message = 'Could not update profile.';
+            $error_message = 'Could not update profile. Please try again.';
         }
         $update_stmt->close();
     }
 }
-
-$user = getUserById($conn, $user_id);
-$profile_image = getUserProfileImage($user['profile_image'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,15 +49,22 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Profile - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
     <style>
+        .admin-main-content {
+            margin-left: 280px;
+            padding: var(--spacing-xl);
+            min-height: 100vh;
+            background: var(--gray-bg);
+            transition: margin-left var(--transition-normal);
+        }
+
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         .page-header {
             margin-bottom: var(--spacing-xl);
         }
@@ -318,6 +322,12 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         }
 
         @media (max-width: 1024px) {
+            .admin-main-content {
+                margin-left: 0;
+                padding: var(--spacing-md);
+                padding-top: 70px;
+            }
+
             .profile-layout {
                 grid-template-columns: 1fr;
                 gap: var(--spacing-lg);
@@ -329,6 +339,11 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         }
 
         @media (max-width: 768px) {
+            .admin-main-content {
+                padding: var(--spacing-md);
+                padding-top: 70px;
+            }
+
             .form-actions {
                 flex-direction: column;
             }
@@ -344,6 +359,14 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
         }
 
         @media (max-width: 480px) {
+            .admin-main-content {
+                padding: var(--spacing-sm);
+                padding-top: 60px;
+            }
+
+            .page-header h1 {
+                font-size: var(--font-xl);
+            }
 
             .profile-left,
             .profile-right,
@@ -380,29 +403,29 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
             <div class="profile-layout">
                 <div class="profile-left">
                     <div class="profile-avatar">
-                        <img src="<?php echo $profile_image; ?>" alt="Profile Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
+                        <img src="<?php echo $currentUser->getProfileImageUrl(); ?>" alt="Profile Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                     </div>
-                    <h2><?php echo htmlspecialchars($user['full_name']); ?></h2>
+                    <h2><?php echo htmlspecialchars($currentUser->getFullName()); ?></h2>
                     <span class="role-badge">Administrator</span>
 
                     <div class="stats-list">
                         <div class="stat-item">
                             <span class="stat-label">Member Since</span>
-                            <span class="stat-value"><?php echo formatDate($user['created_at']); ?></span>
+                            <span class="stat-value"><?php echo date('d M Y', strtotime($currentUser->getCreatedAt())); ?></span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Email</span>
-                            <span class="stat-value"><?php echo htmlspecialchars($user['email']); ?></span>
+                            <span class="stat-value"><?php echo htmlspecialchars($currentUser->getEmail()); ?></span>
                         </div>
-                        <?php if ($user['phone']): ?>
+                        <?php if ($currentUser->getPhone()): ?>
                             <div class="stat-item">
                                 <span class="stat-label">Phone</span>
-                                <span class="stat-value"><?php echo htmlspecialchars($user['phone']); ?></span>
+                                <span class="stat-value"><?php echo htmlspecialchars($currentUser->getPhone()); ?></span>
                             </div>
                         <?php endif; ?>
                         <div class="stat-item">
                             <span class="stat-label">Role</span>
-                            <span class="stat-value"><?php echo ucfirst($user['role']); ?></span>
+                            <span class="stat-value"><?php echo ucfirst($currentUser->getRole()); ?></span>
                         </div>
                     </div>
                 </div>
@@ -412,18 +435,18 @@ $profile_image = getUserProfileImage($user['profile_image'] ?? null);
                     <form method="POST" action="" class="profile-form">
                         <div class="form-group">
                             <label for="full_name">Full Name</label>
-                            <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($user['full_name']); ?>" required>
+                            <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($currentUser->getFullName()); ?>" required>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Email Address</label>
-                            <input type="email" id="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled>
+                            <input type="email" id="email" value="<?php echo htmlspecialchars($currentUser->getEmail()); ?>" disabled>
                             <small>Email cannot be changed</small>
                         </div>
 
                         <div class="form-group">
                             <label for="phone">Phone Number (Optional)</label>
-                            <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="e.g., 071 234 5678">
+                            <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($currentUser->getPhone() ?? ''); ?>" placeholder="e.g., 071 234 5678">
                             <small>Optional but recommended for contact</small>
                         </div>
 

@@ -8,12 +8,10 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!isAdminLoggedIn()) {
+if (!$auth->isAdmin()) {
     header('Location: login.php');
     exit;
 }
-
-$baseUrl = getBaseUrl();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -23,16 +21,36 @@ $baseUrl = getBaseUrl();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Products - ConsuTrade Admin</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
     <style>
-        /* Page specific styles */
+        .admin-main-content {
+            margin-left: 280px;
+            padding: var(--spacing-xl);
+            min-height: 100vh;
+            background: var(--gray-bg);
+            transition: margin-left var(--transition-normal);
+        }
+
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .page-header h1 {
+            font-size: var(--font-2xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .page-header p {
+            color: var(--gray-medium);
+        }
+
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -51,12 +69,12 @@ $baseUrl = getBaseUrl();
         .filter-btn {
             padding: 8px 16px;
             border-radius: var(--radius-md);
-            text-decoration: none;
             background: var(--white);
             border: 1px solid var(--border-light);
             color: var(--gray-dark);
             cursor: pointer;
             transition: all var(--transition-fast);
+            font-size: var(--font-sm);
         }
 
         .filter-btn:hover {
@@ -81,6 +99,13 @@ $baseUrl = getBaseUrl();
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
             width: 250px;
+            font-size: var(--font-md);
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
         }
 
         .search-bar button {
@@ -90,6 +115,13 @@ $baseUrl = getBaseUrl();
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+        }
+
+        .search-bar button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
         }
 
         .products-grid {
@@ -135,12 +167,12 @@ $baseUrl = getBaseUrl();
         }
 
         .status-active {
-            background: #4caf50;
+            background: var(--success);
             color: white;
         }
 
         .status-suspended {
-            background: #ff9800;
+            background: var(--warning);
             color: white;
         }
 
@@ -178,13 +210,13 @@ $baseUrl = getBaseUrl();
         }
 
         .stock-badge.out-of-stock {
-            background: #ffebee;
-            color: #f44336;
+            background: var(--error-light);
+            color: var(--error);
         }
 
         .stock-badge.low-stock {
-            background: #fff3e0;
-            color: #ff9800;
+            background: var(--warning-light);
+            color: var(--warning);
         }
 
         .product-actions {
@@ -251,12 +283,26 @@ $baseUrl = getBaseUrl();
             background: var(--white);
             border-radius: var(--radius-md);
             cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: var(--font-sm);
+        }
+
+        .page-btn:hover {
+            background: var(--primary-fade);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
         }
 
         .page-btn.active {
             background: var(--primary-color);
             color: white;
             border-color: var(--primary-color);
+            cursor: default;
+        }
+
+        .page-dots {
+            padding: 8px 4px;
+            color: var(--gray-light);
         }
 
         .loading-spinner {
@@ -273,16 +319,11 @@ $baseUrl = getBaseUrl();
             border: 1px solid var(--border-light);
         }
 
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .products-grid {
-                gap: var(--spacing-md);
-            }
-        }
-
         @media (max-width: 1024px) {
-            .products-grid {
-                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            .admin-main-content {
+                margin-left: 0;
+                padding: var(--spacing-md);
+                padding-top: 70px;
             }
         }
 
@@ -300,6 +341,10 @@ $baseUrl = getBaseUrl();
                 justify-content: center;
             }
 
+            .search-bar input {
+                width: 100%;
+            }
+
             .products-grid {
                 grid-template-columns: 1fr;
             }
@@ -310,12 +355,13 @@ $baseUrl = getBaseUrl();
         }
 
         @media (max-width: 480px) {
-            h1 {
-                font-size: var(--font-xl);
+            .admin-main-content {
+                padding: var(--spacing-sm);
+                padding-top: 60px;
             }
 
-            .search-bar input {
-                width: 100%;
+            .page-header h1 {
+                font-size: var(--font-xl);
             }
 
             .pagination {
@@ -336,8 +382,10 @@ $baseUrl = getBaseUrl();
 
     <main class="admin-main-content">
         <div class="dashboard-content">
-            <h1 style="margin-bottom: var(--spacing-xs); font-size: var(--font-2xl); font-weight: var(--font-bold)">All Products</h1>
-            <p style="margin-bottom: var(--spacing-lg); color: var(--gray-medium);">Manage all products on the marketplace</p>
+            <div class="page-header">
+                <h1>All Products</h1>
+                <p>Manage all products on the marketplace</p>
+            </div>
 
             <div class="filters-bar">
                 <div class="status-filters">
@@ -346,7 +394,7 @@ $baseUrl = getBaseUrl();
                     <button data-status="suspended" class="filter-btn">Suspended</button>
                 </div>
                 <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="Search products...">
+                    <input type="text" id="searchInput" placeholder="Search products by name or seller...">
                     <button id="searchBtn">Search</button>
                     <button id="resetBtn" style="display: none;">Reset</button>
                 </div>
@@ -361,47 +409,30 @@ $baseUrl = getBaseUrl();
     </main>
 
     <script>
-        var currentPage = 1,
+        var $productsGrid = null,
+            $pagination = null,
+            $filterBtns = null,
+            $searchBtn = null,
+            $resetBtn = null,
+            $searchInput = null,
+            currentPage = 1,
             currentStatus = 'all',
             currentSearch = '',
             totalPages = 1;
 
-        $(function() {
-            loadProducts();
-
-            $('.status-filters .filter-btn').on('click', function() {
-                $('.status-filters .filter-btn').removeClass('active');
-                $(this).addClass('active');
-                currentStatus = $(this).data('status');
-                currentPage = 1;
-                loadProducts();
-            });
-
-            $('#searchBtn').on('click', function() {
-                currentSearch = $('#searchInput').val().trim();
-                currentPage = 1;
-                loadProducts();
-                $('#resetBtn').toggle(!!currentSearch);
-            });
-
-            $('#resetBtn').on('click', function() {
-                $('#searchInput').val('');
-                currentSearch = '';
-                currentPage = 1;
-                loadProducts();
-                $(this).hide();
-            });
-
-            $('#searchInput').on('keypress', function(e) {
-                if (e.which === 13) $('#searchBtn').click();
-            });
-        });
+        function cacheElements() {
+            $productsGrid = $('#productsGrid');
+            $pagination = $('#pagination');
+            $filterBtns = $('.status-filters .filter-btn');
+            $searchBtn = $('#searchBtn');
+            $resetBtn = $('#resetBtn');
+            $searchInput = $('#searchInput');
+        }
 
         function loadProducts() {
-            $('#productsGrid').html('<div class="loading-spinner">Loading products...</div>');
-
+            $productsGrid.html('<div class="loading-spinner">Loading products...</div>');
             $.ajax({
-                url: baseUrl + 'admin/php/get-all-products.php',
+                url: baseUrl + 'php/endpoints/get-all-products.php',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -415,79 +446,70 @@ $baseUrl = getBaseUrl();
                         totalPages = data.total_pages;
                         displayPagination();
                     } else {
-                        $('#productsGrid').html('<div class="empty-products"><p>No products found.</p></div>');
-                        $('#pagination').empty();
+                        $productsGrid.html('<div class="empty-products"><p>No products found.</p></div>');
+                        $pagination.empty();
                     }
                 },
                 error: function() {
-                    $('#productsGrid').html('<div class="empty-products" style="color: var(--error);">Error loading products. Please refresh.</div>');
+                    $productsGrid.html('<div class="empty-products" style="color: var(--error);">Error loading products.</div>');
                 }
             });
         }
 
         function displayProducts(products) {
-            var $grid = $('#productsGrid');
-            $grid.empty();
-
+            $productsGrid.empty();
             $.each(products, function(i, product) {
                 var imagePath = product.display_image || product.image;
-                if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                if (imagePath && !imagePath.startsWith('http')) {
                     imagePath = baseUrl + imagePath;
                 }
-
                 var stockBadge = '';
                 if (product.stock_quantity <= 0) {
                     stockBadge = '<span class="stock-badge out-of-stock">Out of Stock</span>';
                 } else if (product.stock_quantity <= 5) {
                     stockBadge = '<span class="stock-badge low-stock">Low Stock (' + product.stock_quantity + ')</span>';
                 }
-
                 var card = $('<div>').addClass('product-card');
-                card.html(`
-            <div class="product-image">
-                <img src="${imagePath || baseUrl + 'images/default-product.png'}" alt="${escapeHtml(product.name)}" onerror="this.src='${baseUrl}images/default-product.png'">
-                <div class="product-status-badge status-${product.status}">${product.status}</div>
-            </div>
-            <div class="product-details">
-                <h3 class="product-title">${escapeHtml(product.name)}</h3>
-                <p class="product-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                <p class="product-seller">Seller: ${escapeHtml(product.seller_name)}</p>
-                <p class="product-stock">Stock: ${product.stock_quantity}</p>
-                ${stockBadge}
-                <p class="product-date">Listed: ${product.created_at}</p>
-                <div class="product-actions">
-                    <button class="action-btn ${product.status === 'active' ? 'suspend-btn' : 'activate-btn'}" onclick="toggleProductStatus(${product.id}, '${product.status}')">
-                        ${product.status === 'active' ? 'Suspend' : 'Activate'}
-                    </button>
-                    <button class="action-btn delete-btn" onclick="adminDeleteProduct(${product.id})">Delete</button>
-                </div>
-            </div>
-        `);
-                $grid.append(card);
+                card.html(
+                    '<div class="product-image">' +
+                    '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                    '<div class="product-status-badge status-' + product.status + '">' + product.status + '</div>' +
+                    '</div>' +
+                    '<div class="product-details">' +
+                    '<h3 class="product-title">' + escapeHtml(product.name) + '</h3>' +
+                    '<p class="product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
+                    '<p class="product-seller">Seller: ' + escapeHtml(product.seller_name) + '</p>' +
+                    '<p class="product-stock">Stock: ' + product.stock_quantity + '</p>' +
+                    stockBadge +
+                    '<p class="product-date">Listed: ' + product.created_at + '</p>' +
+                    '<div class="product-actions">' +
+                    '<button class="action-btn ' + (product.status === 'active' ? 'suspend-btn' : 'activate-btn') + '" onclick="toggleProductStatus(' + product.id + ', \'' + product.status + '\', function() { loadProducts(); })">' + (product.status === 'active' ? 'Suspend' : 'Activate') + '</button>' +
+                    '<button class="action-btn delete-btn" onclick="deleteProduct(' + product.id + ', function() { loadProducts(); })">Delete</button>' +
+                    '</div>' +
+                    '</div>'
+                );
+                $productsGrid.append(card);
             });
         }
 
         function displayPagination() {
             if (totalPages <= 1) {
-                $('#pagination').empty();
+                $pagination.empty();
                 return;
             }
-
             var html = '';
-            if (currentPage > 1) html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Previous</button>`;
-
+            if (currentPage > 1) html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous</button>';
             for (var i = 1; i <= totalPages; i++) {
                 if (i === currentPage) {
-                    html += `<button class="page-btn active" disabled>${i}</button>`;
+                    html += '<button class="page-btn active" disabled>' + i + '</button>';
                 } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-                    html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
+                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
                 } else if (Math.abs(i - currentPage) === 3) {
-                    html += `<span class="page-dots">...</span>`;
+                    html += '<span class="page-dots">...</span>';
                 }
             }
-
-            if (currentPage < totalPages) html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
-            $('#pagination').html(html);
+            if (currentPage < totalPages) html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →</button>';
+            $pagination.html(html);
         }
 
         function goToPage(page) {
@@ -498,57 +520,33 @@ $baseUrl = getBaseUrl();
             }, 'smooth');
         }
 
-        function toggleProductStatus(productId, currentStatus) {
-            var newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-            if (confirm('Are you sure you want to ' + newStatus + ' this product?')) {
-                $.ajax({
-                    url: baseUrl + 'admin/php/update-product-status.php',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        product_id: productId,
-                        status: newStatus
-                    }),
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success) {
-                            showSuccessToast(data.message || 'Product status updated');
-                            loadProducts();
-                        } else {
-                            showErrorToast('Error: ' + data.message);
-                        }
-                    },
-                    error: function() {
-                        showErrorToast('Something went wrong');
-                    }
-                });
-            }
-        }
-
-        function adminDeleteProduct(productId) {
-            if (confirm('Are you sure you want to delete this product? This cannot be undone.')) {
-                $.ajax({
-                    url: baseUrl + 'admin/php/delete-product.php',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        product_id: productId
-                    }),
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success) {
-                            showSuccessToast(data.message || 'Product deleted successfully');
-                            loadProducts();
-                        } else {
-                            showErrorToast('Error: ' + data.message);
-                        }
-                    },
-                    error: function() {
-                        showErrorToast('Something went wrong');
-                    }
-                });
-            }
-        }
+        $(function() {
+            cacheElements();
+            loadProducts();
+            $filterBtns.on('click', function() {
+                $filterBtns.removeClass('active');
+                $(this).addClass('active');
+                currentStatus = $(this).data('status');
+                currentPage = 1;
+                loadProducts();
+            });
+            $searchBtn.on('click', function() {
+                currentSearch = $searchInput.val().trim();
+                currentPage = 1;
+                loadProducts();
+                $resetBtn.toggle(!!currentSearch);
+            });
+            $resetBtn.on('click', function() {
+                $searchInput.val('');
+                currentSearch = '';
+                currentPage = 1;
+                loadProducts();
+                $(this).hide();
+            });
+            $searchInput.on('keypress', function(e) {
+                if (e.which === 13) $searchBtn.click();
+            });
+        });
     </script>
 
 </body>

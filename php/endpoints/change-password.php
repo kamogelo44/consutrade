@@ -31,26 +31,23 @@ if (strlen($new_password) < 6) {
     exit;
 }
 
-$user_id = $current_user_id;
-$user = $userRepo->getById($user_id);
+$user_id = $currentUser->getUserId();
+$user = $userRepo->findById($user_id);
 
-if (!$user || !password_verify($current_password, $user['password'])) {
+if (!$user || !password_verify($current_password, $user->getPassword())) {
     $response['message'] = 'Current password is incorrect.';
     echo json_encode($response);
     exit;
 }
 
 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-$stmt = $conn->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-$stmt->bind_param('si', $hashed_password, $user_id);
+$result = $userRepo->updatePassword($user_id, $hashed_password);
 
-if ($stmt->execute()) {
+if ($result) {
     $response['success'] = true;
     $response['message'] = 'Password changed successfully.';
 } else {
     $response['message'] = 'Failed to update password.';
 }
 
-$stmt->close();
 echo json_encode($response);
-?>

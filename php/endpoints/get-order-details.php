@@ -4,6 +4,19 @@
  * Author: Kamogelo Phale
  */
 
+// Try to find existing session before init.php runs
+$sessionNames = ['CONSUTRADE_ADMIN_SESSION', 'CONSUTRADE_SELLER_SESSION', 'CONSUTRADE_USER_SESSION'];
+foreach ($sessionNames as $sName) {
+    session_name($sName);
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
+        break;
+    }
+    session_write_close();
+}
+
 require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
@@ -50,13 +63,15 @@ if (!$orderExists) {
 $response['debug']['order_data'] = $orderExists;
 
 // Check permission
+// Check permission
 $hasPermission = false;
-if ($role === 'buyer' && $orderExists['buyer_id'] == $user_id) {
+if ($role === 'admin') {
+    $hasPermission = true;  // Admin can view any order
+} elseif ($role === 'buyer' && $orderExists['buyer_id'] == $user_id) {
     $hasPermission = true;
 } elseif ($role === 'seller' && $orderExists['seller_id'] == $user_id) {
     $hasPermission = true;
 }
-
 $response['debug']['has_permission'] = $hasPermission;
 
 if (!$hasPermission) {

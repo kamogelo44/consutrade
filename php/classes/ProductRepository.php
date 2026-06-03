@@ -42,7 +42,7 @@ class ProductRepository
     {
         $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
                        p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
-                       p.status, p.created_at
+                       p.status, p.created_at, p.suspended_by, p.suspended_reason
                 FROM products p
                 WHERE p.product_id = ? AND p.status != 'deleted'";
 
@@ -78,7 +78,7 @@ class ProductRepository
     ): array {
         $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
                        p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
-                       p.status, p.created_at
+                       p.status, p.created_at, p.suspended_by, p.suspended_reason
                 FROM products p
                 WHERE p.seller_id = ? AND p.status != 'deleted'";
 
@@ -130,6 +130,18 @@ class ProductRepository
      */
     public function saveProduct(Product $product): bool
     {
+        $title = $product->getTitle();
+        $description = $product->getDescription();
+        $price = $product->getPrice();
+        $stockQuantity = $product->getStockQuantity();
+        $condition = $product->getCondition();
+        $location = $product->getLocation();
+        $categoryId = $product->getCategoryId();
+        $imageUrl = $product->getImageUrl();
+        $status = $product->getStatus();
+        $productId = $product->getProductId();
+        $sellerId = $product->getSellerId();
+
         $sql = "UPDATE products SET 
                     title = ?,
                     description = ?,
@@ -145,17 +157,17 @@ class ProductRepository
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param(
             'ssdisssssii',
-            $product->getTitle(),
-            $product->getDescription(),
-            $product->getPrice(),
-            $product->getStockQuantity(),
-            $product->getCondition(),
-            $product->getLocation(),
-            $product->getCategoryId(),
-            $product->getImageUrl(),
-            $product->getStatus(),
-            $product->getProductId(),
-            $product->getSellerId()
+            $title,
+            $description,
+            $price,
+            $stockQuantity,
+            $condition,
+            $location,
+            $categoryId,
+            $imageUrl,
+            $status,
+            $productId,
+            $sellerId
         );
 
         $result = $stmt->execute();
@@ -171,22 +183,33 @@ class ProductRepository
      */
     public function createProduct(Product $product)
     {
+        $sellerId = $product->getSellerId();
+        $categoryId = $product->getCategoryId();
+        $title = $product->getTitle();
+        $description = $product->getDescription();
+        $price = $product->getPrice();
+        $stockQuantity = $product->getStockQuantity();
+        $condition = $product->getCondition();
+        $location = $product->getLocation();
+        $imageUrl = $product->getImageUrl();
+        $status = $product->getStatus();
+
         $sql = "INSERT INTO products (seller_id, category_id, title, description, price, stock_quantity, `condition`, location, image_url, status, created_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param(
             'iissdissss',
-            $product->getSellerId(),
-            $product->getCategoryId(),
-            $product->getTitle(),
-            $product->getDescription(),
-            $product->getPrice(),
-            $product->getStockQuantity(),
-            $product->getCondition(),
-            $product->getLocation(),
-            $product->getImageUrl(),
-            $product->getStatus()
+            $sellerId,
+            $categoryId,
+            $title,
+            $description,
+            $price,
+            $stockQuantity,
+            $condition,
+            $location,
+            $imageUrl,
+            $status
         );
 
         if ($stmt->execute()) {
@@ -199,11 +222,11 @@ class ProductRepository
     }
 
     // ============================================================
-    //  PRODUCT QUERIES (ARRAY BASED - Legacy)
+    //  PRODUCT QUERIES (ARRAY BASED)
     // ============================================================
 
     /**
-     * Get seller products with filters (includes primary image).
+     * Get seller products with filters (includes primary image and suspension info).
      *
      * @param int    $id      Seller ID
      * @param string $filter  Status filter
@@ -220,7 +243,7 @@ class ProductRepository
         int $offset = 0
     ): array {
         $sql = "SELECT p.product_id, p.title, p.price, p.image_url, p.status,
-                       p.stock_quantity, p.created_at,
+                       p.stock_quantity, p.created_at, p.suspended_by, p.suspended_reason,
                        c.category_name,
                        COALESCE(pi.image_url, p.image_url) AS display_image
                 FROM products p
@@ -270,12 +293,71 @@ class ProductRepository
                 'status'         => $row['status'],
                 'stock_quantity' => (int) ($row['stock_quantity'] ?? 1),
                 'created_at'     => $row['created_at'],
-                'category_name'  => $row['category_name'] ?? 'General'
+                'category_name'  => $row['category_name'] ?? 'General',
+                'suspended_by'   => $row['suspended_by'],
+                'suspended_reason' => $row['suspended_reason']
             ];
         }
         $stmt->close();
 
         return $products;
+    }
+
+    /**
+     * Update product status with suspension tracking.
+     *
+     * @param int    $id              Product ID
+     * @param int    $sellerId        Seller ID
+     * @param string $action          'activate' or 'suspend'
+     * @param string $suspendedBy     Who is performing the action ('seller' or 'admin')
+     * @param string $suspendedReason Optional reason for suspension
+     * @return array
+     */
+    public function updateProductStatus(int $id, int $sellerId, string $action, string $suspendedBy = 'seller', string $suspendedReason = ''): array
+    {
+        $checkSql = "SELECT product_id, status, suspended_by FROM products
+                     WHERE product_id = ? AND seller_id = ? AND status != 'deleted'";
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->bind_param('ii', $id, $sellerId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+
+        if ($checkResult->num_rows === 0) {
+            $checkStmt->close();
+            return ['success' => false, 'message' => 'Product not found.'];
+        }
+
+        $product = $checkResult->fetch_assoc();
+        $checkStmt->close();
+
+        if ($action === 'activate') {
+            // Check if product was admin-suspended
+            if ($product['suspended_by'] === 'admin' && $suspendedBy !== 'admin') {
+                return ['success' => false, 'message' => 'This product was suspended by an admin. Only an admin can reactivate it.'];
+            }
+
+            $newStatus = 'active';
+            $updateSql = "UPDATE products SET status = ?, suspended_by = NULL, suspended_reason = NULL 
+                          WHERE product_id = ? AND seller_id = ?";
+            $updateStmt = $this->db->prepare($updateSql);
+            $updateStmt->bind_param('sii', $newStatus, $id, $sellerId);
+        } else {
+            // Suspend action
+            $newStatus = 'suspended';
+            $updateSql = "UPDATE products SET status = ?, suspended_by = ?, suspended_reason = ? 
+                          WHERE product_id = ? AND seller_id = ?";
+            $updateStmt = $this->db->prepare($updateSql);
+            $updateStmt->bind_param('sssii', $newStatus, $suspendedBy, $suspendedReason, $id, $sellerId);
+        }
+
+        if ($updateStmt->execute()) {
+            $updateStmt->close();
+            $message = ($action === 'activate') ? 'Product activated.' : 'Product suspended.';
+            return ['success' => true, 'message' => $message];
+        }
+
+        $updateStmt->close();
+        return ['success' => false, 'message' => 'Failed to update product status.'];
     }
 
     /**
@@ -377,52 +459,6 @@ class ProductRepository
 
         $stmt->close();
         return ['success' => false, 'message' => 'Failed to update product.'];
-    }
-
-    /**
-     * Update product status.
-     *
-     * @param int    $id       Product ID
-     * @param int    $sellerId Seller ID
-     * @param string $action   'activate' or 'suspend'
-     * @return array
-     */
-    public function updateProductStatus(int $id, int $sellerId, string $action): array
-    {
-        $checkSql = "SELECT product_id, status FROM products
-                     WHERE product_id = ? AND seller_id = ? AND status != 'deleted'";
-        $checkStmt = $this->db->prepare($checkSql);
-        $checkStmt->bind_param('ii', $id, $sellerId);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-
-        if ($checkResult->num_rows === 0) {
-            $checkStmt->close();
-            return ['success' => false, 'message' => 'Product not found.'];
-        }
-
-        $product = $checkResult->fetch_assoc();
-        $checkStmt->close();
-
-        $newStatus = ($action === 'activate') ? 'active' : 'suspended';
-
-        if ($product['status'] === $newStatus) {
-            $statusText = ($action === 'activate') ? 'active' : 'suspended';
-            return ['success' => false, 'message' => "Product is already $statusText."];
-        }
-
-        $updateSql = "UPDATE products SET status = ? WHERE product_id = ? AND seller_id = ?";
-        $updateStmt = $this->db->prepare($updateSql);
-        $updateStmt->bind_param('sii', $newStatus, $id, $sellerId);
-
-        if ($updateStmt->execute()) {
-            $updateStmt->close();
-            $message = ($action === 'activate') ? 'Product activated.' : 'Product suspended.';
-            return ['success' => true, 'message' => $message];
-        }
-
-        $updateStmt->close();
-        return ['success' => false, 'message' => 'Failed to update product status.'];
     }
 
     /**
@@ -583,19 +619,18 @@ class ProductRepository
         return $total;
     }
 
-// ============================================================
-//  IMAGE FILE OPERATIONS (Product image deletion)
-// ============================================================
+    // ============================================================
+    //  IMAGE FILE OPERATIONS
+    // ============================================================
 
     /**
-     * Helper to get full system path for an image (works on both localhost and InfinityFree)
+     * Helper to get full system path for an image.
      *
      * @param string $imagePath Relative image path
      * @return string
      */
     private function getFullPath(string $imagePath): string
     {
-        // Try multiple possible base paths
         $basePaths = [
             $_SERVER['DOCUMENT_ROOT'] . '/',
             $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/',
@@ -648,17 +683,14 @@ class ProductRepository
             return $baseUrl . 'images/default-product.png';
         }
 
-        // If already has http, return as is
         if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://')) {
             return $imagePath;
         }
 
-        // Remove leading slash if present
         if (str_starts_with($imagePath, '/')) {
             $imagePath = ltrim($imagePath, '/');
         }
 
-        // Check if file exists on server
         $fullPath = $this->getFullPath($imagePath);
         if (file_exists($fullPath)) {
             return $baseUrl . $imagePath;
@@ -678,7 +710,6 @@ class ProductRepository
      */
     public function convertToWebP(array $file, int $sellerId, string $productTitle, string $prefix = 'main')
     {
-        // Try multiple possible upload directories
         $uploadPaths = [
             $_SERVER['DOCUMENT_ROOT'] . '/uploads/products/',
             $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/uploads/products/',
@@ -1195,27 +1226,25 @@ class ProductRepository
     public function getSellerProductsForDisplay(int $sellerId, bool $isOwner = false, int $limit = 0): array
     {
         if ($isOwner) {
-            // Owner sees all products except deleted
             $sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,
-                    p.condition, p.stock_quantity, p.created_at, p.status,
-                    COALESCE(pi.image_url, p.image_url) AS display_image,
-                    c.category_name
-                    FROM products p
-                    LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                    LEFT JOIN categories c ON p.category_id = c.category_id
-                    WHERE p.seller_id = ? AND p.status != 'deleted'
-                    ORDER BY p.created_at DESC";
+                       p.condition, p.stock_quantity, p.created_at, p.status, p.suspended_by, p.suspended_reason,
+                       COALESCE(pi.image_url, p.image_url) AS display_image,
+                       c.category_name
+                FROM products p
+                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                LEFT JOIN categories c ON p.category_id = c.category_id
+                WHERE p.seller_id = ? AND p.status != 'deleted'
+                ORDER BY p.created_at DESC";
         } else {
-            // Public view - only active products
             $sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,
-                    p.condition, p.stock_quantity, p.created_at,
-                    COALESCE(pi.image_url, p.image_url) AS display_image,
-                    c.category_name
-                    FROM products p
-                    LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                    LEFT JOIN categories c ON p.category_id = c.category_id
-                    WHERE p.seller_id = ? AND p.status = 'active'
-                    ORDER BY p.created_at DESC";
+                       p.condition, p.stock_quantity, p.created_at,
+                       COALESCE(pi.image_url, p.image_url) AS display_image,
+                       c.category_name
+                FROM products p
+                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                LEFT JOIN categories c ON p.category_id = c.category_id
+                WHERE p.seller_id = ? AND p.status = 'active'
+                ORDER BY p.created_at DESC";
         }
 
         if ($limit > 0) {
@@ -1250,9 +1279,10 @@ class ProductRepository
                 'category_name' => $row['category_name'] ?? 'General'
             ];
 
-            // Include status for owner's dashboard
-            if ($isOwner && isset($row['status'])) {
+            if ($isOwner) {
                 $productData['status'] = $row['status'];
+                $productData['suspended_by'] = $row['suspended_by'] ?? null;
+                $productData['suspended_reason'] = $row['suspended_reason'] ?? null;
             }
 
             $products[] = $productData;

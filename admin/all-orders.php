@@ -8,12 +8,10 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!isAdminLoggedIn()) {
+if (!$auth->isAdmin()) {
     header('Location: login.php');
     exit;
 }
-
-$baseUrl = getBaseUrl();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -23,16 +21,22 @@ $baseUrl = getBaseUrl();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Orders - ConsuTrade Admin</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/modal.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
     <style>
+        .admin-main-content {
+            margin-left: 280px;
+            padding: var(--spacing-xl);
+            min-height: 100vh;
+            background: var(--gray-bg);
+            transition: margin-left var(--transition-normal);
+        }
+
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         .page-header {
             margin-bottom: var(--spacing-xl);
         }
@@ -209,7 +213,6 @@ $baseUrl = getBaseUrl();
         .view-btn:hover {
             background: var(--info);
             color: white;
-            transform: translateY(-1px);
         }
 
         .process-btn {
@@ -221,7 +224,6 @@ $baseUrl = getBaseUrl();
         .process-btn:hover {
             background: var(--warning);
             color: white;
-            transform: translateY(-1px);
         }
 
         .ship-btn {
@@ -233,7 +235,6 @@ $baseUrl = getBaseUrl();
         .ship-btn:hover {
             background: var(--primary-color);
             color: white;
-            transform: translateY(-1px);
         }
 
         .complete-btn {
@@ -245,7 +246,6 @@ $baseUrl = getBaseUrl();
         .complete-btn:hover {
             background: var(--success);
             color: white;
-            transform: translateY(-1px);
         }
 
         .pagination {
@@ -295,7 +295,6 @@ $baseUrl = getBaseUrl();
             padding: var(--spacing-xl);
             color: var(--error);
             background: var(--error-light);
-            border-left: 4px solid var(--error);
         }
 
         .empty-cell {
@@ -304,23 +303,301 @@ $baseUrl = getBaseUrl();
             color: var(--gray-medium);
         }
 
-        /* Responsive */
-        @media (max-width: 1200px) {
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.3s ease, opacity 0.3s ease;
+        }
 
-            .data-table th,
-            .data-table td {
-                padding: var(--spacing-sm);
-            }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+            background: var(--white);
+        }
+
+        .modal-header h3 {
+            font-size: var(--font-lg);
+            font-weight: var(--font-semibold);
+            margin: 0;
+            color: var(--dark-bg);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray-medium);
+            transition: all var(--transition-fast);
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-round);
+        }
+
+        .modal-close:hover {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-lg);
+            background: var(--white);
+        }
+
+        .modal-footer {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-top: 1px solid var(--border-light);
+            background: var(--gray-bg-light);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--spacing-sm);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--gray-medium);
+        }
+
+        .order-info-section {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .info-row {
+            display: flex;
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: var(--font-semibold);
+            width: 140px;
+            color: var(--gray-dark);
+        }
+
+        .info-value {
+            flex: 1;
+            color: var(--dark-bg);
+        }
+
+        .order-items-list {
+            margin-top: var(--spacing-md);
+        }
+
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+            background: var(--gray-bg-light);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .order-item-img {
+            width: 60px;
+            height: 60px;
+            flex-shrink: 0;
+            background: var(--gray-bg);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .order-item-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .order-item-details {
+            flex: 1;
+        }
+
+        .order-item-details h4 {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            margin: 0 0 var(--spacing-xs) 0;
+            color: var(--dark-bg);
+        }
+
+        .order-item-details p {
+            font-size: var(--font-sm);
+            color: var(--gray-medium);
+            margin: 0;
+        }
+
+        .order-item-price {
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
+            font-size: var(--font-md);
+        }
+
+        .order-total-section {
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-md);
+            border-top: 2px solid var(--border-light);
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-xs) 0;
+            font-size: var(--font-md);
+            color: var(--gray-dark);
+        }
+
+        .total-row.grand-total {
+            font-size: var(--font-lg);
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
+            margin-top: var(--spacing-sm);
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--border-light);
+        }
+
+        .info-value .status-pending,
+        .info-value .status-processing,
+        .info-value .status-shipped,
+        .info-value .status-completed,
+        .info-value .status-cancelled {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+        }
+
+        .info-value .status-pending {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .info-value .status-processing {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        .info-value .status-shipped {
+            background: var(--primary-fade);
+            color: var(--primary-color);
+        }
+
+        .info-value .status-completed {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .info-value .status-cancelled {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .modal-footer .process-btn,
+        .modal-footer .ship-btn,
+        .modal-footer .complete-btn,
+        .modal-footer .cancel-btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            cursor: pointer;
+            border: none;
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+        }
+
+        .modal-footer .process-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .modal-footer .process-btn:hover {
+            background: var(--warning);
+            color: white;
+        }
+
+        .modal-footer .ship-btn {
+            background: var(--primary-fade);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .modal-footer .ship-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modal-footer .complete-btn {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .modal-footer .complete-btn:hover {
+            background: var(--success);
+            color: white;
+        }
+
+        .modal-footer .cancel-btn {
+            background: var(--error-light);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .modal-footer .cancel-btn:hover {
+            background: var(--error);
+            color: white;
         }
 
         @media (max-width: 1024px) {
-            .data-table {
-                min-width: 800px;
-            }
-
-            .action-buttons {
-                flex-direction: row;
-                flex-wrap: wrap;
+            .admin-main-content {
+                margin-left: 0;
+                padding: var(--spacing-md);
+                padding-top: 70px;
             }
         }
 
@@ -336,6 +613,10 @@ $baseUrl = getBaseUrl();
 
             .search-bar {
                 justify-content: center;
+            }
+
+            .search-bar input {
+                width: 100%;
             }
 
             .action-buttons {
@@ -383,19 +664,48 @@ $baseUrl = getBaseUrl();
                 min-width: 120px;
             }
 
-            .error-cell {
-                display: block;
+            .modal-container {
+                width: 95%;
+                max-height: 95vh;
+            }
+
+            .info-row {
+                flex-direction: column;
+                gap: var(--spacing-xs);
+            }
+
+            .info-label {
+                width: 100%;
+            }
+
+            .order-item {
+                flex-direction: column;
                 text-align: center;
+            }
+
+            .order-item-img {
+                width: 80px;
+                height: 80px;
+                margin: 0 auto;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+            }
+
+            .modal-footer button {
+                width: 100%;
             }
         }
 
         @media (max-width: 480px) {
-            .page-header h1 {
-                font-size: var(--font-xl);
+            .admin-main-content {
+                padding: var(--spacing-sm);
+                padding-top: 60px;
             }
 
-            .search-bar input {
-                width: 100%;
+            .page-header h1 {
+                font-size: var(--font-xl);
             }
 
             .pagination {
@@ -405,6 +715,18 @@ $baseUrl = getBaseUrl();
             .page-btn {
                 padding: 6px 10px;
                 font-size: var(--font-xs);
+            }
+
+            .modal-body {
+                padding: var(--spacing-md);
+            }
+
+            .modal-header {
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+
+            .modal-header h3 {
+                font-size: var(--font-base);
             }
         }
     </style>
@@ -452,8 +774,8 @@ $baseUrl = getBaseUrl();
                         </tr>
                     </thead>
                     <tbody id="ordersTable">
-                        <td>
-                        <td colspan="8" class="loading-cell">Loading orders...</td>
+                        <tr>
+                            <td colspan="8" class="loading-cell">Loading orders...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -476,49 +798,31 @@ $baseUrl = getBaseUrl();
         </div>
     </div>
 
-    <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>
     <script>
-        var currentPage = 1,
+        var $ordersTable = null,
+            $pagination = null,
+            $filterBtns = null,
+            $searchBtn = null,
+            $resetBtn = null,
+            $searchInput = null,
+            currentPage = 1,
             currentStatus = 'all',
             currentSearch = '',
             totalPages = 1;
 
-        $(function() {
-            loadOrders();
-
-            $('.status-filters .filter-btn').on('click', function() {
-                $('.status-filters .filter-btn').removeClass('active');
-                $(this).addClass('active');
-                currentStatus = $(this).data('status');
-                currentPage = 1;
-                loadOrders();
-            });
-
-            $('#searchBtn').on('click', function() {
-                currentSearch = $('#searchInput').val().trim();
-                currentPage = 1;
-                loadOrders();
-                $('#resetBtn').toggle(!!currentSearch);
-            });
-
-            $('#resetBtn').on('click', function() {
-                $('#searchInput').val('');
-                currentSearch = '';
-                currentPage = 1;
-                loadOrders();
-                $(this).hide();
-            });
-
-            $('#searchInput').on('keypress', function(e) {
-                if (e.which === 13) $('#searchBtn').click();
-            });
-        });
+        function cacheElements() {
+            $ordersTable = $('#ordersTable');
+            $pagination = $('#pagination');
+            $filterBtns = $('.status-filters .filter-btn');
+            $searchBtn = $('#searchBtn');
+            $resetBtn = $('#resetBtn');
+            $searchInput = $('#searchInput');
+        }
 
         function loadOrders() {
-            $('#ordersTable').html('<tr><td colspan="8" class="loading-cell">Loading orders...</td></tr>');
-
+            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...<\/td><\/tr>');
             $.ajax({
-                url: baseUrl + 'admin/php/get-all-orders.php',
+                url: baseUrl + 'php/endpoints/get-all-orders.php',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -532,24 +836,21 @@ $baseUrl = getBaseUrl();
                         totalPages = data.total_pages;
                         displayPagination();
                     } else {
-                        $('#ordersTable').html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
-                        $('#pagination').empty();
+                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found<\/td><\/tr>');
+                        $pagination.empty();
                     }
                 },
                 error: function() {
-                    $('#ordersTable').html('<td><td colspan="8" class="error-cell">Error loading orders. Please refresh and try again.</td></tr>');
+                    $ordersTable.html('<tr><td colspan="8" class="error-cell">Error loading orders<\/td><\/tr>');
                 }
             });
         }
 
         function displayOrders(orders) {
-            var $tbody = $('#ordersTable');
-            $tbody.empty();
-
+            $ordersTable.empty();
             $.each(orders, function(i, order) {
                 var statusClass = order.status;
                 var actionButtons = '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
-
                 if (order.status === 'pending') {
                     actionButtons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
                 } else if (order.status === 'processing') {
@@ -557,43 +858,39 @@ $baseUrl = getBaseUrl();
                 } else if (order.status === 'shipped') {
                     actionButtons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
                 }
-
-                $tbody.append(`
-            <tr>
-                <td data-label="Order Number">#${order.order_id}</td>
-                <td data-label="Customer">${escapeHtml(order.buyer_name)}</td>
-                <td data-label="Seller">${escapeHtml(order.seller_name)}</td>
-                <td data-label="Items">${order.item_count || 0}</td>
-                <td data-label="Amount">R ${parseFloat(order.total_price).toFixed(2)}</td>
-                <td data-label="Status"><span class="status-badge ${statusClass}">${order.status}</span></td>
-                <td data-label="Date">${order.created_at}</td>
-                <td data-label="Actions" class="action-buttons">${actionButtons}</td>
-            </tr>
-        `);
+                $ordersTable.append(
+                    '<tr>' +
+                    '<td data-label="Order Number">#' + order.order_id + '<\/td>' +
+                    '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '<\/td>' +
+                    '<td data-label="Seller">' + escapeHtml(order.seller_name) + '<\/td>' +
+                    '<td data-label="Items">' + (order.item_count || 0) + '<\/td>' +
+                    '<td data-label="Amount">R ' + parseFloat(order.total_price).toFixed(2) + '<\/td>' +
+                    '<td data-label="Status"><span class="status-badge ' + statusClass + '">' + order.status + '<\/span><\/td>' +
+                    '<td data-label="Date">' + order.created_at + '<\/td>' +
+                    '<td data-label="Actions" class="action-buttons">' + actionButtons + '<\/td>' +
+                    '<\/tr>'
+                );
             });
         }
 
         function displayPagination() {
             if (totalPages <= 1) {
-                $('#pagination').empty();
+                $pagination.empty();
                 return;
             }
-
             var html = '';
-            if (currentPage > 1) html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Previous</button>`;
-
+            if (currentPage > 1) html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous<\/button>';
             for (var i = 1; i <= totalPages; i++) {
                 if (i === currentPage) {
-                    html += `<button class="page-btn active" disabled>${i}</button>`;
+                    html += '<button class="page-btn active" disabled>' + i + '<\/button>';
                 } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-                    html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
+                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '<\/button>';
                 } else if (Math.abs(i - currentPage) === 3) {
-                    html += `<span class="page-dots">...</span>`;
+                    html += '<span class="page-dots">...<\/span>';
                 }
             }
-
-            if (currentPage < totalPages) html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
-            $('#pagination').html(html);
+            if (currentPage < totalPages) html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →<\/button>';
+            $pagination.html(html);
         }
 
         function goToPage(page) {
@@ -603,6 +900,34 @@ $baseUrl = getBaseUrl();
                 scrollTop: 0
             }, 'smooth');
         }
+
+        $(function() {
+            cacheElements();
+            loadOrders();
+            $filterBtns.on('click', function() {
+                $filterBtns.removeClass('active');
+                $(this).addClass('active');
+                currentStatus = $(this).data('status');
+                currentPage = 1;
+                loadOrders();
+            });
+            $searchBtn.on('click', function() {
+                currentSearch = $searchInput.val().trim();
+                currentPage = 1;
+                loadOrders();
+                $resetBtn.toggle(!!currentSearch);
+            });
+            $resetBtn.on('click', function() {
+                $searchInput.val('');
+                currentSearch = '';
+                currentPage = 1;
+                loadOrders();
+                $(this).hide();
+            });
+            $searchInput.on('keypress', function(e) {
+                if (e.which === 13) $searchBtn.click();
+            });
+        });
     </script>
 
 </body>

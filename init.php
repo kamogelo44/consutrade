@@ -42,6 +42,7 @@ require_once __DIR__ . '/php/classes/ProductImageRepository.php';
 require_once __DIR__ . '/php/classes/OrderRepository.php';
 require_once __DIR__ . '/php/classes/CartRepository.php';
 require_once __DIR__ . '/php/classes/ReviewRepository.php';
+require_once __DIR__ . '/php/classes/TransactionRepository.php';
 
 $userRepo = new UserRepository($conn);
 $categoryRepo = new CategoryRepository($conn);
@@ -50,6 +51,7 @@ $productImageRepo = new ProductImageRepository($conn);
 $orderRepo = new OrderRepository($conn);
 $cartRepo = new CartRepository($conn);
 $reviewRepo = new ReviewRepository($conn);
+$transactionRepo = new TransactionRepository($conn);
 
 // Load domain models
 require_once __DIR__ . '/php/classes/Product.php';
@@ -65,6 +67,9 @@ require_once __DIR__ . '/php/classes/User.php';
 require_once __DIR__ . '/php/classes/Buyer.php';
 require_once __DIR__ . '/php/classes/Seller.php';
 require_once __DIR__ . '/php/classes/Admin.php';
+
+// Load PayFastService
+require_once __DIR__ . '/php/classes/PayFastService.php';
 
 // Load Auth
 require_once __DIR__ . '/php/classes/Auth.php';
@@ -89,6 +94,7 @@ $GLOBALS['productImageRepo'] = $productImageRepo;
 $GLOBALS['orderRepo'] = $orderRepo;
 $GLOBALS['cartRepo'] = $cartRepo;
 $GLOBALS['reviewRepo'] = $reviewRepo;
+$GLOBALS['transactionRepo'] = $transactionRepo;
 $GLOBALS['currentUser'] = $currentUser;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;
 $GLOBALS['baseUrl'] = $baseUrl;

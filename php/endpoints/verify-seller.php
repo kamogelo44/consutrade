@@ -6,7 +6,7 @@
  * Allows admins to approve or reject seller verification documents
  */
 
-require_once __DIR__ . '/../init.php';
+require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
 

@@ -10,9 +10,17 @@
  */
 class Auth
 {
+    /** @var mysqli Database connection */
     private mysqli $db;
+
+    /** @var UserRepository User repository instance */
     private UserRepository $userRepo;
 
+    /**
+     * Constructor.
+     * 
+     * @param mysqli $db Database connection
+     */
     public function __construct(mysqli $db)
     {
         $this->db = $db;
@@ -20,7 +28,12 @@ class Auth
     }
 
     /**
-     * Authenticate user and start session
+     * Authenticate user and start session.
+     * 
+     * @param string $email User's email address
+     * @param string $password User's password
+     * @param string $roleType Expected user role (admin, seller, buyer)
+     * @return array Associative array with 'success' and 'redirect' or 'message'
      */
     public function login(string $email, string $password, string $roleType): array
     {
@@ -58,7 +71,10 @@ class Auth
     }
 
     /**
-     * Start session for a user
+     * Start session for a user.
+     * 
+     * @param User $user User object
+     * @return void
      */
     private function startSession(User $user): void
     {
@@ -92,7 +108,10 @@ class Auth
     }
 
     /**
-     * Update cart count in session
+     * Update cart count in session for buyer users.
+     * 
+     * @param int $userId User ID
+     * @return void
      */
     private function updateCartCount(int $userId): void
     {
@@ -106,7 +125,9 @@ class Auth
     }
 
     /**
-     * Get current logged in user as User object
+     * Get current logged in user as User object.
+     * 
+     * @return User|null User object or null if not logged in
      */
     public function getCurrentUser(): ?User
     {
@@ -127,7 +148,9 @@ class Auth
     }
 
     /**
-     * Get current user ID
+     * Get current user ID.
+     * 
+     * @return int User ID or 0 if not logged in
      */
     public function getCurrentUserId(): int
     {
@@ -135,7 +158,9 @@ class Auth
     }
 
     /**
-     * Get current user role
+     * Get current user role.
+     * 
+     * @return string|null User role or null if not logged in
      */
     public function getCurrentUserRole(): ?string
     {
@@ -143,7 +168,9 @@ class Auth
     }
 
     /**
-     * Check if any user is logged in
+     * Check if any user is logged in.
+     * 
+     * @return bool True if logged in, false otherwise
      */
     public function isLoggedIn(): bool
     {
@@ -151,7 +178,9 @@ class Auth
     }
 
     /**
-     * Check if admin is logged in
+     * Check if admin is logged in.
+     * 
+     * @return bool True if admin is logged in, false otherwise
      */
     public function isAdmin(): bool
     {
@@ -159,7 +188,9 @@ class Auth
     }
 
     /**
-     * Check if seller is logged in
+     * Check if seller is logged in.
+     * 
+     * @return bool True if seller is logged in, false otherwise
      */
     public function isSeller(): bool
     {
@@ -167,7 +198,9 @@ class Auth
     }
 
     /**
-     * Check if buyer is logged in
+     * Check if buyer is logged in.
+     * 
+     * @return bool True if buyer is logged in, false otherwise
      */
     public function isBuyer(): bool
     {
@@ -175,7 +208,9 @@ class Auth
     }
 
     /**
-     * Logout current user
+     * Logout current user and destroy session.
+     * 
+     * @return void
      */
     public function logout(): void
     {
@@ -193,7 +228,9 @@ class Auth
     }
 
     /**
-     * Initialize session based on current page
+     * Initialize session based on current page.
+     * 
+     * @return array Associative array with 'user' (User object or null) and 'is_logged_in' (bool)
      */
     public function initSession(): array
     {
@@ -204,32 +241,77 @@ class Auth
             return ['user' => null, 'is_logged_in' => false];
         }
 
-        // Admin only pages
-        $adminPages = ['admin-dashboard.php', 'users.php', 'all-products.php', 'all-orders.php'];
+        $adminPages = [
+            'admin-dashboard.php',
+            'users.php',
+            'all-products.php',
+            'all-orders.php',
+            'admin-profile.php'
+        ];
 
-        // Seller pages (including endpoints called from seller area)
+        $adminEndpoints = [
+            'get-users.php',
+            'get-all-products.php',
+            'get-all-orders.php',
+            'get-user-stats.php',
+            'get-recent-users.php',
+            'get-recent-orders.php',
+            'update-user-verification.php',
+            'delete-user.php',
+            'update-product-status.php',
+            'delete-product.php',
+            'verify-seller.php',
+            'get-order-details.php',
+            'get-order-status.php'
+        ];
+
         $sellerPages = [
             'seller-dashboard.php',
             'seller-profile.php',
             'my-products.php',
             'seller-orders.php',
             'add-product.php',
-            'edit-product.php',
-            'get-seller-products.php',
-            'get-seller-recent-orders.php',
-            'delete-product.php'
+            'edit-product.php'
         ];
 
-        if (in_array($fileName, $adminPages)) {
-            session_name('CONSUTRADE_ADMIN_SESSION');
-        } elseif (in_array($fileName, $sellerPages)) {
-            session_name('CONSUTRADE_SELLER_SESSION');
+        $sellerEndpoints = [
+            'get-seller-products.php',
+            'get-seller-recent-orders.php',
+            'delete-product.php',
+            'add-product.php',
+            'edit-product.php',
+            'update-product-status.php',
+            'remove-gallery-image.php',
+            'set-primary-image.php',
+            'upload-verification.php',
+            'get-order-details.php',
+            'get-order-status.php'
+        ];
+
+        $sharedEndpoints = [
+            'update-profile.php',
+            'change-password.php',
+            'delete-account.php',
+            'logout.php'
+        ];
+
+        if (in_array($fileName, $adminPages) || in_array($fileName, $adminEndpoints)) {
+            $sessionName = 'CONSUTRADE_ADMIN_SESSION';
+        } elseif (in_array($fileName, $sellerPages) || in_array($fileName, $sellerEndpoints)) {
+            $sessionName = 'CONSUTRADE_SELLER_SESSION';
+        } elseif (in_array($fileName, $sharedEndpoints)) {
+            $sessionName = 'CONSUTRADE_USER_SESSION';
         } else {
-            session_name('CONSUTRADE_USER_SESSION');
+            $sessionName = 'CONSUTRADE_USER_SESSION';
         }
 
+        // Only set session name if session is not already active
         if (session_status() === PHP_SESSION_NONE) {
+            session_name($sessionName);
             session_start();
+        } else {
+            // Session already active, just use it
+            $sessionName = session_name();
         }
 
         $user = $this->getCurrentUser();
@@ -239,7 +321,9 @@ class Auth
     }
 
     /**
-     * Refresh cart count in session
+     * Refresh cart count in session for the current user.
+     * 
+     * @return void
      */
     public function refreshCartCount(): void
     {

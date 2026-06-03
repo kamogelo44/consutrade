@@ -5,13 +5,39 @@
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
-
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-$sellerId = isset($_GET['seller_id']) ? (int) $_GET['seller_id'] : 0;
-$userId = isset($_GET['user_id']) ? (int) $_GET['user_id'] : 0;
+// Admin requesting platform-wide stats
+if ($auth->isAdmin() && !isset($_GET['seller_id']) && !isset($_GET['user_id'])) {
+    $totalUsers = $userRepo->getTotalUsers();
+    $totalProducts = $productRepo->getProductsCountForAdmin('all', '');
+
+    $revenueSql = "SELECT COALESCE(SUM(amount), 0) as total_revenue FROM transactions WHERE status = 'completed'";
+    $revenueResult = $conn->query($revenueSql);
+    $revenueRow = $revenueResult->fetch_assoc();
+    $totalRevenue = (float)($revenueRow['total_revenue'] ?? 0);
+
+    $pendingSql = "SELECT COUNT(*) as pending FROM orders WHERE status = 'pending'";
+    $pendingResult = $conn->query($pendingSql);
+    $pendingRow = $pendingResult->fetch_assoc();
+    $pendingOrders = (int)($pendingRow['pending'] ?? 0);
+
+    $response = [
+        'success' => true,
+        'total_users' => $totalUsers,
+        'total_products' => $totalProducts,
+        'total_revenue' => $totalRevenue,
+        'pending_orders' => $pendingOrders
+    ];
+    echo json_encode($response);
+    exit;
+}
+
+// Get specific user stats
+$sellerId = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
+$userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $targetId = $sellerId > 0 ? $sellerId : $userId;
 
 if ($targetId <= 0) {
@@ -37,7 +63,7 @@ if ($targetUser instanceof Seller) {
         'success' => true,
         'total_products' => $totalProducts,
         'total_sales' => $totalRevenue,
-        'total_orders'  => $orderComplete
+        'total_orders' => $orderComplete
     ];
 } elseif ($targetUser instanceof Buyer) {
     $isAuthenticated = ($isLoggedIn && $currentUser instanceof Buyer && $currentUser->getUserId() === $targetId);

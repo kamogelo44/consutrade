@@ -8,11 +8,10 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!$auth->isAdminLoggedIn()) {
+if (!$auth->isAdmin()) {
     header('Location: login.php');
     exit;
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,16 +21,36 @@ if (!$auth->isAdminLoggedIn()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Users - ConsuTrade Admin</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-clean.css">
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar-clean.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-    </script>
     <style>
-        /* Page specific styles - only what's not in dashboard-clean.css */
+        .admin-main-content {
+            margin-left: 280px;
+            padding: var(--spacing-xl);
+            min-height: 100vh;
+            background: var(--gray-bg);
+            transition: margin-left var(--transition-normal);
+        }
 
-        /* Filters Bar */
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .page-header h1 {
+            font-size: var(--font-2xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .page-header p {
+            color: var(--gray-medium);
+        }
+
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -98,7 +117,79 @@ if (!$auth->isAdminLoggedIn()) {
             background: var(--gray-lighter);
         }
 
-        /* Action Buttons - properly sized */
+        .table-wrapper {
+            overflow-x: auto;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-sm);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: var(--spacing-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-table th {
+            background: var(--gray-bg-light);
+            font-weight: var(--font-semibold);
+            color: var(--gray-dark);
+        }
+
+        .data-table tr:hover td {
+            background: var(--gray-bg-light);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+        }
+
+        .role-admin {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .role-seller {
+            background: var(--primary-fade);
+            color: var(--primary-color);
+        }
+
+        .role-buyer {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        .verified-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .unverified-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
         .action-buttons {
             display: flex;
             gap: var(--spacing-sm);
@@ -113,7 +204,6 @@ if (!$auth->isAdminLoggedIn()) {
             border: none;
             font-weight: var(--font-medium);
             transition: all var(--transition-fast);
-            white-space: nowrap;
         }
 
         .verify-btn {
@@ -149,63 +239,69 @@ if (!$auth->isAdminLoggedIn()) {
             color: white;
         }
 
-        /* Verified badge (uses same colors as role badges) */
-        .verified-badge,
-        .unverified-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xl);
+            flex-wrap: wrap;
         }
 
-        .verified-badge {
-            background: var(--success-light);
-            color: var(--success);
+        .page-btn {
+            padding: 8px 14px;
+            border: 1px solid var(--border-light);
+            background: var(--white);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: var(--font-sm);
         }
 
-        .unverified-badge {
-            background: var(--warning-light);
-            color: var(--warning);
+        .page-btn:hover {
+            background: var(--primary-fade);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
         }
 
-        .page-header {
-            margin-bottom: var(--spacing-xl);
+        .page-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            cursor: default;
         }
 
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
+        .page-dots {
+            padding: 8px 4px;
+            color: var(--gray-light);
         }
 
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
-        /* Error/Empty states */
-        .error-cell,
-        .empty-cell,
         .loading-cell {
             text-align: center;
             padding: var(--spacing-xl);
-        }
-
-        .loading-cell {
             color: var(--gray-medium);
         }
 
         .error-cell {
+            text-align: center;
+            padding: var(--spacing-xl);
             color: var(--error);
             background: var(--error-light);
-            border-left: 4px solid var(--error);
         }
 
         .empty-cell {
+            text-align: center;
+            padding: var(--spacing-xl);
             color: var(--gray-medium);
         }
 
-        /* Responsive overrides */
+        @media (max-width: 1024px) {
+            .admin-main-content {
+                margin-left: 0;
+                padding: var(--spacing-md);
+                padding-top: 70px;
+            }
+        }
+
         @media (max-width: 768px) {
             .filters-bar {
                 flex-direction: column;
@@ -228,6 +324,62 @@ if (!$auth->isAdminLoggedIn()) {
                 width: 100%;
                 text-align: center;
             }
+
+            .data-table,
+            .data-table tbody,
+            .data-table tr,
+            .data-table td {
+                display: block;
+            }
+
+            .data-table thead {
+                display: none;
+            }
+
+            .data-table tr {
+                border: 1px solid var(--border-light);
+                margin-bottom: var(--spacing-md);
+                border-radius: var(--radius-md);
+            }
+
+            .data-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: var(--spacing-sm);
+                border-bottom: 1px solid var(--border-light);
+            }
+
+            .data-table td:last-child {
+                border-bottom: none;
+            }
+
+            .data-table td:before {
+                content: attr(data-label);
+                font-weight: var(--font-bold);
+                color: var(--gray-dark);
+                min-width: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-main-content {
+                padding: var(--spacing-sm);
+                padding-top: 60px;
+            }
+
+            .page-header h1 {
+                font-size: var(--font-xl);
+            }
+
+            .pagination {
+                gap: var(--spacing-xs);
+            }
+
+            .page-btn {
+                padding: 6px 10px;
+                font-size: var(--font-xs);
+            }
         }
     </style>
 </head>
@@ -243,7 +395,6 @@ if (!$auth->isAdminLoggedIn()) {
                 <p>View and manage all registered users on ConsuTrade.</p>
             </div>
 
-            <!-- Filter Bar -->
             <div class="filters-bar">
                 <div class="filter-group">
                     <label for="roleFilter">Filter by Role</label>
@@ -263,7 +414,6 @@ if (!$auth->isAdminLoggedIn()) {
                 <button id="resetBtn" class="filter-btn-small reset">Reset</button>
             </div>
 
-            <!-- Users Table - reuses data-table styles from dashboard-clean.css -->
             <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
@@ -291,37 +441,54 @@ if (!$auth->isAdminLoggedIn()) {
     </main>
 
     <script>
-        var currentPage = 1,
+        // Cached DOM elements
+        var $usersTable = null,
+            $pagination = null,
+            $roleFilter = null,
+            $searchBtn = null,
+            $resetBtn = null,
+            $searchInput = null,
+            currentPage = 1,
             currentRole = 'all',
             currentSearch = '';
 
-        $(function() {
+        function cacheElements() {
+            $usersTable = $('#usersTable');
+            $pagination = $('#pagination');
+            $roleFilter = $('#roleFilter');
+            $searchBtn = $('#searchBtn');
+            $resetBtn = $('#resetBtn');
+            $searchInput = $('#searchInput');
+        }
+
+        $(document).ready(function() {
+            cacheElements();
             loadUsers();
 
-            $('#roleFilter').on('change', function() {
+            $roleFilter.on('change', function() {
                 currentRole = $(this).val();
                 currentPage = 1;
                 loadUsers();
             });
 
-            $('#searchBtn').on('click', function() {
-                currentSearch = $('#searchInput').val().trim();
+            $searchBtn.on('click', function() {
+                currentSearch = $searchInput.val().trim();
                 currentPage = 1;
                 loadUsers();
             });
 
-            $('#resetBtn').on('click', function() {
-                $('#roleFilter').val('all');
-                $('#searchInput').val('');
+            $resetBtn.on('click', function() {
+                $roleFilter.val('all');
+                $searchInput.val('');
                 currentRole = 'all';
                 currentSearch = '';
                 currentPage = 1;
                 loadUsers();
             });
 
-            $('#searchInput').on('keypress', function(e) {
+            $searchInput.on('keypress', function(e) {
                 if (e.which === 13) {
-                    currentSearch = $(this).val().trim();
+                    currentSearch = $searchInput.val().trim();
                     currentPage = 1;
                     loadUsers();
                 }
@@ -329,10 +496,10 @@ if (!$auth->isAdminLoggedIn()) {
         });
 
         function loadUsers() {
-            $('#usersTable').html('<tr><td colspan="8" class="loading-cell">Loading users...</td</tr>');
+            $usersTable.html('<tr><td colspan="8" class="loading-cell">Loading users...</td></tr>');
 
             $.ajax({
-                url: baseUrl + 'admin/php/get-users.php',
+                url: baseUrl + 'php/endpoints/get-users.php',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -345,106 +512,80 @@ if (!$auth->isAdminLoggedIn()) {
                         displayUsers(data.users);
                         displayPagination(data.total_pages, data.current_page);
                     } else {
-                        $('#usersTable').html('<tr><td colspan="8" class="empty-cell">No users found</td</tr>');
-                        $('#pagination').empty();
+                        $usersTable.html('<tr><td colspan="8" class="empty-cell">No users found</td></tr>');
+                        $pagination.empty();
                     }
                 },
                 error: function() {
-                    $('#usersTable').html('<tr><td colspan="8" class="error-cell">Error loading users. Please refresh.</td</tr>');
+                    $usersTable.html('<tr><td colspan="8" class="error-cell">Error loading users</td></tr>');
                 }
             });
         }
 
         function displayUsers(users) {
-            var $tbody = $('#usersTable');
-            $tbody.empty();
+            $usersTable.empty();
 
             $.each(users, function(i, user) {
-                // Use existing role badge classes from dashboard-clean.css
                 var roleClass = user.role === 'admin' ? 'role-admin' : (user.role === 'seller' ? 'role-seller' : 'role-buyer');
-
-                // Verified badge
-                var verifiedBadge = user.is_verified ?
-                    '<span class="verified-badge">Verified</span>' :
-                    '<span class="unverified-badge">Not Verified</span>';
-
-                // Action buttons
+                var verifiedBadge = user.id_verified ? '<span class="verified-badge">Verified</span>' : '<span class="unverified-badge">Not Verified</span>';
                 var actionButtons = '<div class="action-buttons">';
 
                 if (user.role === 'seller') {
-                    // Check if this is a pending verification user
-                    if (user.has_document && !user.is_verified) {
-                        actionButtons += '<button class="action-btn verify-btn" onclick="reviewDocuments(' + user.user_id + ')">Review Documents</button>';
-                    } else if (user.is_verified) {
+                    if (user.has_document && !user.id_verified) {
+                        actionButtons += '<button class="action-btn verify-btn" onclick="reviewDocuments(' + user.user_id + ')">Review Docs</button>';
+                    } else if (user.id_verified) {
                         actionButtons += '<button class="action-btn unverify-btn" onclick="toggleUserVerification(' + user.user_id + ', false)">Unverify</button>';
                     } else {
                         actionButtons += '<button class="action-btn verify-btn" onclick="toggleUserVerification(' + user.user_id + ', true)">Verify</button>';
                     }
                 }
 
-                // Delete button (don't allow deleting own admin account)
-                if (user.role !== 'admin' || user.user_id !== <?php echo $current_user_id; ?>) {
+                if (user.role !== 'admin' || user.user_id !== currentUserId) {
                     actionButtons += '<button class="action-btn delete-btn" onclick="deleteUser(' + user.user_id + ')">Delete</button>';
                 }
 
                 actionButtons += '</div>';
 
-                // Verify/Unverify button (only for sellers)
-                if (user.role === 'seller') {
-                    if (user.is_verified) {
-                        actionButtons += '<button class="action-btn unverify-btn" onclick="toggleUserVerification(' + user.user_id + ', false)">Unverify</button>';
-                    } else {
-                        actionButtons += '<button class="action-btn verify-btn" onclick="toggleUserVerification(' + user.user_id + ', true)">Verify</button>';
-                    }
-                }
-
-                // Delete button (don't allow deleting own admin account)
-                if (user.role !== 'admin' || user.user_id !== <?php echo $current_user_id; ?>) {
-                    actionButtons += '<button class="action-btn delete-btn" onclick="deleteUser(' + user.user_id + ')">Delete</button>';
-                }
-
-                actionButtons += '</div>';
-
-                // If no actions, show dash
                 if (actionButtons === '<div class="action-buttons"></div>') {
                     actionButtons = '<div class="action-buttons">-</div>';
                 }
 
-                $tbody.append(`
-            <tr>
-                <td data-label="ID">${user.user_id}</td>
-                <td data-label="Full Name">${escapeHtml(user.full_name)}</td>
-                <td data-label="Email">${escapeHtml(user.email)}</td>
-                <td data-label="Phone">${escapeHtml(user.phone || '-')}</td>
-                <td data-label="Role"><span class="role-badge ${roleClass}">${user.role}</span></td>
-                <td data-label="Verified">${verifiedBadge}</td>
-                <td data-label="Joined Date">${user.created_at}</td>
-                <td data-label="Actions">${actionButtons}</td>
-            `);
+                $usersTable.append(
+                    '<tr>' +
+                    '<td data-label="ID">' + user.user_id + '</td>' +
+                    '<td data-label="Full Name">' + escapeHtml(user.full_name) + '</td>' +
+                    '<td data-label="Email">' + escapeHtml(user.email) + '</td>' +
+                    '<td data-label="Phone">' + escapeHtml(user.phone || '-') + '</td>' +
+                    '<td data-label="Role"><span class="role-badge ' + roleClass + '">' + user.role + '</span></td>' +
+                    '<td data-label="Verified">' + verifiedBadge + '</td>' +
+                    '<td data-label="Joined Date">' + user.created_at + '</td>' +
+                    '<td data-label="Actions">' + actionButtons + '</td>' +
+                    '</tr>'
+                );
             });
         }
 
         function displayPagination(totalPages, currentPageNum) {
             if (totalPages <= 1) {
-                $('#pagination').empty();
+                $pagination.empty();
                 return;
             }
 
             var html = '';
-            if (currentPageNum > 1) html += `<button class="page-btn" onclick="goToPage(${currentPageNum - 1})">← Previous</button>`;
+            if (currentPageNum > 1) html += '<button class="page-btn" onclick="goToPage(' + (currentPageNum - 1) + ')">← Previous</button>';
 
             for (var i = 1; i <= totalPages; i++) {
                 if (i === currentPageNum) {
-                    html += `<button class="page-btn active" disabled>${i}</button>`;
+                    html += '<button class="page-btn active" disabled>' + i + '</button>';
                 } else if (Math.abs(i - currentPageNum) <= 2 || i === 1 || i === totalPages) {
-                    html += `<button class="page-btn" onclick="goToPage(${i})">${i}</button>`;
+                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
                 } else if (Math.abs(i - currentPageNum) === 3) {
-                    html += `<span class="page-dots">...</span>`;
+                    html += '<span class="page-dots">...</span>';
                 }
             }
 
-            if (currentPageNum < totalPages) html += `<button class="page-btn" onclick="goToPage(${currentPageNum + 1})">Next →</button>`;
-            $('#pagination').html(html);
+            if (currentPageNum < totalPages) html += '<button class="page-btn" onclick="goToPage(' + (currentPageNum + 1) + ')">Next →</button>';
+            $pagination.html(html);
         }
 
         function goToPage(page) {
@@ -460,12 +601,10 @@ if (!$auth->isAdminLoggedIn()) {
         }
 
         function toggleUserVerification(userId, verify) {
-            var action = verify ? 'verify' : 'unverify';
-            var confirmMsg = verify ? 'Verify this seller? They will get a verified badge.' : 'Remove verification from this seller?';
-
+            var confirmMsg = verify ? 'Verify this seller?' : 'Remove verification from this seller?';
             if (confirm(confirmMsg)) {
                 $.ajax({
-                    url: baseUrl + 'admin/php/update-user-verification.php',
+                    url: baseUrl + 'php/endpoints/update-user-verification.php',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
@@ -489,9 +628,9 @@ if (!$auth->isAdminLoggedIn()) {
         }
 
         function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            if (confirm('Delete this user? This cannot be undone.')) {
                 $.ajax({
-                    url: baseUrl + 'admin/php/delete-user.php',
+                    url: baseUrl + 'php/endpoints/delete-user.php',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({

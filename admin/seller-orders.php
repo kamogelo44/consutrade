@@ -2,6 +2,9 @@
 /*
  * ConsuTrade - Seller Orders Page
  * Author: Kamogelo Phale
+ * 
+ * Displays all orders for the logged-in seller with filtering and search.
+ * Allows sellers to view order details and update order status.
  */
 
 require_once dirname(__DIR__) . '/init.php';
@@ -29,6 +32,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
+        /* ========== SELLER DASHBOARD LAYOUT ========== */
+
         .seller-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -41,6 +46,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             max-width: 1400px;
             margin: 0 auto;
         }
+
+        /* ========== PAGE HEADER ========== */
 
         .page-header {
             margin-bottom: var(--spacing-xl);
@@ -56,6 +63,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         .page-header p {
             color: var(--gray-medium);
         }
+
+        /* ========== FILTERS BAR ========== */
 
         .filters-bar {
             display: flex;
@@ -96,6 +105,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             border-color: var(--primary-color);
         }
 
+        /* ========== SEARCH FORM ========== */
+
         .search-bar form {
             display: flex;
             gap: var(--spacing-sm);
@@ -115,12 +126,21 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         }
 
         .search-bar button {
-            padding: 8px 16px;
+            padding: 8px 12px;
             background: var(--primary-color);
             color: var(--white);
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-bar button img {
+            width: 16px;
+            height: 16px;
+            filter: brightness(0) invert(1);
         }
 
         .clear-search {
@@ -131,6 +151,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             color: var(--gray-dark);
             font-size: var(--font-sm);
         }
+
+        /* ========== ORDERS LIST ========== */
 
         .orders-list {
             display: flex;
@@ -149,6 +171,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         .order-card:hover {
             box-shadow: var(--shadow-md);
         }
+
+        /* ========== ORDER HEADER ========== */
 
         .order-header {
             display: flex;
@@ -172,6 +196,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             font-size: var(--font-sm);
             margin-left: var(--spacing-sm);
         }
+
+        /* ========== ORDER STATUS BADGES ========== */
 
         .order-status-badge {
             padding: 4px 12px;
@@ -204,6 +230,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             background: var(--error-light);
             color: var(--error);
         }
+
+        /* ========== ORDER BODY ========== */
 
         .order-body {
             padding: var(--spacing-md);
@@ -245,6 +273,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             font-weight: var(--font-bold);
             color: var(--primary-color);
         }
+
+        /* ========== ORDER FOOTER BUTTONS ========== */
 
         .order-footer {
             padding: var(--spacing-md);
@@ -325,7 +355,10 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             transform: translateY(-2px);
         }
 
+        /* ========== EMPTY STATE ========== */
+
         .empty-orders {
+            grid-column: 1 / -1;
             text-align: center;
             padding: 60px var(--spacing-xl);
             background: var(--white);
@@ -333,9 +366,14 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             border: 1px solid var(--border-light);
         }
 
+        .empty-orders img {
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
         .empty-orders h3 {
             font-size: var(--font-xl);
-            font-weight: var(--font-bold);
+            font-weight: var(--font-semibold);
             margin-bottom: var(--spacing-sm);
             color: var(--dark-bg);
         }
@@ -345,17 +383,26 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             margin-bottom: var(--spacing-lg);
         }
 
-        .clear-btn,
-        .back-btn {
+        .empty-orders .clear-btn,
+        .empty-orders .back-btn {
             display: inline-block;
             padding: 10px 24px;
             background: var(--primary-color);
             color: var(--white);
             text-decoration: none;
             border-radius: var(--radius-md);
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
         }
 
-        /* Modal Styles */
+        .empty-orders .clear-btn:hover,
+        .empty-orders .back-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* ========== MODAL STYLES ========== */
+
         .order-modal {
             display: none;
             position: fixed;
@@ -505,6 +552,8 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             color: var(--dark-bg);
         }
 
+        /* ========== RESPONSIVE STYLES ========== */
+
         @media (max-width: 1024px) {
             .seller-main-content {
                 margin-left: 0;
@@ -613,7 +662,9 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
                     <form method="GET" action="">
                         <input type="hidden" name="status" value="<?php echo $status_filter; ?>">
                         <input type="text" name="search" placeholder="Search by order number or customer..." value="<?php echo htmlspecialchars($search_term); ?>">
-                        <button type="submit">Search</button>
+                        <button type="submit">
+                            <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                        </button>
                         <?php if (!empty($search_term)): ?>
                             <a href="?status=<?php echo $status_filter; ?>" class="clear-search">Clear</a>
                         <?php endif; ?>
@@ -673,8 +724,9 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="empty-orders">
+                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="No orders">
                         <h3>No Orders Found</h3>
-                        <p><?php echo !empty($search_term) ? 'No orders match your search criteria.' : 'You have not received any orders yet.' ?></p>
+                        <p><?php echo !empty($search_term) ? 'No orders match your search criteria.' : 'You have not received any orders yet.'; ?></p>
                         <?php if (!empty($search_term)): ?>
                             <a href="?status=<?php echo $status_filter; ?>" class="clear-btn">Clear Search</a>
                         <?php else: ?>
