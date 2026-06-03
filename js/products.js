@@ -8,30 +8,79 @@
  */
 
 // ========== HELPER FUNCTIONS ==========
+
+/**
+ * Gets the seller avatar URL with fallback to default profile image
+ * 
+ * @param {string} profileImage - The seller's profile image path
+ * @returns {string} Fixed URL for the seller avatar
+ * 
+ * @example
+ * getSellerAvatar('uploads/profiles/user1.jpg') // Returns full URL
+ */
 function getSellerAvatar(profileImage) {
     return fixImageUrl(profileImage, 'images/icons/profile-svgrepo-com.svg');
 }
 
 // ========== PRODUCT LISTINGS PAGE ==========
+
+/** @type {number} Current page number for pagination */
 var currentPage = 1;
+
+/** @type {Object} Current filter values (categories, price_range, location) */
 var currentFilters = {};
+
+/** @type {string} Current sort option ('newest', 'price_low', 'price_high') */
 var currentSort = 'newest';
+
+/** @type {number} Total number of pages available */
 var totalPages = 1;
 
 // Cached DOM elements for products page
+/** @type {jQuery|null} Products grid container */
 var $productsGrid = null;
+
+/** @type {jQuery|null} Pagination container */
 var $paginationContainer = null;
+
+/** @type {jQuery|null} Filter sidebar element */
 var $filterSidebar = null;
+
+/** @type {jQuery|null} Filter form element */
 var $filterForm = null;
+
+/** @type {jQuery|null} Sort by select dropdown */
 var $sortBySelect = null;
+
+/** @type {jQuery|null} Reset filters button */
 var $resetFiltersBtn = null;
+
+/** @type {jQuery|null} Mobile filter button */
 var $mobileFilterBtn = null;
+
+/** @type {jQuery|null} Window object for resize events */
 var $window = null;
+
+/** @type {jQuery|null} HTML and body for smooth scrolling */
 var $htmlBody = null;
+
+/** @type {jQuery|null} Category checkbox inputs */
 var $categoryCheckboxes = null;
+
+/** @type {jQuery|null} Price range radio inputs */
 var $priceRangeRadios = null;
+
+/** @type {jQuery|null} Search location input */
 var $searchLocationInput = null;
 
+/** @type {jQuery|null} Empty state reset button (dynamic) */
+var $emptyResetBtn = null;
+
+/**
+ * Caches all DOM elements used in the products page
+ * 
+ * @returns {void}
+ */
 function cacheProductsPageElements() {
     $productsGrid = $('#products-grid');
     $paginationContainer = $('#pagination');
@@ -47,6 +96,13 @@ function cacheProductsPageElements() {
     $searchLocationInput = $('#search-location');
 }
 
+/**
+ * Sets up all event listeners for product filtering and sorting
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Binds click, submit, and change events to filter controls
+ */
 function setupProductEventListeners() {
     cacheProductsPageElements();
     
@@ -78,6 +134,13 @@ function setupProductEventListeners() {
     });
 }
 
+/**
+ * Collects current filter values from the filter form
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Updates the global currentFilters object
+ */
 function collectFilters() {
     var categories = [];
     $categoryCheckboxes.each(function() {
@@ -97,6 +160,69 @@ function collectFilters() {
     };
 }
 
+/**
+ * Shows empty state when no products are found
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Updates products grid with empty state UI
+ */
+function showEmptyState() {
+    cacheProductsPageElements();
+    
+    $productsGrid.html(
+        '<div class="empty-state" id="empty-products-state">' +
+            '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">' +
+            '<h3>No products found</h3>' +
+            '<p>We couldn\'t find any products matching your criteria.</p>' +
+            '<button class="view-all-btn" id="resetFiltersEmptyBtn">Reset Filters</button>' +
+        '</div>'
+    );
+    $paginationContainer.empty();
+    
+    // Bind reset filters button from empty state
+    $('#resetFiltersEmptyBtn').off('click').on('click', function() {
+        $filterForm[0].reset();
+        currentFilters = {};
+        currentPage = 1;
+        loadProducts();
+    });
+}
+
+/**
+ * Shows error state when product loading fails
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Updates products grid with error state UI
+ */
+function showErrorState() {
+    cacheProductsPageElements();
+    
+    $productsGrid.html(
+        '<div class="empty-state" id="error-products-state">' +
+            '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error">' +
+            '<h3>Something went wrong</h3>' +
+            '<p>Error loading products. Please try again.</p>' +
+            '<button class="view-all-btn" id="refreshPageBtn">Refresh Page</button>' +
+        '</div>'
+    );
+    $paginationContainer.empty();
+    
+    // Bind refresh button
+    $('#refreshPageBtn').off('click').on('click', function() {
+        location.reload();
+    });
+}
+
+/**
+ * Loads products from the server with current filters and pagination
+ * 
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-products.php
+ * @sideeffect Updates the products grid with new products
+ */
 function loadProducts() {
     if (!$productsGrid) {
         cacheProductsPageElements();
@@ -121,14 +247,21 @@ function loadProducts() {
             totalPages = data.total_pages || 1;
             displayPagination();
         } else {
-            $productsGrid.html('<div class="empty-state"><p>No products found.</p></div>');
-            $paginationContainer.empty();
+            showEmptyState();
         }
     }).fail(function() {
-        $productsGrid.html('<p class="error">Error loading products. Please try again.</p>');
+        showErrorState();
     });
 }
 
+/**
+ * Renders product cards in the products grid
+ * 
+ * @param {Array} products - Array of product objects to display
+ * @returns {void}
+ * 
+ * @sideeffect Populates the products grid DOM with product cards
+ */
 function displayProducts(products) {
     if (!$productsGrid) {
         cacheProductsPageElements();
@@ -204,6 +337,13 @@ function displayProducts(products) {
     });
 }
 
+/**
+ * Renders pagination controls using the shared renderPagination function
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Creates pagination buttons and scrolls to top
+ */
 function displayPagination() {
     if (!$paginationContainer) {
         cacheProductsPageElements();
@@ -216,12 +356,27 @@ function displayPagination() {
 }
 
 // ========== PRODUCT DETAILS PAGE FUNCTIONS ==========
+
+/** @type {jQuery|null} Product details container element */
 var $productDetailsContainer = null;
+
+/** @type {jQuery|null} Product details content element */
 var $productDetailsContent = null;
+
+/** @type {jQuery|null} Main product image element */
 var $mainProductImage = null;
+
+/** @type {jQuery|null} Small thumbnail image elements */
 var $smallImgElements = null;
+
+/** @type {jQuery|null} Gallery container element */
 var $galleryContainer = null;
 
+/**
+ * Caches DOM elements used on the product details page
+ * 
+ * @returns {void}
+ */
 function cacheProductDetailsElements() {
     $productDetailsContainer = $('.product-details-container');
     $productDetailsContent = $('#product-details-content');
@@ -230,6 +385,14 @@ function cacheProductDetailsElements() {
     $smallImgElements = null;
 }
 
+/**
+ * Loads and displays product details for a given product ID
+ * 
+ * @param {number} id - The product ID to load
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-product.php
+ */
 function loadProductDetails(id) {
     if (!$productDetailsContainer) {
         cacheProductDetailsElements();
@@ -250,6 +413,14 @@ function loadProductDetails(id) {
     });
 }
 
+/**
+ * Displays an error message when a product is not found
+ * 
+ * @param {string} message - Error message to display
+ * @returns {void}
+ * 
+ * @sideeffect Replaces product details container with error UI
+ */
 function showProductError(message) {
     if (!$productDetailsContainer) {
         cacheProductDetailsElements();
@@ -266,6 +437,14 @@ function showProductError(message) {
     );
 }
 
+/**
+ * Renders full product details including images, info, reviews, and actions
+ * 
+ * @param {Object} product - Product object containing all details
+ * @returns {void}
+ * 
+ * @sideeffect Populates the product details DOM with complete product information
+ */
 function displayProductDetails(product) {
     if (!$productDetailsContent) {
         cacheProductDetailsElements();
@@ -398,12 +577,32 @@ function displayProductDetails(product) {
     });
 }
 
+/**
+ * Adds product to cart and redirects to checkout page
+ * 
+ * @param {number} productId - Product ID
+ * @param {string} productName - Product name
+ * @param {number} productPrice - Product price
+ * @returns {void}
+ * 
+ * @fires addToCart from main.js
+ * @sideeffect Redirects to checkout page
+ */
 function buyNow(productId, productName, productPrice) {
     addToCart(productId, productName, productPrice);
     window.location.href = baseUrl + 'checkout.php';
 }
 
 // ========== INITIALIZE ==========
+
+/**
+ * Initializes the products page or product details page based on DOM elements
+ * 
+ * @returns {void}
+ * 
+ * @fires cacheProductsPageElements, loadProducts, setupProductEventListeners for listings page
+ * @fires cacheProductDetailsElements, loadProductDetails for details page
+ */
 $(function() {
     var $productsGridElement = $('#products-grid');
     var $productDetailsContainerElement = $('.product-details-container');

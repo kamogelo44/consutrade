@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ConsuTrade - CartRepository
  *
@@ -74,12 +75,12 @@ class CartRepository
         $stmt->bind_param('ii', $userId, $productId);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             return $row;
         }
-        
+
         $stmt->close();
         return null;
     }
@@ -93,13 +94,13 @@ class CartRepository
     public function getCartItems(int $userId): array
     {
         $sql = "SELECT c.cart_id, c.quantity, c.added_at,
-                    p.product_id, p.title, p.price, p.image_url, p.seller_id, p.stock_quantity,
-                    u.full_name as seller_name, u.id_verified
-                FROM cart c
-                JOIN products p ON c.product_id = p.product_id
-                JOIN users u ON p.seller_id = u.user_id
-                WHERE c.user_id = ?
-                ORDER BY c.added_at DESC";
+            p.product_id, p.title, p.price, p.image_url, p.seller_id, p.stock_quantity,
+            u.full_name as seller_name, u.id_verified as is_verified
+        FROM cart c
+        JOIN products p ON c.product_id = p.product_id
+        JOIN users u ON p.seller_id = u.user_id
+        WHERE c.user_id = ?
+        ORDER BY c.added_at DESC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $userId);
@@ -110,6 +111,7 @@ class CartRepository
         while ($row = $result->fetch_assoc()) {
             $row['subtotal']  = $row['price'] * $row['quantity'];
             $row['image_url'] = (new ProductRepository($this->db))->getProductImageUrl($row['image_url']);
+            $row['is_verified'] = (bool)($row['is_verified'] ?? false);
             $items[] = $row;
         }
         $stmt->close();
@@ -280,7 +282,6 @@ class CartRepository
                 'payment_id'       => $orderResult['payment_id'],
                 'primary_order_id' => $orderResult['order_ids'][0]
             ];
-
         } catch (Exception $e) {
             $this->db->rollback();
             return ['success' => false, 'errors' => ['Could not complete checkout.']];

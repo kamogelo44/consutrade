@@ -149,6 +149,21 @@ $search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 
     <script>
+        // ========== CACHED DOM ELEMENTS ==========
+        var $productsGrid = null;
+        var $paginationContainer = null;
+        var $filterSidebar = null;
+        var $filterForm = null;
+        var $mobileFilterBtn = null;
+        var $resetFiltersBtn = null;
+        var $sortBySelect = null;
+        var $categoryCheckboxes = null;
+        var $priceRangeRadios = null;
+        var $searchLocationInput = null;
+        var $window = null;
+        var $htmlBody = null;
+
+        // ========== GLOBAL VARIABLES ==========
         var searchQuery = <?php echo json_encode($search_query_js); ?>;
         var currentPage = 1;
         var currentSort = 'newest';
@@ -159,28 +174,42 @@ $search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
         };
         var totalPages = 1;
 
-        $(function() {
-            loadSearchResults();
-            setupEventListeners();
-        });
+        // ========== CACHE FUNCTION ==========
+        function cacheSearchResultsElements() {
+            $productsGrid = $('#products-grid');
+            $paginationContainer = $('#pagination');
+            $filterSidebar = $('#filterSidebar');
+            $filterForm = $('#filterForm');
+            $mobileFilterBtn = $('#mobileFilterBtn');
+            $resetFiltersBtn = $('#resetFilters');
+            $sortBySelect = $('#sortBy');
+            $categoryCheckboxes = $('input[name="category[]"]');
+            $priceRangeRadios = $('input[name="price_range"]');
+            $searchLocationInput = $('#search-location');
+            $window = $(window);
+            $htmlBody = $('html, body');
+        }
 
+        // ========== SETUP EVENT LISTENERS ==========
         function setupEventListeners() {
-            $('#mobileFilterBtn').on('click', function() {
-                $('#filterSidebar').toggleClass('active');
+            cacheSearchResultsElements();
+
+            $mobileFilterBtn.on('click', function() {
+                $filterSidebar.toggleClass('active');
             });
 
-            $('#filterForm').on('submit', function(e) {
+            $filterForm.on('submit', function(e) {
                 e.preventDefault();
                 collectFilters();
                 currentPage = 1;
                 loadSearchResults();
-                if ($(window).width() <= 768) {
-                    $('#filterSidebar').removeClass('active');
+                if ($window.width() <= 768) {
+                    $filterSidebar.removeClass('active');
                 }
             });
 
-            $('#resetFilters').on('click', function() {
-                $('#filterForm')[0].reset();
+            $resetFiltersBtn.on('click', function() {
+                $filterForm[0].reset();
                 currentFilters = {
                     categories: [],
                     price_range: '',
@@ -190,45 +219,55 @@ $search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
                 loadSearchResults();
             });
 
-            $('#sortBy').on('change', function() {
-                currentSort = $(this).val();
+            $sortBySelect.on('change', function() {
+                currentSort = $sortBySelect.val();
                 currentPage = 1;
                 loadSearchResults();
             });
         }
 
+        // ========== COLLECT FILTERS ==========
         function collectFilters() {
             var categories = [];
-            $('input[name="category[]"]:checked').each(function() {
-                categories.push($(this).val());
+            $categoryCheckboxes.each(function() {
+                var $checkbox = $(this);
+                if ($checkbox.is(':checked')) {
+                    categories.push($checkbox.val());
+                }
             });
+
+            var $selectedPriceRange = $priceRangeRadios.filter(':checked');
+            var priceRange = $selectedPriceRange.length ? $selectedPriceRange.val() : '';
 
             currentFilters = {
                 categories: categories,
-                price_range: $('input[name="price_range"]:checked').val() || '',
-                location: $('#search-location').val() || ''
+                price_range: priceRange,
+                location: $searchLocationInput.val() || ''
             };
         }
 
+        // ========== LOAD SEARCH RESULTS ==========
         function loadSearchResults() {
-            var params = $.param({
+            cacheSearchResultsElements();
+
+            var params = {
                 search: searchQuery,
                 page: currentPage,
                 sort: currentSort,
                 limit: 12
-            });
+            };
 
             if (currentFilters.categories && currentFilters.categories.length > 0) {
-                params += '&categories=' + encodeURIComponent(currentFilters.categories.join(','));
+                params.categories = currentFilters.categories.join(',');
             }
             if (currentFilters.price_range) {
-                params += '&price_range=' + encodeURIComponent(currentFilters.price_range);
+                params.price_range = currentFilters.price_range;
             }
             if (currentFilters.location) {
-                params += '&location=' + encodeURIComponent(currentFilters.location);
+                params.location = currentFilters.location;
             }
 
-            $('#products-grid').html('<div class="loading-spinner">Searching for products...</div>');
+            $productsGrid.html('<div class="loading-spinner">Searching for products...</div>');
 
             $.ajax({
                 url: baseUrl + 'php/endpoints/search-products.php',
@@ -240,39 +279,49 @@ $search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
                         if (typeof displayProducts === 'function') {
                             displayProducts(data.products);
                         } else {
-                            $('#products-grid').html('<p class="error">Error displaying products.</p>');
+                            $productsGrid.html('<p class="error">Error displaying products.</p>');
                         }
                         totalPages = data.total_pages || 1;
                         displayPagination();
                     } else {
-                        $('#products-grid').html(
-                            '<div class="no-products">' +
-                            '<img src="' + baseUrl + 'images/icons/search-svgrepo-com.svg" width="64" height="64" alt="No results" style="opacity: 0.5; margin-bottom: 20px;">' +
+                        $productsGrid.html(
+                            '<div class="empty-state">' +
+                            '<img src="' + baseUrl + 'images/icons/search-svgrepo-com.svg" width="64" height="64" alt="No results">' +
                             '<h3>No products found</h3>' +
                             '<p>We couldn\'t find any products matching "' + escapeHtml(searchQuery) + '"</p>' +
-                            '<button onclick="window.location.href=\'product-listings.php\'" class="reset-btn">Browse All Products</button>' +
+                            '<button onclick="window.location.href=\'product-listings.php\'" class="view-all-btn">Browse All Products</button>' +
                             '</div>'
                         );
-                        $('#pagination').empty();
+                        $paginationContainer.empty();
                     }
                 },
                 error: function() {
-                    $('#products-grid').html('<p class="error">Error loading search results. Please try again.</p>');
+                    $productsGrid.html('<p class="error">Error loading search results. Please try again.</p>');
                 }
             });
         }
 
+        // ========== DISPLAY PAGINATION ==========
         function displayPagination() {
+            cacheSearchResultsElements();
+
             if (typeof renderPagination === 'function') {
-                renderPagination($('#pagination'), currentPage, totalPages, function(page) {
+                renderPagination($paginationContainer, currentPage, totalPages, function(page) {
                     currentPage = page;
                     loadSearchResults();
-                    $('html, body').animate({
+                    $htmlBody.animate({
                         scrollTop: 0
                     }, 'smooth');
                 });
             }
         }
+
+        // ========== INITIALIZE ==========
+        $(function() {
+            cacheSearchResultsElements();
+            loadSearchResults();
+            setupEventListeners();
+        });
     </script>
 
 </body>

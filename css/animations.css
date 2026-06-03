@@ -1,68 +1,303 @@
 /* ========== ANIMATIONS.CSS - All animation keyframes ========== */
 /* Author: Kamogelo Phale */
 
-/* ========== HAMBURGER TO X ANIMATION ========== */
-@keyframes hamburgerToX { 0% { transform: rotate(0deg); } 100% { transform: rotate(135deg); } }
-@keyframes xToHamburger { 0% { transform: rotate(135deg); } 100% { transform: rotate(0deg); } }
+/* ========== HEADER ANIMATIONS ========== */
 
-/* ========== SIDE MENU CLOSE BUTTON ANIMATIONS ========== */
-@keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.5) rotate(-90deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
-@keyframes fadeOutScale { 0% { opacity: 1; transform: scale(1) rotate(0deg); } 100% { opacity: 0; transform: scale(0.5) rotate(90deg); } }
+/* Mobile menu slide in/out */
+@keyframes slideInRight {
+  from {
+    right: -100%;
+  }
+  to {
+    right: 0;
+  }
+}
 
-/* ========== MOBILE MENU SLIDE ANIMATIONS ========== */
-@keyframes slideInLeft { from { left: -100%; } to { left: 0; } }
-@keyframes slideOutLeft { from { left: 0; } to { left: -100%; } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes slideOutRight {
+  from {
+    right: 0;
+  }
+  to {
+    right: -100%;
+  }
+}
 
-/* ========== MOBILE SEARCH SLIDE DOWN ========== */
-@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+/* Menu overlay fade */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
-/* ========== MODAL ANIMATION CLASSES ========== */
-.modal:not(.active) .modal-content { opacity: 0; }
-.modal.active .modal-content.animate-in { animation: modalFadeIn 0.3s ease forwards; }
-.modal.active .modal-content.animate-out { animation: modalFadeOut 0.25s ease forwards; }
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 
-/* ========== LOGIN MODAL - SLIDE IN LEFT ========== */
-#login-modal.active .modal-content.animate-in { animation: modalSlideInLeft 0.3s ease forwards; }
+/* Mobile search slide down */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-/* ========== REGISTER MODAL - SLIDE IN RIGHT ========== */
-#register-modal.active .modal-content.animate-in { animation: modalSlideInRight 0.3s ease forwards; }
+/* Cart badge pulse */
+@keyframes badgePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 
-/* ========== DELETE MODAL - SLIDE UP ========== */
-#delete-modal.active .modal-content.animate-in { animation: modalSlideUp 0.3s ease forwards; }
+/* Hamburger menu animations */
+@keyframes hamburgerToX {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(135deg);
+  }
+}
 
-/* ========== ALL MODALS - FADE OUT ========== */
+@keyframes xToHamburger {
+  0% {
+    transform: rotate(135deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* ========== MODAL ANIMATIONS ========== */
+
+.modal:not(.active) .modal-content {
+  opacity: 0;
+}
+
+.modal.active .modal-content.animate-in {
+  animation: modalFadeIn 0.3s ease forwards;
+}
+
+.modal.active .modal-content.animate-out {
+  animation: modalFadeOut 0.25s ease forwards;
+}
+
+/* Login modal - slide in left */
+#login-modal.active .modal-content.animate-in {
+  animation: modalSlideInLeft 0.3s ease forwards;
+}
+
+/* Register modal - slide in right */
+#register-modal.active .modal-content.animate-in {
+  animation: modalSlideInRight 0.3s ease forwards;
+}
+
+/* Delete modal - slide up */
+#delete-modal.active .modal-content.animate-in {
+  animation: modalSlideUp 0.3s ease forwards;
+}
+
+/* All modals fade out */
 #login-modal .modal-content.animate-out,
 #register-modal .modal-content.animate-out,
-#delete-modal .modal-content.animate-out { animation: modalFadeOut 0.25s ease forwards; }
+#delete-modal .modal-content.animate-out {
+  animation: modalFadeOut 0.25s ease forwards;
+}
 
-/* ========== STOCK STATUS PULSE WARNING ========== */
-@keyframes pulseWarning { 0% { background-color: var(--warning-light); } 50% { background-color: #ffe0b2; } 100% { background-color: var(--warning-light); } }
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
-/* ========== SHAKE ERROR ANIMATION ========== */
-@keyframes shakeError { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
 
-/* ========== PULSE ERROR ANIMATION ========== */
-@keyframes pulseWarning { 0% { background-color: var(--warning-light); } 50% { background-color: #ffe0b2; } 100% { background-color: var(--warning-light); } }
+@keyframes modalSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
-/* ========== CARD HOVER ANIMATIONS ========== */
-@keyframes cardHover { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+@keyframes modalSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
-/* ========== BUTTON PULSE ANIMATION ========== */
-@keyframes buttonPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-/* ========== MODAL FADE IN/OUT KEYFRAMES ========== */
-@keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes modalFadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
-@keyframes modalSlideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes modalSlideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes modalSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+/* ========== TOAST NOTIFICATIONS ========== */
 
-/* ========== TOAST NOTIFICATION ANIMATIONS ========== */
-@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+.toast-notification {
+  animation: toastSlideInRight 0.3s ease forwards;
+}
 
-/* ========== TOAST ANIMATION CLASSES ========== */
-.toast-notification { animation: slideInRight 0.3s ease forwards; }
-.toast-notification.hiding { animation: slideOutRight 0.3s ease forwards; }
+.toast-notification.hiding {
+  animation: toastSlideOutRight 0.3s ease forwards;
+}
+
+@keyframes toastSlideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* ========== PRODUCT & UI ANIMATIONS ========== */
+
+/* Stock status pulse warning */
+@keyframes pulseWarning {
+  0% {
+    background-color: var(--warning-light);
+  }
+  50% {
+    background-color: #ffe0b2;
+  }
+  100% {
+    background-color: var(--warning-light);
+  }
+}
+
+/* Form error shake */
+@keyframes shakeError {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Card hover */
+@keyframes cardHover {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-5px);
+  }
+}
+
+/* Button pulse */
+@keyframes buttonPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ========== LEGACY ANIMATIONS (Keep for compatibility) ========== */
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes fadeOutScale {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(90deg);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    left: -100%;
+  }
+  to {
+    left: 0;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    left: 0;
+  }
+  to {
+    left: -100%;
+  }
+}

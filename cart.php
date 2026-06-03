@@ -44,416 +44,440 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
     <title>My Cart - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        #empty-cart img {
-            filter: brightness(0.5) invert(1);
-        }
+        /* ========== CART PAGE STYLES - ONLY CART-SPECIFIC ========== */
 
-        #empty-cart button {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            padding: 12px 32px;
-            border-radius: var(--radius-md);
-            font-weight: var(--font-bold);
-            cursor: pointer;
-            margin-top: var(--spacing-sm);
-        }
-
-        #empty-cart button:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .browse-products-btn {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            padding: 12px 32px;
-            border-radius: var(--radius-md);
-            font-weight: var(--font-bold);
-            cursor: pointer;
-            margin-top: var(--spacing-sm);
-        }
-
+        /* Cart Layout */
         .cart-container {
-            margin: 0 0 30px 0;
-            padding: 0 var(--spacing-xl);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px var(--spacing-xl);
         }
 
-        .heading-container {
-            margin-top: 30px;
+        .cart-header {
             text-align: center;
             margin-bottom: 30px;
-            width: 100%;
         }
 
-        .cart-heading {
+        .cart-header h1 {
             font-size: var(--font-3xl);
             font-weight: var(--font-bold);
             color: var(--dark-bg);
-            margin: 0;
             padding-bottom: var(--spacing-sm);
             border-bottom: 2px solid var(--primary-color);
             display: inline-block;
         }
 
-        .item-num {
-            color: var(--primary-color);
-        }
-
-        .cart-layout {
-            display: flex;
+        /* Cart Grid */
+        .cart-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
             gap: 30px;
-            align-items: flex-start;
+            align-items: start;
         }
 
-        .left-column {
-            flex: 2;
-            min-width: 0;
-        }
-
-        .right-column {
-            flex: 1;
-            min-width: 0;
+        .cart-items {
             display: flex;
             flex-direction: column;
+            gap: 20px;
         }
 
-        .desktop-table {
-            display: block;
-        }
-
-        .mobile-cart-items {
-            display: none;
-        }
-
-        .product-table-wrapper {
-            width: 100%;
-            overflow-x: auto;
+        /* Cart Item Card */
+        .cart-item {
+            display: grid;
+            grid-template-columns: 100px 1fr auto;
+            gap: 20px;
+            background: var(--white);
+            border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
-        }
-
-        .product-table {
-            width: 100%;
-            min-width: 700px;
-            border-collapse: collapse;
-            background-color: var(--white);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
+            padding: 20px;
             box-shadow: var(--shadow-sm);
+            transition: all var(--transition-fast);
         }
 
-        .product-table th,
-        .product-table td {
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--border-light);
-            text-align: center;
-            vertical-align: middle;
+        .cart-item:hover {
+            box-shadow: var(--shadow-md);
         }
 
-        .product-table th {
-            background-color: var(--gray-bg);
-            font-weight: var(--font-bold);
-            font-size: var(--font-base);
-            color: var(--gray-dark);
-        }
-
-        .product-cell {
-            min-width: 280px;
-        }
-
-        .cart-product-wrapper {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            justify-content: center;
-        }
-
-        .cart-img-container {
-            width: 80px;
-            height: 80px;
-            flex-shrink: 0;
-            background-color: var(--gray-bg);
+        /* Product Image */
+        .item-image {
+            width: 100px;
+            height: 100px;
+            background: var(--gray-bg);
             border-radius: var(--radius-md);
             overflow: hidden;
         }
 
-        .cart-img-container img {
+        .item-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .cart-prod-info {
-            flex: 1;
-            text-align: left;
-        }
-
-        .cart-prod-info .prod-name {
-            font-size: var(--font-base);
-            font-weight: var(--font-bold);
-            color: var(--dark-bg);
-        }
-
-        .seller-cell {
-            min-width: 160px;
-        }
-
-        .price-cell {
-            font-size: var(--font-lg);
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-            white-space: nowrap;
-            min-width: 90px;
-        }
-
-        .quantity-cell {
-            min-width: 140px;
-        }
-
-        .quantity-controls {
+        /* Product Details */
+        .item-details {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
             gap: 8px;
         }
 
-        .qty-input {
-            width: 55px;
-            height: 32px;
-            text-align: center;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-sm);
-            font-size: var(--font-md);
+        .item-title {
+            font-size: var(--font-base);
+            font-weight: var(--font-bold);
+            color: var(--dark-bg);
+            margin: 0;
         }
 
-        .stock-warning {
-            display: block;
-            font-size: var(--font-xs);
-            color: var(--warning);
-            margin-top: 4px;
+        .item-seller {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .actions-cell {
-            white-space: nowrap;
-            min-width: 100px;
-        }
-
-        .remove-btn {
-            background: transparent;
-            border: 1px solid var(--error);
-            color: var(--error);
-            padding: 6px 14px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
+        .seller-name {
             font-size: var(--font-sm);
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
+            color: var(--gray-medium);
+        }
+
+        /* Cart Badges */
+        .verified-badge,
+        .unverified-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-        }
-
-        .remove-btn:hover {
-            background-color: var(--error);
-            color: var(--white);
-        }
-
-        .remove-btn:hover img {
-            filter: brightness(0) invert(1);
-        }
-
-        .verified-badge-cart,
-        .unverified-badge-cart {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
+            gap: 4px;
+            padding: 2px 8px;
             border-radius: var(--radius-round);
-            font-size: var(--font-xs);
+            font-size: 10px;
         }
 
-        .verified-badge-cart {
-            background-color: var(--success-light);
+        .verified-badge img,
+        .unverified-badge img {
+            width: 10px;
+            height: 10px;
+        }
+
+        .verified-badge {
+            background: var(--success-light);
             border: 1px solid var(--success);
             color: var(--success);
         }
 
-        .unverified-badge-cart {
-            background-color: var(--warning-light);
+        .unverified-badge {
+            background: var(--warning-light);
             border: 1px solid var(--warning);
             color: var(--warning);
         }
 
-        .order-sum-container {
-            background-color: var(--gray-bg);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            position: sticky;
-            top: var(--spacing-xl);
-            box-shadow: var(--shadow-sm);
+        .item-price {
+            font-size: var(--font-lg);
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
         }
 
-        .order-sum-container h2 {
+        /* Stock Status with Icons */
+        .stock-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: var(--radius-md);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+            width: fit-content;
+        }
+
+        .stock-status img {
+            width: 12px;
+            height: 12px;
+        }
+
+        .stock-status.in-stock {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+
+        .stock-status.low-stock {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+        }
+
+        .stock-status.out-of-stock {
+            background: var(--error-light);
+            color: var(--error-dark);
+        }
+
+        /* Item Actions */
+        .item-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        /* Quantity Controls */
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--gray-bg);
+            border-radius: var(--radius-md);
+            padding: 4px;
+        }
+
+        .qty-btn {
+            width: 32px;
+            height: 32px;
+            background: var(--white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all var(--transition-fast);
+        }
+
+        .qty-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .qty-input {
+            width: 45px;
+            height: 32px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-size: var(--font-md);
+        }
+
+        /* Remove Item */
+        .remove-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid var(--error);
+            color: var(--error);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            font-weight: var(--font-medium);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .remove-item:hover {
+            background: var(--error);
+            color: var(--white);
+        }
+
+        .remove-item:hover img {
+            filter: brightness(0) invert(1);
+        }
+
+        /* Order Summary */
+        .order-summary {
+            background: var(--gray-bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            position: sticky;
+            top: 100px;
+        }
+
+        .order-summary h2 {
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xl);
-            padding-bottom: var(--spacing-sm);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
             border-bottom: 1px solid var(--border-light);
             text-align: center;
             color: var(--dark-bg);
         }
 
-        .calculations {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        .sub-total,
-        .deliv-fee {
+        .summary-row {
             display: flex;
             justify-content: space-between;
-            font-size: var(--font-base);
+            padding: 10px 0;
             color: var(--gray-medium);
-            padding: 0 var(--spacing-sm);
+            font-size: var(--font-md);
         }
 
-        .result {
-            border-top: 1px solid var(--border-light);
-            padding-top: var(--spacing-md);
-            margin-top: var(--spacing-sm);
-        }
-
-        .total {
+        .summary-total {
             display: flex;
             justify-content: space-between;
+            padding: 15px 0;
+            border-top: 1px solid var(--border-light);
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
             color: var(--primary-color);
-            padding: 0 var(--spacing-sm);
+            margin-bottom: 15px;
         }
 
-        .checkout-btn,
-        .cont-shopp-btn {
+        /* Buttons */
+        .checkout-btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
             border-radius: var(--radius-md);
             font-weight: var(--font-bold);
             cursor: pointer;
-            margin-top: var(--spacing-md);
-        }
-
-        .checkout-btn {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
+            margin-top: 15px;
+            transition: all var(--transition-normal);
         }
 
         .checkout-btn:hover {
-            background-color: var(--primary-dark);
+            background: var(--primary-dark);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
 
-        .cont-shopp-btn {
-            background-color: transparent;
+        .continue-shopping {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
             color: var(--primary-color);
             border: 2px solid var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            font-weight: var(--font-bold);
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all var(--transition-normal);
         }
 
-        .cont-shopp-btn:hover {
-            background-color: var(--primary-color);
+        .continue-shopping:hover {
+            background: var(--primary-color);
             color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
-        .cont-shopp-btn img {
-            width: 18px;
-            height: 18px;
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
-            transition: filter var(--transition-fast);
+        /* Summary Footer */
+        .summary-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-light);
         }
 
-        .cont-shopp-btn:hover img {
-            filter: brightness(0) invert(1);
-        }
-
-        .security-badge .payfast-badge {
+        .payfast-badge {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-md);
-            padding-top: var(--spacing-md);
-            border-top: 1px solid var(--border-light);
+            gap: 8px;
             font-size: var(--font-sm);
             color: var(--gray-medium);
             text-decoration: none;
+            transition: all var(--transition-fast);
         }
 
-        .security-badge .payfast-badge img {
+        .payfast-badge:hover {
+            color: var(--primary-color);
+        }
+
+        .payfast-badge img {
             height: 20px;
             width: auto;
         }
 
-        .cart-card {
-            background-color: var(--white);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-            box-shadow: var(--shadow-sm);
+        .security-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: var(--font-xs);
+            color: var(--gray-light);
+            margin-top: 10px;
         }
 
-        @media (max-width: 992px) {
-            .cart-layout {
-                flex-direction: column;
+        .security-text img {
+            width: 14px;
+            height: 14px;
+            opacity: 0.6;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .cart-container {
+                padding: 15px var(--spacing-md);
             }
 
-            .right-column {
-                order: -1;
+            .cart-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
             }
 
-            .order-sum-container {
-                max-width: 500px;
-                margin: 0 auto;
+            .order-summary {
                 position: static;
             }
         }
 
-        @media (max-width: 768px) {
-            .cart-container {
-                padding: var(--spacing-md);
+        @media (max-width: 640px) {
+            .cart-item {
+                grid-template-columns: 80px 1fr;
+                gap: 15px;
             }
 
-            .cart-heading {
-                font-size: var(--font-2xl);
+            .item-actions {
+                grid-column: 2 / 3;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 10px;
             }
 
-            .desktop-table {
-                display: none;
+            .item-image {
+                width: 80px;
+                height: 80px;
             }
 
-            .mobile-cart-items {
-                display: block;
+            .item-title {
+                font-size: var(--font-sm);
+            }
+
+            .item-price {
+                font-size: var(--font-md);
             }
         }
 
         @media (max-width: 480px) {
-            .cart-heading {
-                font-size: var(--font-lg);
+            .cart-container {
+                padding: 10px var(--spacing-sm);
             }
 
-            .order-sum-container {
-                padding: var(--spacing-md);
+            .cart-item {
+                grid-template-columns: 1fr;
+                text-align: center;
             }
 
-            .cart-card {
-                padding: var(--spacing-md);
+            .item-image {
+                width: 100px;
+                height: 100px;
+                margin: 0 auto;
+            }
+
+            .item-details {
+                text-align: center;
+            }
+
+            .item-seller {
+                justify-content: center;
+            }
+
+            .item-actions {
+                grid-column: 1;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .quantity-control {
+                justify-content: center;
+            }
+
+            .cart-header h1 {
+                font-size: var(--font-xl);
             }
         }
     </style>
@@ -467,111 +491,109 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         <?php include 'includes/breadcrumb.php'; ?>
 
         <div class="cart-container">
-            <div class="heading-container">
-                <h1 class="cart-heading">My Cart (<span class="item-num" id="cart-item-count"><?php echo $total_quantity; ?></span> items)</h1>
+            <div class="cart-header">
+                <h1>My Cart (<span id="cart-item-count"><?php echo $total_quantity; ?></span> items)</h1>
             </div>
 
             <?php if (empty($cart_items)): ?>
-                <div class="empty-state" id="empty-cart">
+                <div class="empty-state">
                     <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Empty cart">
-                    <h2>Your cart is empty</h2>
-                    <p>Looks like you have not added anything yet</p>
-                    <a href="product-listings.php"><button class="browse-products-btn">Browse Products</button></a>
+                    <h3>Your cart is empty</h3>
+                    <p>Looks like you haven't added anything yet</p>
+                    <button class="view-all-btn" id="browseBtn">Browse Products</button>
                 </div>
             <?php else: ?>
-                <div class="cart-layout">
-                    <div class="left-column">
-                        <div class="product-table-wrapper desktop-table">
-                            <table class="product-table">
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>Seller</th>
-                                        <th>Price</th>
-                                        <th>Quantity</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($cart_items as $item): ?>
-                                        <tr>
-                                            <td class="product-cell">
-                                                <div class="cart-product-wrapper">
-                                                    <div class="cart-img-container">
-                                                        <img src="<?php echo $item['image_url']; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
-                                                    </div>
-                                                    <div class="cart-prod-info">
-                                                        <p class="prod-name"><?php echo htmlspecialchars($item['title']); ?></p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="seller-cell"><?php echo htmlspecialchars($item['seller_name']); ?></td>
-                                            <td class="price-cell">R <?php echo number_format($item['price'], 2); ?></td>
-                                            <td class="quantity-cell">
-                                                <div class="quantity-controls">
-                                                    <button class="qty-decrease" data-cart-id="<?php echo $item['cart_id']; ?>">-</button>
-                                                    <input type="number" class="qty-input" value="<?php echo $item['quantity']; ?>" min="1" max="<?php echo min(99, $item['stock_quantity']); ?>" data-cart-id="<?php echo $item['cart_id']; ?>">
-                                                    <button class="qty-increase" data-cart-id="<?php echo $item['cart_id']; ?>">+</button>
-                                                </div>
-                                                <?php if ($item['quantity'] >= $item['stock_quantity'] && $item['stock_quantity'] > 0): ?>
-                                                    <small class="stock-warning">Max <?php echo $item['stock_quantity']; ?> available</small>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="actions-cell">
-                                                <button class="remove-btn" data-product-id="<?php echo $item['product_id']; ?>">
-                                                    <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove"> Remove
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="mobile-cart-items">
-                            <?php foreach ($cart_items as $item): ?>
-                                <div class="cart-card">
-                                    <div class="cart-card-header">
-                                        <img src="<?php echo $item['image_url']; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" class="cart-card-img" onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
-                                        <div>
-                                            <h4><?php echo htmlspecialchars($item['title']); ?></h4>
-                                            <p class="seller-name"><?php echo htmlspecialchars($item['seller_name']); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="cart-card-body">
-                                        <div class="cart-card-price">R <?php echo number_format($item['price'], 2); ?></div>
-                                        <div class="quantity-controls">
-                                            <button class="qty-decrease" data-cart-id="<?php echo $item['cart_id']; ?>">-</button>
-                                            <input type="number" class="qty-input" value="<?php echo $item['quantity']; ?>" min="1" max="<?php echo min(99, $item['stock_quantity']); ?>" data-cart-id="<?php echo $item['cart_id']; ?>">
-                                            <button class="qty-increase" data-cart-id="<?php echo $item['cart_id']; ?>">+</button>
-                                        </div>
-                                        <button class="remove-btn" data-product-id="<?php echo $item['product_id']; ?>">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove"> Remove
-                                        </button>
-                                    </div>
+                <div class="cart-grid">
+                    <!-- Cart Items Section -->
+                    <div class="cart-items" id="cart-items">
+                        <?php foreach ($cart_items as $item): ?>
+                            <?php $isVerified = $item['is_verified'] ?? false; ?>
+                            <div class="cart-item" data-cart-id="<?php echo $item['cart_id']; ?>" data-product-id="<?php echo $item['product_id']; ?>">
+                                <div class="item-image">
+                                    <img src="<?php echo $item['image_url']; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
+
+                                <div class="item-details">
+                                    <h3 class="item-title"><?php echo htmlspecialchars($item['title']); ?></h3>
+                                    <div class="item-seller">
+                                        <span class="seller-name"><?php echo htmlspecialchars($item['seller_name']); ?></span>
+                                        <?php if ($isVerified): ?>
+                                            <span class="verified-badge">
+                                                <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="10" height="10" alt="Verified">
+                                                Verified
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="unverified-badge">
+                                                <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="10" height="10" alt="Unverified">
+                                                Unverified
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="item-price">R <?php echo number_format($item['price'], 2); ?></div>
+
+                                    <!-- Stock Status with Icons -->
+                                    <?php if ($item['stock_quantity'] <= 0): ?>
+                                        <div class="stock-status out-of-stock">
+                                            <img src="<?php echo $baseUrl; ?>images/icons/close-svgrepo-com.svg" width="12" height="12" alt="Out of stock">
+                                            <span>Out of stock</span>
+                                        </div>
+                                    <?php elseif ($item['stock_quantity'] <= 5): ?>
+                                        <div class="stock-status low-stock">
+                                            <img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" width="12" height="12" alt="Low stock">
+                                            <span>Only <?php echo $item['stock_quantity']; ?> left</span>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="stock-status in-stock">
+                                            <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="12" height="12" alt="In stock">
+                                            <span>In stock</span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="item-actions">
+                                    <div class="quantity-control">
+                                        <button class="qty-btn qty-decrease" data-cart-id="<?php echo $item['cart_id']; ?>">-</button>
+                                        <input type="number" class="qty-input" value="<?php echo $item['quantity']; ?>"
+                                            min="1" max="<?php echo min(99, $item['stock_quantity']); ?>"
+                                            data-cart-id="<?php echo $item['cart_id']; ?>">
+                                        <button class="qty-btn qty-increase" data-cart-id="<?php echo $item['cart_id']; ?>">+</button>
+                                    </div>
+                                    <button class="remove-item" data-product-id="<?php echo $item['product_id']; ?>">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
 
-                    <div class="right-column">
-                        <div class="order-sum-container">
-                            <h2>Order Summary</h2>
-                            <div class="calculations">
-                                <p class="sub-total">Subtotal: R<span class="sub-total-val"><?php echo number_format($cart_totals['subtotal'], 2); ?></span></p>
-                                <p class="deliv-fee">Delivery Fee: R<span class="deliv-fee-val"><?php echo number_format($cart_totals['delivery_fee'], 2); ?></span></p>
-                                <div class="result">
-                                    <p class="total">Total: R<span class="total-val"><?php echo number_format($cart_totals['total'], 2); ?></span></p>
-                                </div>
-                                <button class="checkout-btn" id="checkout-btn">Proceed to Checkout</button>
-                                <button class="cont-shopp-btn" onclick="window.location.href='product-listings.php'">
-                                    <img src="<?php echo $baseUrl; ?>images/icons/continue-svgrepo-com.svg" width="24" height="24" alt=""> Continue Shopping
-                                </button>
-                                <div class="security-badge">
-                                    <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank">
-                                        Secured with <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast Logo">
-                                    </a>
-                                </div>
+                    <!-- Order Summary Section -->
+                    <div class="order-summary">
+                        <h2>Order Summary</h2>
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>R <?php echo number_format($cart_totals['subtotal'], 2); ?></span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Delivery Fee</span>
+                            <span>R <?php echo number_format($cart_totals['delivery_fee'], 2); ?></span>
+                        </div>
+                        <div class="summary-total">
+                            <span>Total</span>
+                            <span>R <?php echo number_format($cart_totals['total'], 2); ?></span>
+                        </div>
+
+                        <button class="checkout-btn" id="checkoutBtn">Proceed to Checkout</button>
+                        <button class="continue-shopping" id="continueBtn">Continue Shopping</button>
+
+                        <div class="summary-footer">
+                            <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank">
+                                <span>Secured with</span>
+                                <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast">
+                            </a>
+                            <div class="security-text">
+                                <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" width="14" height="14" alt="Secure">
+                                <span>Your payment is secure</span>
                             </div>
                         </div>
                     </div>
@@ -585,53 +607,29 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
     <script>
         var baseUrl = '<?php echo $baseUrl; ?>';
 
-        $(document).ready(function() {
-            $('.qty-increase').on('click', function() {
-                var cartId = $(this).data('cart-id');
-                var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
-                var currentVal = parseInt($input.val());
-                var maxVal = parseInt($input.attr('max'));
-                if (!isNaN(currentVal) && currentVal < maxVal) {
-                    $input.val(currentVal + 1);
-                    updateCartQuantity(cartId, currentVal + 1);
-                }
-            });
+        // ========== CACHED DOM ELEMENTS ==========
+        var $cartItems = null;
+        var $qtyIncrease = null;
+        var $qtyDecrease = null;
+        var $qtyInput = null;
+        var $removeItems = null;
+        var $checkoutBtn = null;
+        var $continueBtn = null;
+        var $browseBtn = null;
 
-            $('.qty-decrease').on('click', function() {
-                var cartId = $(this).data('cart-id');
-                var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
-                var currentVal = parseInt($input.val());
-                if (!isNaN(currentVal) && currentVal > 1) {
-                    $input.val(currentVal - 1);
-                    updateCartQuantity(cartId, currentVal - 1);
-                }
-            });
+        // ========== CACHE FUNCTION ==========
+        function cacheCartElements() {
+            $cartItems = $('#cart-items');
+            $qtyIncrease = $('.qty-increase');
+            $qtyDecrease = $('.qty-decrease');
+            $qtyInput = $('.qty-input');
+            $removeItems = $('.remove-item');
+            $checkoutBtn = $('#checkoutBtn');
+            $continueBtn = $('#continueBtn');
+            $browseBtn = $('#browseBtn');
+        }
 
-            $('.qty-input').on('change', function() {
-                var cartId = $(this).data('cart-id');
-                var quantity = parseInt($(this).val());
-                var maxVal = parseInt($(this).attr('max'));
-                if (isNaN(quantity) || quantity < 1) quantity = 1;
-                if (quantity > maxVal) {
-                    quantity = maxVal;
-                    $(this).val(maxVal);
-                    alert('Only ' + maxVal + ' available in stock.');
-                }
-                updateCartQuantity(cartId, quantity);
-            });
-
-            $('.remove-btn').on('click', function() {
-                var productId = $(this).data('product-id');
-                if (confirm('Remove this item from your cart?')) {
-                    removeFromCart(productId);
-                }
-            });
-
-            $('#checkout-btn').on('click', function() {
-                window.location.href = baseUrl + 'checkout.php';
-            });
-        });
-
+        // ========== UPDATE CART QUANTITY ==========
         function updateCartQuantity(cartId, quantity) {
             $.ajax({
                 url: baseUrl + 'php/endpoints/update-cart.php',
@@ -641,18 +639,107 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                     cart_id: cartId,
                     quantity: quantity
                 }),
-                dataType: 'json',
                 success: function(response) {
-                    if (response.success) location.reload();
-                    else alert('Error: ' + response.message);
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
                 },
                 error: function() {
-                    alert('Something went wrong.');
+                    alert('Something went wrong. Please try again.');
                 }
             });
         }
-    </script>
 
+        // ========== HANDLE QUANTITY INCREASE ==========
+        function handleQuantityIncrease() {
+            $qtyIncrease.off('click').on('click', function() {
+                var $btn = $(this);
+                var cartId = $btn.data('cart-id');
+                var $input = $qtyInput.filter('[data-cart-id="' + cartId + '"]');
+                var current = parseInt($input.val());
+                var max = parseInt($input.attr('max'));
+                if (!isNaN(current) && current < max) {
+                    $input.val(current + 1);
+                    updateCartQuantity(cartId, current + 1);
+                }
+            });
+        }
+
+        // ========== HANDLE QUANTITY DECREASE ==========
+        function handleQuantityDecrease() {
+            $qtyDecrease.off('click').on('click', function() {
+                var $btn = $(this);
+                var cartId = $btn.data('cart-id');
+                var $input = $qtyInput.filter('[data-cart-id="' + cartId + '"]');
+                var current = parseInt($input.val());
+                if (!isNaN(current) && current > 1) {
+                    $input.val(current - 1);
+                    updateCartQuantity(cartId, current - 1);
+                }
+            });
+        }
+
+        // ========== HANDLE QUANTITY INPUT CHANGE ==========
+        function handleQuantityInputChange() {
+            $qtyInput.off('change').on('change', function() {
+                var $input = $(this);
+                var cartId = $input.data('cart-id');
+                var quantity = parseInt($input.val());
+                var max = parseInt($input.attr('max'));
+                if (isNaN(quantity) || quantity < 1) quantity = 1;
+                if (quantity > max) {
+                    quantity = max;
+                    $input.val(max);
+                    alert('Only ' + max + ' available in stock.');
+                }
+                updateCartQuantity(cartId, quantity);
+            });
+        }
+
+        // ========== HANDLE REMOVE ITEMS ==========
+        function handleRemoveItems() {
+            $removeItems.off('click').on('click', function() {
+                var $btn = $(this);
+                var productId = $btn.data('product-id');
+                if (confirm('Remove this item from your cart?')) {
+                    removeFromCart(productId);
+                }
+            });
+        }
+
+        // ========== HANDLE NAVIGATION ==========
+        function handleNavigation() {
+            if ($checkoutBtn.length) {
+                $checkoutBtn.off('click').on('click', function() {
+                    window.location.href = baseUrl + 'checkout.php';
+                });
+            }
+
+            if ($continueBtn.length) {
+                $continueBtn.off('click').on('click', function() {
+                    window.location.href = baseUrl + 'product-listings.php';
+                });
+            }
+
+            if ($browseBtn.length) {
+                $browseBtn.off('click').on('click', function() {
+                    window.location.href = baseUrl + 'product-listings.php';
+                });
+            }
+        }
+
+        // ========== INITIALIZE ==========
+        $(document).ready(function() {
+            cacheCartElements();
+            handleQuantityIncrease();
+            handleQuantityDecrease();
+            handleQuantityInputChange();
+            handleRemoveItems();
+            handleNavigation();
+        });
+    </script>
 </body>
 
 </html>

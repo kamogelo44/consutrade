@@ -1,24 +1,18 @@
 <?php
 /*
- * ConsuTrade - Site Header Component (Main Website Only)
+ * ConsuTrade - Site Header Component
  * Author: Kamogelo Phale
- * 
- * This header is ONLY used on main website pages.
- * Only buyers and guests access these pages.
- * Admins and sellers have separate session isolation.
  */
 
 $current_page = basename($_SERVER['PHP_SELF']);
 $is_logged_in = $auth->isLoggedIn();
 
-// On main website, only buyers can be logged in
-// Sellers/admins have different session names so $currentUser will be null
 if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
     $user_name = $currentUser->getDisplayName();
     $user_profile_image = $currentUser->getProfileImageUrl();
     $is_buyer = true;
 } else {
-    $user_name = 'User';
+    $user_name = 'Account';
     $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
     $is_buyer = false;
 }
@@ -29,150 +23,131 @@ $cart_count = $_SESSION['cart_count'] ?? 0;
 
 <header class="site-header">
     <div class="header-container">
-        <!-- Mobile Menu Toggle -->
-        <button class="mobile-menu-toggle" id="mobileMenuToggle">
-            <span></span><span></span><span></span>
-        </button>
-
-        <!-- Logo -->
-        <div class="logo">
-            <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
+        <!-- Left Section: Logo + Desktop Nav -->
+        <div class="header-left">
+            <div class="logo">
+                <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>">Products</a></li>
+                    <?php if ($show_sell_link): ?>
+                        <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
+                    <?php endif; ?>
+                    <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>">About</a></li>
+                </ul>
+            </nav>
         </div>
 
-        <!-- Desktop Search -->
-        <div class="desktop-search">
-            <form action="<?php echo $baseUrl; ?>search-results.php" method="GET" class="search-wrapper">
-                <input type="search" name="search" placeholder="Search for products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                <button type="submit" class="search-btn">
-                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="20" height="20" alt="Search">
-                </button>
-            </form>
+        <!-- Center Section: Search Bar -->
+        <div class="header-center">
+            <div class="search-wrapper">
+                <form action="<?php echo $baseUrl; ?>search-results.php" method="GET">
+                    <input type="search" name="search" placeholder="Search products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                    <button type="submit" class="search-btn">
+                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <!-- Main Navigation -->
-        <nav class="main-nav">
-            <ul>
-                <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
-                <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>">Products</a></li>
-                <?php if ($show_sell_link): ?>
-                    <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
-                <?php endif; ?>
-                <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>">About</a></li>
-            </ul>
-        </nav>
-
-        <!-- Header Actions -->
-        <div class="header-actions">
-            <!-- Desktop Cart -->
-            <a href="<?php echo $baseUrl; ?>cart.php" class="cart-icon desktop-cart">
-                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="24" height="24" alt="Cart">
-                <span class="cart-count"><?php echo $cart_count; ?></span>
+        <!-- Right Section: Cart + Account -->
+        <div class="header-right">
+            <!-- Cart -->
+            <a href="<?php echo $baseUrl; ?>cart.php" class="cart-link">
+                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="22" height="22" alt="Cart">
+                <span class="cart-badge"><?php echo $cart_count; ?></span>
             </a>
 
-            <!-- User Menu (Logged In - Buyer only) -->
+            <!-- Account Dropdown or Login -->
             <?php if ($is_logged_in && $is_buyer): ?>
-                <div class="user-menu">
-                    <button class="user-menu-btn" id="userMenuBtn">
-                        <img src="<?php echo $user_profile_image; ?>" alt="Profile" class="user-avatar-icon" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
-                        <span><?php echo htmlspecialchars($user_name); ?></span>
-                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="account-dropdown">
+                    <button class="account-btn" id="accountBtn">
+                        <img src="<?php echo $user_profile_image; ?>" alt="<?php echo htmlspecialchars($user_name); ?>" class="account-avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
+                        <span class="account-name"><?php echo htmlspecialchars($user_name); ?></span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
-                    <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-menu" id="accountDropdown">
                         <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
                         <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
                         <hr>
-                        <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="logout-link">Logout</a>
+                        <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php">Logout</a>
                     </div>
                 </div>
-
-                <!-- Login/Signup Buttons (Not Logged In) -->
             <?php else: ?>
-                <button class="login-btn" id="loginBtn">Login</button>
-                <button class="signup-btn" id="registerBtn">Sign Up</button>
+                <div class="auth-buttons">
+                    <button class="login-btn" id="loginBtn">Login</button>
+                    <button class="signup-btn" id="registerBtn">Sign Up</button>
+                </div>
             <?php endif; ?>
 
-            <!-- Mobile Header Icons -->
-            <div class="mobile-header-icons">
-                <button class="mobile-search-icon" id="mobileSearchIcon">
-                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="22" height="22" alt="Search">
-                </button>
-                <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-header-cart">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="22" height="22" alt="Cart">
-                    <span class="cart-count"><?php echo $cart_count; ?></span>
-                </a>
-            </div>
+            <!-- Mobile Menu Toggle -->
+            <button class="menu-toggle" id="menuToggle">
+                <span></span><span></span><span></span>
+            </button>
         </div>
     </div>
 
-    <!-- Mobile Search Container -->
-    <div class="mobile-search-container" id="mobileSearchContainer">
-        <form action="<?php echo $baseUrl; ?>search-results.php" method="GET" class="search-wrapper">
-            <input type="search" name="search" placeholder="Search for products..." id="mobile-search">
-            <button type="submit" class="search-btn">
+    <!-- Mobile Search (hidden on desktop) -->
+    <div class="mobile-search" id="mobileSearch">
+        <form action="<?php echo $baseUrl; ?>search-results.php" method="GET">
+            <input type="search" name="search" placeholder="Search products...">
+            <button type="submit">
                 <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">
             </button>
         </form>
     </div>
 
-    <!-- Mobile Navigation Menu -->
-    <div class="mobile-nav" id="mobileNav">
+    <!-- Mobile Menu (hidden on desktop) -->
+    <div class="mobile-menu" id="mobileMenu">
         <div class="mobile-menu-header">
-            <div class="mobile-menu-logo">
+            <div class="mobile-logo">
                 <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
             </div>
-            <button class="side-menu-close" id="sideMenuClose">
+            <button class="close-menu" id="closeMenu">
                 <span></span><span></span>
             </button>
         </div>
 
-        <!-- Mobile Profile Section (Logged In - Buyer only) -->
         <?php if ($is_logged_in && $is_buyer): ?>
-            <div class="mobile-profile-section">
+            <div class="mobile-profile">
+                <img src="<?php echo $user_profile_image; ?>" alt="<?php echo htmlspecialchars($user_name); ?>" class="mobile-profile-img" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                 <div class="mobile-profile-info">
-                    <img src="<?php echo $user_profile_image; ?>" alt="Profile" class="mobile-profile-avatar" width="40" height="40" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
-                    <div class="mobile-profile-text">
-                        <span class="mobile-profile-name"><?php echo htmlspecialchars($user_name); ?></span>
-                        <span class="mobile-profile-role">Buyer</span>
-                    </div>
+                    <span class="mobile-profile-name"><?php echo htmlspecialchars($user_name); ?></span>
+                    <span class="mobile-profile-email"><?php echo htmlspecialchars($currentUser->getEmail()); ?></span>
                 </div>
             </div>
         <?php endif; ?>
 
-        <!-- Mobile Navigation Links -->
         <ul class="mobile-nav-links">
-            <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
-            <li><a href="<?php echo $baseUrl; ?>product-listings.php">Products</a></li>
+            <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
+            <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>">Products</a></li>
             <?php if ($show_sell_link): ?>
-                <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
+                <li><a href="<?php echo $baseUrl; ?>sell.php" class="<?php echo $current_page == 'sell.php' ? 'active' : ''; ?>">Sell</a></li>
             <?php endif; ?>
-            <li><a href="<?php echo $baseUrl; ?>about.php">About</a></li>
-            <li>
-                <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-menu-cart">
-                    <span>Cart</span>
-                    <span class="cart-count"><?php echo $cart_count; ?></span>
-                </a>
-            </li>
+            <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>">About</a></li>
+            <li><a href="<?php echo $baseUrl; ?>cart.php" class="<?php echo $current_page == 'cart.php' ? 'active' : ''; ?>">Cart <?php if ($cart_count > 0): ?><span class="mobile-cart-count"><?php echo $cart_count; ?></span><?php endif; ?></a></li>
 
             <?php if ($is_logged_in && $is_buyer): ?>
-                <li class="mobile-menu-divider"></li>
-                <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
-                <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                <li class="mobile-divider"></li>
+                <li><a href="<?php echo $baseUrl; ?>profile.php" class="<?php echo $current_page == 'profile.php' ? 'active' : ''; ?>">My Profile</a></li>
+                <li><a href="<?php echo $baseUrl; ?>my-orders.php" class="<?php echo $current_page == 'my-orders.php' ? 'active' : ''; ?>">My Orders</a></li>
                 <li><a href="<?php echo $baseUrl; ?>php/endpoints/logout.php">Logout</a></li>
             <?php else: ?>
-                <li class="mobile-menu-divider"></li>
-                <li><button class="mobile-nav-btn" id="mobile-login-btn">Login</button></li>
-                <li><button class="mobile-nav-btn" id="mobile-register-btn">Sign Up</button></li>
+                <li class="mobile-divider"></li>
+                <li><button class="mobile-login-btn" id="mobileLoginBtn">Login</button></li>
+                <li><button class="mobile-signup-btn" id="mobileRegisterBtn">Sign Up</button></li>
             <?php endif; ?>
         </ul>
     </div>
 
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <div class="menu-overlay" id="menuOverlay"></div>
 </header>
 
-<!-- Login & Registration Modals (shown only when user is not logged in) -->
+<!-- Modals -->
 <?php if (!$is_logged_in): ?>
     <!-- Login Modal -->
     <div id="login-modal" class="modal">

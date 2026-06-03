@@ -9,19 +9,100 @@
 // Base URL will be set by footer.php
 var baseUrl = baseUrl || '';
 
+// ========== GLOBAL VARIABLE DECLARATIONS ==========
+var $toastContainer = null;
+var $existingToasts = null;
+var $orderModal = null;
+var $orderModalBody = null;
+var $orderModalFooter = null;
+var $cartCountElements = null;
+var $subTotalVal = null;
+var $delivFeeVal = null;
+var $totalVal = null;
+var $registerModal = null;
+var $loginModal = null;
+var $deleteModal = null;
+var $bodyElement = null;
+var $loginErrorContainer = null;
+var $loginFormInputGroups = null;
+var $loginFormErrorTexts = null;
+var $registerErrorContainer = null;
+var $registerFormInputGroups = null;
+var $registerFormErrorTexts = null;
+var $loginEmailInput = null;
+var $loginPasswordInput = null;
+var $registerFullNameInput = null;
+var $registerEmailInput = null;
+var $registerPhoneInput = null;
+var $registerPasswordInput = null;
+var $registerConfirmPasswordInput = null;
+var $switchToRegisterBtn = null;
+var $switchToLoginBtn = null;
+var $loginForm = null;
+var $loginFormSubmitBtn = null;
+var $registerForm = null;
+var $menuToggle = null;
+var $closeMenu = null;
+var $mobileMenu = null;
+var $menuOverlay = null;
+var $mobileNavLinks = null;
+var $mobileNavBtns = null;
+var $mobileSearchIcon = null;
+var $mobileSearchContainer = null;
+var $document = null;
+var $accountBtn = null;
+var $accountDropdown = null;
+var $registerBtns = null;
+var $loginBtns = null;
+var $modalCloseBtns = null;
+var $switchToRegister = null;
+var $switchToLogin = null;
+var $mainNavLinks = null;
+var $mobileNavLinksForActive = null;
+var $flashMsg = null;
+
 // ========== GLOBAL ESCAPE HTML FUNCTION ==========
+
+/**
+ * Escapes HTML special characters to prevent XSS attacks
+ * 
+ * @param {string} text - The text to escape
+ * @returns {string} HTML-escaped text
+ * 
+ * @example
+ * escapeHtml('<script>alert("xss")</script>') 
+ * // Returns '&lt;script&gt;alert("xss")&lt;/script&gt;'
+ */
 function escapeHtml(text) {
     if (!text) return '';
     return $('<div>').text(text).html();
 }
 
-// ========== HELPER: CAPITALIZE FIRST LETTER ==========
+// ========== HELPER FUNCTIONS ==========
+
+/**
+ * Capitalizes the first letter of a string
+ * 
+ * @param {string} str - The string to capitalize
+ * @returns {string} String with first letter capitalized
+ * 
+ * @example
+ * capitalizeFirst('hello') // Returns 'Hello'
+ */
 function capitalizeFirst(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// ========== HELPER: GET STATUS CLASS ==========
+/**
+ * Returns CSS class name for order status
+ * 
+ * @param {string} status - Order status (pending, processing, shipped, completed, cancelled)
+ * @returns {string} CSS class name for the status badge
+ * 
+ * @example
+ * getStatusClass('pending') // Returns 'status-pending'
+ */
 function getStatusClass(status) {
     var classes = {
         'pending': 'status-pending',
@@ -33,7 +114,16 @@ function getStatusClass(status) {
     return classes[status] || '';
 }
 
-// ========== HELPER: FIX IMAGE URL ==========
+/**
+ * Fixes image URL to ensure correct path
+ * 
+ * @param {string} url - The image URL to fix
+ * @param {string} [defaultPath='images/default-product.png'] - Fallback image path
+ * @returns {string} Corrected absolute URL
+ * 
+ * @example
+ * fixImageUrl('uploads/products/image.jpg') // Returns full URL
+ */
 function fixImageUrl(url, defaultPath) {
     defaultPath = defaultPath || 'images/default-product.png';
     if (!url || url === '') return baseUrl + defaultPath;
@@ -52,6 +142,21 @@ function fixImageUrl(url, defaultPath) {
 }
 
 // ========== PAGINATION FUNCTIONS ==========
+
+/**
+ * Renders pagination controls for product listings
+ * 
+ * @param {Object} $container - jQuery object of the pagination container
+ * @param {number} currentPage - Current active page number
+ * @param {number} totalPages - Total number of pages
+ * @param {Function} onPageChange - Callback function when page changes, receives new page number
+ * @returns {void}
+ * 
+ * @example
+ * renderPagination($('#pagination'), 2, 10, function(page) {
+ *     loadProducts(page);
+ * });
+ */
 function renderPagination($container, currentPage, totalPages, onPageChange) {
     if (!$container.length || totalPages <= 1) {
         $container.empty();
@@ -88,10 +193,22 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     });
 }
 
-// ========== TOAST NOTIFICATIONS (Globally accessible) ==========
-var $toastContainer = null;
-var $existingToasts = null;
+// ========== TOAST NOTIFICATIONS ==========
 
+/**
+ * Displays a temporary toast notification message
+ * 
+ * @param {string} message - The message to display
+ * @param {string} [type='success'] - Toast type: 'success', 'error', 'info', 'warning'
+ * @returns {void}
+ * 
+ * @sideeffect Creates and removes DOM elements
+ * @sideeffect Automatically hides after 4 seconds
+ * 
+ * @example
+ * showToast('Item added to cart', 'success');
+ * showToast('Connection failed', 'error');
+ */
 function showToast(message, type) {
     type = type || 'success';
     
@@ -124,12 +241,52 @@ function showToast(message, type) {
     }, 4000);
 }
 
+/**
+ * Displays a success toast notification
+ * 
+ * @param {string} message - Success message to display
+ * @returns {void}
+ */
 function showSuccessToast(message) { showToast(message, 'success'); }
+
+/**
+ * Displays an error toast notification
+ * 
+ * @param {string} message - Error message to display
+ * @returns {void}
+ */
 function showErrorToast(message) { showToast(message, 'error'); }
+
+/**
+ * Displays an info toast notification
+ * 
+ * @param {string} message - Info message to display
+ * @returns {void}
+ */
 function showInfoToast(message) { showToast(message, 'info'); }
+
+/**
+ * Displays a warning toast notification
+ * 
+ * @param {string} message - Warning message to display
+ * @returns {void}
+ */
 function showWarningToast(message) { showToast(message, 'warning'); }
 
 // ========== PASSWORD TOGGLE ==========
+
+/**
+ * Toggles password field visibility between text and password
+ * 
+ * @param {string} fieldId - ID of the password input field
+ * @param {HTMLElement} button - The toggle button element
+ * @returns {void}
+ * 
+ * @sideeffect Changes input type and button icon
+ * 
+ * @example
+ * <button onclick="togglePassword('login-password', this)">Show/Hide</button>
+ */
 function togglePassword(fieldId, button) {
     var $input = $('#' + fieldId);
     var $img = $(button).find('img');
@@ -145,11 +302,15 @@ function togglePassword(fieldId, button) {
     }
 }
 
-// ========== ORDER MODAL FUNCTIONS (Globally accessible) ==========
-var $orderModal = null;
-var $orderModalBody = null;
-var $orderModalFooter = null;
+// ========== ORDER MODAL FUNCTIONS ==========
 
+/**
+ * Caches jQuery objects for order modal elements
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Sets global variables $orderModal, $orderModalBody, $orderModalFooter
+ */
 function cacheOrderModalElements() {
     if (!$orderModal) {
         $orderModal = $('#orderModal');
@@ -158,6 +319,14 @@ function cacheOrderModalElements() {
     }
 }
 
+/**
+ * Opens the order details modal and loads order data
+ * 
+ * @param {number} orderId - The order ID to load
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-order-details.php
+ */
 function openOrderModal(orderId) {
     cacheOrderModalElements();
     
@@ -184,10 +353,23 @@ function openOrderModal(orderId) {
     });
 }
 
+/**
+ * Closes the order details modal
+ * 
+ * @returns {void}
+ */
 function closeOrderModal() {
     if ($orderModal) $orderModal.removeClass('active');
 }
 
+/**
+ * Displays order details inside the modal
+ * 
+ * @param {Object} order - Order object containing details and items
+ * @returns {void}
+ * 
+ * @sideeffect Updates DOM with order information
+ */
 function displayOrderDetailsInModal(order) {
     cacheOrderModalElements();
     
@@ -286,6 +468,17 @@ function displayOrderDetailsInModal(order) {
     $orderModalFooter.html(actionButtons);
 }
 
+/**
+ * Updates order status via AJAX
+ * 
+ * @param {number} orderId - The order ID to update
+ * @param {string} newStatus - New status (pending, processing, shipped, completed, cancelled)
+ * @returns {void}
+ * 
+ * @fires AJAX POST request to update-order-status.php
+ * @fires showSuccessToast or showErrorToast on completion
+ * @sideeffect Reloads page on success
+ */
 function updateOrderStatus(orderId, newStatus) {
     var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
     if (newStatus === 'cancelled') {
@@ -315,6 +508,15 @@ function updateOrderStatus(orderId, newStatus) {
 }
 
 // ========== MODAL ERROR HANDLING ==========
+
+/**
+ * Clears all error messages and error states from a modal
+ * 
+ * @param {string} modalId - CSS selector of the modal (e.g., '#register-modal')
+ * @returns {void}
+ * 
+ * @sideeffect Removes error classes and clears error containers
+ */
 function clearModalErrors(modalId) {
     var $modal = $(modalId);
     var $modalErrorContainer = $modal.find('.error-container');
@@ -326,6 +528,22 @@ function clearModalErrors(modalId) {
     $modalErrorTexts.remove();
 }    
 
+/**
+ * Displays validation errors inside a modal
+ * 
+ * @param {string} modalId - CSS selector of the modal ('#register-modal' or '#login-modal')
+ * @param {Object} errors - Error object with field names as keys and error messages as values
+ * @param {Object} formData - Submitted form data to restore
+ * @returns {void}
+ * 
+ * @sideeffect Shows error messages and highlights invalid fields
+ * 
+ * @example
+ * displayModalErrors('#register-modal', 
+ *     { email: 'Email already exists', password: 'Too short' },
+ *     { full_name: 'John Doe', email: 'john@example.com' }
+ * );
+ */
 function displayModalErrors(modalId, errors, formData) {
     var $modal = $(modalId);
     
@@ -343,34 +561,57 @@ function displayModalErrors(modalId, errors, formData) {
         if (formData.email) $registerEmail.val(formData.email);
         if (formData.phone) $registerPhone.val(formData.phone);
         
+        $registerErrorContainer.hide().empty();
+        $('.input-group', $modal).removeClass('error');
+        $('.error-text', $modal).remove();
+        
+        var errorMessages = [];
+        
         if (errors.general && errors.general.trim()) {
-            $registerErrorContainer.show().text(errors.general);
+            errorMessages.push(errors.general);
         }
         
         $.each(errors, function(field, message) {
             if (field !== 'general' && message && message.trim()) {
-                var $input = $('#register-' + field);
+                errorMessages.push(message);
+                
+                var inputId = '';
+                switch(field) {
+                    case 'full_name': inputId = 'register-full-name'; break;
+                    case 'email': inputId = 'register-email'; break;
+                    case 'phone': inputId = 'register-phone'; break;
+                    case 'password': inputId = 'register-password'; break;
+                    case 'confirm_password': inputId = 'register-confirm-password'; break;
+                    default: inputId = 'register-' + field;
+                }
+                var $input = $('#' + inputId);
                 if ($input.length) {
-                    var $closestInputGroup = $input.closest('.input-group');
-                    $closestInputGroup.addClass('error');
-                    $closestInputGroup.append('<small class="error-text">' + message + '</small>');
+                    $input.closest('.input-group').addClass('error');
                 }
             }
         });
+        
+        if (errorMessages.length > 0) {
+            $registerErrorContainer.show().html(errorMessages.join('<br>'));
+        }
+        
     } else if (modalId === '#login-modal') {
         if (formData.email) $loginEmail.val(formData.email);
         
+        $loginErrorContainer.hide().empty();
+        $('.input-group', $modal).removeClass('error');
+        
         if (errors.general && errors.general.trim()) {
             $loginErrorContainer.show().text(errors.general);
+        } else if (typeof errors === 'string' && errors.trim()) {
+            $loginErrorContainer.show().text(errors);
         }
         
         $.each(errors, function(field, message) {
             if (field !== 'general' && message && message.trim()) {
                 var $input = $('#login-' + field);
                 if ($input.length) {
-                    var $closestInputGroup = $input.closest('.input-group');
-                    $closestInputGroup.addClass('error');
-                    $closestInputGroup.append('<small class="error-text">' + message + '</small>');
+                    $input.closest('.input-group').addClass('error');
                 }
             }
         });
@@ -378,25 +619,36 @@ function displayModalErrors(modalId, errors, formData) {
 }
 
 // ========== ERROR CLEARING ==========
-var $loginErrorContainer = null;
-var $loginFormInputGroups = null;
-var $loginFormErrorTexts = null;
-var $registerErrorContainer = null;
-var $registerFormInputGroups = null;
-var $registerFormErrorTexts = null;
 
+/**
+ * Caches jQuery objects for login error elements
+ * 
+ * @returns {void}
+ */
 function cacheLoginErrorElements() {
     $loginErrorContainer = $('#login-error-container');
     $loginFormInputGroups = $('#login-form .input-group');
     $loginFormErrorTexts = $('#login-form .error-text');
 }
 
+/**
+ * Caches jQuery objects for register error elements
+ * 
+ * @returns {void}
+ */
 function cacheRegisterErrorElements() {
     $registerErrorContainer = $('#register-error-container');
     $registerFormInputGroups = $('#register-form .input-group');
     $registerFormErrorTexts = $('#register-form .error-text');
 }
 
+/**
+ * Clears all login form errors
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Hides error container, removes error classes and error text
+ */
 function clearLoginErrors() {
     cacheLoginErrorElements();
     if ($loginErrorContainer) $loginErrorContainer.hide().empty();
@@ -404,6 +656,13 @@ function clearLoginErrors() {
     if ($loginFormErrorTexts) $loginFormErrorTexts.remove();
 }
 
+/**
+ * Clears all register form errors
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Hides error container, removes error classes and error text
+ */
 function clearRegisterErrors() {
     cacheRegisterErrorElements();
     if ($registerErrorContainer) $registerErrorContainer.hide().empty();
@@ -411,6 +670,14 @@ function clearRegisterErrors() {
     if ($registerFormErrorTexts) $registerFormErrorTexts.remove();
 }
 
+/**
+ * Legacy function to clear modal errors
+ * 
+ * @param {Object} $modal - jQuery object of the modal
+ * @returns {void}
+ * 
+ * @deprecated Use clearModalErrors() instead
+ */
 function clearModalErrorsOld($modal) {
     var $modalErrorContainer = $modal.find('.error-container');
     var $modalInputGroups = $modal.find('.input-group');
@@ -422,11 +689,12 @@ function clearModalErrorsOld($modal) {
 }
 
 // ========== CART FUNCTIONS ==========
-var $cartCountElements = null;
-var $subTotalVal = null;
-var $delivFeeVal = null;
-var $totalVal = null;
 
+/**
+ * Gets or creates cached jQuery object for cart count elements
+ * 
+ * @returns {Object} jQuery object containing cart count elements
+ */
 function getCartCountElements() {
     if (!$cartCountElements) {
         $cartCountElements = $('.cart-count, .item-num');
@@ -434,12 +702,31 @@ function getCartCountElements() {
     return $cartCountElements;
 }
 
+/**
+ * Updates the cart count display across all cart badges
+ * 
+ * @param {number} count - New cart item count
+ * @returns {void}
+ * 
+ * @sideeffect Updates DOM and sessionStorage
+ */
 function updateCartCountDisplay(count) {
     var $elements = getCartCountElements();
     $elements.text(count);
     if (window.sessionStorage) sessionStorage.setItem('cart_count', count);
 }
 
+/**
+ * Adds a product to the shopping cart
+ * 
+ * @param {number} productId - Product ID
+ * @param {string} productName - Product name
+ * @param {number} productPrice - Product price
+ * @returns {void}
+ * 
+ * @fires AJAX POST request to add-to-cart.php
+ * @fires showSuccessToast or showErrorToast on completion
+ */
 function addToCart(productId, productName, productPrice) {
     $.ajax({
         url: baseUrl + 'php/endpoints/add-to-cart.php',
@@ -458,6 +745,16 @@ function addToCart(productId, productName, productPrice) {
     });
 }
 
+/**
+ * Removes a product from the shopping cart
+ * 
+ * @param {number} productId - Product ID to remove
+ * @returns {void}
+ * 
+ * @fires AJAX POST request to remove-from-cart.php
+ * @fires showSuccessToast or showErrorToast on completion
+ * @sideeffect Reloads page if on cart.php
+ */
 function removeFromCart(productId) {
     if (!confirm('Are you sure you want to remove this item from your cart?')) return;
     
@@ -479,6 +776,13 @@ function removeFromCart(productId) {
     });
 }
 
+/**
+ * Updates the cart count from cache or server
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Updates cart count badge
+ */
 function updateCartCount() {
     var cachedCount = sessionStorage.getItem('cart_count');
     if (cachedCount && !isNaN(parseInt(cachedCount))) {
@@ -492,6 +796,13 @@ function updateCartCount() {
     }
 }
 
+/**
+ * Loads and displays cart items on cart.php page
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Populates cart table and mobile cart items
+ */
 function loadCart() {
     if (!window.location.pathname.includes('cart.php')) return;
     
@@ -503,6 +814,14 @@ function loadCart() {
     }).fail(function() { console.log('Error loading cart'); });
 }
 
+/**
+ * Renders cart items in both desktop table and mobile card views
+ * 
+ * @param {Object} cartData - Cart data containing items array
+ * @returns {void}
+ * 
+ * @sideeffect Updates DOM with cart items
+ */
 function displayCartItems(cartData) {
     var $desktopTableBody = $('#cart-table-body');
     var $mobileContainer = $('#mobile-cart-items');
@@ -592,6 +911,13 @@ function displayCartItems(cartData) {
     attachCartEventHandlers();
 }
 
+/**
+ * Attaches event handlers for cart quantity controls and remove buttons
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Binds click and change events to cart controls
+ */
 function attachCartEventHandlers() {
     var $qtyIncrease = $('.qty-increase');
     var $qtyDecrease = $('.qty-decrease');
@@ -644,6 +970,14 @@ function attachCartEventHandlers() {
     });
 }
 
+/**
+ * Updates the order summary totals in the cart sidebar
+ * 
+ * @param {Object} cartData - Cart data containing subtotal, delivery_fee, and total
+ * @returns {void}
+ * 
+ * @sideeffect Updates DOM with new totals
+ */
 function updateOrderSummary(cartData) {
     $subTotalVal = $('.sub-total-val');
     $delivFeeVal = $('.deliv-fee-val');
@@ -654,6 +988,16 @@ function updateOrderSummary(cartData) {
     if ($totalVal.length) $totalVal.text(cartData.total);
 }
 
+/**
+ * Updates cart item quantity via AJAX
+ * 
+ * @param {number} cartId - Cart item ID
+ * @param {number} quantity - New quantity
+ * @returns {void}
+ * 
+ * @fires AJAX POST request to update-cart.php
+ * @sideeffect Reloads page on success
+ */
 function updateCartQuantity(cartId, quantity) {
     $.ajax({
         url: baseUrl + 'php/endpoints/update-cart.php',
@@ -670,11 +1014,12 @@ function updateCartQuantity(cartId, quantity) {
 }
 
 // ========== MODAL FUNCTIONS ==========
-var $registerModal = null;
-var $loginModal = null;
-var $deleteModal = null;
-var $bodyElement = null;
 
+/**
+ * Caches jQuery objects for modal elements
+ * 
+ * @returns {void}
+ */
 function cacheModalElements() {
     if (!$registerModal) $registerModal = $('#register-modal');
     if (!$loginModal) $loginModal = $('#login-modal');
@@ -682,6 +1027,14 @@ function cacheModalElements() {
     if (!$bodyElement) $bodyElement = $('body');
 }
 
+/**
+ * Opens a modal with animation
+ * 
+ * @param {Object} $modal - jQuery object of the modal to open
+ * @returns {void}
+ * 
+ * @sideeffect Adds active class, locks body scroll
+ */
 function openModal($modal) {
     if (!$modal.length) return;
     
@@ -701,6 +1054,14 @@ function openModal($modal) {
     setTimeout(function() { $content.removeClass('animate-in'); }, 350);
 }
 
+/**
+ * Closes a modal with animation
+ * 
+ * @param {Object} $modal - jQuery object of the modal to close
+ * @returns {void}
+ * 
+ * @sideeffect Removes active class, restores body scroll
+ */
 function closeModal($modal) {
     if (!$modal.length) return;
     
@@ -719,16 +1080,12 @@ function closeModal($modal) {
 }
 
 // ========== ERROR CLEARING ON INPUT ==========
-var $loginEmailInput = null;
-var $loginPasswordInput = null;
-var $registerFullNameInput = null;
-var $registerEmailInput = null;
-var $registerPhoneInput = null;
-var $registerPasswordInput = null;
-var $registerConfirmPasswordInput = null;
-var $switchToRegisterBtn = null;
-var $switchToLoginBtn = null;
 
+/**
+ * Caches DOM elements used for error clearing
+ * 
+ * @returns {void}
+ */
 function cacheErrorClearingElements() {
     $loginEmailInput = $('#login-email');
     $loginPasswordInput = $('#login-password');
@@ -741,6 +1098,13 @@ function cacheErrorClearingElements() {
     $switchToLoginBtn = $('#switch-to-login');
 }
 
+/**
+ * Initializes input event handlers to clear errors when user types
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Binds input event handlers
+ */
 function initErrorClearingOnInput() {
     cacheErrorClearingElements();
     
@@ -749,11 +1113,10 @@ function initErrorClearingOnInput() {
     });
     
     $registerFullNameInput.add($registerEmailInput).add($registerPhoneInput).add($registerPasswordInput).add($registerConfirmPasswordInput).on('input', function() {
-        clearRegisterErrors();
+        $('#register-error-container').hide().empty();
         var $this = $(this);
         var $closestInputGroup = $this.closest('.input-group');
         $closestInputGroup.removeClass('error');
-        $closestInputGroup.find('.error-text').remove();
     });
     
     $switchToRegisterBtn.on('click', function() { 
@@ -766,15 +1129,27 @@ function initErrorClearingOnInput() {
 }
 
 // ========== AJAX LOGIN HANDLER ==========
-var $loginForm = null;
-var $loginFormSubmitBtn = null;
 
+/**
+ * Caches login form jQuery object
+ * 
+ * @returns {void}
+ */
 function cacheLoginFormElements() {
     $loginForm = $('#login-form');
 }
 
+/**
+ * Initializes AJAX login form submission handler
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Prevents default form submission, sends AJAX request
+ */
 function initAjaxLogin() {
     cacheLoginFormElements();
+    
+    if (!$loginForm.length) return;
     
     $loginForm.off('submit').on('submit', function(e) {
         e.preventDefault();
@@ -798,14 +1173,13 @@ function initAjaxLogin() {
                 if (response.success) {
                     window.location.href = response.redirect;
                 } else {
-                    var $loginErrorContainer = $('#login-error-container');
-                    $loginErrorContainer.show().text(response.message);
+                    var errors = { general: response.message };
+                    displayModalErrors('#login-modal', errors, { email: $('#login-email').val() });
                     $submitBtn.prop('disabled', false).text(originalText);
                 }
             },
             error: function() {
-                var $loginErrorContainer = $('#login-error-container');
-                $loginErrorContainer.show().text('Something went wrong. Please try again.');
+                displayModalErrors('#login-modal', { general: 'Something went wrong. Please try again.' }, {});
                 $submitBtn.prop('disabled', false).text(originalText);
             }
         });
@@ -813,14 +1187,27 @@ function initAjaxLogin() {
 }
 
 // ========== AJAX REGISTER HANDLER ==========
-var $registerForm = null;
 
+/**
+ * Caches register form jQuery object
+ * 
+ * @returns {void}
+ */
 function cacheRegisterFormElements() {
     $registerForm = $('#register-form');
 }
 
+/**
+ * Initializes AJAX register form submission handler
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Prevents default form submission, sends AJAX request
+ */
 function initAjaxRegister() {
     cacheRegisterFormElements();
+    
+    if (!$registerForm.length) return;
     
     $registerForm.off('submit').on('submit', function(e) {
         e.preventDefault();
@@ -862,50 +1249,70 @@ function initAjaxRegister() {
 }
 
 // ========== MOBILE MENU FUNCTIONS ==========
-var $mainToggle = null;
-var $sideClose = null;
-var $mobileNav = null;
-var $overlay = null;
-var $mobileNavLinks = null;
-var $mobileNavBtns = null;
 
+/**
+ * Caches jQuery objects for mobile menu elements
+ * 
+ * @returns {void}
+ */
 function cacheMobileMenuElements() {
-    $mainToggle = $('#mobileMenuToggle');
-    $sideClose = $('#sideMenuClose');
-    $mobileNav = $('#mobileNav');
-    $overlay = $('#mobileMenuOverlay');
+    $menuToggle = $('#menuToggle');
+    $closeMenu = $('#closeMenu');
+    $mobileMenu = $('#mobileMenu');
+    $menuOverlay = $('#menuOverlay');
     $mobileNavLinks = $('.mobile-nav-links a');
-    $mobileNavBtns = $('.mobile-nav-btn');
+    $mobileNavBtns = $('.mobile-nav-links button');
 }
 
+/**
+ * Opens the mobile navigation menu
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Adds active classes, locks body scroll
+ */
 function openMobileMenu() {
     cacheMobileMenuElements();
-    $mainToggle.addClass('active');
-    $mobileNav.addClass('active');
-    $overlay.addClass('active');
-    $('body').addClass('menu-open').css('overflow', 'hidden');
+    $menuToggle.addClass('active');
+    $mobileMenu.addClass('active');
+    $menuOverlay.addClass('active');
+    $('body').css('overflow', 'hidden');
 }
 
+/**
+ * Closes the mobile navigation menu
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Removes active classes, restores body scroll
+ */
 function closeMobileMenu() {
     cacheMobileMenuElements();
-    $mainToggle.removeClass('active');
-    $mobileNav.removeClass('active');
-    $overlay.removeClass('active');
-    $('body').removeClass('menu-open').css('overflow', '');
+    $menuToggle.removeClass('active');
+    $mobileMenu.removeClass('active');
+    $menuOverlay.removeClass('active');
+    $('body').css('overflow', '');
 }
 
+/**
+ * Initializes mobile menu toggle functionality
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Binds click events for menu toggle, close button, and overlay
+ */
 function initMobileMenu() {
     cacheMobileMenuElements();
     
-    if ($mainToggle.length) {
-        $mainToggle.on('click', function() {
-            if ($mobileNav.hasClass('active')) closeMobileMenu();
+    if ($menuToggle.length) {
+        $menuToggle.on('click', function() {
+            if ($mobileMenu.hasClass('active')) closeMobileMenu();
             else openMobileMenu();
         });
     }
     
-    if ($sideClose.length) $sideClose.on('click', closeMobileMenu);
-    if ($overlay.length) $overlay.on('click', closeMobileMenu);
+    if ($closeMenu.length) $closeMenu.on('click', closeMobileMenu);
+    if ($menuOverlay.length) $menuOverlay.on('click', closeMobileMenu);
     
     $mobileNavLinks.add($mobileNavBtns).on('click', function() {
         var $windowWidth = $(window).width();
@@ -914,23 +1321,30 @@ function initMobileMenu() {
     
     $(window).on('resize', function() {
         var $windowWidth = $(window).width();
-        if ($windowWidth > 768 && $mobileNav.hasClass('active')) closeMobileMenu();
+        if ($windowWidth > 768 && $mobileMenu.hasClass('active')) closeMobileMenu();
     });
 }
 
 // ========== MOBILE SEARCH FUNCTIONS ==========
-var $mobileSearchIcon = null;
-var $mobileSearchContainer = null;
-var $mobileSearchInput = null;
-var $document = null;
 
+/**
+ * Caches jQuery objects for mobile search elements
+ * 
+ * @returns {void}
+ */
 function cacheMobileSearchElements() {
     $mobileSearchIcon = $('#mobileSearchIcon');
-    $mobileSearchContainer = $('#mobileSearchContainer');
-    $mobileSearchInput = $('#mobile-search');
+    $mobileSearchContainer = $('#mobileSearch');
     $document = $(document);
 }
 
+/**
+ * Initializes mobile search toggle functionality
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Binds click events for search icon and document clicks
+ */
 function initMobileSearch() {
     cacheMobileSearchElements();
     
@@ -938,7 +1352,6 @@ function initMobileSearch() {
         $mobileSearchIcon.on('click', function(e) {
             e.stopPropagation();
             $mobileSearchContainer.toggleClass('active');
-            if ($mobileSearchContainer.hasClass('active')) $mobileSearchInput.focus();
         });
         
         $document.on('click', function(event) {
@@ -952,55 +1365,66 @@ function initMobileSearch() {
 }
 
 // ========== USER DROPDOWN FUNCTIONS ==========
-var $userMenuBtn = null;
-var $userDropdown = null;
 
+/**
+ * Caches jQuery objects for user dropdown elements
+ * 
+ * @returns {void}
+ */
 function cacheUserDropdownElements() {
-    $userMenuBtn = $('#userMenuBtn');
-    $userDropdown = $('#userDropdown');
+    $accountBtn = $('#accountBtn');
+    $accountDropdown = $('#accountDropdown');
 }
 
+/**
+ * Initializes user account dropdown functionality
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Binds click events for dropdown toggle and document clicks
+ */
 function initUserDropdown() {
     cacheUserDropdownElements();
     
-    if ($userMenuBtn.length && $userDropdown.length) {
-        $userMenuBtn.on('click', function(e) {
+    if ($accountBtn.length && $accountDropdown.length) {
+        $accountBtn.on('click', function(e) {
             e.stopPropagation();
-            $userDropdown.toggleClass('active');
-            $userMenuBtn.toggleClass('active');
+            $accountDropdown.toggleClass('active');
         });
         
         $(document).on('click', function(e) {
-            if (!$userMenuBtn.is(e.target) && !$userDropdown.is(e.target) &&
-                !$userMenuBtn.has(e.target).length && !$userDropdown.has(e.target).length) {
-                $userDropdown.removeClass('active');
-                $userMenuBtn.removeClass('active');
+            if (!$accountBtn.is(e.target) && !$accountDropdown.is(e.target) &&
+                !$accountBtn.has(e.target).length && !$accountDropdown.has(e.target).length) {
+                $accountDropdown.removeClass('active');
             }
         });
     }
 }
 
 // ========== MODAL CONTROLS INIT ==========
-var $registerBtns = null;
-var $loginBtns = null;
-var $registerClose = null;
-var $loginClose = null;
-var $deleteClose = null;
-var $switchToRegister = null;
-var $switchToLogin = null;
 
+/**
+ * Caches jQuery objects for modal control buttons
+ * 
+ * @returns {void}
+ */
 function cacheModalControlElements() {
     cacheModalElements();
     
-    $registerBtns = $('#registerBtn, #mobile-register-btn');
-    $loginBtns = $('#loginBtn, #mobile-login-btn');
-    $registerClose = $('#register-modal .btn-close, #register-modal .modal-close');
-    $loginClose = $('#login-modal .btn-close, #login-modal .modal-close');
-    $deleteClose = $('#delete-modal .btn-close, #delete-modal .modal-close, #delete-modal .delete-cancel-btn');
+    $registerBtns = $('#registerBtn, #mobileRegisterBtn');
+    $loginBtns = $('#loginBtn, #mobileLoginBtn');
+    $modalCloseBtns = $('.modal-close, .btn-close');
     $switchToRegister = $('#switch-to-register');
     $switchToLogin = $('#switch-to-login');
 }
 
+/**
+ * Initializes all modal control buttons (open, close, switch)
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Binds click events for all modal controls
+ */
 function initModalControls() {
     cacheModalControlElements();
     
@@ -1020,9 +1444,11 @@ function initModalControls() {
         });
     }
     
-    if ($registerClose.length) $registerClose.on('click', function() { closeModal($registerModal); });
-    if ($loginClose.length) $loginClose.on('click', function() { closeModal($loginModal); });
-    if ($deleteClose.length) $deleteClose.on('click', function() { closeModal($deleteModal); });
+    if ($modalCloseBtns.length) $modalCloseBtns.on('click', function() { 
+        closeModal($registerModal);
+        closeModal($loginModal);
+        closeModal($deleteModal);
+    });
     
     $registerModal.on('click', function(e) { 
         if ($(e.target).is($registerModal)) closeModal($registerModal); 
@@ -1058,14 +1484,24 @@ function initModalControls() {
 }
 
 // ========== SET ACTIVE NAVIGATION LINK ==========
-var $mainNavLinks = null;
-var $mobileNavLinksForActive = null;
 
+/**
+ * Caches jQuery objects for navigation links
+ * 
+ * @returns {void}
+ */
 function cacheActiveLinkElements() {
     $mainNavLinks = $('.main-nav a');
     $mobileNavLinksForActive = $('.mobile-nav-links a');
 }
 
+/**
+ * Sets the active class on navigation links based on current page
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Adds/removes 'active' class from navigation links
+ */
 function setActiveLink() {
     cacheActiveLinkElements();
     
@@ -1088,8 +1524,14 @@ function setActiveLink() {
 }
 
 // ========== INIT FLASH MESSAGES ==========
-var $flashMsg = null;
 
+/**
+ * Initializes auto-hide for flash messages
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Sets timeout to fade out flash messages after 4 seconds
+ */
 function initFlashMessages() {
     $flashMsg = $('.flash-message');
     if ($flashMsg.length) {
@@ -1098,33 +1540,27 @@ function initFlashMessages() {
 }
 
 // ========== DOCUMENT READY ==========
+
+/**
+ * Initializes all functionality when DOM is ready
+ * 
+ * @returns {void}
+ * 
+ * @fires All initialization functions
+ */
 $(function() {
-    // Mobile Menu Toggle
     initMobileMenu();
-    
-    // Mobile Search
     initMobileSearch();
-    
-    // Modal Controls
     initModalControls();
-    
-    // User Dropdown
     initUserDropdown();
-    
-    // Auto-hide flash messages
     initFlashMessages();
-    
-    // Active Navigation Link
     setActiveLink();
-    
-    // Error clearing on input
     initErrorClearingOnInput();
-    
-    // AJAX handlers
     initAjaxLogin();
     initAjaxRegister();
     
-    // Cart functions
-    updateCartCount();
-    loadCart();
+    if (!window.location.pathname.includes('cart.php')) {
+        updateCartCount();
+        loadCart();
+    }
 });

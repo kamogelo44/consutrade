@@ -73,14 +73,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if (empty($errors)) {
-        $existing_user = $userRepo->getByEmail($email);
+        // FIXED: Use findByEmail() not getByEmail()
+        $existing_user = $userRepo->findByEmail($email);
         if ($existing_user) {
             $errors['email'] = 'Unable to register with this email. Please contact support if you believe this is an error.';
         }
     }
 
     if (empty($errors) && !empty($clean_phone)) {
-        $existing_phone = $userRepo->getByPhone($clean_phone);
+        // FIXED: Use findByPhone() not getByPhone()
+        $existing_phone = $userRepo->findByPhone($clean_phone);
         if ($existing_phone) {
             $errors['phone'] = 'Unable to register with this phone number. Please contact support.';
         }

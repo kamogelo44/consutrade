@@ -1,4 +1,3 @@
-// dashboard.js
 /*
  * ConsuTrade - Unified Dashboard JavaScript
  * Author: Kamogelo Phale
@@ -6,28 +5,106 @@
  * Handles both Admin and Seller dashboards
  * Includes shared modal functions for order details
  * 
- * Note: Relies on main.js for escapeHtml(), showSuccessToast(), showErrorToast()
+ * Note: Relies on main.js for escapeHtml(), showSuccessToast(), showErrorToast(), updateOrderStatus()
  */
 
 // ========== GLOBAL VARIABLES ==========
+/** @type {string} Base URL for the site */
 var baseUrl = baseUrl || '';
 
 // ========== HELPER FUNCTIONS ==========
+
+/**
+ * Sets the text content of an element by ID
+ * 
+ * @param {string} id - Element ID
+ * @param {*} value - Value to set as text
+ * @returns {void}
+ * 
+ * @example
+ * setText('totalUsers', 42);
+ */
 function setText(id, value) {
     $('#' + id).text(value);
 }
 
 // ========== SHARED MODAL FUNCTIONS ==========
-// Note: order modal functions are already defined in main.js
-// These are kept for compatibility with dashboard pages
+// Note: order modal functions (openOrderModal, closeOrderModal) are defined in main.js
+// updateOrderStatus is also defined in main.js
+// These shortcut functions call the main.js version
+
+/**
+ * Shortcut to process an order (set status to 'processing')
+ * 
+ * @param {number} orderId - Order ID to process
+ * @returns {void}
+ */
+window.processOrder = function(orderId) { 
+    if (typeof updateOrderStatus === 'function') {
+        updateOrderStatus(orderId, 'processing');
+    }
+};
+
+/**
+ * Shortcut to mark order as shipped (set status to 'shipped')
+ * 
+ * @param {number} orderId - Order ID to ship
+ * @returns {void}
+ */
+window.shipOrder = function(orderId) { 
+    if (typeof updateOrderStatus === 'function') {
+        updateOrderStatus(orderId, 'shipped');
+    }
+};
+
+/**
+ * Shortcut to complete an order (set status to 'completed')
+ * 
+ * @param {number} orderId - Order ID to complete
+ * @returns {void}
+ */
+window.completeOrder = function(orderId) { 
+    if (typeof updateOrderStatus === 'function') {
+        updateOrderStatus(orderId, 'completed');
+    }
+};
+
+/**
+ * Shortcut to cancel an order (set status to 'cancelled')
+ * 
+ * @param {number} orderId - Order ID to cancel
+ * @returns {void}
+ */
+window.cancelOrder = function(orderId) { 
+    if (typeof updateOrderStatus === 'function') {
+        updateOrderStatus(orderId, 'cancelled');
+    }
+};
 
 // ========== PRODUCT FUNCTIONS ==========
+
+/**
+ * Redirects to edit product page
+ * 
+ * @param {number} productId - Product ID to edit
+ * @returns {void}
+ */
 window.editProduct = function(productId) {
     if (productId) {
         window.location.href = baseUrl + 'admin/edit-product.php?id=' + productId;
     }
 };
 
+/**
+ * Deletes a product via AJAX
+ * 
+ * @param {number} productId - Product ID to delete
+ * @returns {void}
+ * 
+ * @fires AJAX POST request to delete-product.php
+ * @fires showSuccessToast or showErrorToast on completion
+ * @sideeffect Reloads seller products or refreshes page
+ */
 window.deleteProduct = function(productId) {
     if (!productId) return;
     
@@ -63,6 +140,12 @@ window.deleteProduct = function(productId) {
     }
 };
 
+/**
+ * Redirects to order details page
+ * 
+ * @param {number} orderId - Order ID to view
+ * @returns {void}
+ */
 window.viewOrder = function(orderId) {
     if (orderId) {
         var path = window.location.pathname;
@@ -74,52 +157,29 @@ window.viewOrder = function(orderId) {
     }
 };
 
-window.updateOrderStatus = function(orderId, newStatus) {
-    var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
-    if (newStatus === 'cancelled') {
-        confirmMsg = 'Are you sure you want to cancel this order? This action cannot be undone.';
-    }
-    
-    if (confirm(confirmMsg)) {
-        $.ajax({
-            url: baseUrl + 'php/endpoints/update-order-status.php',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ order_id: orderId, status: newStatus }),
-            dataType: 'json',
-            success: function(data) {
-                if (data.success) {
-                    if (typeof showSuccessToast === 'function') {
-                        showSuccessToast(data.message || 'Order status updated successfully!');
-                    }
-                    setTimeout(function() { location.reload(); }, 1500);
-                } else {
-                    if (typeof showErrorToast === 'function') {
-                        showErrorToast('Error: ' + (data.message || 'Unknown error'));
-                    }
-                }
-            },
-            error: function() {
-                if (typeof showErrorToast === 'function') {
-                    showErrorToast('Something went wrong. Please try again.');
-                }
-            }
-        });
-    }
-};
-
-window.processOrder = function(orderId) { updateOrderStatus(orderId, 'processing'); };
-window.shipOrder = function(orderId) { updateOrderStatus(orderId, 'shipped'); };
-window.completeOrder = function(orderId) { updateOrderStatus(orderId, 'completed'); };
-window.cancelOrder = function(orderId) { updateOrderStatus(orderId, 'cancelled'); };
-
 // ========== SELLER PRODUCTS FUNCTION ==========
+
+/** @type {jQuery|null} Listings grid container */
 var $listingsGrid = null;
 
+/**
+ * Caches seller dashboard DOM elements
+ * 
+ * @returns {void}
+ */
 function cacheSellerElements() {
     $listingsGrid = $('#listings-grid');
 }
 
+/**
+ * Loads seller's products from the server
+ * 
+ * @param {number} [limit] - Optional limit for number of products to load
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-seller-products.php
+ * @sideeffect Populates the listings grid with seller's products
+ */
 window.loadSellerProducts = function(limit) {
     cacheSellerElements();
     
@@ -147,6 +207,14 @@ window.loadSellerProducts = function(limit) {
     });
 };
 
+/**
+ * Displays seller products in the listings grid
+ * 
+ * @param {Array} products - Array of product objects
+ * @returns {void}
+ * 
+ * @sideeffect Populates the listings grid with product cards
+ */
 function displaySellerProducts(products) {
     cacheSellerElements();
     $listingsGrid.empty();
@@ -173,11 +241,24 @@ function displaySellerProducts(products) {
 }
 
 // ========== ADMIN DASHBOARD FUNCTIONS ==========
+
+/** @type {jQuery|null} Total revenue element */
 var $totalRevenue = null;
+
+/** @type {jQuery|null} Total users element */
 var $totalUsers = null;
+
+/** @type {jQuery|null} Total products element */
 var $totalProducts = null;
+
+/** @type {jQuery|null} Pending orders element */
 var $pendingOrders = null;
 
+/**
+ * Caches admin stats DOM elements
+ * 
+ * @returns {void}
+ */
 function cacheAdminStatsElements() {
     $totalRevenue = $('#totalRevenue');
     $totalUsers = $('#totalUsers');
@@ -185,6 +266,14 @@ function cacheAdminStatsElements() {
     $pendingOrders = $('#pendingOrders');
 }
 
+/**
+ * Loads admin dashboard statistics from the server
+ * 
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-user-stats.php
+ * @sideeffect Updates dashboard stat displays
+ */
 function loadAdminStats() {
     cacheAdminStatsElements();
     
@@ -205,16 +294,35 @@ function loadAdminStats() {
 }
 
 // ========== LOAD PENDING VERIFICATIONS ==========
+
+/** @type {jQuery|null} Pending verifications count element */
 var $pendingVerifications = null;
+
+/** @type {jQuery|null} Pending notice container */
 var $pendingNotice = null;
+
+/** @type {jQuery|null} Pending message element */
 var $pendingMessage = null;
 
+/**
+ * Caches pending verification DOM elements
+ * 
+ * @returns {void}
+ */
 function cachePendingVerificationElements() {
     $pendingVerifications = $('#pendingVerifications');
     $pendingNotice = $('#pendingNotice');
     $pendingMessage = $('#pendingMessage');
 }
 
+/**
+ * Loads and displays pending seller verifications
+ * 
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-users.php?role=pending
+ * @sideeffect Updates verification count and shows/hides notice
+ */
 function loadPendingVerifications() {
     cachePendingVerificationElements();
     
@@ -241,6 +349,14 @@ function loadPendingVerifications() {
     });
 }
 
+/**
+ * Loads recent users for admin dashboard
+ * 
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-users.php?recent=true
+ * @sideeffect Populates recent users table
+ */
 function loadRecentUsers() {
     var $recentUsersTable = $('#recent-users-table');
     if (!$recentUsersTable.length) return;
@@ -273,6 +389,15 @@ function loadRecentUsers() {
     });
 }
 
+/**
+ * Loads recent orders for admin dashboard
+ * 
+ * @param {number} [limit=5] - Number of orders to load
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-recent-orders.php
+ * @sideeffect Populates recent orders table
+ */
 function loadRecentOrders(limit) {
     limit = limit || 5;
     var $recentOrdersTable = $('#recent-orders-table');
@@ -302,11 +427,18 @@ function loadRecentOrders(limit) {
             }
         },
         error: function() {
-            $recentOrdersTable.html('<tr><td colspan="5" class="loading-cell">Error loading orders</td></tr>');
+            $recentOrdersTable.html('</table><td colspan="5" class="loading-cell">Error loading orders</td></tr>');
         }
     });
 }
 
+/**
+ * Loads all admin dashboard components
+ * 
+ * @returns {void}
+ * 
+ * @fires loadAdminStats, loadRecentUsers, loadRecentOrders, loadPendingVerifications
+ */
 function loadAdminDashboard() {
     loadAdminStats();
     loadRecentUsers();
@@ -315,16 +447,35 @@ function loadAdminDashboard() {
 }
 
 // ========== SELLER DASHBOARD FUNCTIONS ==========
+
+/** @type {jQuery|null} Seller earnings stat element */
 var $statEarnings = null;
+
+/** @type {jQuery|null} Seller products stat element */
 var $statProducts = null;
+
+/** @type {jQuery|null} Seller pending orders stat element */
 var $statPending = null;
 
+/**
+ * Caches seller stats DOM elements
+ * 
+ * @returns {void}
+ */
 function cacheSellerStatsElements() {
     $statEarnings = $('#stat-earnings');
     $statProducts = $('#stat-products');
     $statPending = $('#stat-pending');
 }
 
+/**
+ * Loads seller dashboard statistics
+ * 
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-user-stats.php?seller_id
+ * @sideeffect Updates seller stat displays
+ */
 function loadSellerStats() {
     cacheSellerStatsElements();
     
@@ -343,6 +494,15 @@ function loadSellerStats() {
     });
 }
 
+/**
+ * Loads seller's recent orders
+ * 
+ * @param {number} [limit=5] - Number of orders to load
+ * @returns {void}
+ * 
+ * @fires AJAX GET request to get-seller-recent-orders.php
+ * @sideeffect Populates recent orders list
+ */
 function loadSellerRecentOrders(limit) {
     limit = limit || 5;
     var $recentOrdersList = $('#recent-orders-list');
@@ -388,6 +548,13 @@ function loadSellerRecentOrders(limit) {
     });
 }
 
+/**
+ * Loads all seller dashboard components
+ * 
+ * @returns {void}
+ * 
+ * @fires loadSellerStats, loadSellerProducts, loadSellerRecentOrders
+ */
 function loadSellerDashboard() {
     loadSellerStats();
     if (typeof window.loadSellerProducts === 'function') {
@@ -397,6 +564,15 @@ function loadSellerDashboard() {
 }
 
 // ========== MOBILE SIDEBAR TOGGLE ==========
+
+/**
+ * Initializes mobile sidebar toggle functionality for admin/seller dashboards
+ * 
+ * @param {string} prefix - Sidebar prefix ('admin' or 'seller')
+ * @returns {void}
+ * 
+ * @sideeffect Binds click events for hamburger menu and close button
+ */
 function initMobileSidebar(prefix) {
     var $hamburger = $('#' + prefix + 'Hamburger');
     var $sideMenu = $('#' + prefix + 'SideMenu');
@@ -408,6 +584,11 @@ function initMobileSidebar(prefix) {
     
     if (!$hamburger.length || !$sideMenu.length) return;
     
+    /**
+     * Opens the sidebar
+     * 
+     * @returns {void}
+     */
     function openSidebar() {
         $sideMenu.addClass('active');
         if ($overlay.length) $overlay.addClass('active');
@@ -415,6 +596,11 @@ function initMobileSidebar(prefix) {
         $body.css('overflow', 'hidden');
     }
     
+    /**
+     * Closes the sidebar
+     * 
+     * @returns {void}
+     */
     function closeSidebar() {
         $sideMenu.removeClass('active');
         if ($overlay.length) $overlay.removeClass('active');
@@ -431,11 +617,23 @@ function initMobileSidebar(prefix) {
     });
 }
 
+/** @type {jQuery|null} Admin side menu element */
 var $adminSideMenu = null;
+
+/** @type {jQuery|null} Admin menu overlay element */
 var $adminMenuOverlay = null;
+
+/** @type {jQuery|null} Seller side menu element */
 var $sellerSideMenu = null;
+
+/** @type {jQuery|null} Seller menu overlay element */
 var $sellerMenuOverlay = null;
 
+/**
+ * Caches sidebar handler DOM elements
+ * 
+ * @returns {void}
+ */
 function cacheModalSidebarHandlerElements() {
     $adminSideMenu = $('#adminSideMenu');
     $adminMenuOverlay = $('#adminMenuOverlay');
@@ -443,6 +641,13 @@ function cacheModalSidebarHandlerElements() {
     $sellerMenuOverlay = $('#sellerMenuOverlay');
 }
 
+/**
+ * Initializes modal sidebar handler to manage sidebar state when modals open
+ * 
+ * @returns {void}
+ * 
+ * @sideeffect Tracks sidebar state and restores it after modal closes
+ */
 function initModalSidebarHandler() {
     cacheModalSidebarHandlerElements();
     
@@ -471,6 +676,17 @@ function initModalSidebarHandler() {
 }
 
 // ========== GALLERY IMAGE FUNCTIONS ==========
+
+/**
+ * Removes a gallery image from a product
+ * 
+ * @param {number} imageId - Gallery image ID
+ * @param {number} productId - Product ID
+ * @returns {void}
+ * 
+ * @fires AJAX POST request to remove-gallery-image.php
+ * @sideeffect Fades out and removes the gallery item
+ */
 function removeGalleryImage(imageId, productId) {
     if (!confirm('Remove this image from the gallery? This action cannot be undone.')) {
         return;
@@ -510,11 +726,24 @@ function removeGalleryImage(imageId, productId) {
 }
 
 // ========== DOCUMENT READY ==========
+
+/** @type {jQuery|null} Total users element for dashboard detection */
 var $totalUsersElement = null;
+
+/** @type {jQuery|null} Recent users table element for dashboard detection */
 var $recentUsersTableElement = null;
+
+/** @type {jQuery|null} Stat products element for dashboard detection */
 var $statProductsElement = null;
+
+/** @type {jQuery|null} Listings grid element for dashboard detection */
 var $listingsGridElement = null;
 
+/**
+ * Caches dashboard page detection elements
+ * 
+ * @returns {void}
+ */
 function cacheDashboardPageElements() {
     $totalUsersElement = $('#totalUsers');
     $recentUsersTableElement = $('#recent-users-table');
@@ -522,6 +751,14 @@ function cacheDashboardPageElements() {
     $listingsGridElement = $('#listings-grid');
 }
 
+/**
+ * Initializes the dashboard based on page type
+ * 
+ * @returns {void}
+ * 
+ * @fires initMobileSidebar, initModalSidebarHandler
+ * @fires loadAdminDashboard or loadSellerDashboard based on page elements
+ */
 $(function() {
     cacheDashboardPageElements();
     

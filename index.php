@@ -32,6 +32,7 @@ unset($_SESSION['flash']);
     <meta name="description" content="Buy and sell products from local South African traders. Secure payments with PayFast.">
     <link rel="stylesheet" href="css/main.css">
     <style>
+        /* Homepage specific overrides */
         .featured .prod-grid .empty-state {
             grid-column: 1 / -1;
             width: 100%;
@@ -49,6 +50,11 @@ unset($_SESSION['flash']);
 
         .trust .card p {
             color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Remove duplicate search since header handles it */
+        .hero .search-container {
+            display: none;
         }
 
         @media (max-width: 768px) {
@@ -171,7 +177,7 @@ unset($_SESSION['flash']);
                             <img src="${baseUrl}images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
                             <h3>No products yet</h3>
                             <p>Be the first to list a product on ConsuTrade!</p>
-                            <a href="sell.php" class="btn-primary" style="display: inline-block; margin-top: 16px;">Start Selling</a>
+                            <a href="sell.php" class="view-all-btn" style="display: inline-block;">Start Selling</a>
                         </div>
                     `);
                 }
@@ -207,36 +213,58 @@ unset($_SESSION['flash']);
                     else if (conditionText === 'Good') conditionClass = 'good';
                     else if (conditionText === 'Fair') conditionClass = 'fair';
 
+                    var stockQuantity = product.stock_quantity || 1;
+                    var isOutOfStock = stockQuantity <= 0;
+                    var stockBadge = isOutOfStock ?
+                        '<div class="out-of-stock-badge-card">Out of Stock</div>' :
+                        (stockQuantity <= 5 ? '<div class="low-stock-badge-card">Only ' + stockQuantity + ' left</div>' : '');
+
                     var $card = $('<div>').addClass('prod-card').css('cursor', 'pointer');
                     $card.on('click', function() {
                         window.location.href = baseUrl + 'product-details.php?id=' + product.id;
                     });
 
                     $card.html(`
-                <div class="img-container">
-                    <img src="${imagePath || baseUrl + 'images/default-product.png'}" alt="${escapeHtml(product.name)}" onerror="this.src='${baseUrl}images/default-product.png'">
-                    <div class="condition-badge ${conditionClass}">${conditionText}</div>
-                </div>
-                <div class="prod-info-container">
-                    <h3 class="prod-name">${escapeHtml(product.name)}</h3>
-                    <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
-                    <div class="seller-info">
-                        <div class="seller-avatar"><img src="${getSellerAvatar(product.profile_image)}" alt="${escapeHtml(product.seller_name)}" onerror="this.src='${baseUrl}images/icons/profile-svgrepo-com.svg'"></div>
-                        <div class="seller-details">
-                            <p class="seller-name">${escapeHtml(product.seller_name)}</p>
-                            <p class="location"><img src="${baseUrl}images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location"> ${escapeHtml(product.location || 'South Africa')}</p>
+                        <div class="img-container">
+                            <img src="${imagePath || baseUrl + 'images/default-product.png'}" alt="${escapeHtml(product.name)}" onerror="this.src='${baseUrl}images/default-product.png'">
+                            <div class="condition-badge ${conditionClass}">${conditionText}</div>
+                            ${stockBadge}
                         </div>
-                        ${verifiedBadge}
-                    </div>
-                    <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
-                        <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="16" height="16" alt="Cart"> Add to Cart
-                    </button>
-                    <div class="payment-badge"><span>Secure payment via</span><img src="${baseUrl}images/icons/Payfast logo.svg" alt="PayFast" width="40" height="16"></div>
-                </div>
-            `);
+                        <div class="prod-info-container">
+                            <h3 class="prod-name">${escapeHtml(product.name)}</h3>
+                            <p class="prod-price">R ${parseFloat(product.price).toFixed(2)}</p>
+                            <div class="seller-info">
+                                <div class="seller-avatar"><img src="${getSellerAvatar(product.profile_image)}" alt="${escapeHtml(product.seller_name)}" onerror="this.src='${baseUrl}images/icons/profile-svgrepo-com.svg'"></div>
+                                <div class="seller-details">
+                                    <p class="seller-name">${escapeHtml(product.seller_name)}</p>
+                                    <p class="location"><img src="${baseUrl}images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location"> ${escapeHtml(product.location || 'South Africa')}</p>
+                                </div>
+                                ${verifiedBadge}
+                            </div>
+                            <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(${product.id}, '${escapeHtml(product.name).replace(/'/g, "\\'")}', ${product.price})">
+                                <img src="${baseUrl}images/icons/shopping-cart-01-svgrepo-com.svg" width="16" height="16" alt="Cart"> Add to Cart
+                            </button>
+                            <div class="payment-badge"><span>Secure payment via</span><img src="${baseUrl}images/icons/Payfast logo.svg" alt="PayFast" width="40" height="16"></div>
+                        </div>
+                    `);
                     $grid.append($card);
                 });
             }
+
+            // Handle Start Selling button
+            $('#primary-btn').on('click', function() {
+                var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
+                var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
+
+                if (isLoggedIn && currentUserRole === 'seller') {
+                    window.location.href = baseUrl + 'admin/seller-dashboard.php';
+                } else if (isLoggedIn && currentUserRole === 'buyer') {
+                    window.location.href = baseUrl + 'sell.php';
+                } else {
+                    openModal($('#register-modal'));
+                    $('#seller').prop('checked', true);
+                }
+            });
         });
     </script>
 

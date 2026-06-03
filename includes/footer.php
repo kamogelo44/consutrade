@@ -50,10 +50,12 @@
 <script>
     // ========== CACHED DOM ELEMENTS ==========
     var $cartCountElements = null;
+    var $mobileCartCount = null;
 
     // ========== CACHE FUNCTION ==========
     function cacheFooterElements() {
-        $cartCountElements = $('.cart-count');
+        $cartCountElements = $('.cart-badge, .cart-count');
+        $mobileCartCount = $('.mobile-cart-count');
     }
 
     // ========== UPDATE CART COUNT DISPLAY ==========
@@ -70,15 +72,20 @@
                     if ($cartCountElements.length) {
                         $cartCountElements.text(count);
                     }
+                    if ($mobileCartCount.length) {
+                        $mobileCartCount.text(count);
+                    }
                     if (window.sessionStorage) {
                         sessionStorage.setItem('cart_count', count);
                     }
                 }
             },
             error: function() {
-                // Silent fail - cart count just shows 0
                 if ($cartCountElements.length) {
                     $cartCountElements.text('0');
+                }
+                if ($mobileCartCount.length) {
+                    $mobileCartCount.text('0');
                 }
             }
         });
@@ -90,15 +97,19 @@
 
         if (window.sessionStorage) {
             var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
-            if (!isNaN(cachedCount) && $cartCountElements.length) {
-                $cartCountElements.text(cachedCount);
+            if (!isNaN(cachedCount)) {
+                if ($cartCountElements.length) {
+                    $cartCountElements.text(cachedCount);
+                }
+                if ($mobileCartCount.length) {
+                    $mobileCartCount.text(cachedCount);
+                }
             }
         }
     }
 
     // ========== INITIALIZE ==========
     $(function() {
-        // Global variables passed from PHP
         var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
         var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
         var baseUrl = <?php echo json_encode($baseUrl); ?>;
@@ -107,18 +118,24 @@
 
         cacheFooterElements();
 
-        // Set initial cart count from session
-        if ($cartCountElements.length && cartCount > 0) {
-            $cartCountElements.text(cartCount);
+        if (cartCount > 0) {
+            if ($cartCountElements.length) {
+                $cartCountElements.text(cartCount);
+            }
+            if ($mobileCartCount.length) {
+                $mobileCartCount.text(cartCount);
+            }
         }
 
-        // Load cart count from server for buyers
         if (isLoggedIn && currentUserRole === 'buyer') {
             updateCartCountDisplay();
             loadCachedCartCount();
         } else {
             if ($cartCountElements.length) {
                 $cartCountElements.text('0');
+            }
+            if ($mobileCartCount.length) {
+                $mobileCartCount.text('0');
             }
         }
     });
