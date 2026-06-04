@@ -2,6 +2,12 @@
 /*
  * ConsuTrade - Get Order Status (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * Retrieves order status information for buyers, sellers, and admins.
+ * Used for order tracking and real-time status updates.
+ * 
+ * This endpoint is shared across all user roles. Session detection is handled
+ * by Auth.php which checks for existing session cookies.
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -11,12 +17,14 @@ header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'status' => null, 'message' => ''];
 
+// Verify user is logged in
 if (!$isLoggedIn) {
-    $response['message'] = 'Unauthorized';
+    $response['message'] = 'Unauthorized. Please login.';
     echo json_encode($response);
     exit;
 }
 
+// Get and validate order ID
 $orderId = isset($_GET['order_id']) ? (int) $_GET['order_id'] : 0;
 
 if ($orderId <= 0) {
@@ -25,6 +33,7 @@ if ($orderId <= 0) {
     exit;
 }
 
+// Get order details based on user role
 $role = $currentUser->getRole();
 $userId = $currentUser->getUserId();
 $order = $orderRepo->getOrderDetails($orderId, $userId, $role);
@@ -35,6 +44,7 @@ if (!$order) {
     exit;
 }
 
+// Status descriptions for user-friendly messages
 $statusDescriptions = [
     'pending' => 'Your order is pending confirmation',
     'processing' => 'Your order is being processed',
@@ -43,6 +53,7 @@ $statusDescriptions = [
     'cancelled' => 'Your order has been cancelled'
 ];
 
+// Build response
 $response['success'] = true;
 $response['status'] = $order['status'];
 $response['created_at'] = date('d M Y, h:i A', strtotime($order['created_at']));

@@ -339,11 +339,24 @@ $user_name = $currentUser->getFullName();
                         <img src="<?php echo $baseUrl; ?>images/icons/valid-document-svgrepo-com.svg" alt="Pending">
                     </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3>Flagged Reports</h3>
+                        <p class="stat-number pending" id="flaggedReports">--</p>
+                    </div>
+                    <div class="stat-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" alt="Flagged">
+                    </div>
+                </div>
             </div>
 
             <div class="pending-verification-notice" id="pendingNotice" style="display: none;">
                 <span id="pendingMessage"></span>
                 <a href="users.php?role=seller&filter=pending" class="view-all-link">Review Now →</a>
+            </div>
+            <div class="pending-verification-notice" id="flaggedReportsNotice" style="display: none; background: var(--error-light);">
+                <span id="flaggedReportsMessage"></span>
+                <a href="flagged-listings.php" class="view-all-link">Review Reports →</a>
             </div>
 
             <div class="dashboard-grid">

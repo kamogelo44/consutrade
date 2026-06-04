@@ -44,6 +44,16 @@
     </div>
 </footer>
 
+<!-- GLOBAL JAVASCRIPT VARIABLES - MUST be defined before jQuery and main.js -->
+<script>
+    // Global variables accessible from any script
+    var baseUrl = '<?php echo $baseUrl; ?>';
+    var currentUserId = <?php echo isset($currentUser) ? $currentUser->getUserId() : 0; ?>;
+    var currentUserRole = '<?php echo isset($currentUser) ? $currentUser->getRole() : ''; ?>';
+    var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+    var cartCountInitial = <?php echo ($isLoggedIn && isset($currentUser) && $currentUser instanceof Buyer) ? ($_SESSION['cart_count'] ?? 0) : 0; ?>;
+</script>
+
 <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 
@@ -110,20 +120,15 @@
 
     // ========== INITIALIZE ==========
     $(function() {
-        var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
-        var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
-        var baseUrl = <?php echo json_encode($baseUrl); ?>;
-        var currentUserId = <?php echo isset($currentUser) ? json_encode($currentUser->getUserId()) : '0'; ?>;
-        var cartCount = <?php echo ($isLoggedIn && $currentUser instanceof Buyer) ? ($_SESSION['cart_count'] ?? 0) : 0; ?>;
-
         cacheFooterElements();
 
-        if (cartCount > 0) {
+        // Use the global variables
+        if (typeof cartCountInitial !== 'undefined' && cartCountInitial > 0) {
             if ($cartCountElements.length) {
-                $cartCountElements.text(cartCount);
+                $cartCountElements.text(cartCountInitial);
             }
             if ($mobileCartCount.length) {
-                $mobileCartCount.text(cartCount);
+                $mobileCartCount.text(cartCountInitial);
             }
         }
 

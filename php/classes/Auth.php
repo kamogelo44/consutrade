@@ -28,7 +28,27 @@ class Auth
     }
 
     /**
-     * Authenticate user and start session.
+     * Start or resume session.
+     * 
+     * @return void
+     */
+    private function startSession(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        // SINGLE session name for everything
+        session_name('CONSUTRADE_SESSION');
+        session_start([
+            'cookie_httponly' => true,
+            'cookie_samesite' => 'Lax',
+            'cookie_path' => '/'
+        ]);
+    }
+
+    /**
+     * Authenticate user.
      * 
      * @param string $email User's email address
      * @param string $password User's password
@@ -59,37 +79,8 @@ class Auth
             return ['success' => false, 'message' => 'Invalid email or password.'];
         }
 
-        $this->startSession($user);
-
-        $redirect = match ($user->getRole()) {
-            'admin' => getBaseUrl() . 'admin/admin-dashboard.php',
-            'seller' => getBaseUrl() . 'admin/seller-dashboard.php',
-            default => getBaseUrl() . 'index.php'
-        };
-
-        return ['success' => true, 'redirect' => $redirect];
-    }
-
-    /**
-     * Start session for a user.
-     * 
-     * @param User $user User object
-     * @return void
-     */
-    private function startSession(User $user): void
-    {
-        if (session_status() !== PHP_SESSION_NONE) {
-            session_write_close();
-        }
-
-        $sessionName = match ($user->getRole()) {
-            'admin' => 'CONSUTRADE_ADMIN_SESSION',
-            'seller' => 'CONSUTRADE_SELLER_SESSION',
-            default => 'CONSUTRADE_USER_SESSION'
-        };
-
-        session_name($sessionName);
-        session_start();
+        // Start session and store user data
+        $this->startSession();
         session_regenerate_id(true);
 
         $_SESSION['user_id'] = $user->getUserId();
@@ -104,7 +95,13 @@ class Auth
             $this->updateCartCount($user->getUserId());
         }
 
-        session_write_close();
+        $redirect = match ($user->getRole()) {
+            'admin' => getBaseUrl() . 'admin/admin-dashboard.php',
+            'seller' => getBaseUrl() . 'admin/seller-dashboard.php',
+            default => getBaseUrl() . 'index.php'
+        };
+
+        return ['success' => true, 'redirect' => $redirect];
     }
 
     /**
@@ -131,6 +128,8 @@ class Auth
      */
     public function getCurrentUser(): ?User
     {
+        $this->startSession();
+
         if (!$this->isLoggedIn()) {
             return null;
         }
@@ -141,7 +140,11 @@ class Auth
 
         $userId = $_SESSION['user_id'] ?? 0;
         if ($userId > 0) {
-            return $this->userRepo->findById($userId);
+            $user = $this->userRepo->findById($userId);
+            if ($user) {
+                $_SESSION['user_object'] = serialize($user);
+            }
+            return $user;
         }
 
         return null;
@@ -154,6 +157,7 @@ class Auth
      */
     public function getCurrentUserId(): int
     {
+        $this->startSession();
         return $_SESSION['user_id'] ?? 0;
     }
 
@@ -164,6 +168,7 @@ class Auth
      */
     public function getCurrentUserRole(): ?string
     {
+        $this->startSession();
         return $_SESSION['role'] ?? null;
     }
 
@@ -174,6 +179,7 @@ class Auth
      */
     public function isLoggedIn(): bool
     {
+        $this->startSession();
         return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
     }
 
@@ -214,110 +220,14 @@ class Auth
      */
     public function logout(): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
+        $this->startSession();
         $_SESSION = [];
         session_unset();
         session_destroy();
 
-        if (isset($_COOKIE[session_name()])) {
-            setcookie(session_name(), '', time() - 3600, '/');
+        if (isset($_COOKIE['CONSUTRADE_SESSION'])) {
+            setcookie('CONSUTRADE_SESSION', '', time() - 3600, '/');
         }
-    }
-
-    /**
-     * Initialize session based on current page.
-     * 
-     * @return array Associative array with 'user' (User object or null) and 'is_logged_in' (bool)
-     */
-    public function initSession(): array
-    {
-        $scriptPath = $_SERVER['SCRIPT_NAME'];
-        $fileName = basename($scriptPath);
-
-        if ($fileName === 'login.php' && strpos($scriptPath, '/admin/') !== false) {
-            return ['user' => null, 'is_logged_in' => false];
-        }
-
-        $adminPages = [
-            'admin-dashboard.php',
-            'users.php',
-            'all-products.php',
-            'all-orders.php',
-            'admin-profile.php'
-        ];
-
-        $adminEndpoints = [
-            'get-users.php',
-            'get-all-products.php',
-            'get-all-orders.php',
-            'get-user-stats.php',
-            'get-recent-users.php',
-            'get-recent-orders.php',
-            'update-user-verification.php',
-            'delete-user.php',
-            'update-product-status.php',
-            'delete-product.php',
-            'verify-seller.php',
-            'get-order-details.php',
-            'get-order-status.php'
-        ];
-
-        $sellerPages = [
-            'seller-dashboard.php',
-            'seller-profile.php',
-            'my-products.php',
-            'seller-orders.php',
-            'add-product.php',
-            'edit-product.php'
-        ];
-
-        $sellerEndpoints = [
-            'get-seller-products.php',
-            'get-seller-recent-orders.php',
-            'delete-product.php',
-            'add-product.php',
-            'edit-product.php',
-            'update-product-status.php',
-            'remove-gallery-image.php',
-            'set-primary-image.php',
-            'upload-verification.php',
-            'get-order-details.php',
-            'get-order-status.php'
-        ];
-
-        $sharedEndpoints = [
-            'update-profile.php',
-            'change-password.php',
-            'delete-account.php',
-            'logout.php'
-        ];
-
-        if (in_array($fileName, $adminPages) || in_array($fileName, $adminEndpoints)) {
-            $sessionName = 'CONSUTRADE_ADMIN_SESSION';
-        } elseif (in_array($fileName, $sellerPages) || in_array($fileName, $sellerEndpoints)) {
-            $sessionName = 'CONSUTRADE_SELLER_SESSION';
-        } elseif (in_array($fileName, $sharedEndpoints)) {
-            $sessionName = 'CONSUTRADE_USER_SESSION';
-        } else {
-            $sessionName = 'CONSUTRADE_USER_SESSION';
-        }
-
-        // Only set session name if session is not already active
-        if (session_status() === PHP_SESSION_NONE) {
-            session_name($sessionName);
-            session_start();
-        } else {
-            // Session already active, just use it
-            $sessionName = session_name();
-        }
-
-        $user = $this->getCurrentUser();
-        $isLoggedIn = $user !== null;
-
-        return ['user' => $user, 'is_logged_in' => $isLoggedIn];
     }
 
     /**

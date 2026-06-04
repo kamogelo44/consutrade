@@ -1139,3 +1139,103 @@ footer {
   width: 100%;
   max-width: 100%;
 }
+
+/* ========== REPORT MODAL STYLES ========== */
+.report-modal .modal-content {
+  max-width: 500px;
+}
+
+.report-modal .input-group {
+  margin-bottom: 16px;
+}
+
+.report-modal .input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: var(--font-medium);
+  color: var(--gray-dark);
+}
+
+.report-modal select,
+.report-modal textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.report-modal select:focus,
+.report-modal textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+}
+
+.report-modal textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.report-modal small {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--font-xs);
+  color: var(--gray-light);
+}
+
+.report-modal .error-container {
+  background-color: var(--error-light);
+  color: var(--error);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: var(--font-sm);
+}
+
+.report-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.report-modal .btn-secondary {
+  background-color: var(--gray-bg);
+  color: var(--gray-dark);
+  border: 1px solid var(--border-medium);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.report-modal .btn-secondary:hover {
+  background-color: var(--border-light);
+  transform: translateY(-1px);
+}
+
+.report-modal .btn-primary {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.report-modal .btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.report-modal .btn-primary:disabled {
+  background-color: var(--gray-light);
+  cursor: not-allowed;
+  transform: none;
+}

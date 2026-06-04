@@ -376,6 +376,23 @@ $breadcrumbItems = [
             border-color: #ccc;
         }
 
+        /* Report button */
+        .action-btns .report-btn {
+            background-color: var(--error-light);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .action-btns .report-btn:hover {
+            background-color: var(--error);
+            color: white;
+        }
+
+        .action-btns .report-btn.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         /* ========== PAYMENT BADGE ========== */
         .payfast-badge {
             display: flex;
@@ -426,6 +443,59 @@ $breadcrumbItems = [
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
+        }
+
+        /* Report Modal */
+        .report-modal .modal-content {
+            max-width: 500px;
+        }
+
+        .report-modal textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: var(--font-md);
+            resize: vertical;
+        }
+
+        .report-modal textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .report-modal select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            font-size: var(--font-md);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            font-weight: var(--font-normal);
+            cursor: pointer;
+            color: var(--gray-light);
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-round);
+            transition: all var(--transition-fast);
+        }
+
+        .modal-close:hover {
+            color: var(--error);
+            background-color: var(--error-light);
+            transform: rotate(90deg);
         }
 
         /* ========== RESPONSIVE ========== */
@@ -490,6 +560,41 @@ $breadcrumbItems = [
             </div>
         </div>
     </main>
+
+    <!-- Report Product Modal -->
+    <div id="reportModal" class="modal report-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Report Product</h3>
+                <button class="modal-close" id="closeReportModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="reportErrorContainer" class="error-container" style="display:none;"></div>
+                <form id="reportForm">
+                    <div class="input-group">
+                        <label for="reportReason">Reason for reporting *</label>
+                        <select id="reportReason" name="reason" required>
+                            <option value="">Select a reason...</option>
+                            <option value="fake_product">Fake Product</option>
+                            <option value="wrong_description">Wrong Description</option>
+                            <option value="counterfeit">Counterfeit Item</option>
+                            <option value="scam">Potential Scam</option>
+                            <option value="other">Other Issue</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin-top: 16px;">
+                        <label for="reportDescription">Additional Details (Optional)</label>
+                        <textarea id="reportDescription" name="description" rows="4" placeholder="Please provide more details about the issue..."></textarea>
+                        <small>Maximum 1000 characters</small>
+                    </div>
+                    <div class="modal-actions" style="display:flex; gap:12px; margin-top:20px; justify-content: flex-end;">
+                        <button type="button" class="btn-secondary" id="cancelReportBtn">Cancel</button>
+                        <button type="submit" class="btn-primary" id="submitReportBtn">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <?php $load_products_js = true; ?>
     <?php include 'includes/footer.php'; ?>

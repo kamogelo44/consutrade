@@ -372,6 +372,28 @@ var $smallImgElements = null;
 /** @type {jQuery|null} Gallery container element */
 var $galleryContainer = null;
 
+// Report modal variables
+/** @type {jQuery|null} Report modal element */
+var $reportModal = null;
+
+/** @type {jQuery|null} Report form element */
+var $reportForm = null;
+
+/** @type {jQuery|null} Report reason select */
+var $reportReason = null;
+
+/** @type {jQuery|null} Report description textarea */
+var $reportDescription = null;
+
+/** @type {jQuery|null} Report error container */
+var $reportErrorContainer = null;
+
+/** @type {jQuery|null} Submit report button */
+var $submitReportBtn = null;
+
+/** @type {number} Current product ID for reporting */
+var currentProductId = 0;
+
 /**
  * Caches DOM elements used on the product details page
  * 
@@ -383,6 +405,135 @@ function cacheProductDetailsElements() {
     $mainProductImage = $('#main-product-image');
     $galleryContainer = $('#gallery-container');
     $smallImgElements = null;
+}
+
+/**
+ * Caches report modal DOM elements
+ * 
+ * @returns {void}
+ */
+function cacheReportElements() {
+    $reportModal = $('#reportModal');
+    $reportForm = $('#reportForm');
+    $reportReason = $('#reportReason');
+    $reportDescription = $('#reportDescription');
+    $reportErrorContainer = $('#reportErrorContainer');
+    $submitReportBtn = $('#submitReportBtn');
+}
+
+/**
+ * Opens the report product modal
+ * 
+ * @returns {void}
+ */
+function openReportModal() {
+    cacheReportElements();
+    if (!$reportModal.length) return;
+    
+    // Get current product ID from the container
+    currentProductId = parseInt($('.product-details-container').data('product-id')) || 0;
+    
+    // Reset form
+    $reportReason.val('');
+    $reportDescription.val('');
+    $reportErrorContainer.hide().empty();
+    
+    // Use existing openModal function from main.js if available
+    if (typeof openModal === 'function') {
+        openModal($reportModal);
+    } else {
+        $reportModal.addClass('active');
+        $('body').css('overflow', 'hidden');
+    }
+}
+
+/**
+ * Closes the report product modal
+ * 
+ * @returns {void}
+ */
+function closeReportModal() {
+    if (!$reportModal || !$reportModal.length) return;
+    
+    // Use existing closeModal function from main.js if available
+    if (typeof closeModal === 'function') {
+        closeModal($reportModal);
+    } else {
+        $reportModal.removeClass('active');
+        $('body').css('overflow', '');
+    }
+}
+
+/**
+ * Initializes the report modal event handlers
+ * 
+ * @returns {void}
+ */
+function initReportModal() {
+    cacheReportElements();
+    if (!$reportModal.length) return;
+    
+    // Close button handlers
+    $('#closeReportModalBtn, #cancelReportBtn').off('click').on('click', function() {
+        closeReportModal();
+    });
+    
+    // Click outside to close
+    $reportModal.off('click').on('click', function(e) {
+        if ($(e.target).is($reportModal)) {
+            closeReportModal();
+        }
+    });
+    
+    // Form submission
+    $reportForm.off('submit').on('submit', function(e) {
+        e.preventDefault();
+        
+        var reason = $reportReason.val();
+        var description = $reportDescription.val();
+        
+        if (!reason) {
+            $reportErrorContainer.show().addClass('error-message').html('Please select a reason for reporting.');
+            return;
+        }
+        
+        $submitReportBtn.prop('disabled', true).text('Submitting...');
+        
+        $.ajax({
+            url: baseUrl + 'php/endpoints/report-product.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                product_id: currentProductId,
+                reason: reason,
+                description: description
+            }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    // Use existing toast function from main.js
+                    if (typeof showSuccessToast === 'function') {
+                        showSuccessToast(data.message);
+                    } else if (typeof window.showSuccessToast === 'function') {
+                        window.showSuccessToast(data.message);
+                    } else {
+                        alert(data.message);
+                    }
+                    closeReportModal();
+                    // Disable the report button
+                    $('#reportProductBtn').prop('disabled', true).addClass('disabled');
+                } else {
+                    $reportErrorContainer.show().addClass('error-message').html(data.message);
+                }
+            },
+            error: function() {
+                $reportErrorContainer.show().addClass('error-message').html('Something went wrong. Please try again.');
+            },
+            complete: function() {
+                $submitReportBtn.prop('disabled', false).text('Submit Report');
+            }
+        });
+    });
 }
 
 /**
@@ -496,14 +647,28 @@ function displayProductDetails(product) {
         starsHtml += (i <= avgRating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
     }
     
+    // Build action buttons - includes report button for buyers
     var actionButtonsHtml = '';
+    var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
+    
     if (!isOutOfStock) {
-        var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
-        actionButtonsHtml =
+        actionButtonsHtml +=
             '<button class="cart-btn" onclick="addToCart(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Add to Cart</button>' +
             '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
     } else {
-        actionButtonsHtml = '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
+        actionButtonsHtml += '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
+    }
+    
+    // Add Report button for logged-in buyers who are not the product owner
+    var isLoggedInFlag = (typeof isLoggedIn !== 'undefined' && isLoggedIn === true);
+    var isBuyerRole = (typeof currentUserRole !== 'undefined' && currentUserRole === 'buyer');
+    var isNotOwner = (typeof currentUserId !== 'undefined' && currentUserId != product.seller_id);
+    var showReportButton = isLoggedInFlag && isBuyerRole && isNotOwner;
+    
+    if (showReportButton) {
+        actionButtonsHtml += '<button class="report-btn" id="reportProductBtn">' +
+                             '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="16" height="16" alt="Report"> Report This Product' +
+                             '</button>';
     }
     
     var sellerImage = fixImageUrl(product.seller_profile_image);
@@ -575,6 +740,14 @@ function displayProductDetails(product) {
         $smallImgElements.removeClass('active');
         $this.addClass('active');
     });
+    
+    // Bind report button click event if it exists
+    if (showReportButton) {
+        $('#reportProductBtn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            openReportModal();
+        });
+    }
 }
 
 /**
@@ -619,5 +792,7 @@ $(function() {
         if (productId > 0) {
             loadProductDetails(productId);
         }
+        // Initialize report modal for product details page
+        initReportModal();
     }
 });

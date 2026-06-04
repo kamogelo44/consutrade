@@ -280,12 +280,21 @@ var $totalRevenue = null;
 var $totalUsers = null;
 var $totalProducts = null;
 var $pendingOrders = null;
+var $flaggedReports = null;
+var $flaggedReportsNotice = null;
+var $flaggedReportsMessage = null;
 
 function cacheAdminStatsElements() {
     $totalRevenue = $('#totalRevenue');
     $totalUsers = $('#totalUsers');
     $totalProducts = $('#totalProducts');
     $pendingOrders = $('#pendingOrders');
+}
+
+function cacheFlaggedReportsElements() {
+    $flaggedReports = $('#flaggedReports');
+    $flaggedReportsNotice = $('#flaggedReportsNotice');
+    $flaggedReportsMessage = $('#flaggedReportsMessage');
 }
 
 function loadAdminStats() {
@@ -303,6 +312,38 @@ function loadAdminStats() {
             }
         },
         error: function() {}
+    });
+}
+
+function loadFlaggedReportsCount() {
+    cacheFlaggedReportsElements();
+    
+    if (!$flaggedReports || !$flaggedReports.length) return;
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/get-flagged-listings.php',
+        type: 'GET',
+        dataType: 'json',
+        data: { page: 1, limit: 1 },
+        success: function(data) {
+            if (data.success) {
+                var count = data.total || 0;
+                if ($flaggedReports.length) $flaggedReports.text(count);
+                
+                if ($flaggedReportsNotice && $flaggedReportsNotice.length && count > 0) {
+                    var message = count + ' product ' + (count === 1 ? 'report requires' : 'reports require') + ' your attention.';
+                    if ($flaggedReportsMessage.length) $flaggedReportsMessage.text(message);
+                    $flaggedReportsNotice.show();
+                } else if ($flaggedReportsNotice && $flaggedReportsNotice.length) {
+                    $flaggedReportsNotice.hide();
+                }
+            } else {
+                if ($flaggedReports.length) $flaggedReports.text('0');
+            }
+        },
+        error: function() {
+            if ($flaggedReports.length) $flaggedReports.text('0');
+        }
     });
 }
 
@@ -390,7 +431,7 @@ function loadRecentOrders(limit) {
                     var statusClass = getStatusClass(order.status);
                     $recentOrdersTable.append(
                         '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
-                            '<td>#' + order.id + '</td>' +
+                            '方向的#' + order.id + '</td>' +
                             '<td>' + escapeHtml(order.buyer_name) + '</td>' +
                             '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
                             '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
@@ -413,6 +454,7 @@ function loadAdminDashboard() {
     loadRecentUsers();
     loadRecentOrders(5);
     loadPendingVerifications();
+    loadFlaggedReportsCount();
 }
 
 // ========== SELLER DASHBOARD FUNCTIONS ==========
@@ -480,7 +522,6 @@ function loadSellerRecentOrders(limit) {
                     );
                 });
             } else {
-                // Enhanced empty state for recent orders
                 $recentOrdersList.html(getEmptyStateHTML(
                     'shopping-cart-01-svgrepo-com.svg',
                     'No recent orders',
