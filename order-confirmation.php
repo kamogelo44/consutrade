@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/init.php';
+include __DIR__ . '/includes/session-vars.php';
 
 $baseUrl = getBaseUrl();
 
@@ -58,6 +59,7 @@ if ($order_id == 0 && isset($_GET['m_payment_id'])) {
     </main>
 
     <?php include 'includes/footer.php'; ?>
+    <?php include 'includes/modal-errors.php'; ?>
 
     <script>
         $(function() {

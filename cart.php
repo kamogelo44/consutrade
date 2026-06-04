@@ -4,19 +4,12 @@
  * Author: Kamogelo Phale
  * 
  * Displays user's cart items with quantity and stock awareness
+ * Uses CartRepository for cart operations
  */
 
 require_once __DIR__ . '/init.php';
-
-// Read register errors
-$registerErrors = $_SESSION['register_errors'] ?? [];
-$registerFormData = $_SESSION['register_form_data'] ?? [];
-unset($_SESSION['register_errors'], $_SESSION['register_form_data']);
-
-// Read login errors
-$loginErrors = $_SESSION['login_errors'] ?? [];
-$loginEmail = $_SESSION['login_email'] ?? '';
-unset($_SESSION['login_errors'], $_SESSION['login_email']);
+include __DIR__ . '/includes/session-vars.php';
+include __DIR__ . '/includes/functions.php';
 
 $breadcrumbItems = [
     ['label' => 'Shopping Cart']
@@ -42,11 +35,10 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cart - ConsuTrade</title>
+    <meta name="description" content="View and manage your shopping cart items">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== CART PAGE STYLES - ONLY CART-SPECIFIC ========== */
-
-        /* Cart Layout */
+        /* ========== CART PAGE STYLES ========== */
         .cart-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -67,7 +59,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             display: inline-block;
         }
 
-        /* Cart Grid */
         .cart-grid {
             display: grid;
             grid-template-columns: 1fr 350px;
@@ -81,7 +72,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             gap: 20px;
         }
 
-        /* Cart Item Card */
         .cart-item {
             display: grid;
             grid-template-columns: 100px 1fr auto;
@@ -98,7 +88,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             box-shadow: var(--shadow-md);
         }
 
-        /* Product Image */
         .item-image {
             width: 100px;
             height: 100px;
@@ -113,7 +102,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             object-fit: cover;
         }
 
-        /* Product Details */
         .item-details {
             display: flex;
             flex-direction: column;
@@ -139,7 +127,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             color: var(--gray-medium);
         }
 
-        /* Cart Badges */
         .verified-badge,
         .unverified-badge {
             display: inline-flex;
@@ -148,12 +135,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             padding: 2px 8px;
             border-radius: var(--radius-round);
             font-size: 10px;
-        }
-
-        .verified-badge img,
-        .unverified-badge img {
-            width: 10px;
-            height: 10px;
         }
 
         .verified-badge {
@@ -174,7 +155,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             color: var(--primary-color);
         }
 
-        /* Stock Status with Icons */
         .stock-status {
             display: inline-flex;
             align-items: center;
@@ -184,11 +164,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             font-size: var(--font-xs);
             font-weight: var(--font-medium);
             width: fit-content;
-        }
-
-        .stock-status img {
-            width: 12px;
-            height: 12px;
         }
 
         .stock-status.in-stock {
@@ -206,7 +181,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             color: var(--error-dark);
         }
 
-        /* Item Actions */
         .item-actions {
             display: flex;
             flex-direction: column;
@@ -214,7 +188,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             gap: 12px;
         }
 
-        /* Quantity Controls */
         .quantity-control {
             display: flex;
             align-items: center;
@@ -251,7 +224,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             font-size: var(--font-md);
         }
 
-        /* Remove Item */
         .remove-item {
             display: inline-flex;
             align-items: center;
@@ -276,7 +248,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             filter: brightness(0) invert(1);
         }
 
-        /* Order Summary */
         .order-summary {
             background: var(--gray-bg);
             border: 1px solid var(--border-light);
@@ -315,7 +286,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             margin-bottom: 15px;
         }
 
-        /* Buttons */
         .checkout-btn {
             width: 100%;
             padding: 14px;
@@ -355,7 +325,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             box-shadow: var(--shadow-md);
         }
 
-        /* Summary Footer */
         .summary-footer {
             margin-top: 20px;
             padding-top: 15px;
@@ -392,13 +361,39 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             margin-top: 10px;
         }
 
-        .security-text img {
-            width: 14px;
-            height: 14px;
-            opacity: 0.6;
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
         }
 
-        /* ========== RESPONSIVE ========== */
+        .empty-state img {
+            opacity: 0.5;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .empty-state h3 {
+            margin-bottom: var(--spacing-sm);
+            color: var(--dark-bg);
+        }
+
+        .empty-state p {
+            color: var(--gray-medium);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .view-all-btn {
+            padding: 10px 24px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-bold);
+        }
+
         @media (max-width: 768px) {
             .cart-container {
                 padding: 15px var(--spacing-md);
@@ -432,14 +427,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                 width: 80px;
                 height: 80px;
             }
-
-            .item-title {
-                font-size: var(--font-sm);
-            }
-
-            .item-price {
-                font-size: var(--font-md);
-            }
         }
 
         @media (max-width: 480px) {
@@ -453,27 +440,12 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             }
 
             .item-image {
-                width: 100px;
-                height: 100px;
                 margin: 0 auto;
-            }
-
-            .item-details {
-                text-align: center;
-            }
-
-            .item-seller {
-                justify-content: center;
             }
 
             .item-actions {
                 grid-column: 1;
                 flex-direction: column;
-                align-items: stretch;
-            }
-
-            .quantity-control {
-                justify-content: center;
             }
 
             .cart-header h1 {
@@ -504,13 +476,14 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                 </div>
             <?php else: ?>
                 <div class="cart-grid">
-                    <!-- Cart Items Section -->
                     <div class="cart-items" id="cart-items">
                         <?php foreach ($cart_items as $item): ?>
                             <?php $isVerified = $item['is_verified'] ?? false; ?>
                             <div class="cart-item" data-cart-id="<?php echo $item['cart_id']; ?>" data-product-id="<?php echo $item['product_id']; ?>">
                                 <div class="item-image">
-                                    <img src="<?php echo $item['image_url']; ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
+                                    <img src="<?php echo fixImageUrl($item['image_url']); ?>"
+                                        alt="<?php echo htmlspecialchars($item['title']); ?>"
+                                        onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
                                 </div>
 
                                 <div class="item-details">
@@ -531,7 +504,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                                     </div>
                                     <div class="item-price">R <?php echo number_format($item['price'], 2); ?></div>
 
-                                    <!-- Stock Status with Icons -->
                                     <?php if ($item['stock_quantity'] <= 0): ?>
                                         <div class="stock-status out-of-stock">
                                             <img src="<?php echo $baseUrl; ?>images/icons/close-svgrepo-com.svg" width="12" height="12" alt="Out of stock">
@@ -567,7 +539,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                         <?php endforeach; ?>
                     </div>
 
-                    <!-- Order Summary Section -->
                     <div class="order-summary">
                         <h2>Order Summary</h2>
                         <div class="summary-row">
@@ -587,7 +558,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                         <button class="continue-shopping" id="continueBtn">Continue Shopping</button>
 
                         <div class="summary-footer">
-                            <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank">
+                            <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank" rel="noopener noreferrer">
                                 <span>Secured with</span>
                                 <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast">
                             </a>
@@ -605,9 +576,12 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
     <?php include 'includes/footer.php'; ?>
 
     <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
+        /**
+         * ConsuTrade - Cart Page JavaScript
+         * Handles cart quantity updates and item removal with caching
+         */
 
-        // ========== CACHED DOM ELEMENTS ==========
+        // Cache DOM elements for better performance
         var $cartItems = null;
         var $qtyIncrease = null;
         var $qtyDecrease = null;
@@ -617,7 +591,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         var $continueBtn = null;
         var $browseBtn = null;
 
-        // ========== CACHE FUNCTION ==========
+        // Cache jQuery objects after DOM is ready
         function cacheCartElements() {
             $cartItems = $('#cart-items');
             $qtyIncrease = $('.qty-increase');
@@ -629,7 +603,11 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             $browseBtn = $('#browseBtn');
         }
 
-        // ========== UPDATE CART QUANTITY ==========
+        /**
+         * Update cart item quantity via AJAX
+         * @param {number} cartId - Cart item ID
+         * @param {number} quantity - New quantity value
+         */
         function updateCartQuantity(cartId, quantity) {
             $.ajax({
                 url: baseUrl + 'php/endpoints/update-cart.php',
@@ -652,7 +630,9 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             });
         }
 
-        // ========== HANDLE QUANTITY INCREASE ==========
+        /**
+         * Handle quantity increase button click
+         */
         function handleQuantityIncrease() {
             $qtyIncrease.off('click').on('click', function() {
                 var $btn = $(this);
@@ -667,7 +647,9 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             });
         }
 
-        // ========== HANDLE QUANTITY DECREASE ==========
+        /**
+         * Handle quantity decrease button click
+         */
         function handleQuantityDecrease() {
             $qtyDecrease.off('click').on('click', function() {
                 var $btn = $(this);
@@ -681,7 +663,9 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             });
         }
 
-        // ========== HANDLE QUANTITY INPUT CHANGE ==========
+        /**
+         * Handle manual quantity input change
+         */
         function handleQuantityInputChange() {
             $qtyInput.off('change').on('change', function() {
                 var $input = $(this);
@@ -698,7 +682,9 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             });
         }
 
-        // ========== HANDLE REMOVE ITEMS ==========
+        /**
+         * Handle remove item button click
+         */
         function handleRemoveItems() {
             $removeItems.off('click').on('click', function() {
                 var $btn = $(this);
@@ -709,7 +695,9 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             });
         }
 
-        // ========== HANDLE NAVIGATION ==========
+        /**
+         * Handle navigation button clicks
+         */
         function handleNavigation() {
             if ($checkoutBtn.length) {
                 $checkoutBtn.off('click').on('click', function() {
@@ -730,7 +718,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             }
         }
 
-        // ========== INITIALIZE ==========
+        // Initialize all cart functionality when DOM is ready
         $(document).ready(function() {
             cacheCartElements();
             handleQuantityIncrease();

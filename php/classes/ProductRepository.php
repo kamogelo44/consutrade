@@ -60,6 +60,36 @@ class ProductRepository
     }
 
     /**
+     * Get public products as Product objects (not arrays)
+     *
+     * @param array $filters Associative array of filters
+     * @return Product[]
+     */
+    public function getPublicProductObjects(array $filters = []): array
+    {
+        $result = $this->getPublicProducts($filters);
+        $products = [];
+
+        foreach ($result['products'] as $productData) {
+            // Map the array data to match Product constructor expectations
+            $mappedData = [
+                'product_id' => $productData['id'],
+                'seller_id' => $productData['seller_id'],
+                'title' => $productData['name'],
+                'price' => $productData['price'],
+                'image_url' => $productData['image'],  // Map 'image' to 'image_url'
+                'condition' => $productData['condition'],
+                'stock_quantity' => $productData['stock_quantity'],
+                'location' => $productData['location'],
+                'status' => 'active'
+            ];
+            $products[] = new Product($mappedData);
+        }
+
+        return $products;
+    }
+
+    /**
      * Get seller products as Product objects.
      *
      * @param int $sellerId Seller ID

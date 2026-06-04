@@ -5,51 +5,20 @@
  * Handles both Admin and Seller dashboards
  * Includes shared modal functions for order details
  * 
- * Note: Relies on main.js for escapeHtml(), showSuccessToast(), showErrorToast(), updateOrderStatus()
+ * Note: Relies on main.js for:
+ *   - escapeHtml()
+ *   - fixImageUrl()
+ *   - showSuccessToast(), showErrorToast()
+ *   - updateOrderStatus()
+ *   - getStatusClass()
+ *   - capitalizeFirst()
  */
 
 // ========== GLOBAL VARIABLES ==========
 /** @type {string} Base URL for the site */
 var baseUrl = baseUrl || '';
 
-// ========== HELPER FUNCTIONS ==========
-
-/**
- * Sets the text content of an element by ID
- * 
- * @param {string} id - Element ID
- * @param {*} value - Value to set as text
- * @returns {void}
- */
-function setText(id, value) {
-    $('#' + id).text(value);
-}
-
-/**
- * Generates HTML for an empty state message
- * 
- * @param {string} icon - Icon filename from images/icons/
- * @param {string} title - Heading text
- * @param {string} message - Description text
- * @param {string} buttonText - Button text (optional)
- * @param {string} buttonLink - Button link URL (optional)
- * @returns {string} HTML for empty state
- */
-function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
-    var html = '<div class="empty-state">' +
-        '<img src="' + baseUrl + 'images/icons/' + icon + '" width="64" height="64" alt="' + title + '">' +
-        '<h3>' + escapeHtml(title) + '</h3>' +
-        '<p>' + escapeHtml(message) + '</p>';
-    
-    if (buttonText && buttonLink) {
-        html += '<a href="' + buttonLink + '" class="view-all-btn">' + escapeHtml(buttonText) + '</a>';
-    }
-    
-    html += '</div>';
-    return html;
-}
-
-// ========== PRODUCT MANAGEMENT FUNCTIONS (Shared between admin and seller) ==========
+// ========== PRODUCT MANAGEMENT FUNCTIONS ==========
 
 /**
  * Toggle product status (suspend/activate)
@@ -68,7 +37,6 @@ window.toggleProductStatus = function(productId, currentStatus, callback) {
     
     var requestData = { product_id: productId, status: newStatus };
     
-    // Ask for reason if suspending (optional for sellers, recommended for admins)
     if (action === 'suspend') {
         var reason = prompt('Reason for suspension (optional):', '');
         if (reason !== null && reason.trim() !== '') {
@@ -137,62 +105,38 @@ window.deleteProduct = function(productId, productName, callback) {
     }
 };
 
-// ========== SHARED MODAL FUNCTIONS ==========
+// ========== SHARED MODAL FUNCTIONS (Wrappers for main.js) ==========
 
-/**
- * Shortcut to process an order (set status to 'processing')
- * @param {number} orderId - Order ID to process
- */
 window.processOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
         updateOrderStatus(orderId, 'processing');
     }
 };
 
-/**
- * Shortcut to mark order as shipped (set status to 'shipped')
- * @param {number} orderId - Order ID to ship
- */
 window.shipOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
         updateOrderStatus(orderId, 'shipped');
     }
 };
 
-/**
- * Shortcut to complete an order (set status to 'completed')
- * @param {number} orderId - Order ID to complete
- */
 window.completeOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
         updateOrderStatus(orderId, 'completed');
     }
 };
 
-/**
- * Shortcut to cancel an order (set status to 'cancelled')
- * @param {number} orderId - Order ID to cancel
- */
 window.cancelOrder = function(orderId) { 
     if (typeof updateOrderStatus === 'function') {
         updateOrderStatus(orderId, 'cancelled');
     }
 };
 
-/**
- * Redirects to edit product page
- * @param {number} productId - Product ID to edit
- */
 window.editProduct = function(productId) {
     if (productId) {
         window.location.href = baseUrl + 'admin/edit-product.php?id=' + productId;
     }
 };
 
-/**
- * Redirects to order details page
- * @param {number} orderId - Order ID to view
- */
 window.viewOrder = function(orderId) {
     if (orderId) {
         var path = window.location.pathname;
@@ -206,17 +150,12 @@ window.viewOrder = function(orderId) {
 
 // ========== SELLER PRODUCTS FUNCTION ==========
 
-/** @type {jQuery|null} Listings grid container */
 var $listingsGrid = null;
 
 function cacheSellerElements() {
     $listingsGrid = $('#listings-grid');
 }
 
-/**
- * Loads seller's products from the server
- * @param {number} [limit] - Optional limit for number of products to load
- */
 window.loadSellerProducts = function(limit) {
     cacheSellerElements();
     if (!$listingsGrid.length) return;
@@ -233,7 +172,6 @@ window.loadSellerProducts = function(limit) {
             if (data.success && data.products && data.products.length) {
                 displaySellerProducts(data.products);
             } else {
-                // Enhanced empty state for seller products
                 $listingsGrid.html(getEmptyStateHTML(
                     'product-catalog-svgrepo-com.svg',
                     'No products found',
@@ -258,7 +196,7 @@ function displaySellerProducts(products) {
         var $card = $('<div>').addClass('product-card');
         $card.html(
             '<div class="product-image">' +
-                '<img src="' + (imagePath) + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                '<img src="' + imagePath + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
             '</div>' +
             '<div class="product-details">' +
                 '<h4 class="product-title">' + escapeHtml(product.name) + '</h4>' +
@@ -275,50 +213,28 @@ function displaySellerProducts(products) {
 
 // ========== ADMIN DASHBOARD FUNCTIONS ==========
 
-/** @type {jQuery|null} Total revenue element */
-var $totalRevenue = null;
-var $totalUsers = null;
-var $totalProducts = null;
-var $pendingOrders = null;
-var $flaggedReports = null;
-var $flaggedReportsNotice = null;
-var $flaggedReportsMessage = null;
-
-function cacheAdminStatsElements() {
-    $totalRevenue = $('#totalRevenue');
-    $totalUsers = $('#totalUsers');
-    $totalProducts = $('#totalProducts');
-    $pendingOrders = $('#pendingOrders');
-}
-
-function cacheFlaggedReportsElements() {
-    $flaggedReports = $('#flaggedReports');
-    $flaggedReportsNotice = $('#flaggedReportsNotice');
-    $flaggedReportsMessage = $('#flaggedReportsMessage');
-}
-
 function loadAdminStats() {
-    cacheAdminStatsElements();
     $.ajax({
         url: baseUrl + 'php/endpoints/get-user-stats.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success) {
-                if ($totalRevenue.length) $totalRevenue.text('R ' + (data.total_revenue || 0).toFixed(2));
-                if ($totalUsers.length) $totalUsers.text(data.total_users || 0);
-                if ($totalProducts.length) $totalProducts.text(data.total_products || 0);
-                if ($pendingOrders.length) $pendingOrders.text(data.pending_orders || 0);
+                $('#totalRevenue').text('R ' + (data.total_revenue || 0).toFixed(2));
+                $('#totalUsers').text(data.total_users || 0);
+                $('#totalProducts').text(data.total_products || 0);
+                $('#pendingOrders').text(data.pending_orders || 0);
             }
-        },
-        error: function() {}
+        }
     });
 }
 
 function loadFlaggedReportsCount() {
-    cacheFlaggedReportsElements();
+    var $flaggedReports = $('#flaggedReports');
+    var $flaggedReportsNotice = $('#flaggedReportsNotice');
+    var $flaggedReportsMessage = $('#flaggedReportsMessage');
     
-    if (!$flaggedReports || !$flaggedReports.length) return;
+    if (!$flaggedReports.length) return;
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-flagged-listings.php',
@@ -328,39 +244,30 @@ function loadFlaggedReportsCount() {
         success: function(data) {
             if (data.success) {
                 var count = data.total || 0;
-                if ($flaggedReports.length) $flaggedReports.text(count);
+                $flaggedReports.text(count);
                 
-                if ($flaggedReportsNotice && $flaggedReportsNotice.length && count > 0) {
+                if ($flaggedReportsNotice.length && count > 0) {
                     var message = count + ' product ' + (count === 1 ? 'report requires' : 'reports require') + ' your attention.';
-                    if ($flaggedReportsMessage.length) $flaggedReportsMessage.text(message);
+                    $flaggedReportsMessage.text(message);
                     $flaggedReportsNotice.show();
-                } else if ($flaggedReportsNotice && $flaggedReportsNotice.length) {
+                } else if ($flaggedReportsNotice.length) {
                     $flaggedReportsNotice.hide();
                 }
             } else {
-                if ($flaggedReports.length) $flaggedReports.text('0');
+                $flaggedReports.text('0');
             }
         },
         error: function() {
-            if ($flaggedReports.length) $flaggedReports.text('0');
+            $flaggedReports.text('0');
         }
     });
 }
 
-// ========== LOAD PENDING VERIFICATIONS ==========
-
-var $pendingVerifications = null;
-var $pendingNotice = null;
-var $pendingMessage = null;
-
-function cachePendingVerificationElements() {
-    $pendingVerifications = $('#pendingVerifications');
-    $pendingNotice = $('#pendingNotice');
-    $pendingMessage = $('#pendingMessage');
-}
-
 function loadPendingVerifications() {
-    cachePendingVerificationElements();
+    var $pendingVerifications = $('#pendingVerifications');
+    var $pendingNotice = $('#pendingNotice');
+    var $pendingMessage = $('#pendingMessage');
+    
     $.ajax({
         url: baseUrl + 'php/endpoints/get-users.php?role=pending',
         type: 'GET',
@@ -368,7 +275,7 @@ function loadPendingVerifications() {
         success: function(data) {
             if (data.success) {
                 var count = data.users ? data.users.length : 0;
-                if ($pendingVerifications.length) $pendingVerifications.text(count);
+                $pendingVerifications.text(count);
                 if (count > 0) {
                     if ($pendingNotice.length) $pendingNotice.show();
                     if ($pendingMessage.length) $pendingMessage.html('<strong>' + count + '</strong> seller(s) waiting for document verification.');
@@ -378,7 +285,7 @@ function loadPendingVerifications() {
             }
         },
         error: function() {
-            if ($pendingVerifications.length) $pendingVerifications.text('0');
+            $pendingVerifications.text('0');
         }
     });
 }
@@ -431,7 +338,7 @@ function loadRecentOrders(limit) {
                     var statusClass = getStatusClass(order.status);
                     $recentOrdersTable.append(
                         '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
-                            '方向的#' + order.id + '</td>' +
+                            '<td>#' + order.id + '</td>' +
                             '<td>' + escapeHtml(order.buyer_name) + '</td>' +
                             '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
                             '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
@@ -459,30 +366,18 @@ function loadAdminDashboard() {
 
 // ========== SELLER DASHBOARD FUNCTIONS ==========
 
-var $statEarnings = null;
-var $statProducts = null;
-var $statPending = null;
-
-function cacheSellerStatsElements() {
-    $statEarnings = $('#stat-earnings');
-    $statProducts = $('#stat-products');
-    $statPending = $('#stat-pending');
-}
-
 function loadSellerStats() {
-    cacheSellerStatsElements();
     $.ajax({
         url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + currentUserId,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success) {
-                if ($statEarnings.length) $statEarnings.text('R ' + parseFloat(data.total_sales || 0).toFixed(2));
-                if ($statProducts.length) $statProducts.text(data.total_products || 0);
-                if ($statPending.length) $statPending.text(data.pending_orders || 0);
+                $('#stat-earnings').text('R ' + parseFloat(data.total_sales || 0).toFixed(2));
+                $('#stat-products').text(data.total_products || 0);
+                $('#stat-pending').text(data.pending_orders || 0);
             }
-        },
-        error: function() {}
+        }
     });
 }
 
@@ -581,23 +476,10 @@ function initMobileSidebar(prefix) {
     });
 }
 
-var $adminSideMenu = null;
-var $adminMenuOverlay = null;
-var $sellerSideMenu = null;
-var $sellerMenuOverlay = null;
-
-function cacheModalSidebarHandlerElements() {
-    $adminSideMenu = $('#adminSideMenu');
-    $adminMenuOverlay = $('#adminMenuOverlay');
-    $sellerSideMenu = $('#sellerSideMenu');
-    $sellerMenuOverlay = $('#sellerMenuOverlay');
-}
-
 function initModalSidebarHandler() {
-    cacheModalSidebarHandlerElements();
     var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
-    var $sideMenu = (prefix === 'admin') ? $adminSideMenu : $sellerSideMenu;
-    var $menuOverlay = (prefix === 'admin') ? $adminMenuOverlay : $sellerMenuOverlay;
+    var $sideMenu = $('#' + prefix + 'SideMenu');
+    var $menuOverlay = $('#' + prefix + 'MenuOverlay');
     var $viewDetailsBtns = $('.view-details-btn, .view-btn, [data-modal-open]');
     var $modalCloseBtns = $('.modal-close');
     
@@ -655,30 +537,16 @@ function removeGalleryImage(imageId, productId) {
 
 // ========== DOCUMENT READY ==========
 
-var $totalUsersElement = null;
-var $recentUsersTableElement = null;
-var $statProductsElement = null;
-var $listingsGridElement = null;
-
-function cacheDashboardPageElements() {
-    $totalUsersElement = $('#totalUsers');
-    $recentUsersTableElement = $('#recent-users-table');
-    $statProductsElement = $('#stat-products');
-    $listingsGridElement = $('#listings-grid');
-}
-
 $(function() {
-    cacheDashboardPageElements();
-    
     initMobileSidebar('admin');
     initMobileSidebar('seller');
     initModalSidebarHandler();
     
-    if ($totalUsersElement.length || $recentUsersTableElement.length) {
+    if ($('#totalUsers').length || $('#recent-users-table').length) {
         loadAdminDashboard();
     }
     
-    if ($statProductsElement.length || $listingsGridElement.length) {
+    if ($('#stat-products').length || $('#listings-grid').length) {
         loadSellerDashboard();
     }
 });

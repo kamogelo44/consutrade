@@ -3,10 +3,13 @@
  * ConsuTrade - All Orders (Admin)
  * Author: Kamogelo Phale
  * 
- * Displays all orders on the marketplace for admin management
+ * Displays all orders on the marketplace for admin management.
+ * Uses main.js for modal, toast, pagination, and admin orders table rendering.
  */
 
 require_once dirname(__DIR__) . '/init.php';
+include dirname(__DIR__) . '/includes/session-vars.php';
+include dirname(__DIR__) . '/includes/functions.php';
 
 if (!$auth->isAdmin()) {
     header('Location: login.php');
@@ -22,7 +25,6 @@ if (!$auth->isAdmin()) {
     <title>All Orders - ConsuTrade Admin</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
         .admin-main-content {
             margin-left: 280px;
@@ -303,7 +305,6 @@ if (!$auth->isAdmin()) {
             color: var(--gray-medium);
         }
 
-        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -499,100 +500,6 @@ if (!$auth->isAdmin()) {
             border-top: 1px solid var(--border-light);
         }
 
-        .info-value .status-pending,
-        .info-value .status-processing,
-        .info-value .status-shipped,
-        .info-value .status-completed,
-        .info-value .status-cancelled {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .info-value .status-pending {
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        .info-value .status-processing {
-            background: var(--info-light);
-            color: var(--info);
-        }
-
-        .info-value .status-shipped {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-        }
-
-        .info-value .status-completed {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .info-value .status-cancelled {
-            background: var(--error-light);
-            color: var(--error);
-        }
-
-        .modal-footer .process-btn,
-        .modal-footer .ship-btn,
-        .modal-footer .complete-btn,
-        .modal-footer .cancel-btn {
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            font-size: var(--font-sm);
-            cursor: pointer;
-            border: none;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-        }
-
-        .modal-footer .process-btn {
-            background: var(--warning-light);
-            color: var(--warning);
-            border: 1px solid var(--warning);
-        }
-
-        .modal-footer .process-btn:hover {
-            background: var(--warning);
-            color: white;
-        }
-
-        .modal-footer .ship-btn {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-        }
-
-        .modal-footer .ship-btn:hover {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .modal-footer .complete-btn {
-            background: var(--success-light);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .modal-footer .complete-btn:hover {
-            background: var(--success);
-            color: white;
-        }
-
-        .modal-footer .cancel-btn {
-            background: var(--error-light);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        .modal-footer .cancel-btn:hover {
-            background: var(--error);
-            color: white;
-        }
-
         @media (max-width: 1024px) {
             .admin-main-content {
                 margin-left: 0;
@@ -775,8 +682,8 @@ if (!$auth->isAdmin()) {
                     </thead>
                     <tbody id="ordersTable">
                         <tr>
-                            <td colspan="8" class="loading-cell">Loading orders...</td>
-                        </tr>
+                            <td colspan="8" class="loading-cell">Loading orders...<\ /td>
+                                    <\ /tr>
                     </tbody>
                 </table>
             </div>
@@ -798,7 +705,10 @@ if (!$auth->isAdmin()) {
         </div>
     </div>
 
+    <?php include 'includes/footer.php'; ?>
+
     <script>
+        // ========== GLOBAL VARIABLES ==========
         var $ordersTable = null,
             $pagination = null,
             $filterBtns = null,
@@ -810,6 +720,7 @@ if (!$auth->isAdmin()) {
             currentSearch = '',
             totalPages = 1;
 
+        // ========== CACHE ELEMENTS ==========
         function cacheElements() {
             $ordersTable = $('#ordersTable');
             $pagination = $('#pagination');
@@ -819,8 +730,9 @@ if (!$auth->isAdmin()) {
             $searchInput = $('#searchInput');
         }
 
+        // ========== LOAD ORDERS ==========
         function loadOrders() {
-            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...<\/td><\/tr>');
+            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...</td></tr>');
             $.ajax({
                 url: baseUrl + 'php/endpoints/get-all-orders.php',
                 type: 'GET',
@@ -832,78 +744,33 @@ if (!$auth->isAdmin()) {
                 },
                 success: function(data) {
                     if (data.success && data.orders && data.orders.length) {
-                        displayOrders(data.orders);
-                        totalPages = data.total_pages;
-                        displayPagination();
+                        // Use the shared renderAdminOrdersTable function from main.js
+                        renderAdminOrdersTable(data.orders, $ordersTable);
+                        totalPages = data.total_pages || 1;
+                        // Use main.js renderPagination function
+                        renderPagination($pagination, currentPage, totalPages, function(page) {
+                            currentPage = page;
+                            loadOrders();
+                            $('html, body').animate({
+                                scrollTop: 0
+                            }, 'smooth');
+                        });
                     } else {
-                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found<\/td><\/tr>');
+                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
                         $pagination.empty();
                     }
                 },
                 error: function() {
-                    $ordersTable.html('<tr><td colspan="8" class="error-cell">Error loading orders<\/td><\/tr>');
+                    $ordersTable.html('<tr><td colspan="8" class="error-cell">Error loading orders</td></tr>');
                 }
             });
         }
 
-        function displayOrders(orders) {
-            $ordersTable.empty();
-            $.each(orders, function(i, order) {
-                var statusClass = order.status;
-                var actionButtons = '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
-                if (order.status === 'pending') {
-                    actionButtons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
-                } else if (order.status === 'processing') {
-                    actionButtons += '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
-                } else if (order.status === 'shipped') {
-                    actionButtons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
-                }
-                $ordersTable.append(
-                    '<tr>' +
-                    '<td data-label="Order Number">#' + order.order_id + '<\/td>' +
-                    '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '<\/td>' +
-                    '<td data-label="Seller">' + escapeHtml(order.seller_name) + '<\/td>' +
-                    '<td data-label="Items">' + (order.item_count || 0) + '<\/td>' +
-                    '<td data-label="Amount">R ' + parseFloat(order.total_price).toFixed(2) + '<\/td>' +
-                    '<td data-label="Status"><span class="status-badge ' + statusClass + '">' + order.status + '<\/span><\/td>' +
-                    '<td data-label="Date">' + order.created_at + '<\/td>' +
-                    '<td data-label="Actions" class="action-buttons">' + actionButtons + '<\/td>' +
-                    '<\/tr>'
-                );
-            });
-        }
-
-        function displayPagination() {
-            if (totalPages <= 1) {
-                $pagination.empty();
-                return;
-            }
-            var html = '';
-            if (currentPage > 1) html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous<\/button>';
-            for (var i = 1; i <= totalPages; i++) {
-                if (i === currentPage) {
-                    html += '<button class="page-btn active" disabled>' + i + '<\/button>';
-                } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '<\/button>';
-                } else if (Math.abs(i - currentPage) === 3) {
-                    html += '<span class="page-dots">...<\/span>';
-                }
-            }
-            if (currentPage < totalPages) html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →<\/button>';
-            $pagination.html(html);
-        }
-
-        function goToPage(page) {
-            currentPage = page;
-            loadOrders();
-            $('html, body').animate({
-                scrollTop: 0
-            }, 'smooth');
-        }
-
-        $(function() {
+        // ========== EVENT HANDLERS ==========
+        $(document).ready(function() {
             cacheElements();
             loadOrders();
+
             $filterBtns.on('click', function() {
                 $filterBtns.removeClass('active');
                 $(this).addClass('active');
@@ -911,12 +778,14 @@ if (!$auth->isAdmin()) {
                 currentPage = 1;
                 loadOrders();
             });
+
             $searchBtn.on('click', function() {
                 currentSearch = $searchInput.val().trim();
                 currentPage = 1;
                 loadOrders();
                 $resetBtn.toggle(!!currentSearch);
             });
+
             $resetBtn.on('click', function() {
                 $searchInput.val('');
                 currentSearch = '';
@@ -924,8 +793,20 @@ if (!$auth->isAdmin()) {
                 loadOrders();
                 $(this).hide();
             });
+
             $searchInput.on('keypress', function(e) {
                 if (e.which === 13) $searchBtn.click();
+            });
+
+            // Modal close handlers
+            $('.modal-close').on('click', function() {
+                closeOrderModal();
+            });
+
+            $('#orderModal').on('click', function(e) {
+                if ($(e.target).is('#orderModal')) {
+                    closeOrderModal();
+                }
             });
         });
     </script>

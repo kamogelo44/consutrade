@@ -4,10 +4,12 @@
  * Author: Kamogelo Phale
  * 
  * Displays all orders for the logged-in seller with filtering and search.
- * Allows sellers to view order details and update order status.
+ * Uses main.js for modal, toast, and status update functions.
  */
 
 require_once dirname(__DIR__) . '/init.php';
+include dirname(__DIR__) . '/includes/session-vars.php';
+include dirname(__DIR__) . '/includes/functions.php';
 
 if (!$auth->isSeller()) {
     header('Location: login.php');
@@ -30,10 +32,7 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
     <title>Seller Orders - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
-        /* ========== SELLER DASHBOARD LAYOUT ========== */
-
         .seller-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -46,8 +45,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             max-width: 1400px;
             margin: 0 auto;
         }
-
-        /* ========== PAGE HEADER ========== */
 
         .page-header {
             margin-bottom: var(--spacing-xl);
@@ -63,8 +60,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         .page-header p {
             color: var(--gray-medium);
         }
-
-        /* ========== FILTERS BAR ========== */
 
         .filters-bar {
             display: flex;
@@ -104,8 +99,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             color: var(--white);
             border-color: var(--primary-color);
         }
-
-        /* ========== SEARCH FORM ========== */
 
         .search-bar form {
             display: flex;
@@ -152,8 +145,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             font-size: var(--font-sm);
         }
 
-        /* ========== ORDERS LIST ========== */
-
         .orders-list {
             display: flex;
             flex-direction: column;
@@ -171,8 +162,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         .order-card:hover {
             box-shadow: var(--shadow-md);
         }
-
-        /* ========== ORDER HEADER ========== */
 
         .order-header {
             display: flex;
@@ -196,8 +185,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             font-size: var(--font-sm);
             margin-left: var(--spacing-sm);
         }
-
-        /* ========== ORDER STATUS BADGES ========== */
 
         .order-status-badge {
             padding: 4px 12px;
@@ -230,8 +217,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             background: var(--error-light);
             color: var(--error);
         }
-
-        /* ========== ORDER BODY ========== */
 
         .order-body {
             padding: var(--spacing-md);
@@ -273,8 +258,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             font-weight: var(--font-bold);
             color: var(--primary-color);
         }
-
-        /* ========== ORDER FOOTER BUTTONS ========== */
 
         .order-footer {
             padding: var(--spacing-md);
@@ -355,8 +338,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             transform: translateY(-2px);
         }
 
-        /* ========== EMPTY STATE ========== */
-
         .empty-orders {
             grid-column: 1 / -1;
             text-align: center;
@@ -394,14 +375,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             font-weight: var(--font-medium);
             transition: all var(--transition-fast);
         }
-
-        .empty-orders .clear-btn:hover,
-        .empty-orders .back-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        /* ========== MODAL STYLES ========== */
 
         .order-modal {
             display: none;
@@ -551,8 +524,6 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             font-size: var(--font-lg);
             color: var(--dark-bg);
         }
-
-        /* ========== RESPONSIVE STYLES ========== */
 
         @media (max-width: 1024px) {
             .seller-main-content {
@@ -706,18 +677,18 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
                             </div>
 
                             <div class="order-footer">
-                                <button class="view-details-btn" onclick="openOrderModal(<?php echo $order['order_id']; ?>)">View Details</button>
+                                <button class="view-details-btn" data-order-id="<?php echo $order['order_id']; ?>">View Details</button>
                                 <?php if ($order['status'] === 'pending'): ?>
-                                    <button class="process-btn" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'processing')">Process Order</button>
+                                    <button class="process-btn" data-order-id="<?php echo $order['order_id']; ?>" data-status="processing">Process Order</button>
                                 <?php endif; ?>
                                 <?php if ($order['status'] === 'processing'): ?>
-                                    <button class="ship-btn" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'shipped')">Mark as Shipped</button>
+                                    <button class="ship-btn" data-order-id="<?php echo $order['order_id']; ?>" data-status="shipped">Mark as Shipped</button>
                                 <?php endif; ?>
                                 <?php if ($order['status'] === 'shipped'): ?>
-                                    <button class="complete-btn" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'completed')">Mark as Completed</button>
+                                    <button class="complete-btn" data-order-id="<?php echo $order['order_id']; ?>" data-status="completed">Mark as Completed</button>
                                 <?php endif; ?>
                                 <?php if (in_array($order['status'], ['pending', 'processing'])): ?>
-                                    <button class="cancel-btn" onclick="updateOrderStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Cancel Order</button>
+                                    <button class="cancel-btn" data-order-id="<?php echo $order['order_id']; ?>" data-status="cancelled">Cancel Order</button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -743,7 +714,7 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         <div class="order-modal-content">
             <div class="order-modal-header">
                 <h2>Order Details</h2>
-                <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
+                <button class="order-modal-close">&times;</button>
             </div>
             <div id="orderModalBody" class="order-details-content">
                 <div class="loading-spinner">Loading order details...</div>
@@ -751,6 +722,73 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             <div id="orderModalFooter" class="order-modal-footer"></div>
         </div>
     </div>
+
+    <?php include 'includes/footer.php'; ?>
+
+    <script>
+        // ========== CACHED DOM ELEMENTS ==========
+        var $viewDetailsBtns = null;
+        var $processBtns = null;
+        var $shipBtns = null;
+        var $completeBtns = null;
+        var $cancelBtns = null;
+
+        function cacheSellerOrderElements() {
+            $viewDetailsBtns = $('.view-details-btn');
+            $processBtns = $('.process-btn');
+            $shipBtns = $('.ship-btn');
+            $completeBtns = $('.complete-btn');
+            $cancelBtns = $('.cancel-btn');
+        }
+
+        // ========== EVENT HANDLERS ==========
+        function handleViewDetails() {
+            $viewDetailsBtns.off('click').on('click', function() {
+                openOrderModal($(this).data('order-id'));
+            });
+        }
+
+        function handleStatusUpdates() {
+            // Process button (pending -> processing)
+            $processBtns.off('click').on('click', function() {
+                updateOrderStatus($(this).data('order-id'), 'processing');
+            });
+
+            // Ship button (processing -> shipped)
+            $shipBtns.off('click').on('click', function() {
+                updateOrderStatus($(this).data('order-id'), 'shipped');
+            });
+
+            // Complete button (shipped -> completed)
+            $completeBtns.off('click').on('click', function() {
+                updateOrderStatus($(this).data('order-id'), 'completed');
+            });
+
+            // Cancel button
+            $cancelBtns.off('click').on('click', function() {
+                updateOrderStatus($(this).data('order-id'), 'cancelled');
+            });
+        }
+
+        function handleModalClose() {
+            $('.order-modal-close').off('click').on('click', function() {
+                closeOrderModal();
+            });
+            $('#orderModal').off('click').on('click', function(e) {
+                if ($(e.target).is('#orderModal')) {
+                    closeOrderModal();
+                }
+            });
+        }
+
+        // ========== INITIALIZE ==========
+        $(document).ready(function() {
+            cacheSellerOrderElements();
+            handleViewDetails();
+            handleStatusUpdates();
+            handleModalClose();
+        });
+    </script>
 
 </body>
 

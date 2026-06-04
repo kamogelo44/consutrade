@@ -8,6 +8,7 @@
  */
 
 require_once __DIR__ . '/init.php';
+include __DIR__ . '/includes/session-vars.php';
 
 // Define PayFast constants if not already defined
 if (!defined('PAYFAST_PROCESS_URL')) {
@@ -412,6 +413,7 @@ unset($_SESSION['checkout_data']);
     </div>
 
     <?php include 'includes/footer.php'; ?>
+    <?php include 'includes/modal-errors.php'; ?>
 
     <script>
         var baseUrl = '<?php echo $baseUrl; ?>';

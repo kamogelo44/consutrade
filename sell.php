@@ -7,16 +7,7 @@
  */
 
 require_once __DIR__ . '/init.php';
-
-// Read register errors
-$registerErrors = $_SESSION['register_errors'] ?? [];
-$registerFormData = $_SESSION['register_form_data'] ?? [];
-unset($_SESSION['register_errors'], $_SESSION['register_form_data']);
-
-// Read login errors
-$loginErrors = $_SESSION['login_errors'] ?? [];
-$loginEmail = $_SESSION['login_email'] ?? '';
-unset($_SESSION['login_errors'], $_SESSION['login_email']);
+include __DIR__ . '/includes/session-vars.php';
 
 // If user is already a seller, redirect to seller dashboard
 if ($isLoggedIn && $currentUser instanceof Seller) {
@@ -110,26 +101,7 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
     </main>
 
     <?php include 'includes/footer.php'; ?>
-
-    <?php if (!empty($registerErrors)): ?>
-        <script>
-            $(function() {
-                openModal($('#register-modal'));
-                displayModalErrors('#register-modal', <?php echo json_encode($registerErrors); ?>, <?php echo json_encode($registerFormData); ?>);
-            });
-        </script>
-    <?php endif; ?>
-
-    <?php if (!empty($loginErrors)): ?>
-        <script>
-            $(function() {
-                openModal($('#login-modal'));
-                displayModalErrors('#login-modal', <?php echo json_encode($loginErrors); ?>, {
-                    email: <?php echo json_encode($loginEmail); ?>
-                });
-            });
-        </script>
-    <?php endif; ?>
+    <?php include 'includes/modal-errors.php'; ?>
 
     <script>
         // ========== CACHED DOM ELEMENTS ==========

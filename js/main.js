@@ -4,6 +4,8 @@
  * Author: Kamogelo Phale
  * 
  * Handles mobile menu, search, password toggle, modals, cart, dropdowns, toast notifications
+ * 
+ * Dependencies: jQuery 3.7.1
  */
 
 // Base URL will be set by footer.php
@@ -115,6 +117,26 @@ function getStatusClass(status) {
 }
 
 /**
+ * Returns human-readable label for order status
+ * 
+ * @param {string} status - Order status (pending, processing, shipped, completed, cancelled)
+ * @returns {string} Human-readable status label
+ * 
+ * @example
+ * getStatusLabel('pending') // Returns 'Pending'
+ */
+function getStatusLabel(status) {
+    var labels = {
+        'pending': 'Pending',
+        'processing': 'Processing',
+        'shipped': 'Shipped',
+        'completed': 'Completed',
+        'cancelled': 'Cancelled'
+    };
+    return labels[status] || capitalizeFirst(status);
+}
+
+/**
  * Fixes image URL to ensure correct path
  * 
  * @param {string} url - The image URL to fix
@@ -139,6 +161,33 @@ function fixImageUrl(url, defaultPath) {
     if (uploadsIndex !== -1) return baseUrl + url.substring(uploadsIndex);
     
     return baseUrl + defaultPath;
+}
+
+/**
+ * Generates HTML for an empty state message
+ * 
+ * @param {string} icon - Icon filename from images/icons/
+ * @param {string} title - Heading text
+ * @param {string} message - Description text
+ * @param {string} [buttonText] - Button text (optional)
+ * @param {string} [buttonLink] - Button link URL (optional)
+ * @returns {string} HTML for empty state
+ * 
+ * @example
+ * getEmptyStateHTML('product-catalog-svgrepo-com.svg', 'No products', 'Add your first product', 'Add Product', '/add-product.php')
+ */
+function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
+    var html = '<div class="empty-state">' +
+        '<img src="' + baseUrl + 'images/icons/' + icon + '" width="64" height="64" alt="' + escapeHtml(title) + '">' +
+        '<h3>' + escapeHtml(title) + '</h3>' +
+        '<p>' + escapeHtml(message) + '</p>';
+    
+    if (buttonText && buttonLink) {
+        html += '<a href="' + buttonLink + '" class="view-all-btn">' + escapeHtml(buttonText) + '</a>';
+    }
+    
+    html += '</div>';
+    return html;
 }
 
 // ========== PAGINATION FUNCTIONS ==========
@@ -190,6 +239,55 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
         if (!isNaN(page) && typeof onPageChange === 'function') {
             onPageChange(page);
         }
+    });
+}
+
+// ========== ADMIN ORDERS TABLE RENDERING ==========
+
+/**
+ * Renders admin orders table with action buttons
+ * 
+ * @param {Array} orders - Array of order objects
+ * @param {Object} $container - jQuery object of the table body container
+ * @returns {void}
+ * 
+ * @example
+ * renderAdminOrdersTable(data.orders, $('#ordersTable'));
+ */
+function renderAdminOrdersTable(orders, $container) {
+    if (!$container || !$container.length) return;
+    
+    $container.empty();
+    
+    if (!orders || orders.length === 0) {
+        $container.html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
+        return;
+    }
+    
+    $.each(orders, function(i, order) {
+        var statusClass = order.status;
+        var actionButtons = '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
+        
+        if (order.status === 'pending') {
+            actionButtons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
+        } else if (order.status === 'processing') {
+            actionButtons += '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
+        } else if (order.status === 'shipped') {
+            actionButtons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
+        }
+        
+        $container.append(
+            '<tr>' +
+                '<td data-label="Order Number">#' + order.order_id + '</td>' +
+                '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '</td>' +
+                '<td data-label="Seller">' + escapeHtml(order.seller_name) + '</td>' +
+                '<td data-label="Items">' + (order.item_count || 0) + '</td>' +
+                '<td data-label="Amount">R ' + parseFloat(order.total_price).toFixed(2) + '</td>' +
+                '<td data-label="Status"><span class="status-badge ' + statusClass + '">' + order.status + '</span></td>' +
+                '<td data-label="Date">' + order.created_at + '</td>' +
+                '<td data-label="Actions" class="action-buttons">' + actionButtons + '</td>' +
+            '</tr>'
+        );
     });
 }
 
@@ -697,7 +795,7 @@ function clearModalErrorsOld($modal) {
  */
 function getCartCountElements() {
     if (!$cartCountElements) {
-        $cartCountElements = $('.cart-count, .item-num');
+        $cartCountElements = $('.cart-count, .item-num, .cart-badge');
     }
     return $cartCountElements;
 }

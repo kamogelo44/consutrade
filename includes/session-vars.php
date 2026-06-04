@@ -1,4 +1,11 @@
 <?php
+/*
+ * ConsuTrade - Session Variables Component
+ * Author: Kamogelo Phale
+ * 
+ * Initializes and clears session error variables for registration and login
+ */
+
 // Session variables for registration errors
 $registerErrors = $_SESSION['register_errors'] ?? [];
 $registerFormData = $_SESSION['register_form_data'] ?? [];

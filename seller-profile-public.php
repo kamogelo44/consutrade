@@ -2,18 +2,14 @@
 /*
  * ConsuTrade - Public Seller Profile Page
  * Author: Kamogelo Phale
+ * 
+ * Displays public seller profile with products and reviews
+ * Uses ProductRepository and ReviewRepository for data
  */
 
 require_once __DIR__ . '/init.php';
-
-// Read register/login errors from session
-$registerErrors = $_SESSION['register_errors'] ?? [];
-$registerFormData = $_SESSION['register_form_data'] ?? [];
-unset($_SESSION['register_errors'], $_SESSION['register_form_data']);
-
-$loginErrors = $_SESSION['login_errors'] ?? [];
-$loginEmail = $_SESSION['login_email'] ?? '';
-unset($_SESSION['login_errors'], $_SESSION['login_email']);
+include __DIR__ . '/includes/session-vars.php';
+include __DIR__ . '/includes/functions.php';
 
 $seller_id = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
 
@@ -22,7 +18,6 @@ if ($seller_id <= 0) {
     exit;
 }
 
-// Use UserRepository to get seller as User object
 $seller = $userRepo->findById($seller_id);
 
 if (!$seller || !$seller instanceof Seller) {
@@ -30,8 +25,12 @@ if (!$seller || !$seller instanceof Seller) {
     exit;
 }
 
-// Get profile image URL
 $profile_image = $seller->getProfileImageUrl();
+$ratingData = $reviewRepo->getSellerRating($seller_id);
+$avgRating = $ratingData['avg_rating'] ?? 0;
+$reviewCount = $ratingData['review_count'] ?? 0;
+$sellerProducts = $productRepo->getSellerProductsForDisplay($seller_id, false);
+$sellerReviews = $reviewRepo->getSellerReviews($seller_id);
 
 // Breadcrumb setup
 $from_product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
@@ -55,9 +54,10 @@ if ($from_product_id > 0 && $from_product_name) {
 <head>
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($seller->getFullName()); ?> - Seller Profile | ConsuTrade</title>
+    <meta name="description" content="View products and reviews from <?php echo htmlspecialchars($seller->getFullName()); ?> on ConsuTrade">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== PUBLIC SELLER PROFILE SPECIFIC STYLES ========== */
+        /* ========== PUBLIC SELLER PROFILE STYLES ========== */
         .public-seller-profile-container {
             width: 100%;
             max-width: 100%;
@@ -207,6 +207,14 @@ if ($from_product_id > 0 && $from_product_name) {
             color: var(--gray-dark);
         }
 
+        .rating-summary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-sm);
+        }
+
         .seller-public-products {
             width: 100%;
         }
@@ -223,45 +231,230 @@ if ($from_product_id > 0 && $from_product_name) {
 
         .seller-public-products .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: var(--spacing-lg);
         }
 
-        .seller-public-products .prod-card .img-container {
-            height: 180px;
+        /* Product Card Styles */
+        .prod-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all var(--transition-normal);
+            cursor: pointer;
+            border: 1px solid var(--border-light);
         }
 
-        .seller-public-products .prod-card .prod-name {
-            font-size: var(--font-sm);
-            min-height: 38px;
+        .prod-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-color);
         }
 
-        .seller-public-products .prod-card .prod-price {
+        .img-container {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+            background: var(--gray-bg);
+        }
+
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition-normal);
+        }
+
+        .prod-card:hover .img-container img {
+            transform: scale(1.05);
+        }
+
+        .condition-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: 11px;
+            font-weight: var(--font-bold);
+            color: var(--white);
+            z-index: 1;
+        }
+
+        .condition-badge.new {
+            background: var(--success);
+        }
+
+        .condition-badge.like-new {
+            background: var(--info);
+        }
+
+        .condition-badge.good {
+            background: var(--primary-color);
+        }
+
+        .condition-badge.fair {
+            background: var(--warning);
+        }
+
+        .out-of-stock-badge-card,
+        .low-stock-badge-card {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: 11px;
+            font-weight: var(--font-bold);
+            color: var(--white);
+            z-index: 1;
+        }
+
+        .out-of-stock-badge-card {
+            background: var(--error);
+        }
+
+        .low-stock-badge-card {
+            background: var(--warning);
+        }
+
+        .prod-info-container {
+            padding: var(--spacing-md);
+        }
+
+        .prod-name {
+            font-size: var(--font-base);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--spacing-xs);
+            color: var(--dark-bg);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .prod-price {
             font-size: var(--font-xl);
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-sm);
         }
 
-        .seller-public-products .seller-avatar {
+        .seller-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .seller-avatar {
             width: 32px;
             height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: var(--gray-bg);
+            flex-shrink: 0;
         }
 
-        .seller-public-products .seller-details .seller-name {
+        .seller-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .seller-details {
+            flex: 1;
+        }
+
+        .seller-name {
             font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+            color: var(--gray-dark);
         }
 
-        .seller-public-products .add-to-cart-btn {
-            padding: 8px;
-            font-size: var(--font-xs);
-            margin-top: 8px;
+        .location {
+            font-size: 10px;
+            color: var(--gray-light);
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
 
-        .seller-public-products .verified-badge-card,
-        .seller-public-products .unverified-badge-card {
-            padding: 2px 6px;
-            font-size: 8px;
+        .verified-badge-card,
+        .unverified-badge-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: var(--radius-round);
+            font-size: 9px;
+            font-weight: var(--font-medium);
         }
 
-        /* ========== REVIEWS SECTION ========== */
+        .verified-badge-card {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .unverified-badge-card {
+            background: var(--warning-light);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            font-weight: var(--font-bold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+            transition: all var(--transition-fast);
+            margin-top: var(--spacing-sm);
+        }
+
+        .add-to-cart-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .out-of-stock-btn {
+            width: 100%;
+            padding: 10px;
+            background: #ccc;
+            color: #666;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            cursor: not-allowed;
+            margin-top: var(--spacing-sm);
+        }
+
+        .payment-badge {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: var(--spacing-xs);
+            margin-top: var(--spacing-sm);
+            font-size: 9px;
+            color: var(--gray-light);
+        }
+
+        .payment-badge img {
+            height: 14px;
+            width: auto;
+        }
+
+        /* Reviews Section */
         .seller-reviews-section {
             margin-top: var(--spacing-2xl);
             width: 100%;
@@ -317,9 +510,6 @@ if ($from_product_id > 0 && $from_product_name) {
             height: 40px;
             border-radius: 50%;
             background: var(--gray-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
         }
 
@@ -337,6 +527,7 @@ if ($from_product_id > 0 && $from_product_name) {
         .review-stars {
             display: flex;
             gap: 2px;
+            margin-top: 4px;
         }
 
         .review-stars .star {
@@ -357,10 +548,11 @@ if ($from_product_id > 0 && $from_product_name) {
             font-size: var(--font-md);
             line-height: 1.5;
             color: var(--gray-dark);
-            margin-bottom: var(--spacing-md);
+            margin-top: var(--spacing-md);
         }
 
-        .empty-reviews {
+        .empty-reviews,
+        .no-products {
             text-align: center;
             padding: var(--spacing-2xl);
             background: var(--white);
@@ -369,23 +561,13 @@ if ($from_product_id > 0 && $from_product_name) {
             color: var(--gray-medium);
         }
 
-        .empty-reviews img {
+        .empty-reviews img,
+        .no-products img {
             opacity: 0.5;
             margin-bottom: var(--spacing-lg);
         }
 
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 992px) {
-            .seller-public-products .products-grid {
-                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-                gap: var(--spacing-md);
-            }
-
-            .seller-public-products .prod-card .img-container {
-                height: 160px;
-            }
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
             .public-seller-profile-container {
                 padding: var(--spacing-lg);
@@ -394,7 +576,6 @@ if ($from_product_id > 0 && $from_product_name) {
             .seller-public-header {
                 flex-direction: column;
                 text-align: center;
-                padding: var(--spacing-xl) var(--spacing-lg);
             }
 
             .seller-public-meta {
@@ -402,65 +583,21 @@ if ($from_product_id > 0 && $from_product_name) {
             }
 
             .seller-location {
-                margin: var(--spacing-sm) auto 0;
+                margin: 0 auto;
             }
 
             .seller-public-stats {
                 grid-template-columns: 1fr;
-                gap: var(--spacing-md);
-            }
-
-            .stat-number {
-                font-size: var(--font-2xl);
             }
 
             .seller-public-products .products-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: var(--spacing-md);
-            }
-
-            .seller-public-products .prod-card .img-container {
-                height: 150px;
-            }
-
-            .review-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .review-card {
-                padding: var(--spacing-md);
             }
         }
 
         @media (max-width: 576px) {
-            .seller-public-avatar {
-                width: 100px;
-                height: 100px;
-            }
-
-            .seller-public-info h1 {
-                font-size: var(--font-2xl);
-            }
-
-            .stat-number {
-                font-size: var(--font-xl);
-            }
-
             .seller-public-products .products-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .seller-public-products .prod-card .img-container {
-                height: 200px;
-            }
-
-            .seller-public-products .prod-card .prod-name {
-                font-size: var(--font-base);
-            }
-
-            .seller-public-products .prod-card .prod-price {
-                font-size: var(--font-lg);
             }
         }
     </style>
@@ -472,6 +609,7 @@ if ($from_product_id > 0 && $from_product_name) {
 
     <main class="public-seller-profile-container">
         <?php include 'includes/breadcrumb.php'; ?>
+        <?php include 'includes/flash-message.php'; ?>
 
         <div class="seller-public-header">
             <div class="seller-public-avatar">
@@ -481,9 +619,13 @@ if ($from_product_id > 0 && $from_product_name) {
                 <h1><?php echo htmlspecialchars($seller->getFullName()); ?></h1>
                 <div class="seller-public-meta">
                     <?php if ($seller->isVerified()): ?>
-                        <span class="verified-badge"><img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16" height="16" alt="Verified"> Verified Seller</span>
+                        <span class="verified-badge">
+                            <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16" height="16" alt="Verified"> Verified Seller
+                        </span>
                     <?php else: ?>
-                        <span class="unverified-badge"><img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="16" height="16" alt="Unverified"> Unverified Seller</span>
+                        <span class="unverified-badge">
+                            <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="16" height="16" alt="Unverified"> Unverified Seller
+                        </span>
                     <?php endif; ?>
                     <span class="member-since">Member since <?php echo date('d M Y', strtotime($seller->getCreatedAt())); ?></span>
                 </div>
@@ -499,11 +641,17 @@ if ($from_product_id > 0 && $from_product_name) {
         <div class="seller-public-stats">
             <div class="stat-card">
                 <h3>Products</h3>
-                <p class="stat-number" id="stat-products">-</p>
+                <p class="stat-number"><?php echo count($sellerProducts); ?></p>
             </div>
             <div class="stat-card">
-                <h3>Orders Completed</h3>
-                <p class="stat-number" id="stat-orders">-</p>
+                <h3>Reviews</h3>
+                <p class="stat-number"><?php echo $reviewCount; ?></p>
+                <?php if ($reviewCount > 0): ?>
+                    <div class="rating-summary">
+                        <?php echo renderStars($avgRating); ?>
+                        <span class="rating-count">(<?php echo number_format($avgRating, 1); ?>)</span>
+                    </div>
+                <?php endif; ?>
             </div>
             <div class="stat-card">
                 <h3>Member Since</h3>
@@ -513,249 +661,69 @@ if ($from_product_id > 0 && $from_product_name) {
 
         <div class="seller-public-products">
             <h2>Products from <?php echo htmlspecialchars($seller->getFullName()); ?></h2>
-            <div class="products-grid" id="products-grid">
-                <div class="loading-spinner">Loading products...</div>
+            <div class="products-grid">
+                <?php if (!empty($sellerProducts)): ?>
+                    <?php foreach ($sellerProducts as $productData): ?>
+                        <?php
+                        // Create Product object from the data for consistent rendering
+                        $product = new Product([
+                            'product_id' => $productData['id'],
+                            'title' => $productData['name'],
+                            'price' => $productData['price'],
+                            'image_url' => $productData['image'],
+                            'condition' => $productData['condition'],
+                            'stock_quantity' => $productData['stock_quantity'],
+                            'location' => $productData['location'] ?? $seller->getLocation(),
+                            'status' => $productData['status'] ?? 'active'
+                        ]);
+                        echo renderProductCard($product, $seller);
+                        ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="no-products">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
+                        <p>This seller has no products yet.</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
-        <!-- Seller Reviews Section -->
         <div class="seller-reviews-section">
             <h2>Customer Reviews</h2>
-            <div id="reviews-container">
-                <div class="loading-spinner">Loading reviews...</div>
-            </div>
+            <?php if (!empty($sellerReviews)): ?>
+                <div class="reviews-list">
+                    <?php foreach ($sellerReviews as $review): ?>
+                        <div class="review-card">
+                            <div class="review-header">
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="<?php echo htmlspecialchars($review['buyer_name']); ?>">
+                                    </div>
+                                    <div>
+                                        <div class="reviewer-name"><?php echo htmlspecialchars($review['buyer_name']); ?></div>
+                                        <?php echo renderStars($review['rating']); ?>
+                                    </div>
+                                </div>
+                                <div class="review-date"><?php echo formatDate($review['created_at'], 'd M Y'); ?></div>
+                            </div>
+                            <?php if (!empty($review['comment'])): ?>
+                                <div class="review-comment"><?php echo nl2br(htmlspecialchars($review['comment'])); ?></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="empty-reviews">
+                    <img src="<?php echo $baseUrl; ?>images/icons/comment-svgrepo-com.svg" width="64" height="64" alt="No reviews">
+                    <p>No reviews yet for this seller.</p>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
 
     <?php include 'includes/footer.php'; ?>
+    <?php include 'includes/modal-errors.php'; ?>
 
-    <?php if (!empty($registerErrors)): ?>
-        <script>
-            $(function() {
-                openModal($('#register-modal'));
-                displayModalErrors('#register-modal', <?php echo json_encode($registerErrors); ?>, <?php echo json_encode($registerFormData); ?>);
-            });
-        </script>
-    <?php endif; ?>
-
-    <?php if (!empty($loginErrors)): ?>
-        <script>
-            $(function() {
-                openModal($('#login-modal'));
-                displayModalErrors('#login-modal', <?php echo json_encode($loginErrors); ?>, {
-                    email: <?php echo json_encode($loginEmail); ?>
-                });
-            });
-        </script>
-    <?php endif; ?>
-    <?php $load_products_js = true; ?>
-    <?php include 'includes/footer.php'; ?>
-
-    <script>
-        // Cache DOM elements
-        var $statProducts = null;
-        var $statOrders = null;
-        var $productsGrid = null;
-        var $reviewsContainer = null;
-        var sellerId = <?php echo $seller_id; ?>;
-        var sellerName = '<?php echo addslashes($seller->getFullName()); ?>';
-        var sellerLocation = '<?php echo addslashes($seller->getLocation() ?? 'Not specified'); ?>';
-        var sellerProfileImage = '<?php echo addslashes($seller->getProfileImage()); ?>';
-        var isSellerVerified = <?php echo $seller->isVerified() ? 'true' : 'false'; ?>;
-
-        function cacheSellerProfileElements() {
-            $statProducts = $('#stat-products');
-            $statOrders = $('#stat-orders');
-            $productsGrid = $('#products-grid');
-            $reviewsContainer = $('#reviews-container');
-        }
-
-        function loadSellerStats() {
-            cacheSellerProfileElements();
-
-            $.ajax({
-                url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + sellerId,
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success) {
-                        if ($statProducts.length) $statProducts.text(data.total_products || 0);
-                        if ($statOrders.length) $statOrders.text(data.total_orders || 0);
-                    } else {
-                        if ($statProducts.length) $statProducts.text('0');
-                        if ($statOrders.length) $statOrders.text('0');
-                    }
-                },
-                error: function() {
-                    if ($statProducts.length) $statProducts.text('0');
-                    if ($statOrders.length) $statOrders.text('0');
-                }
-            });
-        }
-
-        function loadSellerProducts() {
-            cacheSellerProfileElements();
-
-            $.ajax({
-                url: baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + sellerId,
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success && data.products && data.products.length > 0) {
-                        // Map products to match what displayProducts expects
-                        var productsWithSellerInfo = data.products.map(function(product) {
-                            return {
-                                id: product.id,
-                                name: product.name,
-                                price: parseFloat(product.price),
-                                display_image: product.image,
-                                condition: product.condition || 'Good',
-                                seller_name: sellerName,
-                                location: sellerLocation,
-                                profile_image: sellerProfileImage,
-                                is_verified: isSellerVerified,
-                                seller_id: sellerId,
-                                stock_quantity: product.stock_quantity || 1
-                            };
-                        });
-
-                        // Check if displayProducts function exists
-                        if (typeof displayProducts === 'function') {
-                            displayProducts(productsWithSellerInfo);
-                        } else {
-                            // Fallback: manually display products
-                            $productsGrid.empty();
-                            for (var i = 0; i < productsWithSellerInfo.length; i++) {
-                                var p = productsWithSellerInfo[i];
-                                var imagePath = fixImageUrl(p.display_image || p.image);
-                                var conditionClass = '';
-                                var conditionText = p.condition || 'Good';
-                                if (conditionText === 'New') conditionClass = 'new';
-                                else if (conditionText === 'Like New') conditionClass = 'like-new';
-                                else if (conditionText === 'Good') conditionClass = 'good';
-                                else if (conditionText === 'Fair') conditionClass = 'fair';
-
-                                var stockQuantity = p.stock_quantity || 1;
-                                var isOutOfStock = stockQuantity <= 0;
-                                var stockBadge = isOutOfStock ?
-                                    '<div class="out-of-stock-badge-card">Out of Stock</div>' :
-                                    (stockQuantity <= 5 ? '<div class="low-stock-badge-card">Only ' + stockQuantity + ' left</div>' : '');
-
-                                var addToCartButton = '';
-                                if (!isOutOfStock) {
-                                    addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + p.id + ', \'' + escapeHtml(p.name).replace(/'/g, "\\'") + '\', ' + p.price + ')">Add to Cart</button>';
-                                } else {
-                                    addToCartButton = '<button class="out-of-stock-btn" disabled>Out of Stock</button>';
-                                }
-
-                                var $card = $('<div>').addClass('prod-card').css('cursor', 'pointer');
-                                $card.on('click', function(prodId) {
-                                    return function() {
-                                        window.location.href = baseUrl + 'product-details.php?id=' + prodId;
-                                    };
-                                }(p.id));
-
-                                $card.html(
-                                    '<div class="img-container">' +
-                                    '<img src="' + imagePath + '" alt="' + escapeHtml(p.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
-                                    '<div class="condition-badge ' + conditionClass + '">' + conditionText + '</div>' +
-                                    stockBadge +
-                                    '</div>' +
-                                    '<div class="prod-info-container">' +
-                                    '<h3 class="prod-name">' + escapeHtml(p.name) + '</h3>' +
-                                    '<p class="prod-price">R ' + p.price.toFixed(2) + '</p>' +
-                                    '<div class="seller-info">' +
-                                    '<div class="seller-avatar">' +
-                                    '<img src="' + getSellerAvatar(p.profile_image) + '" alt="' + escapeHtml(p.seller_name) + '" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
-                                    '</div>' +
-                                    '<div class="seller-details">' +
-                                    '<p class="seller-name">' + escapeHtml(p.seller_name) + '</p>' +
-                                    '<p class="location">' +
-                                    '<img src="' + baseUrl + 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location">' +
-                                    escapeHtml(p.location) +
-                                    '</p>' +
-                                    '</div>' +
-                                    (p.is_verified ?
-                                        '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' :
-                                        '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>') +
-                                    '</div>' +
-                                    addToCartButton +
-                                    '<div class="payment-badge">' +
-                                    '<span>Secure payment via</span>' +
-                                    '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast">' +
-                                    '</div>' +
-                                    '</div>'
-                                );
-                                $productsGrid.append($card);
-                            }
-                        }
-                    } else {
-                        $productsGrid.html('<div class="no-products"><p>This seller has no products yet.</p></div>');
-                    }
-                },
-                error: function() {
-                    $productsGrid.html('<div class="error-message">Error loading products.</div>');
-                }
-            });
-        }
-
-        function loadSellerReviews() {
-            cacheSellerProfileElements();
-
-            $.ajax({
-                url: baseUrl + 'php/endpoints/get-reviews.php?seller_id=' + sellerId,
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success && data.reviews && data.reviews.length > 0) {
-                        var html = '<div class="reviews-list">';
-                        for (var i = 0; i < data.reviews.length; i++) {
-                            var review = data.reviews[i];
-                            var starsHtml = '';
-                            for (var s = 1; s <= 5; s++) {
-                                starsHtml += (s <= review.rating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
-                            }
-                            var date = new Date(review.created_at).toLocaleDateString('en-ZA', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                            });
-                            html += '<div class="review-card">' +
-                                '<div class="review-header">' +
-                                '<div class="reviewer-info">' +
-                                '<div class="reviewer-avatar">' +
-                                '<img src="' + baseUrl + 'images/icons/profile-svgrepo-com.svg" alt="' + escapeHtml(review.buyer_name) + '">' +
-                                '</div>' +
-                                '<div>' +
-                                '<div class="reviewer-name">' + escapeHtml(review.buyer_name) + '</div>' +
-                                '<div class="review-stars">' + starsHtml + '</div>' +
-                                '</div>' +
-                                '</div>' +
-                                '<div class="review-date">' + date + '</div>' +
-                                '</div>' +
-                                '<div class="review-comment">' + escapeHtml(review.comment || 'No comment provided.') + '</div>' +
-                                '</div>';
-                        }
-                        html += '</div>';
-                        $reviewsContainer.html(html);
-                    } else {
-                        $reviewsContainer.html('<div class="empty-reviews"><img src="' + baseUrl + 'images/icons/comment-svgrepo-com.svg" width="48" height="48" alt="No reviews"><p>No reviews yet for this seller.</p></div>');
-                    }
-                },
-                error: function() {
-                    $reviewsContainer.html('<div class="error-message">Error loading reviews.</div>');
-                }
-            });
-        }
-
-        // Initialize everything
-        $(document).ready(function() {
-            cacheSellerProfileElements();
-            loadSellerStats();
-            loadSellerProducts();
-            loadSellerReviews();
-        });
-    </script>
 </body>
 
 </html>

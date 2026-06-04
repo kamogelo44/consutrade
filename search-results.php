@@ -5,12 +5,7 @@
  */
 
 require_once __DIR__ . '/init.php';
-
-$registerErrors = $_SESSION['register_errors'] ?? [];
-$registerFormData = $_SESSION['register_form_data'] ?? [];
-$loginErrors = $_SESSION['login_errors'] ?? [];
-$loginEmail = $_SESSION['login_email'] ?? '';
-unset($_SESSION['register_errors'], $_SESSION['register_form_data'], $_SESSION['login_errors'], $_SESSION['login_email']);
+include __DIR__ . '/includes/session-vars.php';
 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -146,6 +141,7 @@ $search_query_js = htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8');
     </main>
 
     <?php include 'includes/footer.php'; ?>
+    <?php include 'includes/modal-errors.php'; ?>
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 
     <script>

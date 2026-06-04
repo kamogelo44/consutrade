@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/init.php';
+include __DIR__ . '/includes/session-vars.php';
 
 $breadcrumbItems = [
     ['label' => 'My Profile']
@@ -34,7 +35,6 @@ $phone = $currentUser->getPhone();
 $location = $currentUser->getLocation();
 $created_at = $currentUser->getCreatedAt();
 $profile_image_path = $currentUser->getProfileImage();
-
 
 // Set profile image URL
 if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $profile_image_path)) {
@@ -542,6 +542,7 @@ if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www
 
     <main class="profile-container">
         <?php include 'includes/breadcrumb.php'; ?>
+        <?php include 'includes/flash-message.php'; ?>
 
         <!-- User Profile Header -->
         <div class="profile-user-header">
@@ -736,6 +737,7 @@ if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www
     </main>
 
     <?php include 'includes/footer.php'; ?>
+    <?php include 'includes/modal-errors.php'; ?>
 
     <script>
         /*

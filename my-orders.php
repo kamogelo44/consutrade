@@ -2,9 +2,14 @@
 /*
  * ConsuTrade - My Orders (Buyer)
  * Author: Kamogelo Phale
+ * 
+ * Displays buyer's order history with filters and search
+ * Uses main.js for modal, toast, and utility functions
  */
 
 require_once __DIR__ . '/init.php';
+include __DIR__ . '/includes/session-vars.php';
+include __DIR__ . '/includes/functions.php';
 
 // Check if user is logged in and is a buyer
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
@@ -32,12 +37,15 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade</title>
+    <meta name="description" content="View and track your order history">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== MY ORDERS PAGE – PRODUCTION STYLES ========== */
-        /* All base styles come from main.css / style.css – only page‑specific overrides below */
+        .orders-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+        }
 
-        /* ----- Page Header (ensures styling even if base h1/p are reset) ----- */
         .page-header {
             margin-bottom: var(--spacing-xl);
         }
@@ -47,18 +55,14 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             font-weight: var(--font-bold);
             color: var(--dark-bg);
             margin: 0 0 var(--spacing-xs) 0;
-            line-height: 1.2;
-            font-family: inherit;
         }
 
         .page-header p {
             font-size: var(--font-md);
             color: var(--gray-medium);
             margin: 0;
-            line-height: 1.4;
         }
 
-        /* ----- Filters Bar ----- */
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -100,7 +104,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             border-color: var(--primary-color);
         }
 
-        /* ----- Search Bar ----- */
         .search-bar {
             flex-shrink: 0;
         }
@@ -117,7 +120,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             border-radius: var(--radius-md);
             font-size: var(--font-sm);
             width: 250px;
-            transition: border-color var(--transition-fast);
         }
 
         .search-bar input[type="text"]:focus {
@@ -131,14 +133,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             padding: 8px 12px;
             border-radius: var(--radius-md);
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background var(--transition-fast);
-        }
-
-        .search-bar button:hover {
-            background: var(--primary-dark);
         }
 
         .search-bar button img {
@@ -150,10 +144,8 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             font-size: var(--font-sm);
             text-decoration: none;
             margin-left: var(--spacing-sm);
-            white-space: nowrap;
         }
 
-        /* ----- Orders List & Cards ----- */
         .orders-list {
             display: flex;
             flex-direction: column;
@@ -170,7 +162,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
 
         .order-card:hover {
             box-shadow: var(--shadow-md);
-            border-color: var(--primary-light);
         }
 
         .order-header {
@@ -239,9 +230,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
         }
 
         .seller-info {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
             flex: 2;
         }
 
@@ -250,6 +238,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
         }
 
         .seller-details span,
@@ -342,7 +331,40 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             transform: translateY(-2px);
         }
 
-        /* ----- Modals (Order & Review) ----- */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .empty-state img {
+            opacity: 0.5;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .empty-state h3 {
+            margin-bottom: var(--spacing-sm);
+            color: var(--dark-bg);
+        }
+
+        .empty-state p {
+            color: var(--gray-medium);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .clear-btn,
+        .shop-btn {
+            display: inline-block;
+            padding: 10px 24px;
+            background: var(--primary-color);
+            color: var(--white);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: var(--font-bold);
+        }
+
         .order-modal,
         .review-modal {
             display: none;
@@ -403,7 +425,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             padding: 0;
             width: 30px;
             height: 30px;
-            transition: color var(--transition-fast);
         }
 
         .order-modal-close:hover,
@@ -504,7 +525,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             color: var(--dark-bg);
         }
 
-        /* ----- Review Form (modal) ----- */
         .review-form-container {
             padding: var(--spacing-lg);
         }
@@ -556,7 +576,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             font-family: inherit;
             resize: vertical;
             box-sizing: border-box;
-            transition: border-color var(--transition-fast);
         }
 
         textarea:focus {
@@ -583,7 +602,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             transform: translateY(-2px);
         }
 
-        /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
             .orders-container {
                 padding: var(--spacing-lg);
@@ -592,19 +610,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             .filters-bar {
                 flex-direction: column;
                 align-items: stretch;
-            }
-
-            .status-filters {
-                justify-content: center;
-            }
-
-            .search-bar form {
-                width: 100%;
-            }
-
-            .search-bar input[type="text"] {
-                flex: 1;
-                width: auto;
             }
 
             .order-header {
@@ -629,21 +634,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             .order-footer button {
                 width: 100%;
             }
-
-            .info-row {
-                flex-direction: column;
-                gap: var(--spacing-xs);
-            }
-
-            .order-item {
-                flex-wrap: wrap;
-            }
-
-            .order-item-price {
-                width: 100%;
-                margin-top: var(--spacing-xs);
-                text-align: right;
-            }
         }
 
         @media (max-width: 480px) {
@@ -659,32 +649,11 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             .amount-value {
                 font-size: var(--font-lg);
             }
-
-            .order-modal-header h2,
-            .review-modal-header h2 {
-                font-size: var(--font-lg);
-            }
-
-            .rating-stars .star {
-                font-size: 28px;
-            }
-
-            .order-modal-footer {
-                flex-direction: column;
-            }
-
-            .order-modal-footer button {
-                width: 100%;
-            }
-
-            .review-form-container {
-                padding: var(--spacing-md);
-            }
         }
     </style>
 </head>
 
-<body class="my-orders-page">
+<body>
 
     <?php include 'includes/header.php'; ?>
 
@@ -734,7 +703,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                             <div class="order-header">
                                 <div class="order-info">
                                     <span class="order-number">Order #<?php echo $order['order_id']; ?></span>
-                                    <span class="order-date"><?php echo date('d M Y, h:i A', strtotime($order['created_at'])); ?></span>
+                                    <span class="order-date"><?php echo formatDateTime($order['created_at']); ?></span>
                                 </div>
                                 <div class="order-status-badge status-<?php echo $order['status']; ?>">
                                     <?php echo ucfirst($order['status']); ?>
@@ -765,7 +734,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                             <div class="order-footer">
                                 <button class="view-details-btn" data-order-id="<?php echo $order['order_id']; ?>">View Details</button>
                                 <?php if ($order['status'] === 'pending'): ?>
-                                    <button class="cancel-btn" data-order-id="<?php echo $order['order_id']; ?>">Cancel Order</button>
+                                    <button class="cancel-btn cancel-order-btn" data-order-id="<?php echo $order['order_id']; ?>">Cancel Order</button>
                                 <?php endif; ?>
                                 <?php if ($order['status'] === 'completed'): ?>
                                     <?php if ($has_review): ?>
@@ -845,14 +814,10 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
     </div>
 
     <?php include 'includes/footer.php'; ?>
+    <?php include 'includes/modal-errors.php'; ?>
 
     <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-
         // ========== CACHED DOM ELEMENTS ==========
-        var $orderModal = null;
-        var $orderModalBody = null;
-        var $orderModalFooter = null;
         var $reviewModal = null;
         var $reviewForm = null;
         var $reviewRating = null;
@@ -863,15 +828,12 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
         var $reviewSellerName = null;
         var $isEditMode = null;
         var $submitReviewBtn = null;
-        var $viewDetailsBtns = null;
         var $cancelBtns = null;
         var $reviewBtns = null;
         var $editReviewBtns = null;
+        var $viewDetailsBtns = null;
 
         function cacheMyOrdersElements() {
-            $orderModal = $('#orderModal');
-            $orderModalBody = $('#orderModalBody');
-            $orderModalFooter = $('#orderModalFooter');
             $reviewModal = $('#reviewModal');
             $reviewForm = $('#reviewForm');
             $reviewRating = $('#reviewRating');
@@ -882,13 +844,14 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             $reviewSellerName = $('#reviewSellerName');
             $isEditMode = $('#isEditMode');
             $submitReviewBtn = $('#submitReviewBtn');
-            $viewDetailsBtns = $('.view-details-btn');
-            $cancelBtns = $('.cancel-btn');
+            $cancelBtns = $('.cancel-order-btn');
             $reviewBtns = $('.review-btn:not(.edit-review-btn)');
             $editReviewBtns = $('.edit-review-btn');
+            $viewDetailsBtns = $('.view-details-btn');
         }
 
-        function cancelOrder(orderId) {
+        // ========== ORDER CANCELLATION ==========
+        function cancelBuyerOrder(orderId) {
             if (confirm('Are you sure you want to cancel this order?')) {
                 $.ajax({
                     url: baseUrl + 'php/endpoints/cancel-order.php',
@@ -912,62 +875,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             }
         }
 
-        function openOrderModal(orderId) {
-            $orderModal.addClass('active');
-            $orderModalBody.html('<div class="loading-spinner">Loading order details...</div>');
-            $orderModalFooter.empty();
-
-            $.ajax({
-                url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
-                success: function(data) {
-                    if (data.success && data.order) {
-                        displayOrderDetails(data.order);
-                    } else {
-                        $orderModalBody.html('<p class="error">Unable to load order details.</p>');
-                    }
-                },
-                error: function() {
-                    $orderModalBody.html('<p class="error">Error loading order details.</p>');
-                }
-            });
-        }
-
-        function closeOrderModal() {
-            $orderModal.removeClass('active');
-        }
-
-        function displayOrderDetails(order) {
-            var itemsHtml = '';
-            for (var i = 0; i < (order.items || []).length; i++) {
-                var item = order.items[i];
-                itemsHtml += '<div class="order-item">' +
-                    '<div class="order-item-img"><img src="' + fixImageUrl(item.image_url) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'"></div>' +
-                    '<div class="order-item-details"><h4>' + escapeHtml(item.product_name) + '</h4><p>Quantity: ' + item.quantity + '</p></div>' +
-                    '<div class="order-item-price">R ' + parseFloat(item.price).toFixed(2) + '</div>' +
-                    '</div>';
-            }
-
-            $orderModalBody.html(
-                '<div class="order-info-section">' +
-                '<div class="info-row"><span class="info-label">Order Number:</span><span class="info-value">#' + order.order_id + '</span></div>' +
-                '<div class="info-row"><span class="info-label">Order Date:</span><span class="info-value">' + order.created_at + '</span></div>' +
-                '<div class="info-row"><span class="info-label">Order Status:</span><span class="info-value status-' + order.status + '">' + (order.status ? order.status.toUpperCase() : 'UNKNOWN') + '</span></div>' +
-                '<div class="info-row"><span class="info-label">Seller:</span><span class="info-value">' + escapeHtml(order.seller_name) + '</span></div>' +
-                (order.shipping_address ? '<div class="info-row"><span class="info-label">Shipping Address:</span><span class="info-value">' + escapeHtml(order.shipping_address) + '</span></div>' : '') +
-                '</div>' +
-                '<h4>Order Items</h4><div class="order-items-list">' + (itemsHtml || '<p>No items found.</p>') + '</div>' +
-                '<div class="order-total-section">' +
-                '<div class="total-row"><span>Subtotal:</span><span>R ' + parseFloat(order.subtotal || 0).toFixed(2) + '</span></div>' +
-                '<div class="total-row"><span>Delivery Fee:</span><span>R ' + parseFloat(order.delivery_fee || 0).toFixed(2) + '</span></div>' +
-                '<div class="total-row grand-total"><span>Total:</span><span>R ' + parseFloat(order.total || 0).toFixed(2) + '</span></div>' +
-                '</div>'
-            );
-
-            if (order.status === 'pending') {
-                $orderModalFooter.html('<button class="cancel-btn" onclick="cancelOrder(' + order.order_id + ')">Cancel Order</button>');
-            }
-        }
-
+        // ========== REVIEW MODAL FUNCTIONS ==========
         function resetRatingStars() {
             $reviewRating.val(0);
             $ratingStars.removeClass('active');
@@ -1007,6 +915,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             resetRatingStars();
         }
 
+        // ========== EVENT HANDLERS ==========
         function handleViewDetails() {
             $viewDetailsBtns.off('click').on('click', function() {
                 openOrderModal($(this).data('order-id'));
@@ -1015,7 +924,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
 
         function handleCancelButtons() {
             $cancelBtns.off('click').on('click', function() {
-                cancelOrder($(this).data('order-id'));
+                cancelBuyerOrder($(this).data('order-id'));
             });
         }
 
@@ -1024,7 +933,13 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                 openReviewModal($(this).data('order-id'), $(this).data('seller-id'), $(this).data('seller-name'));
             });
             $editReviewBtns.off('click').on('click', function() {
-                openEditReviewModal($(this).data('order-id'), $(this).data('seller-id'), $(this).data('seller-name'), $(this).data('rating'), $(this).data('comment'));
+                openEditReviewModal(
+                    $(this).data('order-id'),
+                    $(this).data('seller-id'),
+                    $(this).data('seller-name'),
+                    $(this).data('rating'),
+                    $(this).data('comment')
+                );
             });
         }
 
@@ -1068,8 +983,8 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                 closeOrderModal();
                 closeReviewModal();
             });
-            $orderModal.off('click').on('click', function(e) {
-                if ($(e.target).is($orderModal)) closeOrderModal();
+            $('#orderModal').off('click').on('click', function(e) {
+                if ($(e.target).is('#orderModal')) closeOrderModal();
             });
             $reviewModal.off('click').on('click', function(e) {
                 if ($(e.target).is($reviewModal)) closeReviewModal();
@@ -1079,6 +994,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             });
         }
 
+        // ========== INITIALIZE ==========
         $(document).ready(function() {
             cacheMyOrdersElements();
             handleViewDetails();
