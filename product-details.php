@@ -3,11 +3,12 @@
  * ConsuTrade - Product Details Page
  * Author: Kamogelo Phale
  * 
- * Displays single product - uses AJAX to load detailed data
+ * Displays single product - uses AJAX to load detailed data via products.js
  */
 
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
+include __DIR__ . '/includes/functions.php';
 
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -18,7 +19,6 @@ if ($product_id <= 0) {
 
 // Use ProductRepository to get product data for breadcrumb
 $productData = $productRepo->getProductForDisplay($product_id);
-
 $product_name = $productData['title'] ?? 'Product Details';
 
 // Set breadcrumb
@@ -34,8 +34,12 @@ $breadcrumbItems = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($product_name); ?> - ConsuTrade</title>
+    <meta name="description" content="View product details and purchase from trusted sellers on ConsuTrade">
     <meta name="author" content="Kamogelo Phale">
+
+    <!-- CSS Files -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+
     <style>
         /* ========== PRODUCT DETAILS PAGE SPECIFIC STYLES ========== */
         .product-details-main {
@@ -49,7 +53,7 @@ $breadcrumbItems = [
             width: 100%;
         }
 
-        /* ========== PRODUCT IMAGES GALLERY ========== */
+        /* Product Images Gallery */
         .top-items {
             display: flex;
             justify-content: space-between;
@@ -116,7 +120,7 @@ $breadcrumbItems = [
             object-fit: cover;
         }
 
-        /* ========== PRODUCT INFO SECTION ========== */
+        /* Product Info Section */
         .product-info {
             display: flex;
             flex-direction: column;
@@ -182,7 +186,7 @@ $breadcrumbItems = [
             gap: var(--spacing-sm);
         }
 
-        /* ========== SELLER REVIEWS SECTION ========== */
+        /* Seller Reviews Section */
         .rev-container {
             display: flex;
             flex-direction: column;
@@ -292,7 +296,7 @@ $breadcrumbItems = [
             color: var(--primary-color);
         }
 
-        /* ========== ACTION BUTTONS SECTION ========== */
+        /* Action Buttons Section */
         .actions {
             display: flex;
             justify-content: center;
@@ -384,7 +388,7 @@ $breadcrumbItems = [
             cursor: not-allowed;
         }
 
-        /* ========== PAYMENT BADGE ========== */
+        /* Payment Badge */
         .payfast-badge {
             display: flex;
             align-items: center;
@@ -400,40 +404,6 @@ $breadcrumbItems = [
         .payfast-badge img {
             height: 30px;
             width: auto;
-        }
-
-        /* ========== LOADING & ERROR STATES ========== */
-        .loading-spinner {
-            text-align: center;
-            padding: 60px;
-            color: var(--gray-medium);
-        }
-
-        .product-error-container {
-            text-align: center;
-            padding: 80px 20px;
-            max-width: 500px;
-            margin: 0 auto;
-            background-color: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .product-error-title {
-            color: var(--error);
-            margin-bottom: 10px;
-            font-size: 24px;
-            font-weight: var(--font-bold);
-        }
-
-        .product-error-action-btn {
-            margin-top: 10px;
-            padding: 10px 24px;
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
         }
 
         /* Report Modal */
@@ -489,7 +459,7 @@ $breadcrumbItems = [
             transform: rotate(90deg);
         }
 
-        /* ========== RESPONSIVE ========== */
+        /* Responsive */
         @media (max-width: 992px) {
             .top-items {
                 flex-direction: column;

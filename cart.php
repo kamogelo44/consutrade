@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Displays user's cart items with quantity and stock awareness
- * Uses CartRepository for cart operations
+ * Uses CartRepository for cart data and main.js for rendering
  */
 
 require_once __DIR__ . '/init.php';
@@ -15,12 +15,11 @@ $breadcrumbItems = [
     ['label' => 'Shopping Cart']
 ];
 
-// Initialize cart variables
+// Get cart data for initial load (passed to JavaScript)
 $cart_items = [];
 $cart_totals = ['subtotal' => 0, 'delivery_fee' => 0, 'total' => 0];
 $total_quantity = 0;
 
-// If user is logged in, load cart using CartRepository
 if ($isLoggedIn && $currentUser instanceof Buyer) {
     $cart_items = $cartRepo->getCartItems($currentUser->getUserId());
     $cart_totals = $cartRepo->calculateCartTotals($cart_items);
@@ -38,7 +37,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
     <meta name="description" content="View and manage your shopping cart items">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== CART PAGE STYLES ========== */
+        /* ========== CART PAGE STYLES (Page-specific only) ========== */
         .cart-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -72,6 +71,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             gap: 20px;
         }
 
+        /* Cart Item Styles - matches main.js displayCartItems output */
         .cart-item {
             display: grid;
             grid-template-columns: 100px 1fr auto;
@@ -127,8 +127,8 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             color: var(--gray-medium);
         }
 
-        .verified-badge,
-        .unverified-badge {
+        .verified-badge-cart,
+        .unverified-badge-cart {
             display: inline-flex;
             align-items: center;
             gap: 4px;
@@ -137,13 +137,13 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             font-size: 10px;
         }
 
-        .verified-badge {
+        .verified-badge-cart {
             background: var(--success-light);
             border: 1px solid var(--success);
             color: var(--success);
         }
 
-        .unverified-badge {
+        .unverified-badge-cart {
             background: var(--warning-light);
             border: 1px solid var(--warning);
             color: var(--warning);
@@ -188,7 +188,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             gap: 12px;
         }
 
-        .quantity-control {
+        .quantity-controls {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -197,7 +197,8 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             padding: 4px;
         }
 
-        .qty-btn {
+        .qty-decrease,
+        .qty-increase {
             width: 32px;
             height: 32px;
             background: var(--white);
@@ -209,7 +210,8 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             transition: all var(--transition-fast);
         }
 
-        .qty-btn:hover {
+        .qty-decrease:hover,
+        .qty-increase:hover {
             background: var(--primary-color);
             border-color: var(--primary-color);
             color: var(--white);
@@ -224,7 +226,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             font-size: var(--font-md);
         }
 
-        .remove-item {
+        .remove-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -239,12 +241,12 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             transition: all var(--transition-fast);
         }
 
-        .remove-item:hover {
+        .remove-btn:hover {
             background: var(--error);
             color: var(--white);
         }
 
-        .remove-item:hover img {
+        .remove-btn:hover img {
             filter: brightness(0) invert(1);
         }
 
@@ -361,39 +363,6 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             margin-top: 10px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: var(--spacing-2xl);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-        }
-
-        .empty-state img {
-            opacity: 0.5;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .empty-state h3 {
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .empty-state p {
-            color: var(--gray-medium);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .view-all-btn {
-            padding: 10px 24px;
-            background: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-bold);
-        }
-
         @media (max-width: 768px) {
             .cart-container {
                 padding: 15px var(--spacing-md);
@@ -467,91 +436,40 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                 <h1>My Cart (<span id="cart-item-count"><?php echo $total_quantity; ?></span> items)</h1>
             </div>
 
-            <?php if (empty($cart_items)): ?>
-                <div class="empty-state">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Empty cart">
-                    <h3>Your cart is empty</h3>
-                    <p>Looks like you haven't added anything yet</p>
-                    <button class="view-all-btn" id="browseBtn">Browse Products</button>
-                </div>
-            <?php else: ?>
+            <!-- Cart layout container - populated by main.js displayCartItems() -->
+            <div id="cart-layout" style="display: <?php echo empty($cart_items) ? 'none' : 'flex'; ?>;">
                 <div class="cart-grid">
-                    <div class="cart-items" id="cart-items">
-                        <?php foreach ($cart_items as $item): ?>
-                            <?php $isVerified = $item['is_verified'] ?? false; ?>
-                            <div class="cart-item" data-cart-id="<?php echo $item['cart_id']; ?>" data-product-id="<?php echo $item['product_id']; ?>">
-                                <div class="item-image">
-                                    <img src="<?php echo fixImageUrl($item['image_url']); ?>"
-                                        alt="<?php echo htmlspecialchars($item['title']); ?>"
-                                        onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
-                                </div>
+                    <!-- Desktop cart table body -->
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Seller</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-table-body"></tbody>
+                    </table>
 
-                                <div class="item-details">
-                                    <h3 class="item-title"><?php echo htmlspecialchars($item['title']); ?></h3>
-                                    <div class="item-seller">
-                                        <span class="seller-name"><?php echo htmlspecialchars($item['seller_name']); ?></span>
-                                        <?php if ($isVerified): ?>
-                                            <span class="verified-badge">
-                                                <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="10" height="10" alt="Verified">
-                                                Verified
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="unverified-badge">
-                                                <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="10" height="10" alt="Unverified">
-                                                Unverified
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="item-price">R <?php echo number_format($item['price'], 2); ?></div>
+                    <!-- Mobile cart items container -->
+                    <div id="mobile-cart-items"></div>
 
-                                    <?php if ($item['stock_quantity'] <= 0): ?>
-                                        <div class="stock-status out-of-stock">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/close-svgrepo-com.svg" width="12" height="12" alt="Out of stock">
-                                            <span>Out of stock</span>
-                                        </div>
-                                    <?php elseif ($item['stock_quantity'] <= 5): ?>
-                                        <div class="stock-status low-stock">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" width="12" height="12" alt="Low stock">
-                                            <span>Only <?php echo $item['stock_quantity']; ?> left</span>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="stock-status in-stock">
-                                            <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="12" height="12" alt="In stock">
-                                            <span>In stock</span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-
-                                <div class="item-actions">
-                                    <div class="quantity-control">
-                                        <button class="qty-btn qty-decrease" data-cart-id="<?php echo $item['cart_id']; ?>">-</button>
-                                        <input type="number" class="qty-input" value="<?php echo $item['quantity']; ?>"
-                                            min="1" max="<?php echo min(99, $item['stock_quantity']); ?>"
-                                            data-cart-id="<?php echo $item['cart_id']; ?>">
-                                        <button class="qty-btn qty-increase" data-cart-id="<?php echo $item['cart_id']; ?>">+</button>
-                                    </div>
-                                    <button class="remove-item" data-product-id="<?php echo $item['product_id']; ?>">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove">
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-
+                    <!-- Order Summary -->
                     <div class="order-summary">
                         <h2>Order Summary</h2>
                         <div class="summary-row">
                             <span>Subtotal</span>
-                            <span>R <?php echo number_format($cart_totals['subtotal'], 2); ?></span>
+                            <span class="sub-total-val">R <?php echo number_format($cart_totals['subtotal'], 2); ?></span>
                         </div>
                         <div class="summary-row">
                             <span>Delivery Fee</span>
-                            <span>R <?php echo number_format($cart_totals['delivery_fee'], 2); ?></span>
+                            <span class="deliv-fee-val">R <?php echo number_format($cart_totals['delivery_fee'], 2); ?></span>
                         </div>
                         <div class="summary-total">
                             <span>Total</span>
-                            <span>R <?php echo number_format($cart_totals['total'], 2); ?></span>
+                            <span class="total-val">R <?php echo number_format($cart_totals['total'], 2); ?></span>
                         </div>
 
                         <button class="checkout-btn" id="checkoutBtn">Proceed to Checkout</button>
@@ -569,163 +487,150 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                         </div>
                     </div>
                 </div>
-            <?php endif; ?>
+            </div>
+
+            <!-- Empty cart state -->
+            <div id="empty-cart" style="display: <?php echo empty($cart_items) ? 'flex' : 'none'; ?>;">
+                <div class="empty-state">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Empty cart">
+                    <h3>Your cart is empty</h3>
+                    <p>Looks like you haven't added anything yet</p>
+                    <button class="view-all-btn" id="browseBtn">Browse Products</button>
+                </div>
+            </div>
         </div>
     </main>
 
     <?php include 'includes/footer.php'; ?>
 
     <script>
-        /**
-         * ConsuTrade - Cart Page JavaScript
-         * Handles cart quantity updates and item removal with caching
-         */
+        // Pass cart data to JavaScript for initial rendering
+        var initialCartData = {
+            items: <?php echo json_encode($cart_items); ?>,
+            subtotal: <?php echo json_encode($cart_totals['subtotal']); ?>,
+            delivery_fee: <?php echo json_encode($cart_totals['delivery_fee']); ?>,
+            total: <?php echo json_encode($cart_totals['total']); ?>
+        };
 
         // Cache DOM elements for better performance
-        var $cartItems = null;
-        var $qtyIncrease = null;
-        var $qtyDecrease = null;
-        var $qtyInput = null;
-        var $removeItems = null;
-        var $checkoutBtn = null;
-        var $continueBtn = null;
-        var $browseBtn = null;
+        var $cartLayout = null;
+        var $emptyCart = null;
+        var $cartItemCount = null;
 
-        // Cache jQuery objects after DOM is ready
-        function cacheCartElements() {
-            $cartItems = $('#cart-items');
-            $qtyIncrease = $('.qty-increase');
-            $qtyDecrease = $('.qty-decrease');
-            $qtyInput = $('.qty-input');
-            $removeItems = $('.remove-item');
-            $checkoutBtn = $('#checkoutBtn');
-            $continueBtn = $('#continueBtn');
-            $browseBtn = $('#browseBtn');
+        function cacheCartPageElements() {
+            $cartLayout = $('#cart-layout');
+            $emptyCart = $('#empty-cart');
+            $cartItemCount = $('#cart-item-count');
         }
 
-        /**
-         * Update cart item quantity via AJAX
-         * @param {number} cartId - Cart item ID
-         * @param {number} quantity - New quantity value
-         */
-        function updateCartQuantity(cartId, quantity) {
+        // Update cart count display (uses existing function from footer)
+        function updateCartCountFromCache(count) {
+            if ($cartItemCount && $cartItemCount.length) {
+                $cartItemCount.text(count);
+            }
+            // Use existing function from main.js/footer
+            if (typeof updateCartCountDisplay === 'function') {
+                updateCartCountDisplay(count);
+            }
+            if (window.sessionStorage) {
+                sessionStorage.setItem('cart_count', count);
+            }
+        }
+
+        // Load cart with caching
+        function loadCartWithCache() {
+            cacheCartPageElements();
+
+            // Try to load from session storage first
+            var cachedCart = null;
+            if (window.sessionStorage) {
+                var cachedCartStr = sessionStorage.getItem('cart_data');
+                if (cachedCartStr) {
+                    try {
+                        cachedCart = JSON.parse(cachedCartStr);
+                    } catch (e) {}
+                }
+            }
+
+            if (cachedCart && cachedCart.items && cachedCart.items.length > 0) {
+                // Use existing displayCartItems from main.js
+                if (typeof displayCartItems === 'function') {
+                    displayCartItems(cachedCart);
+                }
+                if (typeof updateOrderSummary === 'function') {
+                    updateOrderSummary(cachedCart);
+                }
+                if ($cartLayout && $cartLayout.length) {
+                    $cartLayout.css('display', 'flex');
+                }
+                if ($emptyCart && $emptyCart.length) {
+                    $emptyCart.css('display', 'none');
+                }
+                updateCartCountFromCache(cachedCart.items.length);
+            } else if (initialCartData.items && initialCartData.items.length > 0) {
+                // Use existing functions from main.js
+                if (typeof displayCartItems === 'function') {
+                    displayCartItems(initialCartData);
+                }
+                if (typeof updateOrderSummary === 'function') {
+                    updateOrderSummary(initialCartData);
+                }
+                if ($cartLayout && $cartLayout.length) {
+                    $cartLayout.css('display', 'flex');
+                }
+                if ($emptyCart && $emptyCart.length) {
+                    $emptyCart.css('display', 'none');
+                }
+                updateCartCountFromCache(initialCartData.items.length);
+
+                if (window.sessionStorage) {
+                    sessionStorage.setItem('cart_data', JSON.stringify(initialCartData));
+                }
+            }
+
+            // Silent refresh - uses existing updateCartCount from main.js
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+
+            // Refresh cart data silently
             $.ajax({
-                url: baseUrl + 'php/endpoints/update-cart.php',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    cart_id: cartId,
-                    quantity: quantity
-                }),
-                success: function(response) {
-                    if (response.success) {
-                        location.reload();
-                    } else {
-                        alert('Error: ' + response.message);
+                url: baseUrl + 'php/endpoints/get-cart.php',
+                type: 'GET',
+                dataType: 'json',
+                cache: true,
+                success: function(data) {
+                    if (data.success && data.items) {
+                        var currentCount = $cartItemCount ? parseInt($cartItemCount.text()) : 0;
+                        if (data.items.length !== currentCount) {
+                            if (typeof displayCartItems === 'function') {
+                                displayCartItems(data);
+                            }
+                            if (typeof updateOrderSummary === 'function') {
+                                updateOrderSummary(data);
+                            }
+                            updateCartCountFromCache(data.items.length);
+                            if (window.sessionStorage) {
+                                sessionStorage.setItem('cart_data', JSON.stringify(data));
+                            }
+                        }
                     }
-                },
-                error: function() {
-                    alert('Something went wrong. Please try again.');
                 }
             });
         }
 
-        /**
-         * Handle quantity increase button click
-         */
-        function handleQuantityIncrease() {
-            $qtyIncrease.off('click').on('click', function() {
-                var $btn = $(this);
-                var cartId = $btn.data('cart-id');
-                var $input = $qtyInput.filter('[data-cart-id="' + cartId + '"]');
-                var current = parseInt($input.val());
-                var max = parseInt($input.attr('max'));
-                if (!isNaN(current) && current < max) {
-                    $input.val(current + 1);
-                    updateCartQuantity(cartId, current + 1);
-                }
-            });
-        }
-
-        /**
-         * Handle quantity decrease button click
-         */
-        function handleQuantityDecrease() {
-            $qtyDecrease.off('click').on('click', function() {
-                var $btn = $(this);
-                var cartId = $btn.data('cart-id');
-                var $input = $qtyInput.filter('[data-cart-id="' + cartId + '"]');
-                var current = parseInt($input.val());
-                if (!isNaN(current) && current > 1) {
-                    $input.val(current - 1);
-                    updateCartQuantity(cartId, current - 1);
-                }
-            });
-        }
-
-        /**
-         * Handle manual quantity input change
-         */
-        function handleQuantityInputChange() {
-            $qtyInput.off('change').on('change', function() {
-                var $input = $(this);
-                var cartId = $input.data('cart-id');
-                var quantity = parseInt($input.val());
-                var max = parseInt($input.attr('max'));
-                if (isNaN(quantity) || quantity < 1) quantity = 1;
-                if (quantity > max) {
-                    quantity = max;
-                    $input.val(max);
-                    alert('Only ' + max + ' available in stock.');
-                }
-                updateCartQuantity(cartId, quantity);
-            });
-        }
-
-        /**
-         * Handle remove item button click
-         */
-        function handleRemoveItems() {
-            $removeItems.off('click').on('click', function() {
-                var $btn = $(this);
-                var productId = $btn.data('product-id');
-                if (confirm('Remove this item from your cart?')) {
-                    removeFromCart(productId);
-                }
-            });
-        }
-
-        /**
-         * Handle navigation button clicks
-         */
-        function handleNavigation() {
-            if ($checkoutBtn.length) {
-                $checkoutBtn.off('click').on('click', function() {
-                    window.location.href = baseUrl + 'checkout.php';
-                });
-            }
-
-            if ($continueBtn.length) {
-                $continueBtn.off('click').on('click', function() {
-                    window.location.href = baseUrl + 'product-listings.php';
-                });
-            }
-
-            if ($browseBtn.length) {
-                $browseBtn.off('click').on('click', function() {
-                    window.location.href = baseUrl + 'product-listings.php';
-                });
-            }
-        }
-
-        // Initialize all cart functionality when DOM is ready
         $(document).ready(function() {
-            cacheCartElements();
-            handleQuantityIncrease();
-            handleQuantityDecrease();
-            handleQuantityInputChange();
-            handleRemoveItems();
-            handleNavigation();
+            cacheCartPageElements();
+            loadCartWithCache();
+
+            // Bind navigation buttons
+            $('#checkoutBtn').on('click', function() {
+                window.location.href = baseUrl + 'checkout.php';
+            });
+
+            $('#continueBtn, #browseBtn').on('click', function() {
+                window.location.href = baseUrl + 'product-listings.php';
+            });
         });
     </script>
 </body>

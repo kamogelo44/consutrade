@@ -2,6 +2,9 @@
 /*
  * ConsuTrade - Homepage
  * Author: Kamogelo Phale
+ * 
+ * Main landing page displaying featured products and site information
+ * Uses components: header.php, footer.php, product-card (via functions.php)
  */
 
 require_once __DIR__ . '/init.php';
@@ -16,8 +19,12 @@ include __DIR__ . '/includes/functions.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
     <meta name="description" content="Buy and sell products from local South African traders. Secure payments with PayFast.">
-    <link rel="stylesheet" href="css/main.css">
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+
     <style>
+        /* Homepage specific overrides */
         .featured .prod-grid .empty-state {
             grid-column: 1 / -1;
             width: 100%;
@@ -37,6 +44,7 @@ include __DIR__ . '/includes/functions.php';
             color: rgba(255, 255, 255, 0.9);
         }
 
+        /* Hide duplicate search in hero section */
         .hero .search-container {
             display: none;
         }
@@ -56,6 +64,7 @@ include __DIR__ . '/includes/functions.php';
     <main class="content">
         <?php include 'includes/flash-message.php'; ?>
 
+        <!-- Hero Section -->
         <section class="hero">
             <img src="images/hero-img.webp" alt="South African marketplace" class="hero-bg-image" width="1920" height="500">
             <div class="hero-overlay"></div>
@@ -71,26 +80,31 @@ include __DIR__ . '/includes/functions.php';
             </div>
         </section>
 
+        <!-- How it works section -->
         <section class="how">
             <h1 class="section-heading">How it works</h1>
             <div class="how-container">
-                <div class="card"><img src="images/icons/register-svgrepo-com.svg" width="48" height="48" class="icon" loading="lazy">
+                <div class="card">
+                    <img src="images/icons/register-svgrepo-com.svg" width="48" height="48" class="icon" loading="lazy">
                     <h2>Register</h2>
                     <p>Create your free account</p>
                 </div>
                 <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48" height="48" loading="lazy">
-                <div class="card"><img src="images/icons/product-catalog-svgrepo-com.svg" width="48" height="48" class="icon" loading="lazy">
+                <div class="card">
+                    <img src="images/icons/product-catalog-svgrepo-com.svg" width="48" height="48" class="icon" loading="lazy">
                     <h2>List</h2>
                     <p>Upload your products in minutes</p>
                 </div>
                 <img src="images/icons/right-arrow-1-svgrepo-com.svg" class="arrow" width="48" height="48" loading="lazy">
-                <div class="card"><img src="images/icons/cash-atm-svgrepo-com.svg" width="48" height="48" class="icon" loading="lazy">
+                <div class="card">
+                    <img src="images/icons/cash-atm-svgrepo-com.svg" width="48" height="48" class="icon" loading="lazy">
                     <h2>Get Paid</h2>
                     <p>Receive payments securely with PayFast</p>
                 </div>
             </div>
         </section>
 
+        <!-- Featured products section -->
         <section class="featured">
             <div class="featured-header">
                 <h1 class="section-heading">Recently Listed</h1>
@@ -105,7 +119,7 @@ include __DIR__ . '/includes/functions.php';
                     foreach ($featuredProducts as $product):
                         // Get seller for this product
                         $seller = $userRepo->findById($product->getSellerId());
-                        // Render the product card using the reusable function
+                        // Render the product card using the reusable function from functions.php
                         echo renderProductCard($product, $seller);
                     endforeach;
                 else:
@@ -120,16 +134,20 @@ include __DIR__ . '/includes/functions.php';
             </div>
         </section>
 
+        <!-- Trust banner -->
         <section class="trust">
-            <div class="card"><img src="images/icons/secure-card-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48" height="48" class="icon" loading="lazy">
+            <div class="card">
+                <img src="images/icons/secure-card-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48" height="48" class="icon" loading="lazy">
                 <h2>Secure Payments</h2>
                 <p>PayFast protected</p>
             </div>
-            <div class="card"><img src="images/icons/verified-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48" height="48" class="icon" loading="lazy">
+            <div class="card">
+                <img src="images/icons/verified-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48" height="48" class="icon" loading="lazy">
                 <h2>Verified Sellers</h2>
                 <p>All sellers are checked</p>
             </div>
-            <div class="card"><img src="images/icons/delivery-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48" height="48" class="icon" loading="lazy">
+            <div class="card">
+                <img src="images/icons/delivery-svgrepo-com.svg" style="filter: brightness(0) invert(1);" width="48" height="48" class="icon" loading="lazy">
                 <h2>Nationwide Delivery</h2>
                 <p>We deliver across SA</p>
             </div>
@@ -140,6 +158,7 @@ include __DIR__ . '/includes/functions.php';
     <?php include 'includes/modal-errors.php'; ?>
 
     <script>
+        // Handle Start Selling button
         $('#primary-btn').on('click', function() {
             var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
             var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;

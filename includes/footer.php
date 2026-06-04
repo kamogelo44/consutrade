@@ -2,6 +2,9 @@
 /*
  * ConsuTrade - Site Footer Component
  * Author: Kamogelo Phale
+ * 
+ * Includes global JavaScript variables and scripts
+ * Uses modular components for cart display
  */
 ?>
 <footer class="site-footer">
@@ -34,9 +37,18 @@
         </div>
         <div class="footer-section">
             <h4>Contact Info</h4>
-            <p><a href="mailto:info@consutrade.co.za">info@consutrade.co.za</a></p>
-            <p><a href="tel:+27123456789">+27 123 456 789</a></p>
-            <p>Johannesburg, South Africa</p>
+            <div class="contact-item">
+                <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" alt="Email" width="16" height="16">
+                <a href="mailto:info@consutrade.co.za" class="contact-link">info@consutrade.co.za</a>
+            </div>
+            <div class="contact-item">
+                <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" alt="Phone" width="16" height="16">
+                <a href="tel:+27123456789" class="contact-link">+27 12 345 6789</a>
+            </div>
+            <div class="contact-item">
+                <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" alt="Location" width="16" height="16">
+                <span>Johannesburg, South Africa</span>
+            </div>
         </div>
     </div>
     <div class="footer-bottom">
@@ -44,7 +56,7 @@
     </div>
 </footer>
 
-<!-- GLOBAL JAVASCRIPT VARIABLES - MUST be defined before jQuery and main.js -->
+<!-- GLOBAL JAVASCRIPT VARIABLES -->
 <script>
     // Global variables accessible from any script
     var baseUrl = '<?php echo $baseUrl; ?>';
@@ -58,17 +70,15 @@
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 
 <script>
-    // ========== CACHED DOM ELEMENTS ==========
+    // ========== CART COUNT DISPLAY (Using cached elements) ==========
     var $cartCountElements = null;
     var $mobileCartCount = null;
 
-    // ========== CACHE FUNCTION ==========
     function cacheFooterElements() {
         $cartCountElements = $('.cart-badge, .cart-count');
         $mobileCartCount = $('.mobile-cart-count');
     }
 
-    // ========== UPDATE CART COUNT DISPLAY ==========
     function updateCartCountDisplay() {
         cacheFooterElements();
 
@@ -101,7 +111,6 @@
         });
     }
 
-    // ========== LOAD CACHED CART COUNT ==========
     function loadCachedCartCount() {
         cacheFooterElements();
 
@@ -118,11 +127,9 @@
         }
     }
 
-    // ========== INITIALIZE ==========
     $(function() {
         cacheFooterElements();
 
-        // Use the global variables
         if (typeof cartCountInitial !== 'undefined' && cartCountInitial > 0) {
             if ($cartCountElements.length) {
                 $cartCountElements.text(cartCountInitial);

@@ -1656,7 +1656,7 @@ $(function() {
     initErrorClearingOnInput();
     initAjaxLogin();
     initAjaxRegister();
-    
+        
     if (!window.location.pathname.includes('cart.php')) {
         updateCartCount();
         loadCart();

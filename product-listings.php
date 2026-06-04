@@ -4,10 +4,12 @@
  * Author: Kamogelo Phale
  * 
  * Displays all products with filtering and sorting options
+ * Uses AJAX loading via products.js
  */
 
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
+include __DIR__ . '/includes/functions.php';
 
 $breadcrumbItems = [
     ['label' => 'All Products']
@@ -20,11 +22,11 @@ $breadcrumbItems = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop Products - ConsuTrade</title>
+    <meta name="description" content="Browse all products on ConsuTrade - South Africa's trusted marketplace">
     <meta name="author" content="Kamogelo Phale">
 
-    <!-- Master Stylesheet -->
-    <link rel="stylesheet" href="css/main.css">
-
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
 </head>
 
 <body>
@@ -32,14 +34,12 @@ $breadcrumbItems = [
     <?php include 'includes/header.php'; ?>
 
     <main>
-        <!-- Breadcrumb -->
         <?php include 'includes/breadcrumb.php'; ?>
 
-        <!-- Listings Body -->
         <div class="listings-body">
             <!-- Mobile Filter Button -->
             <button class="filter-btn" id="mobileFilterBtn">
-                <img src="images/icons/filter-svgrepo-com.svg" alt="filter" width="18" height="18">
+                <img src="<?php echo $baseUrl; ?>images/icons/filter-svgrepo-com.svg" alt="filter" width="18" height="18">
                 Filter Products
             </button>
 
@@ -103,7 +103,7 @@ $breadcrumbItems = [
                         <fieldset class="filter-location">
                             <legend class="filter-heading">Location</legend>
                             <div class="search-loc-wrapper">
-                                <img src="images/icons/pin-location-svgrepo-com.svg" alt="location" class="location-icon" width="16" height="16">
+                                <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" alt="location" class="location-icon" width="16" height="16">
                                 <input type="search" id="search-location" name="location" placeholder="Enter city or province...">
                             </div>
                         </fieldset>
@@ -111,11 +111,11 @@ $breadcrumbItems = [
                         <!-- Filter Actions -->
                         <div class="filter-actions">
                             <button type="submit" class="apply-filter-btn">
-                                <img src="images/icons/verified-svgrepo-com.svg" alt="apply" width="14" height="14">
+                                <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" alt="apply" width="14" height="14">
                                 Apply Filters
                             </button>
                             <button type="reset" class="reset-filter-btn" id="resetFilters">
-                                <img src="images/icons/form-close-svgrepo-com.svg" alt="reset" width="14" height="14">
+                                <img src="<?php echo $baseUrl; ?>images/icons/form-close-svgrepo-com.svg" alt="reset" width="14" height="14">
                                 Reset
                             </button>
                         </div>
@@ -149,7 +149,8 @@ $breadcrumbItems = [
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
 
-    <script src="js/products.js"></script>
+    <!-- products.js handles all product loading, filtering, and pagination -->
+    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 
 </body>
 

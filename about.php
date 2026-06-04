@@ -20,7 +20,7 @@ include __DIR__ . '/includes/session-vars.php';
     <meta name="description" content="Learn about ConsuTrade - South Africa's online marketplace connecting informal traders with buyers">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* About Page Styles */
+        /* About Page Styles - Page specific only */
         .about-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -83,7 +83,6 @@ include __DIR__ . '/includes/session-vars.php';
             gap: var(--spacing-sm);
         }
 
-        /* Features Grid - Same as index.php cards */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -109,6 +108,7 @@ include __DIR__ . '/includes/session-vars.php';
         .feature img {
             margin-bottom: var(--spacing-md);
             transition: transform var(--transition-normal);
+            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
         }
 
         .feature:hover img {
@@ -157,6 +157,7 @@ include __DIR__ . '/includes/session-vars.php';
 
         .contact-item img {
             transition: transform var(--transition-fast);
+            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
         }
 
         .contact-item:hover img {
@@ -166,12 +167,6 @@ include __DIR__ . '/includes/session-vars.php';
         .contact-item p {
             font-size: var(--font-md);
             color: var(--gray-dark);
-        }
-
-        /* Icon colors - orange */
-        .feature img,
-        .contact-item img {
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
         }
 
         /* Responsive */

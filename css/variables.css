@@ -1,0 +1,96 @@
+/**
+ * ConsuTrade - CSS Variables
+ * Author: Kamogelo Phale
+ */
+
+:root {
+  /* Primary Brand Colors */
+  --primary-color: #ff6b00;
+  --primary-dark: #e05f00;
+  --primary-darker: #cc5500;
+  --primary-light: #ff8533;
+  --primary-lighter: #ffa366;
+  --primary-fade: #fff4e8;
+
+  /* Neutral Colors */
+  --white: #ffffff;
+  --black: #000000;
+  --dark-bg: #1a1a1a;
+  --gray-dark: #333333;
+  --gray-medium: #666666;
+  --gray-light: #999999;
+  --gray-lighter: #cccccc;
+  --gray-bg: #f5f5f5;
+  --gray-bg-light: #f8f9fa;
+
+  /* Border Colors */
+  --border-light: #e0e0e0;
+  --border-medium: #cccccc;
+  --border-dark: #999999;
+
+  /* Status Colors */
+  --success: #4caf50;
+  --success-light: #e8f5e9;
+  --success-dark: #388e3c;
+  --error: #f44336;
+  --error-light: #ffebee;
+  --error-dark: #d32f2f;
+  --warning: #ff9800;
+  --warning-light: #fff3e0;
+  --warning-dark: #e68900;
+  --info: #2196f3;
+  --info-light: #e3f2fd;
+  --info-dark: #1976d2;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-round: 999px;
+
+  /* Font Sizes */
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-base: 16px;
+  --font-lg: 18px;
+  --font-xl: 20px;
+  --font-2xl: 24px;
+  --font-3xl: 28px;
+  --font-4xl: 32px;
+
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.6s ease;
+
+  /* Z-Index Layers */
+  --z-below: -1;
+  --z-normal: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 1000;
+  --z-popup: 1100;
+  --z-tooltip: 1200;
+}

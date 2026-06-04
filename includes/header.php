@@ -2,6 +2,8 @@
 /*
  * ConsuTrade - Site Header Component
  * Author: Kamogelo Phale
+ * 
+ * Uses modular components for consistent structure
  */
 
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -147,93 +149,91 @@ $cart_count = $_SESSION['cart_count'] ?? 0;
     <div class="menu-overlay" id="menuOverlay"></div>
 </header>
 
-<!-- Modals -->
-<?php if (!$is_logged_in): ?>
-    <!-- Login Modal -->
-    <div id="login-modal" class="modal">
-        <div class="modal-content">
-            <button class="btn-close"></button>
-            <div class="modal-header">
-                <h1>Consu<span>Trade</span></h1>
-                <p>Welcome back! Please login to your account</p>
-            </div>
-            <div id="login-error-container" class="error-container" style="display: none;"></div>
-            <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/login.php">
-                <input type="hidden" name="role_type" value="buyer">
-                <div class="input-group">
-                    <label for="login-email">Email Address</label>
-                    <input type="email" id="login-email" name="email" placeholder="Enter your email address" required>
-                </div>
-                <div class="input-group">
-                    <label for="login-password">Password</label>
-                    <div class="password-field-wrapper">
-                        <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
-                        <button type="button" class="password-toggle-btn" onclick="togglePassword('login-password', this)">
-                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
-                        </button>
-                    </div>
-                </div>
-                <div class="reset-pass"><a href="#">Forgot Password?</a></div>
-                <button type="submit" class="submit-btn">Login</button>
-                <div class="register-link">Don't have an account? <a href="#" id="switch-to-register">Register here</a></div>
-            </form>
+
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+    <div class="modal-content">
+        <button class="btn-close"></button>
+        <div class="modal-header">
+            <h1>Consu<span>Trade</span></h1>
+            <p>Welcome back! Please login to your account</p>
         </div>
-    </div>
-
-    <!-- Register Modal -->
-    <div id="register-modal" class="modal">
-        <div class="modal-content">
-            <button class="btn-close"></button>
-            <div class="modal-header">
-                <h1>Consu<span>Trade</span></h1>
-                <p>Create your account to start buying and selling</p>
+        <div id="login-error-container" class="error-container" style="display: none;"></div>
+        <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/login.php">
+            <input type="hidden" name="role_type" value="buyer">
+            <div class="input-group">
+                <label for="login-email">Email Address</label>
+                <input type="email" id="login-email" name="email" placeholder="Enter your email address" required>
             </div>
-            <div id="register-error-container" class="error-container" style="display: none;"></div>
-            <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/register.php">
-                <div class="input-group">
-                    <label for="register-full-name">Full Name</label>
-                    <input type="text" id="register-full-name" name="full_name" placeholder="Enter your full name" required>
+            <div class="input-group">
+                <label for="login-password">Password</label>
+                <div class="password-field-wrapper">
+                    <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('login-password', this)">
+                        <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
+                    </button>
                 </div>
-                <div class="input-group">
-                    <label for="register-email">Email Address</label>
-                    <input type="email" id="register-email" name="email" placeholder="Enter your email address" required>
-                </div>
-                <div class="input-group">
-                    <label for="register-phone">Phone Number</label>
-                    <input type="tel" id="register-phone" name="phone" placeholder="Enter your phone number" required>
-                </div>
-                <div class="input-group">
-                    <label for="register-password">Password</label>
-                    <div class="password-field-wrapper">
-                        <input type="password" id="register-password" name="password" placeholder="Create a password" required>
-                        <button type="button" class="password-toggle-btn" onclick="togglePassword('register-password', this)">
-                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
-                        </button>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label for="register-confirm-password">Confirm Password</label>
-                    <div class="password-field-wrapper">
-                        <input type="password" id="register-confirm-password" name="confirm_password" placeholder="Confirm your password" required>
-                        <button type="button" class="password-toggle-btn" onclick="togglePassword('register-confirm-password', this)">
-                            <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
-                        </button>
-                    </div>
-                </div>
-
-                <fieldset class="user-type">
-                    <legend>I want to...</legend>
-                    <div class="radio-buttons">
-                        <input type="radio" id="buyer" name="role" value="buyer" checked>
-                        <label for="buyer" class="radio-btn radio">Buy Products</label>
-                        <input type="radio" id="seller" name="role" value="seller">
-                        <label for="seller" class="radio-btn radio">Sell Products</label>
-                    </div>
-                </fieldset>
-
-                <button type="submit" class="submit-btn">Create Account</button>
-                <div class="login-link">Already have an account? <a href="#" id="switch-to-login">Login here</a></div>
-            </form>
-        </div>
+            </div>
+            <div class="reset-pass"><a href="#">Forgot Password?</a></div>
+            <button type="submit" class="submit-btn">Login</button>
+            <div class="register-link">Don't have an account? <a href="#" id="switch-to-register">Register here</a></div>
+        </form>
     </div>
-<?php endif; ?>
+</div>
+
+<!-- Register Modal -->
+<div id="register-modal" class="modal">
+    <div class="modal-content">
+        <button class="btn-close"></button>
+        <div class="modal-header">
+            <h1>Consu<span>Trade</span></h1>
+            <p>Create your account to start buying and selling</p>
+        </div>
+        <div id="register-error-container" class="error-container" style="display: none;"></div>
+        <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/register.php">
+            <div class="input-group">
+                <label for="register-full-name">Full Name</label>
+                <input type="text" id="register-full-name" name="full_name" placeholder="Enter your full name" required>
+            </div>
+            <div class="input-group">
+                <label for="register-email">Email Address</label>
+                <input type="email" id="register-email" name="email" placeholder="Enter your email address" required>
+            </div>
+            <div class="input-group">
+                <label for="register-phone">Phone Number</label>
+                <input type="tel" id="register-phone" name="phone" placeholder="Enter your phone number" required>
+            </div>
+            <div class="input-group">
+                <label for="register-password">Password</label>
+                <div class="password-field-wrapper">
+                    <input type="password" id="register-password" name="password" placeholder="Create a password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('register-password', this)">
+                        <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
+                    </button>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="register-confirm-password">Confirm Password</label>
+                <div class="password-field-wrapper">
+                    <input type="password" id="register-confirm-password" name="confirm_password" placeholder="Confirm your password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('register-confirm-password', this)">
+                        <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
+                    </button>
+                </div>
+            </div>
+
+            <fieldset class="user-type">
+                <legend>I want to...</legend>
+                <div class="radio-buttons">
+                    <input type="radio" id="buyer" name="role" value="buyer" checked>
+                    <label for="buyer" class="radio-btn radio">Buy Products</label>
+                    <input type="radio" id="seller" name="role" value="seller">
+                    <label for="seller" class="radio-btn radio">Sell Products</label>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="submit-btn">Create Account</button>
+            <div class="login-link">Already have an account? <a href="#" id="switch-to-login">Login here</a></div>
+        </form>
+    </div>
+</div>

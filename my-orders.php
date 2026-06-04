@@ -2,32 +2,24 @@
 /*
  * ConsuTrade - My Orders (Buyer)
  * Author: Kamogelo Phale
- * 
- * Displays buyer's order history with filters and search
- * Uses main.js for modal, toast, and utility functions
  */
 
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
-// Check if user is logged in and is a buyer
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-// Set breadcrumb
 $breadcrumbItems = [
     ['url' => 'profile.php', 'label' => 'My Profile'],
     ['label' => 'My Orders']
 ];
 
-// Get filter parameters
 $status_filter = $_GET['status'] ?? 'all';
 $search_term = $_GET['search'] ?? '';
-
-// Get orders using Buyer class method
 $orders = $currentUser->getOrders($status_filter, $search_term);
 ?>
 <!DOCTYPE html>
@@ -37,9 +29,9 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade</title>
-    <meta name="description" content="View and track your order history">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
+        /* Base styles (keep existing styles) */
         .orders-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -63,6 +55,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             margin: 0;
         }
 
+        /* Filter bar styles */
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -104,6 +97,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             border-color: var(--primary-color);
         }
 
+        /* Search bar styles */
         .search-bar {
             flex-shrink: 0;
         }
@@ -146,6 +140,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             margin-left: var(--spacing-sm);
         }
 
+        /* Orders list styles */
         .orders-list {
             display: flex;
             flex-direction: column;
@@ -229,27 +224,20 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             padding: var(--spacing-lg);
         }
 
-        .seller-info {
+        .customer-info {
             flex: 2;
         }
 
-        .seller-details,
-        .product-details {
+        .customer-details {
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
             margin-bottom: var(--spacing-xs);
         }
 
-        .seller-details span,
-        .product-details span {
+        .customer-details span {
             color: var(--gray-dark);
             font-size: var(--font-sm);
-        }
-
-        .item-details span {
-            color: var(--gray-medium);
-            font-size: var(--font-xs);
         }
 
         .order-amount {
@@ -354,17 +342,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             margin-bottom: var(--spacing-lg);
         }
 
-        .clear-btn,
-        .shop-btn {
-            display: inline-block;
-            padding: 10px 24px;
-            background: var(--primary-color);
-            color: var(--white);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            font-weight: var(--font-bold);
-        }
-
+        /* Modal Styles */
         .order-modal,
         .review-modal {
             display: none;
@@ -443,86 +421,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             flex-wrap: wrap;
             gap: var(--spacing-md);
             justify-content: flex-end;
-        }
-
-        .order-info-section {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: var(--spacing-xs) 0;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .info-label {
-            font-weight: var(--font-medium);
-            color: var(--gray-dark);
-        }
-
-        .info-value {
-            color: var(--gray-medium);
-        }
-
-        .order-items-list {
-            margin: var(--spacing-lg) 0;
-        }
-
-        .order-item {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-sm) 0;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .order-item-img {
-            width: 60px;
-            height: 60px;
-            background: var(--gray-bg);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .order-item-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .order-item-details {
-            flex: 1;
-        }
-
-        .order-item-details h4 {
-            font-size: var(--font-sm);
-            font-weight: var(--font-medium);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .order-item-price {
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-        }
-
-        .order-total-section {
-            margin-top: var(--spacing-lg);
-            padding-top: var(--spacing-md);
-            border-top: 2px solid var(--border-light);
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            padding: var(--spacing-xs) 0;
-        }
-
-        .grand-total {
-            font-weight: var(--font-bold);
-            font-size: var(--font-lg);
-            color: var(--dark-bg);
         }
 
         .review-form-container {
@@ -666,99 +564,11 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                 <p>Track and manage your purchase history</p>
             </div>
 
-            <div class="filters-bar">
-                <div class="status-filters">
-                    <a href="?status=all" class="filter-btn <?php echo $status_filter === 'all' ? 'active' : ''; ?>">All Orders</a>
-                    <a href="?status=pending" class="filter-btn <?php echo $status_filter === 'pending' ? 'active' : ''; ?>">Pending</a>
-                    <a href="?status=processing" class="filter-btn <?php echo $status_filter === 'processing' ? 'active' : ''; ?>">Processing</a>
-                    <a href="?status=shipped" class="filter-btn <?php echo $status_filter === 'shipped' ? 'active' : ''; ?>">Shipped</a>
-                    <a href="?status=completed" class="filter-btn <?php echo $status_filter === 'completed' ? 'active' : ''; ?>">Completed</a>
-                    <a href="?status=cancelled" class="filter-btn <?php echo $status_filter === 'cancelled' ? 'active' : ''; ?>">Cancelled</a>
-                </div>
-
-                <div class="search-bar">
-                    <form method="GET" action="">
-                        <input type="hidden" name="status" value="<?php echo $status_filter; ?>">
-                        <input type="text" name="search" placeholder="Search by order # or seller..." value="<?php echo htmlspecialchars($search_term); ?>">
-                        <button type="submit">
-                            <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">
-                        </button>
-                        <?php if (!empty($search_term)): ?>
-                            <a href="?status=<?php echo $status_filter; ?>" class="clear-search">Clear</a>
-                        <?php endif; ?>
-                    </form>
-                </div>
-            </div>
-
-            <div class="orders-list">
-                <?php if (count($orders) > 0): ?>
-                    <?php foreach ($orders as $order): ?>
-                        <?php
-                        $existing_review = $reviewRepo->getReviewByOrderAndBuyer($order['order_id'], $currentUser->getUserId());
-                        $has_review = $existing_review !== null;
-                        $existing_rating = $has_review ? $existing_review['rating'] : 0;
-                        $existing_comment = $has_review ? addslashes($existing_review['comment']) : '';
-                        ?>
-                        <div class="order-card">
-                            <div class="order-header">
-                                <div class="order-info">
-                                    <span class="order-number">Order #<?php echo $order['order_id']; ?></span>
-                                    <span class="order-date"><?php echo formatDateTime($order['created_at']); ?></span>
-                                </div>
-                                <div class="order-status-badge status-<?php echo $order['status']; ?>">
-                                    <?php echo ucfirst($order['status']); ?>
-                                </div>
-                            </div>
-
-                            <div class="order-body">
-                                <div class="seller-info">
-                                    <div class="seller-details">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" width="20" height="20" alt="Seller">
-                                        <span>Seller: <?php echo htmlspecialchars($order['seller_name']); ?></span>
-                                    </div>
-                                    <div class="product-details">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="20" height="20" alt="Product">
-                                        <span><?php echo htmlspecialchars($order['product_names']); ?></span>
-                                    </div>
-                                    <div class="item-details">
-                                        <span><?php echo $order['item_count']; ?> item(s)</span>
-                                    </div>
-                                </div>
-
-                                <div class="order-amount">
-                                    <span class="amount-label">Total Amount</span>
-                                    <span class="amount-value">R <?php echo number_format($order['total_price'], 2); ?></span>
-                                </div>
-                            </div>
-
-                            <div class="order-footer">
-                                <button class="view-details-btn" data-order-id="<?php echo $order['order_id']; ?>">View Details</button>
-                                <?php if ($order['status'] === 'pending'): ?>
-                                    <button class="cancel-btn cancel-order-btn" data-order-id="<?php echo $order['order_id']; ?>">Cancel Order</button>
-                                <?php endif; ?>
-                                <?php if ($order['status'] === 'completed'): ?>
-                                    <?php if ($has_review): ?>
-                                        <button class="review-btn edit-review-btn" data-order-id="<?php echo $order['order_id']; ?>" data-seller-id="<?php echo $order['seller_id']; ?>" data-seller-name="<?php echo addslashes($order['seller_name']); ?>" data-rating="<?php echo $existing_rating; ?>" data-comment="<?php echo $existing_comment; ?>">Edit Review</button>
-                                    <?php else: ?>
-                                        <button class="review-btn" data-order-id="<?php echo $order['order_id']; ?>" data-seller-id="<?php echo $order['seller_id']; ?>" data-seller-name="<?php echo addslashes($order['seller_name']); ?>">Leave Review</button>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="No orders">
-                        <h3>No Orders Found</h3>
-                        <p><?php echo !empty($search_term) ? 'No orders match your search criteria.' : 'You haven\'t placed any orders yet.'; ?></p>
-                        <?php if (!empty($search_term)): ?>
-                            <a href="?status=<?php echo $status_filter; ?>" class="clear-btn">Clear Search</a>
-                        <?php else: ?>
-                            <a href="product-listings.php" class="shop-btn">Start Shopping</a>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
+            <?php
+            // Use the orders list component
+            $role = 'buyer';
+            include __DIR__ . '/includes/orders-list.php';
+            ?>
         </div>
     </main>
 
@@ -789,7 +599,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                     <input type="hidden" id="reviewOrderId" name="order_id">
                     <input type="hidden" id="reviewSellerId" name="seller_id">
                     <input type="hidden" id="isEditMode" name="is_edit_mode" value="0">
-
                     <div class="form-group">
                         <label>Rating</label>
                         <div class="rating-stars">
@@ -801,12 +610,10 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
                         </div>
                         <input type="hidden" id="reviewRating" name="rating" value="0">
                     </div>
-
                     <div class="form-group">
                         <label for="reviewComment">Your Review</label>
                         <textarea id="reviewComment" name="comment" rows="4" placeholder="Share your experience with this seller..."></textarea>
                     </div>
-
                     <button type="submit" class="submit-review-btn" id="submitReviewBtn">Submit Review</button>
                 </form>
             </div>
@@ -817,7 +624,9 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
     <?php include 'includes/modal-errors.php'; ?>
 
     <script>
-        // ========== CACHED DOM ELEMENTS ==========
+        var baseUrl = '<?php echo $baseUrl; ?>';
+
+        // Cached DOM elements
         var $reviewModal = null;
         var $reviewForm = null;
         var $reviewRating = null;
@@ -828,10 +637,7 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
         var $reviewSellerName = null;
         var $isEditMode = null;
         var $submitReviewBtn = null;
-        var $cancelBtns = null;
-        var $reviewBtns = null;
         var $editReviewBtns = null;
-        var $viewDetailsBtns = null;
 
         function cacheMyOrdersElements() {
             $reviewModal = $('#reviewModal');
@@ -844,13 +650,9 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             $reviewSellerName = $('#reviewSellerName');
             $isEditMode = $('#isEditMode');
             $submitReviewBtn = $('#submitReviewBtn');
-            $cancelBtns = $('.cancel-order-btn');
-            $reviewBtns = $('.review-btn:not(.edit-review-btn)');
             $editReviewBtns = $('.edit-review-btn');
-            $viewDetailsBtns = $('.view-details-btn');
         }
 
-        // ========== ORDER CANCELLATION ==========
         function cancelBuyerOrder(orderId) {
             if (confirm('Are you sure you want to cancel this order?')) {
                 $.ajax({
@@ -875,7 +677,6 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             }
         }
 
-        // ========== REVIEW MODAL FUNCTIONS ==========
         function resetRatingStars() {
             $reviewRating.val(0);
             $ratingStars.removeClass('active');
@@ -915,21 +716,8 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             resetRatingStars();
         }
 
-        // ========== EVENT HANDLERS ==========
-        function handleViewDetails() {
-            $viewDetailsBtns.off('click').on('click', function() {
-                openOrderModal($(this).data('order-id'));
-            });
-        }
-
-        function handleCancelButtons() {
-            $cancelBtns.off('click').on('click', function() {
-                cancelBuyerOrder($(this).data('order-id'));
-            });
-        }
-
         function handleReviewButtons() {
-            $reviewBtns.off('click').on('click', function() {
+            $('.review-btn:not(.edit-review-btn)').off('click').on('click', function() {
                 openReviewModal($(this).data('order-id'), $(this).data('seller-id'), $(this).data('seller-name'));
             });
             $editReviewBtns.off('click').on('click', function() {
@@ -994,11 +782,8 @@ $orders = $currentUser->getOrders($status_filter, $search_term);
             });
         }
 
-        // ========== INITIALIZE ==========
         $(document).ready(function() {
             cacheMyOrdersElements();
-            handleViewDetails();
-            handleCancelButtons();
             handleReviewButtons();
             handleReviewSubmit();
             handleModalClicks();
