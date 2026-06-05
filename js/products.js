@@ -69,18 +69,15 @@ function displayProducts(products) {
             sellerBadge = '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
         }
         
-        // button logic - only buyers and guests access the main website
+        // button logic - simple: out of stock OR add to cart (addToCart handles login check internally)
         var isOutOfStock = (product.stock_quantity || 1) <= 0;
         var addToCartButton = '';
         
         if (isOutOfStock) {
             addToCartButton = '<button class="out-of-stock-btn" disabled>Out of Stock</button>';
-        } else if (typeof isLoggedIn !== 'undefined' && isLoggedIn === true) {
-            // logged in buyer
-            addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', ' + product.price + ')">Add to Cart</button>';
         } else {
-            // guest user - show login prompt
-            addToCartButton = '<button class="login-to-cart-btn" onclick="event.stopPropagation(); $(\'#login-modal\').addClass(\'active\');">Login to Buy</button>';
+            // Always show Add to Cart button - addToCart function will check login and show modal if needed
+            addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', ' + product.price + ')">Add to Cart</button>';
         }
         
         var sellerAvatar = fixImageUrl(product.profile_image, 'images/icons/profile-svgrepo-com.svg');
@@ -296,16 +293,15 @@ function displayProductDetails(product) {
     
     var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
     
-    // button logic for product details - only buyers and guests
+    // button logic for product details - simple: out of stock OR add to cart/buy now (addToCart handles login internally)
     var actionButtonsHtml = '';
     
     if (isOutOfStock) {
         actionButtonsHtml = '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
-    } else if (typeof isLoggedIn !== 'undefined' && isLoggedIn === true) {
+    } else {
+        // Always show Add to Cart and Buy Now - addToCart function handles login check
         actionButtonsHtml = '<button class="cart-btn" onclick="addToCart(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Add to Cart</button>' +
                             '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
-    } else {
-        actionButtonsHtml = '<button class="cart-btn login-prompt" onclick="$(\'#login-modal\').addClass(\'active\');">Login to Buy</button>';
     }
     
     // report button - only for logged in buyers

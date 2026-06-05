@@ -1,10 +1,6 @@
 <?php
 /*
- * ConsuTrade - Shopping Cart Page
- * Author: Kamogelo Phale
- * 
- * Displays user's cart items with quantity and stock awareness
- * Uses CartRepository for cart data and main.js for rendering
+ * Shopping Cart Page - Displays user's cart items with quantity and stock awareness
  */
 
 require_once __DIR__ . '/init.php';
@@ -33,20 +29,24 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Cart - ConsuTrade</title>
+    <title>Shopping Cart - ConsuTrade</title>
     <meta name="description" content="View and manage your shopping cart items">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== CART PAGE STYLES (Page-specific only) ========== */
+        /* ============================================
+           CART PAGE STYLES - Matches JS output exactly
+           ============================================ */
+
         .cart-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px var(--spacing-xl);
+            padding: var(--spacing-xl);
+            min-height: 400px;
         }
 
         .cart-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: var(--spacing-2xl);
         }
 
         .cart-header h1 {
@@ -61,70 +61,91 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         .cart-grid {
             display: grid;
             grid-template-columns: 1fr 350px;
-            gap: 30px;
+            gap: var(--spacing-xl);
             align-items: start;
         }
 
-        .cart-items {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        /* ===== DESKTOP TABLE STYLES ===== */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Cart Item Styles - matches main.js displayCartItems output */
-        .cart-item {
-            display: grid;
-            grid-template-columns: 100px 1fr auto;
-            gap: 20px;
+        .cart-table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
             background: var(--white);
-            border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
-            padding: 20px;
+            overflow: hidden;
             box-shadow: var(--shadow-sm);
-            transition: all var(--transition-fast);
         }
 
-        .cart-item:hover {
-            box-shadow: var(--shadow-md);
+        .cart-table th {
+            text-align: left;
+            padding: var(--spacing-md);
+            background: var(--gray-bg);
+            font-weight: var(--font-semibold);
+            color: var(--gray-dark);
+            border-bottom: 1px solid var(--border-light);
+            font-size: var(--font-md);
         }
 
-        .item-image {
-            width: 100px;
-            height: 100px;
+        .cart-table td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .cart-product-wrapper {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .cart-img-container {
+            width: 70px;
+            height: 70px;
+            flex-shrink: 0;
             background: var(--gray-bg);
             border-radius: var(--radius-md);
             overflow: hidden;
         }
 
-        .item-image img {
+        .cart-img-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .item-details {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        .cart-prod-info {
+            flex: 1;
         }
 
-        .item-title {
-            font-size: var(--font-base);
-            font-weight: var(--font-bold);
+        .cart-prod-info .prod-name {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
             color: var(--dark-bg);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .seller-cart-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .seller-cart-info .seller-name {
+            font-size: var(--font-sm);
+            color: var(--gray-dark);
             margin: 0;
         }
 
-        .item-seller {
+        .verification {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .seller-name {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
         }
 
         .verified-badge-cart,
@@ -135,6 +156,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             padding: 2px 8px;
             border-radius: var(--radius-round);
             font-size: 10px;
+            width: fit-content;
         }
 
         .verified-badge-cart {
@@ -149,52 +171,20 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             color: var(--warning);
         }
 
-        .item-price {
+        .price-cell {
             font-size: var(--font-lg);
             font-weight: var(--font-bold);
             color: var(--primary-color);
         }
 
-        .stock-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: var(--radius-md);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-            width: fit-content;
-        }
-
-        .stock-status.in-stock {
-            background: var(--success-light);
-            color: var(--success-dark);
-        }
-
-        .stock-status.low-stock {
-            background: var(--warning-light);
-            color: var(--warning-dark);
-        }
-
-        .stock-status.out-of-stock {
-            background: var(--error-light);
-            color: var(--error-dark);
-        }
-
-        .item-actions {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 12px;
-        }
-
         .quantity-controls {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: var(--spacing-sm);
             background: var(--gray-bg);
             border-radius: var(--radius-md);
             padding: 4px;
+            width: fit-content;
         }
 
         .qty-decrease,
@@ -206,7 +196,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: var(--font-bold);
             transition: all var(--transition-fast);
         }
 
@@ -218,12 +208,19 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         }
 
         .qty-input {
-            width: 45px;
+            width: 50px;
             height: 32px;
             text-align: center;
             border: none;
             background: transparent;
             font-size: var(--font-md);
+        }
+
+        .stock-warning {
+            display: block;
+            font-size: var(--font-xs);
+            color: var(--warning);
+            margin-top: 4px;
         }
 
         .remove-btn {
@@ -250,11 +247,78 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             filter: brightness(0) invert(1);
         }
 
+        /* ===== MOBILE CARD STYLES ===== */
+        #mobile-cart-items {
+            display: none;
+        }
+
+        .cart-card {
+            background: var(--white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cart-card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .cart-card-img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+            background: var(--gray-bg);
+        }
+
+        .cart-card-header h4 {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            color: var(--dark-bg);
+            margin: 0 0 4px 0;
+        }
+
+        .cart-card-header .seller-name {
+            font-size: var(--font-sm);
+            color: var(--gray-dark);
+            margin: 0 0 6px 0;
+        }
+
+        .cart-card-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+
+        .cart-card-price {
+            font-size: var(--font-lg);
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
+        }
+
+        .cart-card-body .quantity-controls {
+            margin: 0;
+        }
+
+        .cart-card-body .remove-btn {
+            padding: 6px 12px;
+        }
+
+        /* ===== ORDER SUMMARY ===== */
         .order-summary {
             background: var(--gray-bg);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
-            padding: 20px;
+            padding: var(--spacing-lg);
             position: sticky;
             top: 100px;
         }
@@ -262,8 +326,8 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         .order-summary h2 {
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
             border-bottom: 1px solid var(--border-light);
             text-align: center;
             color: var(--dark-bg);
@@ -272,7 +336,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         .summary-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: var(--spacing-sm) 0;
             color: var(--gray-medium);
             font-size: var(--font-md);
         }
@@ -280,12 +344,12 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         .summary-total {
             display: flex;
             justify-content: space-between;
-            padding: 15px 0;
+            padding: var(--spacing-md) 0;
             border-top: 1px solid var(--border-light);
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
             color: var(--primary-color);
-            margin-bottom: 15px;
+            margin-bottom: var(--spacing-md);
         }
 
         .checkout-btn {
@@ -297,7 +361,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             border-radius: var(--radius-md);
             font-weight: var(--font-bold);
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: var(--spacing-md);
             transition: all var(--transition-normal);
         }
 
@@ -316,7 +380,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             border-radius: var(--radius-md);
             font-weight: var(--font-bold);
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: var(--spacing-sm);
             transition: all var(--transition-normal);
         }
 
@@ -328,8 +392,8 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         }
 
         .summary-footer {
-            margin-top: 20px;
-            padding-top: 15px;
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-md);
             border-top: 1px solid var(--border-light);
         }
 
@@ -337,7 +401,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: var(--spacing-sm);
             font-size: var(--font-sm);
             color: var(--gray-medium);
             text-decoration: none;
@@ -360,65 +424,70 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             gap: 6px;
             font-size: var(--font-xs);
             color: var(--gray-light);
-            margin-top: 10px;
+            margin-top: var(--spacing-sm);
         }
 
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .cart-container {
-                padding: 15px var(--spacing-md);
+                padding: var(--spacing-md);
             }
 
             .cart-grid {
                 grid-template-columns: 1fr;
-                gap: 20px;
+                gap: var(--spacing-lg);
             }
 
             .order-summary {
                 position: static;
             }
+
+            .cart-table {
+                display: none;
+            }
+
+            #mobile-cart-items {
+                display: block;
+            }
         }
 
         @media (max-width: 640px) {
-            .cart-item {
-                grid-template-columns: 80px 1fr;
-                gap: 15px;
+            .cart-card-body {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .item-actions {
-                grid-column: 2 / 3;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 10px;
+            .cart-card-body .quantity-controls {
+                justify-content: center;
             }
 
-            .item-image {
-                width: 80px;
-                height: 80px;
+            .cart-card-body .remove-btn {
+                justify-content: center;
             }
         }
 
         @media (max-width: 480px) {
             .cart-container {
-                padding: 10px var(--spacing-sm);
-            }
-
-            .cart-item {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-
-            .item-image {
-                margin: 0 auto;
-            }
-
-            .item-actions {
-                grid-column: 1;
-                flex-direction: column;
+                padding: var(--spacing-sm);
             }
 
             .cart-header h1 {
                 font-size: var(--font-xl);
+            }
+
+            .cart-card-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .cart-card-header .verification {
+                justify-content: center;
+            }
+
+            .cart-card-body {
+                flex-direction: column;
+                align-items: center;
+                gap: var(--spacing-sm);
             }
         }
     </style>
@@ -436,27 +505,23 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                 <h1>My Cart (<span id="cart-item-count"><?php echo $total_quantity; ?></span> items)</h1>
             </div>
 
-            <!-- Cart layout container - populated by main.js displayCartItems() -->
             <div id="cart-layout" style="display: <?php echo empty($cart_items) ? 'none' : 'flex'; ?>;">
                 <div class="cart-grid">
-                    <!-- Desktop cart table body -->
-                    <table class="cart-table">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Seller</th>
-                                <th>Price</th>
-                                <th>Quantity</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cart-table-body"></tbody>
-                    </table>
-
-                    <!-- Mobile cart items container -->
+                    <div class="table-wrapper">
+                        <table class="cart-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Seller</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cart-table-body"></tbody>
+                        </table>
+                    </div>
                     <div id="mobile-cart-items"></div>
-
-                    <!-- Order Summary -->
                     <div class="order-summary">
                         <h2>Order Summary</h2>
                         <div class="summary-row">
@@ -471,10 +536,8 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                             <span>Total</span>
                             <span class="total-val">R <?php echo number_format($cart_totals['total'], 2); ?></span>
                         </div>
-
                         <button class="checkout-btn" id="checkoutBtn">Proceed to Checkout</button>
                         <button class="continue-shopping" id="continueBtn">Continue Shopping</button>
-
                         <div class="summary-footer">
                             <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank" rel="noopener noreferrer">
                                 <span>Secured with</span>
@@ -489,13 +552,12 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                 </div>
             </div>
 
-            <!-- Empty cart state -->
             <div id="empty-cart" style="display: <?php echo empty($cart_items) ? 'flex' : 'none'; ?>;">
                 <div class="empty-state">
                     <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Empty cart">
                     <h3>Your cart is empty</h3>
                     <p>Looks like you haven't added anything yet</p>
-                    <button class="view-all-btn" id="browseBtn">Browse Products</button>
+                    <button class="shop-btn" id="browseBtn">Browse Products</button>
                 </div>
             </div>
         </div>
@@ -504,7 +566,7 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
     <?php include 'includes/footer.php'; ?>
 
     <script>
-        // Pass cart data to JavaScript for initial rendering
+        // Cart page specific data only - global vars already in footer.php
         var initialCartData = {
             items: <?php echo json_encode($cart_items); ?>,
             subtotal: <?php echo json_encode($cart_totals['subtotal']); ?>,
@@ -512,118 +574,27 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             total: <?php echo json_encode($cart_totals['total']); ?>
         };
 
-        // Cache DOM elements for better performance
-        var $cartLayout = null;
-        var $emptyCart = null;
-        var $cartItemCount = null;
+        function loadCart() {
+            var $cartLayout = $('#cart-layout');
+            var $emptyCart = $('#empty-cart');
+            var $cartItemCount = $('#cart-item-count');
 
-        function cacheCartPageElements() {
-            $cartLayout = $('#cart-layout');
-            $emptyCart = $('#empty-cart');
-            $cartItemCount = $('#cart-item-count');
-        }
-
-        // Update cart count display (uses existing function from footer)
-        function updateCartCountFromCache(count) {
-            if ($cartItemCount && $cartItemCount.length) {
-                $cartItemCount.text(count);
+            if (initialCartData.items && initialCartData.items.length > 0) {
+                if (typeof displayCartItems === 'function') displayCartItems(initialCartData);
+                if (typeof updateOrderSummary === 'function') updateOrderSummary(initialCartData);
+                $cartLayout.css('display', 'flex');
+                $emptyCart.css('display', 'none');
+                $cartItemCount.text(initialCartData.items.length);
+            } else {
+                $cartLayout.css('display', 'none');
+                $emptyCart.css('display', 'flex');
+                $cartItemCount.text('0');
             }
-            // Use existing function from main.js/footer
-            if (typeof updateCartCountDisplay === 'function') {
-                updateCartCountDisplay(count);
-            }
-            if (window.sessionStorage) {
-                sessionStorage.setItem('cart_count', count);
-            }
-        }
-
-        // Load cart with caching
-        function loadCartWithCache() {
-            cacheCartPageElements();
-
-            // Try to load from session storage first
-            var cachedCart = null;
-            if (window.sessionStorage) {
-                var cachedCartStr = sessionStorage.getItem('cart_data');
-                if (cachedCartStr) {
-                    try {
-                        cachedCart = JSON.parse(cachedCartStr);
-                    } catch (e) {}
-                }
-            }
-
-            if (cachedCart && cachedCart.items && cachedCart.items.length > 0) {
-                // Use existing displayCartItems from main.js
-                if (typeof displayCartItems === 'function') {
-                    displayCartItems(cachedCart);
-                }
-                if (typeof updateOrderSummary === 'function') {
-                    updateOrderSummary(cachedCart);
-                }
-                if ($cartLayout && $cartLayout.length) {
-                    $cartLayout.css('display', 'flex');
-                }
-                if ($emptyCart && $emptyCart.length) {
-                    $emptyCart.css('display', 'none');
-                }
-                updateCartCountFromCache(cachedCart.items.length);
-            } else if (initialCartData.items && initialCartData.items.length > 0) {
-                // Use existing functions from main.js
-                if (typeof displayCartItems === 'function') {
-                    displayCartItems(initialCartData);
-                }
-                if (typeof updateOrderSummary === 'function') {
-                    updateOrderSummary(initialCartData);
-                }
-                if ($cartLayout && $cartLayout.length) {
-                    $cartLayout.css('display', 'flex');
-                }
-                if ($emptyCart && $emptyCart.length) {
-                    $emptyCart.css('display', 'none');
-                }
-                updateCartCountFromCache(initialCartData.items.length);
-
-                if (window.sessionStorage) {
-                    sessionStorage.setItem('cart_data', JSON.stringify(initialCartData));
-                }
-            }
-
-            // Silent refresh - uses existing updateCartCount from main.js
-            if (typeof updateCartCount === 'function') {
-                updateCartCount();
-            }
-
-            // Refresh cart data silently
-            $.ajax({
-                url: baseUrl + 'php/endpoints/get-cart.php',
-                type: 'GET',
-                dataType: 'json',
-                cache: true,
-                success: function(data) {
-                    if (data.success && data.items) {
-                        var currentCount = $cartItemCount ? parseInt($cartItemCount.text()) : 0;
-                        if (data.items.length !== currentCount) {
-                            if (typeof displayCartItems === 'function') {
-                                displayCartItems(data);
-                            }
-                            if (typeof updateOrderSummary === 'function') {
-                                updateOrderSummary(data);
-                            }
-                            updateCartCountFromCache(data.items.length);
-                            if (window.sessionStorage) {
-                                sessionStorage.setItem('cart_data', JSON.stringify(data));
-                            }
-                        }
-                    }
-                }
-            });
         }
 
         $(document).ready(function() {
-            cacheCartPageElements();
-            loadCartWithCache();
+            loadCart();
 
-            // Bind navigation buttons
             $('#checkoutBtn').on('click', function() {
                 window.location.href = baseUrl + 'checkout.php';
             });

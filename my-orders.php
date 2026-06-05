@@ -20,7 +20,7 @@ $breadcrumbItems = [
 
 $status_filter = $_GET['status'] ?? 'all';
 $search_term = $_GET['search'] ?? '';
-$orders = $currentUser->getOrders($status_filter, $search_term);
+$orders = $orderRepo->getBuyerOrders($currentUser->getUserId(), $status_filter, $search_term);
 ?>
 <!DOCTYPE html>
 <html lang="en">
