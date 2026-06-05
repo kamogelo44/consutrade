@@ -4,16 +4,15 @@
  * ConsuTrade - OrderRepository
  *
  * Handles all order and order item database operations.
- * Business rules moved to Order domain class.
  *
  * @author Kamogelo Phale
  * @version 2.0.0
  */
 class OrderRepository
 {
-    private mysqli $db;
+    private $db;
 
-    public function __construct(mysqli $db)
+    public function __construct($db)
     {
         $this->db = $db;
     }
@@ -26,7 +25,7 @@ class OrderRepository
      * @param string $search Search term
      * @return array
      */
-    public function getBuyerOrders(int $id, string $filter = 'all', string $search = ''): array
+    public function getBuyerOrders($id, $filter = 'all', $search = '')
     {
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
                        u.full_name as seller_name, u.user_id as seller_id,
@@ -89,7 +88,7 @@ class OrderRepository
      * @param string $search Search term
      * @return array
      */
-    public function getSellerOrders(int $id, string $filter = 'all', string $search = ''): array
+    public function getSellerOrders($id, $filter = 'all', $search = '')
     {
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
                        u.full_name as buyer_name, u.email as buyer_email, u.user_id as buyer_id,
@@ -146,7 +145,7 @@ class OrderRepository
      * @param int $sellerId
      * @return int
      */
-    public function getSellerTotalOrders(int $sellerId): int
+    public function getSellerTotalOrders($sellerId)
     {
         $sql = "SELECT COUNT(*) as total 
                 FROM orders 
@@ -168,7 +167,7 @@ class OrderRepository
      * @param int $sellerId
      * @return float
      */
-    public function getSellerTotalRevenue(int $sellerId): float
+    public function getSellerTotalRevenue($sellerId)
     {
         $sql = "SELECT SUM(total_price) as total FROM orders WHERE seller_id = ? AND status = 'completed'";
         $stmt = $this->db->prepare($sql);
@@ -185,7 +184,7 @@ class OrderRepository
      *
      * @return array
      */
-    public function getAllOrders(): array
+    public function getAllOrders()
     {
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
                        buyer.full_name as buyer_name, buyer.user_id as buyer_id,
@@ -215,7 +214,7 @@ class OrderRepository
      * @param int $limit Number of orders to return
      * @return array
      */
-    public function getRecentOrders(int $limit = 5): array
+    public function getRecentOrders($limit = 5)
     {
         $sql = "SELECT o.order_id as id, o.total_price as total, o.status, 
             DATE_FORMAT(o.created_at, '%d %b %Y') as created_at,
@@ -258,12 +257,12 @@ class OrderRepository
      *
      * @param int $orderId Order ID
      * @param int $userId User ID for verification
-     * @param string $role User role (buyer, seller, or admin)
+     * @param string $role User role
      * @return array|null
      */
-    public function getOrderDetails(int $orderId, int $userId, string $role): ?array
+    public function getOrderDetails($orderId, $userId, $role)
     {
-        // Admin can view any order without buyer/seller restriction
+        // Admin can view any order
         if ($role === 'admin') {
             $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
                        buyer.full_name as buyer_name, seller.full_name as seller_name
@@ -295,7 +294,7 @@ class OrderRepository
                 $itemsStmt->close();
 
                 $row['items'] = $items;
-                $row['other_party_name'] = $row['buyer_name']; // For consistency with frontend
+                $row['other_party_name'] = $row['buyer_name'];
                 $stmt->close();
                 return $row;
             }
@@ -303,7 +302,7 @@ class OrderRepository
             return null;
         }
 
-        // Original logic for buyer and seller
+        // For buyer and seller
         $idColumn = ($role === 'buyer') ? 'buyer_id' : 'seller_id';
 
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
@@ -344,15 +343,14 @@ class OrderRepository
     }
 
     /**
-     * Update order status (database only - no validation)
-     * Caller should validate using Order::canTransitionTo() first
+     * Update order status
      *
      * @param int $orderId Order ID
      * @param int $sellerId Seller ID for verification
      * @param string $status New status
      * @return array
      */
-    public function updateSellerOrderStatus(int $orderId, int $sellerId, string $status): array
+    public function updateSellerOrderStatus($orderId, $sellerId, $status)
     {
         $sql = "UPDATE orders SET status = ? WHERE order_id = ? AND seller_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -374,14 +372,13 @@ class OrderRepository
     }
 
     /**
-     * Cancel buyer order (database only - no validation)
-     * Caller should validate using Order::canBeCancelledByBuyer() first
+     * Cancel buyer order
      *
      * @param int $orderId Order ID
      * @param int $buyerId Buyer ID for verification
      * @return bool
      */
-    public function cancelBuyerOrder(int $orderId, int $buyerId): bool
+    public function cancelBuyerOrder($orderId, $buyerId)
     {
         $sql = "UPDATE orders SET status = 'cancelled' WHERE order_id = ? AND buyer_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -399,14 +396,13 @@ class OrderRepository
 
     /**
      * Create orders from cart items
-     * NOTE: Stock is NOT decreased here - that happens after payment confirmation in payfast-notify.php
      *
      * @param int $buyerId Buyer user ID
      * @param array $items Cart items
      * @param array $sellers Unique seller IDs
      * @return array|null
      */
-    public function createOrdersFromCart(int $buyerId, array $items, array $sellers): ?array
+    public function createOrdersFromCart($buyerId, $items, $sellers)
     {
         $orderIds = [];
         $paymentId = time() . '_' . $buyerId;
@@ -443,9 +439,6 @@ class OrderRepository
                     $itemStmt->bind_param('iiid', $orderId, $item['product_id'], $item['quantity'], $item['price']);
                     $itemStmt->execute();
                     $itemStmt->close();
-
-                    // STOCK IS NOT DECREASED HERE
-                    // Stock decrease happens ONLY in payfast-notify.php after payment confirmation
                 }
             }
         }
@@ -459,7 +452,7 @@ class OrderRepository
      * @param int $sellerId Seller ID
      * @return int
      */
-    public function countSellerCompletedOrders(int $sellerId): int
+    public function countSellerCompletedOrders($sellerId)
     {
         $sql = "SELECT COUNT(DISTINCT o.order_id) as total 
                 FROM orders o
@@ -481,7 +474,7 @@ class OrderRepository
      * @param int $buyerId Buyer ID
      * @return array
      */
-    public function getBuyerStats(int $buyerId): array
+    public function getBuyerStats($buyerId)
     {
         $sql = "SELECT 
                     COUNT(*) as total_orders,
@@ -512,7 +505,7 @@ class OrderRepository
      * @param int $limit Number of orders to return
      * @return array
      */
-    public function getSellerRecentOrders(int $sellerId, int $limit = 5): array
+    public function getSellerRecentOrders($sellerId, $limit = 5)
     {
         $sql = "SELECT o.order_id as id, o.total_price as total, o.status,
             DATE_FORMAT(o.created_at, '%d %b %Y') as created_at,
@@ -543,14 +536,13 @@ class OrderRepository
     }
 
     /**
-     * Update order status directly (for PayFast payment confirmation)
-     * No seller verification needed - called from payment gateway
+     * Update order status directly (for PayFast)
      *
      * @param int $orderId Order ID
      * @param string $status New status
      * @return bool
      */
-    public function updateOrderStatusDirect(int $orderId, string $status): bool
+    public function updateOrderStatusDirect($orderId, $status)
     {
         $validStatuses = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
         if (!in_array($status, $validStatuses)) {

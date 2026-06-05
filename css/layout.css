@@ -1,9 +1,4 @@
-/**
- * ConsuTrade - Layout Styles
- * Author: Kamogelo Phale
- * 
- * Contains: Header, Footer, Hero, How it works, Trust section, Breadcrumb
- */
+/* Layout Styles - Header, Footer, Hero, etc */
 
 /* ========== HEADER STYLES ========== */
 
@@ -557,7 +552,6 @@
   margin-bottom: var(--spacing-sm);
 }
 
-/* ALL footer links - including email and phone */
 .footer-section a {
   color: var(--gray-light);
   text-decoration: none;
@@ -570,7 +564,6 @@
   transform: translateX(3px);
 }
 
-/* Footer list items */
 .footer-section ul {
   list-style: none;
   padding: 0;
@@ -594,7 +587,6 @@
   transform: translateX(4px);
 }
 
-/* Contact section specific */
 .footer-section .contact-item {
   display: flex;
   align-items: center;
@@ -622,7 +614,6 @@
   transform: translateX(3px);
 }
 
-/* Social links */
 .social-links {
   display: flex;
   gap: var(--spacing-md);
@@ -651,7 +642,6 @@
   filter: brightness(0) invert(1);
 }
 
-/* Footer bottom */
 .footer-bottom {
   border-top: 1px solid var(--gray-dark);
   padding-top: var(--spacing-xl);

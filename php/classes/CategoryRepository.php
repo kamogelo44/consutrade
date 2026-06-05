@@ -1,15 +1,12 @@
 <?php
+
 /**
  * ConsuTrade - CategoryRepository
  *
  * Handles all categories table queries.
- * The categories table only has category_id and category_name columns.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class CategoryRepository
@@ -22,21 +19,17 @@ class CategoryRepository
      *
      * @param mysqli $db Database connection
      */
-    public function __construct(mysqli $db)
+    public function __construct($db)
     {
         $this->db = $db;
     }
-
-    // ============================================================
-    //  RETRIEVE
-    // ============================================================
 
     /**
      * Get all categories.
      *
      * @return array Array of categories
      */
-    public function getAll(): array
+    public function getAll()
     {
         $sql = "SELECT category_id, category_name FROM categories ORDER BY category_name ASC";
         $stmt = $this->db->prepare($sql);
@@ -61,7 +54,7 @@ class CategoryRepository
      * @param int $categoryId Category ID
      * @return array|null Category data or null if not found
      */
-    public function getById(int $categoryId): ?array
+    public function getById($categoryId)
     {
         $sql = "SELECT category_id, category_name FROM categories WHERE category_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -87,7 +80,7 @@ class CategoryRepository
      * @param string $name Category name
      * @return array|null Category data or null if not found
      */
-    public function getByName(string $name): ?array
+    public function getByName($name)
     {
         $sql = "SELECT category_id, category_name FROM categories WHERE category_name = ?";
         $stmt = $this->db->prepare($sql);
@@ -113,15 +106,11 @@ class CategoryRepository
      * @param int $categoryId Category ID
      * @return string|null Category name or null if not found
      */
-    public function getCategoryName(int $categoryId): ?string
+    public function getCategoryName($categoryId)
     {
         $category = $this->getById($categoryId);
         return $category ? $category['name'] : null;
     }
-
-    // ============================================================
-    //  CREATE, UPDATE, DELETE
-    // ============================================================
 
     /**
      * Create a new category.
@@ -129,7 +118,7 @@ class CategoryRepository
      * @param string $categoryName Category name
      * @return bool True on success, false on failure
      */
-    public function create(string $categoryName): bool
+    public function create($categoryName)
     {
         $stmt = $this->db->prepare("INSERT INTO categories (category_name) VALUES (?)");
         $stmt->bind_param('s', $categoryName);
@@ -145,7 +134,7 @@ class CategoryRepository
      * @param string $name New category name
      * @return bool True on success, false on failure
      */
-    public function update(int $categoryId, string $name): bool
+    public function update($categoryId, $name)
     {
         $stmt = $this->db->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
         $stmt->bind_param('si', $name, $categoryId);
@@ -160,7 +149,7 @@ class CategoryRepository
      * @param int $categoryId Category ID
      * @return bool True on success, false on failure
      */
-    public function delete(int $categoryId): bool
+    public function delete($categoryId)
     {
         $stmt = $this->db->prepare("DELETE FROM categories WHERE category_id = ?");
         $stmt->bind_param('i', $categoryId);
@@ -169,16 +158,12 @@ class CategoryRepository
         return $result;
     }
 
-    // ============================================================
-    //  UTILITY
-    // ============================================================
-
     /**
      * Get total number of categories.
      *
      * @return int
      */
-    public function getTotalCategories(): int
+    public function getTotalCategories()
     {
         $sql = "SELECT COUNT(*) as total FROM categories";
         $stmt = $this->db->prepare($sql);

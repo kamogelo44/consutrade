@@ -177,7 +177,7 @@ class Auth
      * 
      * @return bool True if logged in, false otherwise
      */
-    public function isLoggedIn(): bool
+    public function isLoggedIn()
     {
         $this->startSession();
         return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
@@ -188,7 +188,7 @@ class Auth
      * 
      * @return bool True if admin is logged in, false otherwise
      */
-    public function isAdmin(): bool
+    public function isAdmin()
     {
         return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'admin';
     }
@@ -198,7 +198,7 @@ class Auth
      * 
      * @return bool True if seller is logged in, false otherwise
      */
-    public function isSeller(): bool
+    public function isSeller()
     {
         return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'seller';
     }
@@ -208,7 +208,7 @@ class Auth
      * 
      * @return bool True if buyer is logged in, false otherwise
      */
-    public function isBuyer(): bool
+    public function isBuyer()
     {
         return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'buyer';
     }

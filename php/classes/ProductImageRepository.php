@@ -5,11 +5,8 @@
  *
  * Handles all product image database operations.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class ProductImageRepository
@@ -22,7 +19,7 @@ class ProductImageRepository
      *
      * @param mysqli $db Database connection
      */
-    public function __construct(mysqli $db)
+    public function __construct($db)
     {
         $this->db = $db;
     }
@@ -33,7 +30,7 @@ class ProductImageRepository
      * @param string $imageUrl Relative image path
      * @return string Full system path
      */
-    private function getFullPath(string $imageUrl): string
+    private function getFullPath($imageUrl)
     {
         // Try multiple possible base paths
         $basePaths = [
@@ -54,17 +51,13 @@ class ProductImageRepository
         return $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($imageUrl, '/');
     }
 
-    // ============================================================
-    //  RETRIEVE
-    // ============================================================
-
     /**
      * Get all images for a product.
      *
      * @param int $productId Product ID
      * @return array
      */
-    public function getByProductId(int $productId): array
+    public function getByProductId($productId)
     {
         $sql = "SELECT image_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -89,7 +82,7 @@ class ProductImageRepository
      * @param int $productId Product ID
      * @return array|null
      */
-    public function getPrimaryImage(int $productId): ?array
+    public function getPrimaryImage($productId)
     {
         $sql = "SELECT image_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -114,7 +107,7 @@ class ProductImageRepository
      * @param int $imageId Image ID
      * @return array|null
      */
-    public function getById(int $imageId): ?array
+    public function getById($imageId)
     {
         $sql = "SELECT image_id, product_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -132,10 +125,6 @@ class ProductImageRepository
         return null;
     }
 
-    // ============================================================
-    //  CREATE
-    // ============================================================
-
     /**
      * Add a gallery image to a product.
      *
@@ -145,7 +134,7 @@ class ProductImageRepository
      * @param int $sortOrder Sort order
      * @return int|false Insert ID or false on failure
      */
-    public function add(int $productId, string $imageUrl, bool $isPrimary = false, int $sortOrder = 0)
+    public function add($productId, $imageUrl, $isPrimary = false, $sortOrder = 0)
     {
         $primaryInt = $isPrimary ? 1 : 0;
         $stmt = $this->db->prepare(
@@ -169,7 +158,7 @@ class ProductImageRepository
      * @param array $imageUrls Array of image paths
      * @return int Number of images successfully added
      */
-    public function addMultiple(int $productId, array $imageUrls): int
+    public function addMultiple($productId, $imageUrls)
     {
         $count = 0;
 
@@ -193,10 +182,6 @@ class ProductImageRepository
         return $count;
     }
 
-    // ============================================================
-    //  UPDATE
-    // ============================================================
-
     /**
      * Set an image as the primary image for a product.
      *
@@ -204,7 +189,7 @@ class ProductImageRepository
      * @param int $imageId Image ID to set as primary
      * @return bool
      */
-    public function setPrimary(int $productId, int $imageId): bool
+    public function setPrimary($productId, $imageId)
     {
         $clearStmt = $this->db->prepare("UPDATE product_images SET is_primary = 0 WHERE product_id = ?");
         $clearStmt->bind_param('i', $productId);
@@ -226,7 +211,7 @@ class ProductImageRepository
      * @param int $sortOrder New sort order
      * @return bool
      */
-    public function updateSortOrder(int $imageId, int $sortOrder): bool
+    public function updateSortOrder($imageId, $sortOrder)
     {
         $stmt = $this->db->prepare("UPDATE product_images SET sort_order = ? WHERE image_id = ?");
         $stmt->bind_param('ii', $sortOrder, $imageId);
@@ -235,10 +220,6 @@ class ProductImageRepository
         return $result;
     }
 
-    // ============================================================
-    //  DELETE
-    // ============================================================
-
     /**
      * Delete an image.
      *
@@ -246,7 +227,7 @@ class ProductImageRepository
      * @param int $productId Product ID (for verification)
      * @return bool
      */
-    public function delete(int $imageId, int $productId): bool
+    public function delete($imageId, $productId)
     {
         $image = $this->getById($imageId);
         if ($image && $image['product_id'] == $productId) {
@@ -270,7 +251,7 @@ class ProductImageRepository
      * @param int $productId Product ID
      * @return bool
      */
-    public function deleteByProductId(int $productId): bool
+    public function deleteByProductId($productId)
     {
         $images = $this->getByProductId($productId);
         foreach ($images as $image) {

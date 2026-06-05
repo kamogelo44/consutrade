@@ -10,17 +10,17 @@
  */
 class Order
 {
-    private int $orderId;
-    private int $buyerId;
-    private int $sellerId;
-    private float $totalPrice;
-    private string $status;
-    private string $paymentId;
-    private string $createdAt;
-    private array $items;
+    private $orderId;
+    private $buyerId;
+    private $sellerId;
+    private $totalPrice;
+    private $status;
+    private $paymentId;
+    private $createdAt;
+    private $items;
 
-    /** @var array<string, string[]> Valid status transitions */
-    private const VALID_TRANSITIONS = [
+    // Valid status transitions
+    private $validTransitions = [
         'pending' => ['processing', 'cancelled'],
         'processing' => ['shipped', 'cancelled'],
         'shipped' => ['completed', 'cancelled'],
@@ -32,9 +32,9 @@ class Order
      * Order constructor.
      *
      * @param array $data Order data from database
-     * @param array $items Order items (OrderItem objects or arrays)
+     * @param array $items Order items
      */
-    public function __construct(array $data, array $items = [])
+    public function __construct($data, $items = [])
     {
         $this->orderId = (int) ($data['order_id'] ?? 0);
         $this->buyerId = (int) ($data['buyer_id'] ?? 0);
@@ -46,48 +46,52 @@ class Order
         $this->items = $items;
     }
 
-    public function getOrderId(): int
+    public function getOrderId()
     {
         return $this->orderId;
     }
-    public function getBuyerId(): int
+
+    public function getBuyerId()
     {
         return $this->buyerId;
     }
-    public function getSellerId(): int
+
+    public function getSellerId()
     {
         return $this->sellerId;
     }
-    public function getTotalPrice(): float
+
+    public function getTotalPrice()
     {
         return $this->totalPrice;
     }
-    public function getStatus(): string
+
+    public function getStatus()
     {
         return $this->status;
     }
-    public function getPaymentId(): string
+
+    public function getPaymentId()
     {
         return $this->paymentId;
     }
-    public function getCreatedAt(): string
+
+    public function getCreatedAt()
     {
         return $this->createdAt;
     }
 
-    /** @return array<OrderItem|array> */
-    public function getItems(): array
+    public function getItems()
     {
         return $this->items;
     }
 
     /**
      * Checks if buyer can cancel this order
-     * Business rule: Only pending orders can be cancelled by buyer
      *
      * @return bool
      */
-    public function canBeCancelledByBuyer(): bool
+    public function canBeCancelledByBuyer()
     {
         return $this->status === 'pending';
     }
@@ -98,27 +102,27 @@ class Order
      * @param string $newStatus Target status
      * @return bool
      */
-    public function canTransitionTo(string $newStatus): bool
+    public function canTransitionTo($newStatus)
     {
-        return in_array($newStatus, self::VALID_TRANSITIONS[$this->status] ?? []);
+        return in_array($newStatus, $this->validTransitions[$this->status] ?? []);
     }
 
     /**
      * Returns array of allowed next statuses
      *
-     * @return string[]
+     * @return array
      */
-    public function getAllowedNextStatuses(): array
+    public function getAllowedNextStatuses()
     {
-        return self::VALID_TRANSITIONS[$this->status] ?? [];
+        return $this->validTransitions[$this->status] ?? [];
     }
 
-    public function isCompleted(): bool
+    public function isCompleted()
     {
         return $this->status === 'completed';
     }
 
-    public function isPending(): bool
+    public function isPending()
     {
         return $this->status === 'pending';
     }
@@ -128,7 +132,7 @@ class Order
      *
      * @return int
      */
-    public function getItemCount(): int
+    public function getItemCount()
     {
         $count = 0;
         foreach ($this->items as $item) {

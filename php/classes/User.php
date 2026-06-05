@@ -6,22 +6,8 @@
  * Abstract base class for all user types (Buyer, Seller, Admin).
  * Contains shared properties and methods common to every user.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
- *
- * References:
- * - Pressman, R.S. and Maxim, B.R., 2015. Software Engineering:
- *   A Practitioner's Approach. 8th ed. McGraw-Hill.
- * - Dennis, A., Wixom, B.H. and Tegarden, D., 2015. Systems Analysis
- *   and Design: An Object-Oriented Approach with UML. 6th ed.
- *   John Wiley and Sons.
- * - PHP Group, 2025. Classes and Objects. Available at:
- *   https://www.php.net/manual/en/language.oop5.php
- * - PHP-FIG, 2023. PSR-12: Extended Coding Style. Available at:
- *   https://www.php.fig.org/psr/psr-12/
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 abstract class User
@@ -64,7 +50,7 @@ abstract class User
      *
      * @param array $data Associative array of user data from the database
      */
-    public function __construct(array $data)
+    public function __construct($data)
     {
         $this->userId       = (int) ($data['user_id']       ?? 0);
         $this->fullName     = (string) ($data['full_name']   ?? '');
@@ -84,7 +70,7 @@ abstract class User
      *
      * @return int
      */
-    public function getUserId(): int
+    public function getUserId()
     {
         return $this->userId;
     }
@@ -94,7 +80,7 @@ abstract class User
      *
      * @return string
      */
-    public function getFullName(): string
+    public function getFullName()
     {
         return $this->fullName;
     }
@@ -104,7 +90,7 @@ abstract class User
      *
      * @return string
      */
-    public function getEmail(): string
+    public function getEmail()
     {
         return $this->email;
     }
@@ -114,7 +100,7 @@ abstract class User
      *
      * @return string
      */
-    public function getPassword(): string
+    public function getPassword()
     {
         return $this->password;
     }
@@ -124,7 +110,7 @@ abstract class User
      *
      * @return string
      */
-    public function getRole(): string
+    public function getRole()
     {
         return $this->role;
     }
@@ -134,7 +120,7 @@ abstract class User
      *
      * @return bool
      */
-    public function isVerified(): bool
+    public function isVerified()
     {
         return $this->idVerified;
     }
@@ -144,7 +130,7 @@ abstract class User
      *
      * @return string
      */
-    public function getStatus(): string
+    public function getStatus()
     {
         return $this->status;
     }
@@ -154,7 +140,7 @@ abstract class User
      *
      * @return bool
      */
-    public function canLogin(): bool
+    public function canLogin()
     {
         return $this->status === 'active';
     }
@@ -164,7 +150,7 @@ abstract class User
      *
      * @return string
      */
-    public function getProfileImageUrl(): string
+    public function getProfileImageUrl()
     {
         $baseUrl = getBaseUrl();
 
@@ -185,7 +171,7 @@ abstract class User
      * @param string $filePath Relative file path
      * @return string
      */
-    private function getFullPath(string $filePath): string
+    private function getFullPath($filePath)
     {
         $basePaths = [
             $_SERVER['DOCUMENT_ROOT'] . '/',
@@ -209,7 +195,7 @@ abstract class User
      *
      * @return string
      */
-    public function getCreatedAt(): string
+    public function getCreatedAt()
     {
         return $this->createdAt;
     }
@@ -219,7 +205,7 @@ abstract class User
      *
      * @return string
      */
-    public function getLocation(): string
+    public function getLocation()
     {
         return $this->location;
     }
@@ -229,7 +215,7 @@ abstract class User
      *
      * @return string
      */
-    public function getPhone(): string
+    public function getPhone()
     {
         return $this->phone;
     }
@@ -239,7 +225,7 @@ abstract class User
      *
      * @return string
      */
-    public function getProfileImage(): string
+    public function getProfileImage()
     {
         return $this->profileImage;
     }
@@ -249,7 +235,7 @@ abstract class User
      *
      * @return array
      */
-    public function __serialize(): array
+    public function __serialize()
     {
         return [
             'user_id' => $this->userId,
@@ -271,7 +257,7 @@ abstract class User
      * @param array $data
      * @return void
      */
-    public function __unserialize(array $data): void
+    public function __unserialize($data)
     {
         $this->userId = $data['user_id'];
         $this->fullName = $data['full_name'];
@@ -290,5 +276,5 @@ abstract class User
      *
      * @return string
      */
-    abstract public function getDisplayName(): string;
+    abstract public function getDisplayName();
 }

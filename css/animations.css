@@ -1,11 +1,4 @@
-/**
- * ConsuTrade - Animations CSS
- * Author: Kamogelo Phale
- * 
- * All animation keyframes used across the application
- */
-
-/* ========== MODAL ANIMATIONS ========== */
+/* Animations */
 
 @keyframes modalFadeIn {
   from {
@@ -62,7 +55,6 @@
   }
 }
 
-/* Modal animation classes */
 .modal.active .modal-content.animate-in {
   animation: modalFadeIn 0.3s ease forwards;
 }
@@ -78,12 +70,6 @@
 #register-modal.active .modal-content.animate-in {
   animation: modalSlideInRight 0.3s ease forwards;
 }
-
-#delete-modal.active .modal-content.animate-in {
-  animation: modalSlideUp 0.3s ease forwards;
-}
-
-/* ========== TOAST NOTIFICATIONS ========== */
 
 @keyframes toastSlideInRight {
   from {
@@ -114,8 +100,6 @@
 .toast-notification.hiding {
   animation: toastSlideOutRight 0.3s ease forwards;
 }
-
-/* ========== MOBILE MENU ANIMATIONS ========== */
 
 @keyframes slideInRight {
   from {
@@ -153,71 +137,10 @@
   }
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ========== UI ANIMATIONS ========== */
-
-@keyframes badgePulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes pulseWarning {
-  0% {
-    background-color: var(--warning-light);
-  }
-  50% {
-    background-color: #ffe0b2;
-  }
-  100% {
-    background-color: var(--warning-light);
-  }
-}
-
-@keyframes shakeError {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-4px);
-  }
-  75% {
-    transform: translateX(4px);
-  }
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* Animation classes */
-.stock-status.low-stock {
-  animation: pulseWarning 1.5s infinite;
-}
-
-.input-group.error input,
-.input-group.error select,
-.input-group.error textarea {
-  animation: shakeError 0.3s ease-in-out;
 }
 
 .loading-spinner::before {
@@ -233,52 +156,6 @@
   vertical-align: middle;
 }
 
-.cart-badge.pulse {
-  animation: badgePulse 0.3s ease;
-}
-
 .dropdown-menu.active {
   animation: fadeIn 0.2s ease forwards;
-}
-
-/* ========== Existing ANIMATIONS  ========== */
-
-@keyframes fadeInScale {
-  0% {
-    opacity: 0;
-    transform: scale(0.5) rotate(-90deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-@keyframes fadeOutScale {
-  0% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.5) rotate(90deg);
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    left: -100%;
-  }
-  to {
-    left: 0;
-  }
-}
-
-@keyframes slideOutLeft {
-  from {
-    left: 0;
-  }
-  to {
-    left: -100%;
-  }
 }

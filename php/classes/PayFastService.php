@@ -3,26 +3,21 @@
 /**
  * ConsuTrade - PayFastService
  *
- * Handles PayFast payment verification and processing using OOP.
+ * Handles PayFast payment verification and processing.
  *
  * @author Kamogelo Phale
  * @version 2.0.0
  */
 class PayFastService
 {
-    private mysqli $db;
-    private OrderRepository $orderRepo;
-    private ProductRepository $productRepo;
-    private CartRepository $cartRepo;
-    private TransactionRepository $transactionRepo;
+    private $db;
+    private $orderRepo;
+    private $productRepo;
+    private $cartRepo;
+    private $transactionRepo;
 
-    public function __construct(
-        mysqli $db,
-        OrderRepository $orderRepo,
-        ProductRepository $productRepo,
-        CartRepository $cartRepo,
-        TransactionRepository $transactionRepo
-    ) {
+    public function __construct($db, $orderRepo, $productRepo, $cartRepo, $transactionRepo)
+    {
         $this->db = $db;
         $this->orderRepo = $orderRepo;
         $this->productRepo = $productRepo;
@@ -33,7 +28,7 @@ class PayFastService
     /**
      * Handle PayFast ITN request
      */
-    public function handleItn(array $postData): array
+    public function handleItn($postData)
     {
         if (!$this->verifySignature($postData)) {
             return ['success' => false, 'message' => 'Invalid signature'];
@@ -49,7 +44,7 @@ class PayFastService
     /**
      * Verify PayFast signature
      */
-    private function verifySignature(array $data): bool
+    private function verifySignature($data)
     {
         if (!isset($data['signature'])) {
             return false;
@@ -70,7 +65,7 @@ class PayFastService
     /**
      * Validate with PayFast server
      */
-    private function validateWithPayFast(array $data): bool
+    private function validateWithPayFast($data)
     {
         $payfast_url = PAYFAST_SANDBOX
             ? 'https://sandbox.payfast.co.za/eng/query/validate'
@@ -105,7 +100,7 @@ class PayFastService
     /**
      * Process successful payment
      */
-    private function processPayment(array $data): array
+    private function processPayment($data)
     {
         $paymentStatus = $data['payment_status'] ?? '';
         $paymentId = $data['m_payment_id'] ?? '';
@@ -144,7 +139,7 @@ class PayFastService
 
                 $this->orderRepo->updateOrderStatusDirect($order['order_id'], 'processing');
 
-                // USE TRANSACTION REPOSITORY INSTEAD OF DIRECT INSERT
+                // Create transaction record
                 $transaction = $this->transactionRepo->createFromPayment(
                     $order['order_id'],
                     $payfastRef,
@@ -155,6 +150,7 @@ class PayFastService
                 $this->decreaseOrderStock($order['order_id']);
             }
 
+            // Log amount mismatch but don't fail
             if (abs($totalAmount - $amountReceived) >= 0.01) {
                 error_log("PayFast amount mismatch for payment_id: $paymentId");
             }
@@ -175,7 +171,7 @@ class PayFastService
         }
     }
 
-    private function getOrdersByPaymentId(string $paymentId, int $userId): array
+    private function getOrdersByPaymentId($paymentId, $userId)
     {
         $sql = "SELECT order_id, total_price FROM orders 
                 WHERE payment_id = ? AND buyer_id = ? AND status = 'pending'";
@@ -193,7 +189,7 @@ class PayFastService
         return $orders;
     }
 
-    private function getSingleOrder(int $orderId, int $userId): ?array
+    private function getSingleOrder($orderId, $userId)
     {
         $sql = "SELECT order_id, total_price FROM orders 
                 WHERE order_id = ? AND buyer_id = ? AND status = 'pending'";
@@ -208,7 +204,7 @@ class PayFastService
         return $order ?: null;
     }
 
-    private function decreaseOrderStock(int $orderId): void
+    private function decreaseOrderStock($orderId)
     {
         $sql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
         $stmt = $this->db->prepare($sql);

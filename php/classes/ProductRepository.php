@@ -6,11 +6,8 @@
  * Handles all product database operations.
  * NOTE: Product images are handled by ProductImageRepository.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class ProductRepository
@@ -23,7 +20,7 @@ class ProductRepository
      *
      * @param mysqli $db Database connection
      */
-    public function __construct(mysqli $db)
+    public function __construct($db)
     {
         $this->db = $db;
     }
@@ -38,7 +35,7 @@ class ProductRepository
      * @param int $productId Product ID
      * @return Product|null
      */
-    public function getProductObject(int $productId): ?Product
+    public function getProductObject($productId)
     {
         $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
                        p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
@@ -65,7 +62,7 @@ class ProductRepository
      * @param array $filters Associative array of filters
      * @return Product[]
      */
-    public function getPublicProductObjects(array $filters = []): array
+    public function getPublicProductObjects($filters = [])
     {
         $result = $this->getPublicProducts($filters);
         $products = [];
@@ -77,7 +74,7 @@ class ProductRepository
                 'seller_id' => $productData['seller_id'],
                 'title' => $productData['name'],
                 'price' => $productData['price'],
-                'image_url' => $productData['image'],  // Map 'image' to 'image_url'
+                'image_url' => $productData['image'],
                 'condition' => $productData['condition'],
                 'stock_quantity' => $productData['stock_quantity'],
                 'location' => $productData['location'],
@@ -99,13 +96,8 @@ class ProductRepository
      * @param int $offset Offset
      * @return Product[]
      */
-    public function getSellerProductObjects(
-        int $sellerId,
-        string $filter = 'all',
-        string $search = '',
-        int $limit = 0,
-        int $offset = 0
-    ): array {
+    public function getSellerProductObjects($sellerId, $filter = 'all', $search = '', $limit = 0, $offset = 0)
+    {
         $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
                        p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
                        p.status, p.created_at, p.suspended_by, p.suspended_reason
@@ -158,7 +150,7 @@ class ProductRepository
      * @param Product $product Product object
      * @return bool
      */
-    public function saveProduct(Product $product): bool
+    public function saveProduct($product)
     {
         $title = $product->getTitle();
         $description = $product->getDescription();
@@ -211,7 +203,7 @@ class ProductRepository
      * @param Product $product Product object (without product_id)
      * @return int|false Insert ID or false on failure
      */
-    public function createProduct(Product $product)
+    public function createProduct($product)
     {
         $sellerId = $product->getSellerId();
         $categoryId = $product->getCategoryId();
@@ -256,22 +248,17 @@ class ProductRepository
     // ============================================================
 
     /**
-     * Get seller products with filters (includes primary image and suspension info).
+     * Get seller products with filters.
      *
-     * @param int    $id      Seller ID
-     * @param string $filter  Status filter
-     * @param string $search  Search term
-     * @param int    $limit   Maximum products
-     * @param int    $offset  Pagination offset
+     * @param int $id Seller ID
+     * @param string $filter Status filter
+     * @param string $search Search term
+     * @param int $limit Maximum products
+     * @param int $offset Pagination offset
      * @return array
      */
-    public function getSellerProducts(
-        int $id,
-        string $filter = 'all',
-        string $search = '',
-        int $limit = 0,
-        int $offset = 0
-    ): array {
+    public function getSellerProducts($id, $filter = 'all', $search = '', $limit = 0, $offset = 0)
+    {
         $sql = "SELECT p.product_id, p.title, p.price, p.image_url, p.status,
                        p.stock_quantity, p.created_at, p.suspended_by, p.suspended_reason,
                        c.category_name,
@@ -336,14 +323,14 @@ class ProductRepository
     /**
      * Update product status with suspension tracking.
      *
-     * @param int    $id              Product ID
-     * @param int    $sellerId        Seller ID
-     * @param string $action          'activate' or 'suspend'
-     * @param string $suspendedBy     Who is performing the action ('seller' or 'admin')
+     * @param int $id Product ID
+     * @param int $sellerId Seller ID
+     * @param string $action 'activate' or 'suspend'
+     * @param string $suspendedBy Who is performing the action
      * @param string $suspendedReason Optional reason for suspension
      * @return array
      */
-    public function updateProductStatus(int $id, int $sellerId, string $action, string $suspendedBy = 'seller', string $suspendedReason = ''): array
+    public function updateProductStatus($id, $sellerId, $action, $suspendedBy = 'seller', $suspendedReason = '')
     {
         $checkSql = "SELECT product_id, status, suspended_by FROM products
                      WHERE product_id = ? AND seller_id = ? AND status != 'deleted'";
@@ -396,7 +383,7 @@ class ProductRepository
      * @param int $productId Product ID
      * @return array|null
      */
-    public function getProductForDisplay(int $productId): ?array
+    public function getProductForDisplay($productId)
     {
         $sql = "SELECT p.product_id, p.title, p.image_url
                 FROM products p
@@ -424,10 +411,10 @@ class ProductRepository
      * Get single product for editing (with ownership verification).
      *
      * @param int $productId Product ID
-     * @param int $sellerId  Seller ID
+     * @param int $sellerId Seller ID
      * @return array|null
      */
-    public function getProductForEdit(int $productId, int $sellerId): ?array
+    public function getProductForEdit($productId, $sellerId)
     {
         $sql = "SELECT p.product_id, p.title, p.description, p.price, p.stock_quantity,
                        p.`condition`, p.location, p.category_id, p.image_url, p.status
@@ -451,12 +438,12 @@ class ProductRepository
     /**
      * Update product information.
      *
-     * @param int   $id       Product ID
-     * @param int   $sellerId Seller ID
-     * @param array $data     Product data
+     * @param int $id Product ID
+     * @param int $sellerId Seller ID
+     * @param array $data Product data
      * @return array
      */
-    public function updateSellerProduct(int $id, int $sellerId, array $data): array
+    public function updateSellerProduct($id, $sellerId, $data)
     {
         $sql = "UPDATE products SET
                     title = ?,
@@ -494,11 +481,11 @@ class ProductRepository
     /**
      * Delete product (soft delete).
      *
-     * @param int $id       Product ID
+     * @param int $id Product ID
      * @param int $sellerId Seller ID
      * @return array
      */
-    public function deleteSellerProduct(int $id, int $sellerId): array
+    public function deleteSellerProduct($id, $sellerId)
     {
         $checkSql = "SELECT product_id, image_url FROM products
                      WHERE product_id = ? AND seller_id = ?";
@@ -542,10 +529,10 @@ class ProductRepository
      * Update product stock quantity.
      *
      * @param int $productId Product ID
-     * @param int $qty       Quantity to add (negative to subtract)
+     * @param int $qty Quantity to add (negative to subtract)
      * @return bool
      */
-    public function updateStock(int $productId, int $qty): bool
+    public function updateStock($productId, $qty)
     {
         if ($qty >= 0) {
             $stmt = $this->db->prepare(
@@ -569,10 +556,10 @@ class ProductRepository
      * Decrease product stock after purchase.
      *
      * @param int $productId Product ID
-     * @param int $qty       Quantity ordered
+     * @param int $qty Quantity ordered
      * @return bool
      */
-    public function decreaseProductStock(int $productId, int $qty): bool
+    public function decreaseProductStock($productId, $qty)
     {
         $stmt = $this->db->prepare(
             "UPDATE products SET stock_quantity = stock_quantity - ?
@@ -590,7 +577,7 @@ class ProductRepository
      * @param int $orderId Order ID
      * @return bool
      */
-    public function restoreOrderStock(int $orderId): bool
+    public function restoreOrderStock($orderId)
     {
         $itemsSql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
         $itemsStmt = $this->db->prepare($itemsSql);
@@ -619,7 +606,7 @@ class ProductRepository
      * @param int $productId Product ID
      * @return int
      */
-    public function getProductStock(int $productId): int
+    public function getProductStock($productId)
     {
         $stmt = $this->db->prepare("SELECT stock_quantity FROM products WHERE product_id = ?");
         $stmt->bind_param('i', $productId);
@@ -637,7 +624,7 @@ class ProductRepository
      * @param int $userId User ID
      * @return int
      */
-    public function countUserProducts(int $userId): int
+    public function countUserProducts($userId)
     {
         $sql = "SELECT COUNT(*) as total FROM products WHERE seller_id = ? AND status = 'active'";
         $stmt = $this->db->prepare($sql);
@@ -659,7 +646,7 @@ class ProductRepository
      * @param string $imagePath Relative image path
      * @return string
      */
-    private function getFullPath(string $imagePath): string
+    private function getFullPath($imagePath)
     {
         $basePaths = [
             $_SERVER['DOCUMENT_ROOT'] . '/',
@@ -684,7 +671,7 @@ class ProductRepository
      * @param string $imagePath Relative path to the image
      * @return bool
      */
-    public function deleteProductImage(string $imagePath): bool
+    public function deleteProductImage($imagePath)
     {
         if (empty($imagePath)) {
             return true;
@@ -705,7 +692,7 @@ class ProductRepository
      * @param string $imagePath The stored image path
      * @return string
      */
-    public function getProductImageUrl(string $imagePath): string
+    public function getProductImageUrl($imagePath)
     {
         $baseUrl = getBaseUrl();
 
@@ -732,13 +719,13 @@ class ProductRepository
     /**
      * Convert an uploaded image to WebP format.
      *
-     * @param array  $file         The uploaded file from $_FILES
-     * @param int    $sellerId     The seller's ID
+     * @param array $file The uploaded file from $_FILES
+     * @param int $sellerId The seller's ID
      * @param string $productTitle The product title
-     * @param string $prefix       Optional filename prefix
+     * @param string $prefix Optional filename prefix
      * @return string|false
      */
-    public function convertToWebP(array $file, int $sellerId, string $productTitle, string $prefix = 'main')
+    public function convertToWebP($file, $sellerId, $productTitle, $prefix = 'main')
     {
         $uploadPaths = [
             $_SERVER['DOCUMENT_ROOT'] . '/uploads/products/',
@@ -852,7 +839,7 @@ class ProductRepository
      * @param array $filters Associative array of filters
      * @return array
      */
-    public function getPublicProducts(array $filters = []): array
+    public function getPublicProducts($filters = [])
     {
         $categories  = $filters['categories'] ?? [];
         $priceRange  = $filters['price_range'] ?? '';
@@ -969,11 +956,11 @@ class ProductRepository
     /**
      * Search public products with filters.
      *
-     * @param string $search  Search term
-     * @param array  $filters Filters
+     * @param string $search Search term
+     * @param array $filters Filters
      * @return array
      */
-    public function searchProducts(string $search, array $filters = []): array
+    public function searchProducts($search, $filters = [])
     {
         $categories  = $filters['categories'] ?? [];
         $priceRange  = $filters['price_range'] ?? '';
@@ -1134,15 +1121,15 @@ class ProductRepository
     // ============================================================
 
     /**
-     * Get all products for admin (across all sellers) with filters and pagination.
+     * Get all products for admin with filters and pagination.
      *
-     * @param string $status Status filter (all, active, suspended)
-     * @param string $search Search term (product title, seller name)
+     * @param string $status Status filter
+     * @param string $search Search term
      * @param int $limit Results per page
      * @param int $offset Pagination offset
      * @return array
      */
-    public function getAllProductsForAdmin(string $status = 'all', string $search = '', int $limit = 12, int $offset = 0): array
+    public function getAllProductsForAdmin($status = 'all', $search = '', $limit = 12, $offset = 0)
     {
         $sql = "SELECT p.product_id as id, p.title as name, p.price, p.status,
                 p.stock_quantity, p.created_at,
@@ -1201,13 +1188,13 @@ class ProductRepository
     }
 
     /**
-     * Get total count of products for admin with filters for pagination.
+     * Get total count of products for admin with filters.
      *
-     * @param string $status Status filter (all, active, suspended)
-     * @param string $search Search term (product title, seller name)
+     * @param string $status Status filter
+     * @param string $search Search term
      * @return int
      */
-    public function getProductsCountForAdmin(string $status = 'all', string $search = ''): int
+    public function getProductsCountForAdmin($status = 'all', $search = '')
     {
         $sql = "SELECT COUNT(*) as total FROM products p
                 LEFT JOIN users u ON p.seller_id = u.user_id
@@ -1250,10 +1237,10 @@ class ProductRepository
      *
      * @param int $sellerId Seller ID
      * @param bool $isOwner Whether the viewer is the seller themselves
-     * @param int $limit Maximum products to return (0 for all)
+     * @param int $limit Maximum products to return
      * @return array
      */
-    public function getSellerProductsForDisplay(int $sellerId, bool $isOwner = false, int $limit = 0): array
+    public function getSellerProductsForDisplay($sellerId, $isOwner = false, $limit = 0)
     {
         if ($isOwner) {
             $sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,

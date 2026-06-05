@@ -1,133 +1,252 @@
 <?php
+
 /**
  * ConsuTrade - SellerVerification
  *
- * Domain class representing a seller's verification status and trust score.
+ * Domain class representing a seller's verification document submission.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
- *
- * References:
- * - Pressman, R.S. and Maxim, B.R., 2015. Software Engineering:
- *   A Practitioner's Approach. 8th ed. McGraw-Hill.
- * - Dennis, A., Wixom, B.H. and Tegarden, D., 2015. Systems Analysis
- *   and Design: An Object-Oriented Approach with UML. 6th ed.
- *   John Wiley and Sons.
- * - PHP Group, 2025. Classes and Objects. Available at:
- *   https://www.php.net/manual/en/language.oop5.php
- * - PHP-FIG, 2023. PSR-12: Extended Coding Style. Available at:
- *   https://www.php.fig.org/psr/psr-12/
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class SellerVerification
 {
-    /** @var int */
     private $verificationId;
-
-    /** @var int */
     private $sellerId;
-
-    /** @var bool */
-    private $emailVerified;
-
-    /** @var bool */
-    private $phoneVerified;
-
-    /** @var bool */
-    private $documentVerified;
-
-    /** @var bool */
-    private $locationVerified;
-
-    /** @var string */
     private $documentPath;
-
-    /** @var string */
     private $documentType;
-
-    /** @var int */
-    private $verificationScore;
-
-    /** @var bool */
-    private $autoVerified;
-
-    /** @var string */
-    private $verifiedAt;
-
-    /** @var string */
-    private $emailVerifiedAt;
-
-    /** @var string */
-    private $phoneVerifiedAt;
-
-    /** @var string */
-    private $lastCheck;
+    private $documentVerified;
+    private $rejectionReason;
+    private $submittedAt;
+    private $reviewedAt;
+    private $reviewedBy;
 
     /**
      * Constructor.
      *
      * @param array $data Associative array of verification data from the database
      */
-    public function __construct(array $data)
+    public function __construct($data)
     {
-        $this->verificationId   = (int) ($data['verification_id']    ?? 0);
-        $this->sellerId         = (int) ($data['seller_id']          ?? 0);
-        $this->emailVerified    = (bool) ($data['email_verified']    ?? false);
-        $this->phoneVerified    = (bool) ($data['phone_verified']    ?? false);
-        $this->documentVerified = (bool) ($data['document_verified'] ?? false);
-        $this->locationVerified = (bool) ($data['location_verified'] ?? false);
-        $this->documentPath     = (string) ($data['document_path']   ?? '');
-        $this->documentType     = (string) ($data['document_type']   ?? '');
-        $this->verificationScore = (int) ($data['verification_score'] ?? 0);
-        $this->autoVerified     = (bool) ($data['auto_verified']     ?? false);
-        $this->verifiedAt       = (string) ($data['verified_at']     ?? '');
-        $this->emailVerifiedAt  = (string) ($data['email_verified_at'] ?? '');
-        $this->phoneVerifiedAt  = (string) ($data['phone_verified_at'] ?? '');
-        $this->lastCheck        = (string) ($data['last_check']       ?? '');
+        $this->verificationId = (int) ($data['verification_id'] ?? 0);
+        $this->sellerId = (int) ($data['seller_id'] ?? 0);
+        $this->documentPath = (string) ($data['document_path'] ?? '');
+        $this->documentType = (string) ($data['document_type'] ?? 'id');
+        $this->documentVerified = (int) ($data['document_verified'] ?? 0);
+        $this->rejectionReason = isset($data['rejection_reason']) ? (string) $data['rejection_reason'] : null;
+        $this->submittedAt = (string) ($data['submitted_at'] ?? '');
+        $this->reviewedAt = isset($data['reviewed_at']) ? (string) $data['reviewed_at'] : null;
+        $this->reviewedBy = isset($data['reviewed_by']) ? (int) $data['reviewed_by'] : null;
+    }
+
+    // ============================================================
+    //  GETTERS
+    // ============================================================
+
+    public function getVerificationId()
+    {
+        return $this->verificationId;
+    }
+
+    public function getSellerId()
+    {
+        return $this->sellerId;
+    }
+
+    public function getDocumentPath()
+    {
+        return $this->documentPath;
+    }
+
+    public function getDocumentType()
+    {
+        return $this->documentType;
     }
 
     /**
-     * Returns the verification score (0–100).
+     * Returns human-readable document type label.
      *
-     * @return int
+     * @return string
      */
-    public function getScore(): int
+    public function getDocumentTypeLabel()
     {
-        return $this->verificationScore;
+        $labels = [
+            'id' => 'ID Document',
+            'passport' => 'Passport',
+            'business_license' => 'Business License',
+            'tax_certificate' => 'Tax Certificate',
+            'other' => 'Other Document'
+        ];
+        return $labels[$this->documentType] ?? ucfirst(str_replace('_', ' ', $this->documentType));
+    }
+
+    public function isVerified()
+    {
+        return $this->documentVerified == 1;
+    }
+
+    public function isPending()
+    {
+        return $this->documentVerified == 0 && $this->rejectionReason === null;
+    }
+
+    public function isRejected()
+    {
+        return $this->rejectionReason !== null;
+    }
+
+    public function getRejectionReason()
+    {
+        return $this->rejectionReason;
+    }
+
+    public function getSubmittedAt()
+    {
+        return $this->submittedAt;
     }
 
     /**
-     * Checks whether all verification checks have passed.
-     * Email, phone, document, and location must all be verified.
+     * Returns formatted submission date.
      *
-     * @return bool
+     * @param string $format
+     * @return string
      */
-    public function isFullyVerified(): bool
+    public function getFormattedSubmittedAt($format = 'd M Y, H:i')
     {
-        return $this->emailVerified
-            && $this->phoneVerified
-            && $this->documentVerified
-            && $this->locationVerified;
+        return date($format, strtotime($this->submittedAt));
+    }
+
+    public function getReviewedAt()
+    {
+        return $this->reviewedAt;
     }
 
     /**
-     * Returns a breakdown of each verification check as an associative array.
+     * Returns formatted review date.
+     *
+     * @param string $format
+     * @return string|null
+     */
+    public function getFormattedReviewedAt($format = 'd M Y, H:i')
+    {
+        return $this->reviewedAt ? date($format, strtotime($this->reviewedAt)) : null;
+    }
+
+    public function getReviewedBy()
+    {
+        return $this->reviewedBy;
+    }
+
+    // ============================================================
+    //  SETTERS (for admin actions)
+    // ============================================================
+
+    /**
+     * Approve the verification.
+     *
+     * @param int $adminId Admin user ID
+     * @return void
+     */
+    public function approve($adminId)
+    {
+        $this->documentVerified = 1;
+        $this->rejectionReason = null;
+        $this->reviewedAt = date('Y-m-d H:i:s');
+        $this->reviewedBy = $adminId;
+    }
+
+    /**
+     * Reject the verification.
+     *
+     * @param int $adminId Admin user ID
+     * @param string|null $reason Rejection reason
+     * @return void
+     */
+    public function reject($adminId, $reason = null)
+    {
+        $this->documentVerified = 0;
+        $this->rejectionReason = $reason;
+        $this->reviewedAt = date('Y-m-d H:i:s');
+        $this->reviewedBy = $adminId;
+    }
+
+    /**
+     * Get document URL for display.
+     *
+     * @return string
+     */
+    public function getDocumentUrl()
+    {
+        $baseUrl = getBaseUrl();
+
+        if (empty($this->documentPath)) {
+            return '';
+        }
+
+        if (str_starts_with($this->documentPath, 'http://') || str_starts_with($this->documentPath, 'https://')) {
+            return $this->documentPath;
+        }
+
+        return $baseUrl . $this->documentPath;
+    }
+
+    /**
+     * Get status badge class for UI.
+     *
+     * @return string
+     */
+    public function getStatusClass()
+    {
+        if ($this->isVerified()) {
+            return 'status-verified';
+        }
+        if ($this->isRejected()) {
+            return 'status-rejected';
+        }
+        return 'status-pending';
+    }
+
+    /**
+     * Get status label for UI.
+     *
+     * @return string
+     */
+    public function getStatusLabel()
+    {
+        if ($this->isVerified()) {
+            return 'Verified';
+        }
+        if ($this->isRejected()) {
+            return 'Rejected';
+        }
+        return 'Pending Review';
+    }
+
+    /**
+     * Exports verification data as array.
      *
      * @return array
      */
-    public function getStatus(): array
+    public function toArray()
     {
         return [
-            'email_verified'    => $this->emailVerified,
-            'phone_verified'    => $this->phoneVerified,
-            'document_verified' => $this->documentVerified,
-            'location_verified' => $this->locationVerified,
-            'auto_verified'     => $this->autoVerified,
-            'score'             => $this->verificationScore,
-            'fully_verified'    => $this->isFullyVerified(),
+            'verification_id' => $this->verificationId,
+            'seller_id' => $this->sellerId,
+            'document_path' => $this->documentPath,
+            'document_url' => $this->getDocumentUrl(),
+            'document_type' => $this->documentType,
+            'document_type_label' => $this->getDocumentTypeLabel(),
+            'is_verified' => $this->isVerified(),
+            'is_pending' => $this->isPending(),
+            'is_rejected' => $this->isRejected(),
+            'rejection_reason' => $this->rejectionReason,
+            'submitted_at' => $this->submittedAt,
+            'formatted_submitted_at' => $this->getFormattedSubmittedAt(),
+            'reviewed_at' => $this->reviewedAt,
+            'formatted_reviewed_at' => $this->getFormattedReviewedAt(),
+            'reviewed_by' => $this->reviewedBy,
+            'status_class' => $this->getStatusClass(),
+            'status_label' => $this->getStatusLabel()
         ];
     }
 }

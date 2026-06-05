@@ -3,102 +3,100 @@
 /**
  * ConsuTrade - Buyer
  *
- * Represents a buyer user. Extends User with cart, ordering, and review capabilities.
+ * Domain class representing a buyer user type.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class Buyer extends User
 {
-    /** @var int */
-    private $cartCount;
-
-    /** @var CartRepository */
+    /** @var CartRepository Cart repository instance */
     private $cartRepo;
 
-    /** @var OrderRepository */
+    /** @var OrderRepository Order repository instance */
     private $orderRepo;
 
     /**
      * Constructor.
      *
-     * @param array           $data     User data from database
-     * @param CartRepository  $cartRepo
-     * @param OrderRepository $orderRepo
+     * @param array $data User data
+     * @param CartRepository|null $cartRepo Cart repository
+     * @param OrderRepository|null $orderRepo Order repository
      */
-    public function __construct(array $data, CartRepository $cartRepo, OrderRepository $orderRepo)
+    public function __construct($data, $cartRepo = null, $orderRepo = null)
     {
         parent::__construct($data);
         $this->cartRepo = $cartRepo;
         $this->orderRepo = $orderRepo;
-        $this->cartCount = 0;
     }
 
     /**
-     * Ensure repositories are available (fixes unserialized objects)
+     * Get the buyer's display name.
+     *
+     * @return string
      */
-    private function ensureRepositories(): void
-    {
-        if ($this->orderRepo === null && isset($GLOBALS['orderRepo'])) {
-            $this->orderRepo = $GLOBALS['orderRepo'];
-        }
-        if ($this->cartRepo === null && isset($GLOBALS['cartRepo'])) {
-            $this->cartRepo = $GLOBALS['cartRepo'];
-        }
-    }
-
-    public function getDisplayName(): string
+    public function getDisplayName()
     {
         return $this->fullName;
     }
 
-    public function getCartCount(): int
+    /**
+     * Get cart items for this buyer.
+     *
+     * @return array
+     */
+    public function getCartItems()
     {
-        return $this->cartCount;
-    }
-
-    public function refreshCartCount(): void
-    {
-        $this->ensureRepositories();
-        $this->cartCount = $this->cartRepo->getCartCount($this->userId);
-    }
-
-    public function placeOrder(array $cartItems): array
-    {
-        $this->ensureRepositories();
-        $result = $this->cartRepo->processCheckout($this->userId, $cartItems);
-
-        if ($result['success']) {
-            $this->cartCount = 0;
+        if (!$this->cartRepo) {
+            return [];
         }
-
-        return $result;
+        return $this->cartRepo->getCartItems($this->userId);
     }
 
-    public function cancelOrder(int $orderId): bool
+    /**
+     * Get cart count for this buyer.
+     *
+     * @return int
+     */
+    public function getCartCount()
     {
-        $this->ensureRepositories();
-        return $this->orderRepo->cancelBuyerOrder($orderId, $this->userId);
+        if (!$this->cartRepo) {
+            return 0;
+        }
+        return $this->cartRepo->getCartCount($this->userId);
     }
 
-    public function submitReview(array $data): bool
+    /**
+     * Get orders for this buyer.
+     *
+     * @param string $filter Status filter
+     * @param string $search Search term
+     * @return array
+     */
+    public function getOrders($filter = 'all', $search = '')
     {
-        return true;
-    }
-
-    public function getOrders(string $filter = 'all', string $search = ''): array
-    {
-        $this->ensureRepositories();
+        if (!$this->orderRepo) {
+            return [];
+        }
         return $this->orderRepo->getBuyerOrders($this->userId, $filter, $search);
     }
 
-    public function getOrderDetails(int $orderId): ?array
+    /**
+     * Get buyer statistics.
+     *
+     * @return array
+     */
+    public function getStats()
     {
-        $this->ensureRepositories();
-        return $this->orderRepo->getOrderDetails($orderId, $this->userId, 'buyer');
+        if (!$this->orderRepo) {
+            return [
+                'total_orders' => 0,
+                'total_spent' => 0,
+                'pending_orders' => 0,
+                'completed_orders' => 0
+            ];
+        }
+        return $this->orderRepo->getBuyerStats($this->userId);
     }
 }

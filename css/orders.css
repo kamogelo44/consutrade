@@ -1,18 +1,11 @@
-/**
- * ConsuTrade - Orders Page Styles
- * Author: Kamogelo Phale
- * 
- * Order cards, filters, modals for my-orders, seller-orders, all-orders
- */
+/* Orders Page Styles */
 
-/* ========== ORDERS CONTAINER ========== */
 .orders-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--spacing-xl);
 }
 
-/* ========== PAGE HEADER ========== */
 .page-header {
   margin-bottom: var(--spacing-xl);
 }
@@ -30,7 +23,6 @@
   margin: 0;
 }
 
-/* ========== ORDER CARD ========== */
 .order-card {
   background: var(--white);
   border: 1px solid var(--border-light);
@@ -70,37 +62,6 @@
   font-size: var(--font-sm);
 }
 
-/* Order Status Badge */
-.order-status-badge {
-  padding: 4px 12px;
-  border-radius: var(--radius-round);
-  font-size: var(--font-xs);
-  font-weight: var(--font-bold);
-  text-transform: uppercase;
-}
-
-.order-status-badge.status-pending {
-  background: var(--warning-light);
-  color: var(--warning);
-}
-
-.order-status-badge.status-processing,
-.order-status-badge.status-shipped {
-  background: var(--info-light);
-  color: var(--info);
-}
-
-.order-status-badge.status-completed {
-  background: var(--success-light);
-  color: var(--success);
-}
-
-.order-status-badge.status-cancelled {
-  background: var(--error-light);
-  color: var(--error);
-}
-
-/* Order Body */
 .order-body {
   display: flex;
   justify-content: space-between;
@@ -110,7 +71,6 @@
   padding: var(--spacing-lg);
 }
 
-/* Customer Info */
 .customer-info {
   flex: 2;
 }
@@ -139,18 +99,6 @@
   margin-bottom: var(--spacing-xs);
 }
 
-.seller-details span,
-.product-details span {
-  color: var(--gray-dark);
-  font-size: var(--font-sm);
-}
-
-.item-details span {
-  color: var(--gray-medium);
-  font-size: var(--font-xs);
-}
-
-/* Order Amount */
 .order-amount {
   text-align: right;
   flex: 1;
@@ -170,7 +118,6 @@
   color: var(--primary-color);
 }
 
-/* Order Footer */
 .order-footer {
   display: flex;
   flex-wrap: wrap;
@@ -188,47 +135,6 @@
   cursor: pointer;
   border: none;
   transition: all var(--transition-fast);
-}
-
-.view-details-btn {
-  background: var(--white);
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
-}
-
-.view-details-btn:hover {
-  background: var(--primary-fade);
-  transform: translateY(-2px);
-}
-
-.cancel-btn {
-  background: var(--error);
-  color: var(--white);
-}
-
-.cancel-btn:hover {
-  background: var(--error-dark);
-  transform: translateY(-2px);
-}
-
-.review-btn {
-  background: var(--success);
-  color: var(--white);
-}
-
-.review-btn:hover {
-  background: var(--success-dark);
-  transform: translateY(-2px);
-}
-
-.edit-review-btn {
-  background: var(--info);
-  color: var(--white);
-}
-
-.edit-review-btn:hover {
-  background: var(--info-dark);
-  transform: translateY(-2px);
 }
 
 .process-btn {
@@ -264,33 +170,16 @@
   color: white;
 }
 
-/* Empty State */
-.empty-orders {
-  text-align: center;
-  padding: 60px var(--spacing-xl);
-  background: var(--white);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-light);
+.review-btn {
+  background: var(--success);
+  color: var(--white);
 }
 
-.empty-orders img {
-  margin-bottom: var(--spacing-md);
-  opacity: 0.5;
+.review-btn:hover {
+  background: var(--success-dark);
+  transform: translateY(-2px);
 }
 
-.empty-orders h3 {
-  font-size: var(--font-xl);
-  font-weight: var(--font-semibold);
-  margin-bottom: var(--spacing-sm);
-  color: var(--dark-bg);
-}
-
-.empty-orders p {
-  color: var(--gray-medium);
-  margin-bottom: var(--spacing-lg);
-}
-
-/* Order Modal */
 .order-modal {
   display: none;
   position: fixed;
@@ -357,19 +246,6 @@
   padding: var(--spacing-lg);
 }
 
-.order-modal-footer {
-  padding: var(--spacing-lg);
-  border-top: 1px solid var(--border-light);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
-  justify-content: flex-end;
-  background: var(--white);
-  position: sticky;
-  bottom: 0;
-}
-
-/* Order Items in Modal */
 .order-items-list {
   margin: var(--spacing-lg) 0;
 }
@@ -430,7 +306,6 @@
   color: var(--dark-bg);
 }
 
-/* Review Modal */
 .review-modal {
   display: none;
   position: fixed;
@@ -503,7 +378,6 @@
   font-size: var(--font-sm);
 }
 
-/* Rating Stars Interactive */
 .rating-stars {
   display: flex;
   gap: var(--spacing-xs);
@@ -525,7 +399,6 @@
   color: #ffc107;
 }
 
-/* Review Form */
 .review-form-container .form-group {
   margin-bottom: var(--spacing-lg);
 }
@@ -570,4 +443,47 @@
 .submit-review-btn:hover {
   background: var(--primary-dark);
   transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .orders-container {
+    padding: var(--spacing-lg);
+  }
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .order-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .order-amount {
+    text-align: left;
+    width: 100%;
+  }
+  .order-footer {
+    flex-direction: column;
+  }
+  .order-footer button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .orders-container {
+    padding: var(--spacing-md);
+  }
+  .amount-value {
+    font-size: var(--font-lg);
+  }
+  .order-modal-header h2,
+  .review-modal-header h2 {
+    font-size: var(--font-lg);
+  }
+  .review-form-container {
+    padding: var(--spacing-md);
+  }
+  .rating-stars .star {
+    font-size: 28px;
+  }
 }

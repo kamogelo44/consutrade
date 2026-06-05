@@ -10,54 +10,27 @@
  */
 class Product
 {
-    /** @var int Product ID */
-    private int $productId;
-
-    /** @var int Seller user ID */
-    private int $sellerId;
-
-    /** @var int Category ID */
-    private int $categoryId;
-
-    /** @var string Product title */
-    private string $title;
-
-    /** @var string Product description */
-    private string $description;
-
-    /** @var float Product price */
-    private float $price;
-
-    /** @var int Available stock quantity */
-    private int $stockQuantity;
-
-    /** @var string Product condition (New, Like New, Good, Fair) */
-    private string $condition;
-
-    /** @var string Product location */
-    private string $location;
-
-    /** @var string Product image URL */
-    private string $imageUrl;
-
-    /** @var string Product status (active, suspended, deleted) */
-    private string $status;
-
-    /** @var string Product creation date */
-    private string $createdAt;
-
-    /** @var string|null Who suspended the product (seller or admin) */
-    private ?string $suspendedBy;
-
-    /** @var string|null Reason for suspension */
-    private ?string $suspendedReason;
+    private $productId;
+    private $sellerId;
+    private $categoryId;
+    private $title;
+    private $description;
+    private $price;
+    private $stockQuantity;
+    private $condition;
+    private $location;
+    private $imageUrl;
+    private $status;
+    private $createdAt;
+    private $suspendedBy;
+    private $suspendedReason;
 
     /**
      * Product constructor.
      *
      * @param array $data Product data from database
      */
-    public function __construct(array $data)
+    public function __construct($data)
     {
         $this->productId = (int) ($data['product_id'] ?? 0);
         $this->sellerId = (int) ($data['seller_id'] ?? 0);
@@ -75,274 +48,144 @@ class Product
         $this->suspendedReason = isset($data['suspended_reason']) ? (string) $data['suspended_reason'] : null;
     }
 
-    /**
-     * Returns the product ID.
-     *
-     * @return int
-     */
-    public function getProductId(): int
+    // ========== GETTERS ==========
+
+    public function getProductId()
     {
         return $this->productId;
     }
 
-    /**
-     * Returns the seller user ID.
-     *
-     * @return int
-     */
-    public function getSellerId(): int
+    public function getSellerId()
     {
         return $this->sellerId;
     }
 
-    /**
-     * Returns the category ID.
-     *
-     * @return int
-     */
-    public function getCategoryId(): int
+    public function getCategoryId()
     {
         return $this->categoryId;
     }
 
-    /**
-     * Returns the product title.
-     *
-     * @return string
-     */
-    public function getTitle(): string
+    public function getTitle()
     {
         return $this->title;
     }
 
-    /**
-     * Returns the product description.
-     *
-     * @return string
-     */
-    public function getDescription(): string
+    public function getDescription()
     {
         return $this->description;
     }
 
-    /**
-     * Returns the product price.
-     *
-     * @return float
-     */
-    public function getPrice(): float
+    public function getPrice()
     {
         return $this->price;
     }
 
-    /**
-     * Returns the available stock quantity.
-     *
-     * @return int
-     */
-    public function getStockQuantity(): int
+    public function getStockQuantity()
     {
         return $this->stockQuantity;
     }
 
-    /**
-     * Returns the product condition.
-     *
-     * @return string
-     */
-    public function getCondition(): string
+    public function getCondition()
     {
         return $this->condition;
     }
 
-    /**
-     * Returns the product location.
-     *
-     * @return string
-     */
-    public function getLocation(): string
+    public function getLocation()
     {
         return $this->location;
     }
 
-    /**
-     * Returns the product image URL.
-     *
-     * @return string
-     */
-    public function getImageUrl(): string
+    public function getImageUrl()
     {
         return $this->imageUrl;
     }
 
-    /**
-     * Returns the product status.
-     *
-     * @return string
-     */
-    public function getStatus(): string
+    public function getStatus()
     {
         return $this->status;
     }
 
-    /**
-     * Returns the product creation date.
-     *
-     * @return string
-     */
-    public function getCreatedAt(): string
+    public function getCreatedAt()
     {
         return $this->createdAt;
     }
 
-    /**
-     * Returns who suspended the product (seller or admin).
-     *
-     * @return string|null
-     */
-    public function getSuspendedBy(): ?string
+    public function getSuspendedBy()
     {
         return $this->suspendedBy;
     }
 
-    /**
-     * Returns the suspension reason.
-     *
-     * @return string|null
-     */
-    public function getSuspendedReason(): ?string
+    public function getSuspendedReason()
     {
         return $this->suspendedReason;
     }
 
-    /**
-     * Sets the product title.
-     *
-     * @param string $title
-     * @return void
-     */
-    public function setTitle(string $title): void
+    // ========== SETTERS ==========
+
+    public function setTitle($title)
     {
         $this->title = $title;
     }
 
-    /**
-     * Sets the product description.
-     *
-     * @param string $description
-     * @return void
-     */
-    public function setDescription(string $description): void
+    public function setDescription($description)
     {
         $this->description = $description;
     }
 
-    /**
-     * Sets the product price.
-     *
-     * @param float $price
-     * @return void
-     */
-    public function setPrice(float $price): void
+    public function setPrice($price)
     {
         $this->price = $price;
     }
 
-    /**
-     * Sets the stock quantity.
-     *
-     * @param int $stockQuantity
-     * @return void
-     */
-    public function setStockQuantity(int $stockQuantity): void
+    public function setStockQuantity($stockQuantity)
     {
         $this->stockQuantity = $stockQuantity;
     }
 
-    /**
-     * Sets the product condition.
-     *
-     * @param string $condition
-     * @return void
-     */
-    public function setCondition(string $condition): void
+    public function setCondition($condition)
     {
         $this->condition = $condition;
     }
 
-    /**
-     * Sets the product location.
-     *
-     * @param string $location
-     * @return void
-     */
-    public function setLocation(string $location): void
+    public function setLocation($location)
     {
         $this->location = $location;
     }
 
-    /**
-     * Sets the category ID.
-     *
-     * @param int $categoryId
-     * @return void
-     */
-    public function setCategoryId(int $categoryId): void
+    public function setCategoryId($categoryId)
     {
         $this->categoryId = $categoryId;
     }
 
-    /**
-     * Sets the product image URL.
-     *
-     * @param string $imageUrl
-     * @return void
-     */
-    public function setImageUrl(string $imageUrl): void
+    public function setImageUrl($imageUrl)
     {
         $this->imageUrl = $imageUrl;
     }
 
-    /**
-     * Sets the product status.
-     *
-     * @param string $status
-     * @return void
-     */
-    public function setStatus(string $status): void
+    public function setStatus($status)
     {
         $this->status = $status;
     }
 
-    /**
-     * Sets who suspended the product.
-     *
-     * @param string|null $suspendedBy
-     * @return void
-     */
-    public function setSuspendedBy(?string $suspendedBy): void
+    public function setSuspendedBy($suspendedBy)
     {
         $this->suspendedBy = $suspendedBy;
     }
 
-    /**
-     * Sets the suspension reason.
-     *
-     * @param string|null $suspendedReason
-     * @return void
-     */
-    public function setSuspendedReason(?string $suspendedReason): void
+    public function setSuspendedReason($suspendedReason)
     {
         $this->suspendedReason = $suspendedReason;
     }
 
+    // ========== BUSINESS LOGIC ==========
+
     /**
      * Checks if product is available for purchase.
-     * Business rule: Must be active AND have stock > 0.
+     * Must be active AND have stock > 0.
      *
      * @return bool
      */
-    public function isAvailable(): bool
+    public function isAvailable()
     {
         return $this->status === 'active' && $this->stockQuantity > 0;
     }
@@ -352,7 +195,7 @@ class Product
      *
      * @return bool
      */
-    public function isOutOfStock(): bool
+    public function isOutOfStock()
     {
         return $this->stockQuantity <= 0;
     }
@@ -362,7 +205,7 @@ class Product
      *
      * @return bool
      */
-    public function isLowStock(): bool
+    public function isLowStock()
     {
         return $this->stockQuantity > 0 && $this->stockQuantity <= 5;
     }
@@ -372,7 +215,7 @@ class Product
      *
      * @return string
      */
-    public function getFormattedPrice(): string
+    public function getFormattedPrice()
     {
         return 'R ' . number_format($this->price, 2);
     }
@@ -382,7 +225,7 @@ class Product
      *
      * @return string
      */
-    public function getStockBadgeClass(): string
+    public function getStockBadgeClass()
     {
         if ($this->isOutOfStock()) return 'out-of-stock';
         if ($this->isLowStock()) return 'low-stock';
@@ -394,7 +237,7 @@ class Product
      *
      * @return string
      */
-    public function getStockBadgeText(): string
+    public function getStockBadgeText()
     {
         if ($this->isOutOfStock()) return 'Out of Stock';
         if ($this->isLowStock()) return 'Only ' . $this->stockQuantity . ' left';
@@ -406,15 +249,15 @@ class Product
      *
      * @return string
      */
-    public function getConditionClass(): string
+    public function getConditionClass()
     {
-        return match (strtolower($this->condition)) {
+        $conditionMap = [
             'new' => 'new',
             'like new' => 'like-new',
             'good' => 'good',
-            'fair' => 'fair',
-            default => ''
-        };
+            'fair' => 'fair'
+        ];
+        return $conditionMap[strtolower($this->condition)] ?? '';
     }
 
     /**
@@ -423,7 +266,7 @@ class Product
      * @param int $quantity Requested quantity
      * @return bool
      */
-    public function canDecreaseStock(int $quantity): bool
+    public function canDecreaseStock($quantity)
     {
         return $this->stockQuantity >= $quantity;
     }
@@ -435,7 +278,7 @@ class Product
      * @param int $quantity Quantity to deduct
      * @return void
      */
-    public function decreaseStock(int $quantity): void
+    public function decreaseStock($quantity)
     {
         if ($this->canDecreaseStock($quantity)) {
             $this->stockQuantity -= $quantity;
@@ -448,18 +291,18 @@ class Product
      * @param int $quantity Quantity to add
      * @return void
      */
-    public function increaseStock(int $quantity): void
+    public function increaseStock($quantity)
     {
         $this->stockQuantity += $quantity;
     }
 
     /**
      * Checks if seller can activate this product.
-     * Seller can only activate if product was suspended by themselves, not by admin.
+     * Seller can only activate if product wasn't suspended by admin.
      *
      * @return bool
      */
-    public function canSellerActivate(): bool
+    public function canSellerActivate()
     {
         return $this->suspendedBy !== 'admin';
     }
@@ -469,17 +312,17 @@ class Product
      *
      * @return bool
      */
-    public function isAdminSuspended(): bool
+    public function isAdminSuspended()
     {
         return $this->status === 'suspended' && $this->suspendedBy === 'admin';
     }
 
     /**
-     * Exports product data as array for API responses.
+     * Exports product data as array.
      *
-     * @return array<string, mixed>
+     * @return array
      */
-    public function toArray(): array
+    public function toArray()
     {
         return [
             'product_id' => $this->productId,

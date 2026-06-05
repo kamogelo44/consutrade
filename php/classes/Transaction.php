@@ -5,23 +5,20 @@
  *
  * Domain class representing a PayFast payment transaction for an order.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class Transaction
 {
-    private int $transactionId;
-    private int $orderId;
-    private string $payfastRef;
-    private float $amount;
-    private string $status;
-    private ?string $paidAt;
+    private $transactionId;
+    private $orderId;
+    private $payfastRef;
+    private $amount;
+    private $status;
+    private $paidAt;
 
-    public function __construct(array $data)
+    public function __construct($data)
     {
         $this->transactionId = (int) ($data['transaction_id'] ?? 0);
         $this->orderId = (int) ($data['order_id'] ?? 0);
@@ -31,60 +28,81 @@ class Transaction
         $this->paidAt = isset($data['paid_at']) ? (string) $data['paid_at'] : null;
     }
 
-    public function getTransactionId(): int
+    public function getTransactionId()
     {
         return $this->transactionId;
     }
 
-    public function getOrderId(): int
+    public function getOrderId()
     {
         return $this->orderId;
     }
 
-    public function getPayfastRef(): string
+    public function getPayfastRef()
     {
         return $this->payfastRef;
     }
 
-    public function getAmount(): float
+    public function getAmount()
     {
         return $this->amount;
     }
 
-    public function getStatus(): string
+    public function getStatus()
     {
         return $this->status;
     }
 
-    public function getPaidAt(): ?string
+    public function getPaidAt()
     {
         return $this->paidAt;
     }
 
-    public function isPaid(): bool
+    public function isPaid()
     {
         return $this->status === 'completed';
     }
 
-    public function isPending(): bool
+    public function isPending()
     {
         return $this->status === 'pending';
     }
 
-    public function isFailed(): bool
+    public function isFailed()
     {
         return $this->status === 'failed';
     }
 
-    public function markAsCompleted(string $payfastRef): void
+    public function markAsCompleted($payfastRef)
     {
         $this->status = 'completed';
         $this->payfastRef = $payfastRef;
         $this->paidAt = date('Y-m-d H:i:s');
     }
 
-    public function markAsFailed(): void
+    public function markAsFailed()
     {
         $this->status = 'failed';
+    }
+
+    /**
+     * Get formatted amount with currency symbol.
+     *
+     * @return string
+     */
+    public function getFormattedAmount()
+    {
+        return 'R ' . number_format($this->amount, 2);
+    }
+
+    /**
+     * Get formatted paid date.
+     *
+     * @param string $format
+     * @return string|null
+     */
+    public function getFormattedPaidAt($format = 'd M Y, H:i')
+    {
+        return $this->paidAt ? date($format, strtotime($this->paidAt)) : null;
     }
 }

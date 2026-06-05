@@ -8,20 +8,19 @@
  *
  * @author Kamogelo Phale
  * @version 1.0.0
- * @since 2026
  */
 
 class ReportRepository
 {
     /** @var mysqli Database connection */
-    private mysqli $db;
+    private $db;
 
     /**
      * Constructor.
      *
      * @param mysqli $db Database connection
      */
-    public function __construct(mysqli $db)
+    public function __construct($db)
     {
         $this->db = $db;
     }
@@ -36,7 +35,7 @@ class ReportRepository
      * @param array $data Database row
      * @return Report
      */
-    private function hydrate(array $data): Report
+    private function hydrate($data)
     {
         return new Report($data);
     }
@@ -45,9 +44,9 @@ class ReportRepository
      * Hydrate multiple database rows into Report objects.
      *
      * @param array $rows Database rows
-     * @return Report[]
+     * @return array
      */
-    private function hydrateMultiple(array $rows): array
+    private function hydrateMultiple($rows)
     {
         $reports = [];
         foreach ($rows as $row) {
@@ -63,10 +62,10 @@ class ReportRepository
     /**
      * Create a new product report.
      *
-     * @param Report $report Report object (without report_id)
+     * @param Report $report Report object
      * @return int|false Insert ID or false on failure
      */
-    public function createReport(Report $report)
+    public function createReport($report)
     {
         $productId = $report->getProductId();
         $reporterId = $report->getReporterId();
@@ -98,7 +97,7 @@ class ReportRepository
      * @param string|null $description Additional description
      * @return int|false Insert ID or false on failure
      */
-    public function createReportFromData(int $productId, int $reporterId, string $reason, ?string $description = null)
+    public function createReportFromData($productId, $reporterId, $reason, $description = null)
     {
         $validReasons = ['fake_product', 'wrong_description', 'counterfeit', 'scam', 'other'];
         if (!in_array($reason, $validReasons)) {
@@ -123,9 +122,9 @@ class ReportRepository
      * Get a report by ID as a Report object.
      *
      * @param int $reportId Report ID
-     * @return Report|null Report object or null if not found
+     * @return Report|null
      */
-    public function getReportById(int $reportId): ?Report
+    public function getReportById($reportId)
     {
         $sql = "SELECT * FROM product_reports WHERE report_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -146,9 +145,9 @@ class ReportRepository
      * Get a report with related data (product, reporter, seller).
      *
      * @param int $reportId Report ID
-     * @return array|null Report with related data or null if not found
+     * @return array|null
      */
-    public function getReportWithDetails(int $reportId): ?array
+    public function getReportWithDetails($reportId)
     {
         $sql = "SELECT 
                     pr.*,
@@ -197,9 +196,9 @@ class ReportRepository
      *
      * @param int $limit Results per page
      * @param int $offset Pagination offset
-     * @return Report[]
+     * @return array
      */
-    public function getPendingReports(int $limit = 20, int $offset = 0): array
+    public function getPendingReports($limit = 20, $offset = 0)
     {
         $sql = "SELECT * FROM product_reports 
                 WHERE status = 'pending' 
@@ -225,9 +224,9 @@ class ReportRepository
      *
      * @param int $limit Results per page
      * @param int $offset Pagination offset
-     * @return array Array of reports with related data
+     * @return array
      */
-    public function getPendingReportsWithDetails(int $limit = 20, int $offset = 0): array
+    public function getPendingReportsWithDetails($limit = 20, $offset = 0)
     {
         $sql = "SELECT 
                     pr.*,
@@ -273,9 +272,9 @@ class ReportRepository
      * Get all reports for a specific product as Report objects.
      *
      * @param int $productId Product ID
-     * @return Report[]
+     * @return array
      */
-    public function getReportsByProduct(int $productId): array
+    public function getReportsByProduct($productId)
     {
         $sql = "SELECT * FROM product_reports 
                 WHERE product_id = ? 
@@ -298,12 +297,12 @@ class ReportRepository
     /**
      * Get all reports for admin with filtering.
      *
-     * @param string $status Status filter (all, pending, dismissed, action_taken)
+     * @param string $status Status filter
      * @param int $limit Results per page
      * @param int $offset Pagination offset
      * @return array
      */
-    public function getAllReportsWithDetails(string $status = 'all', int $limit = 20, int $offset = 0): array
+    public function getAllReportsWithDetails($status = 'all', $limit = 20, $offset = 0)
     {
         $sql = "SELECT 
                     pr.*,
@@ -361,9 +360,9 @@ class ReportRepository
     /**
      * Get total count of pending reports.
      *
-     * @return int Number of pending reports
+     * @return int
      */
-    public function getPendingReportsCount(): int
+    public function getPendingReportsCount()
     {
         $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM product_reports WHERE status = 'pending'");
         $stmt->execute();
@@ -376,10 +375,10 @@ class ReportRepository
     /**
      * Get total count of reports with status filter.
      *
-     * @param string $status Status filter (all, pending, dismissed, action_taken)
+     * @param string $status Status filter
      * @return int
      */
-    public function getReportsCount(string $status = 'all'): int
+    public function getReportsCount($status = 'all')
     {
         $sql = "SELECT COUNT(*) as total FROM product_reports";
 
@@ -402,9 +401,9 @@ class ReportRepository
      * Get count of pending reports for a specific product.
      *
      * @param int $productId Product ID
-     * @return int Number of pending reports
+     * @return int
      */
-    public function getPendingReportCountForProduct(int $productId): int
+    public function getPendingReportCountForProduct($productId)
     {
         $stmt = $this->db->prepare(
             "SELECT COUNT(*) as count FROM product_reports 
@@ -425,13 +424,12 @@ class ReportRepository
 
     /**
      * Check if a user has already reported a specific product.
-     * Prevents duplicate/spam reports.
      *
      * @param int $userId User ID
      * @param int $productId Product ID
-     * @return bool True if user has already reported, false otherwise
+     * @return bool
      */
-    public function hasUserReportedProduct(int $userId, int $productId): bool
+    public function hasUserReportedProduct($userId, $productId)
     {
         $stmt = $this->db->prepare(
             "SELECT COUNT(*) as count FROM product_reports 
@@ -452,7 +450,7 @@ class ReportRepository
      * @param int $productId Product ID
      * @return bool
      */
-    public function hasPendingReports(int $productId): bool
+    public function hasPendingReports($productId)
     {
         return $this->getPendingReportCountForProduct($productId) > 0;
     }
@@ -465,9 +463,9 @@ class ReportRepository
      * Update report status using a Report object.
      *
      * @param Report $report Report object (with updated status)
-     * @return bool True on success, false on failure
+     * @return bool
      */
-    public function updateReport(Report $report): bool
+    public function updateReport($report)
     {
         $stmt = $this->db->prepare(
             "UPDATE product_reports 
@@ -491,12 +489,12 @@ class ReportRepository
      * Update report status after admin action.
      *
      * @param int $reportId Report ID
-     * @param string $status New status ('dismissed' or 'action_taken')
-     * @param string|null $adminNotes Admin notes about the decision
+     * @param string $status New status
+     * @param string|null $adminNotes Admin notes
      * @param int $adminId Admin user ID
-     * @return bool True on success, false on failure
+     * @return bool
      */
-    public function updateReportStatus(int $reportId, string $status, ?string $adminNotes = null, int $adminId = 0): bool
+    public function updateReportStatus($reportId, $status, $adminNotes = null, $adminId = 0)
     {
         $validStatuses = ['dismissed', 'action_taken', 'reviewed'];
         if (!in_array($status, $validStatuses)) {
@@ -522,7 +520,7 @@ class ReportRepository
      * @param string|null $notes Admin notes
      * @return bool
      */
-    public function dismissReport(int $reportId, int $adminId, ?string $notes = null): bool
+    public function dismissReport($reportId, $adminId, $notes = null)
     {
         return $this->updateReportStatus($reportId, 'dismissed', $notes, $adminId);
     }
@@ -535,7 +533,7 @@ class ReportRepository
      * @param string|null $notes Admin notes
      * @return bool
      */
-    public function markActionTaken(int $reportId, int $adminId, ?string $notes = null): bool
+    public function markActionTaken($reportId, $adminId, $notes = null)
     {
         return $this->updateReportStatus($reportId, 'action_taken', $notes, $adminId);
     }
@@ -545,12 +543,12 @@ class ReportRepository
     // ============================================================
 
     /**
-     * Delete a report by ID (soft delete not needed, can hard delete if needed).
+     * Delete a report by ID.
      *
      * @param int $reportId Report ID
      * @return bool
      */
-    public function deleteReport(int $reportId): bool
+    public function deleteReport($reportId)
     {
         $stmt = $this->db->prepare("DELETE FROM product_reports WHERE report_id = ?");
         $stmt->bind_param('i', $reportId);
@@ -565,7 +563,7 @@ class ReportRepository
      * @param int $productId Product ID
      * @return bool
      */
-    public function deleteReportsByProduct(int $productId): bool
+    public function deleteReportsByProduct($productId)
     {
         $stmt = $this->db->prepare("DELETE FROM product_reports WHERE product_id = ?");
         $stmt->bind_param('i', $productId);
@@ -584,7 +582,7 @@ class ReportRepository
      * @param string|null $imagePath The stored image path
      * @return string Full URL to image
      */
-    private function getProductImageUrl(?string $imagePath): string
+    private function getProductImageUrl($imagePath)
     {
         $baseUrl = getBaseUrl();
 
@@ -603,9 +601,9 @@ class ReportRepository
      * Get human-readable label for report reason (static helper).
      *
      * @param string $reason The reason code
-     * @return string Human-readable label
+     * @return string
      */
-    public static function getReasonLabel(string $reason): string
+    public static function getReasonLabel($reason)
     {
         $labels = [
             'fake_product' => 'Fake Product',

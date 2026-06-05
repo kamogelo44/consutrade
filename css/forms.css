@@ -1,557 +1,503 @@
-/* ========== LOGIN & REGISTER MODAL STYLES ========== */
-/* Author: Kamogelo Phale */
+/* Login & Register Modal Styles */
 
-/* ========== MODAL CONTAINER ========== */
 .modal {
-    display: flex;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    z-index: var(--z-modal);
-    justify-content: center;
-    align-items: center;
-    visibility: hidden;
-    pointer-events: none;
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  z-index: var(--z-modal);
+  justify-content: center;
+  align-items: center;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .modal.active {
-    background-color: rgba(0, 0, 0, 0.8);
-    visibility: visible;
-    pointer-events: auto;
+  background-color: rgba(0, 0, 0, 0.8);
+  visibility: visible;
+  pointer-events: auto;
 }
 
-/* ========== MODAL CONTENT ========== */
 .modal-content {
-    position: relative;
-    background-color: var(--white);
-    border-radius: var(--radius-xl);
-    width: 90%;
-    max-width: 420px;
-    padding: 28px 24px;
-    box-shadow: var(--shadow-lg);
-    max-height: 90vh;
-    overflow-y: auto;
+  position: relative;
+  background-color: var(--white);
+  border-radius: var(--radius-xl);
+  width: 90%;
+  max-width: 420px;
+  padding: 28px 24px;
+  box-shadow: var(--shadow-lg);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-/* Custom scrollbar for modal content */
 .modal-content::-webkit-scrollbar {
-    width: 4px;
+  width: 4px;
 }
 
 .modal-content::-webkit-scrollbar-track {
-    background: var(--gray-lighter);
-    border-radius: var(--radius-sm);
+  background: var(--gray-lighter);
+  border-radius: var(--radius-sm);
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: var(--radius-sm);
+  background: var(--primary-color);
+  border-radius: var(--radius-sm);
 }
 
-/* ========== CLOSE BUTTON ========== */
 .btn-close {
-    position: absolute;
-    top: var(--spacing-md);
-    right: var(--spacing-md);
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.05);
-    border: none;
-    border-radius: var(--radius-round);
-    cursor: pointer;
-    padding: 0;
-    z-index: 10;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: var(--radius-round);
+  cursor: pointer;
+  padding: 0;
+  z-index: 10;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-close:hover {
-    background: rgba(0, 0, 0, 0.1);
-    transform: rotate(90deg);
+  background: rgba(0, 0, 0, 0.1);
+  transform: rotate(90deg);
 }
 
 .btn-close::before,
 .btn-close::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 16px;
-    height: 2px;
-    background-color: var(--gray-medium);
-    border-radius: 2px;
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 2px;
+  background-color: var(--gray-medium);
+  border-radius: 2px;
 }
 
 .btn-close::before {
-    transform: translate(-50%, -50%) rotate(45deg);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .btn-close::after {
-    transform: translate(-50%, -50%) rotate(-45deg);
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .btn-close:hover::before,
 .btn-close:hover::after {
-    background-color: var(--primary-color);
+  background-color: var(--primary-color);
 }
 
-/* ========== MODAL HEADER ========== */
 .modal-header {
-    text-align: center;
-    margin-bottom: var(--spacing-xl);
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
 }
 
 .modal-header h1 {
-    font-size: var(--font-2xl);
-    font-weight: var(--font-bold);
-    color: var(--dark-bg);
-    margin-bottom: 6px;
+  font-size: var(--font-2xl);
+  font-weight: var(--font-bold);
+  color: var(--dark-bg);
+  margin-bottom: 6px;
 }
 
 .modal-header h1 span {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .modal-header p {
-    font-size: var(--font-sm);
-    color: var(--gray-medium);
-    margin-bottom: 0;
+  font-size: var(--font-sm);
+  color: var(--gray-medium);
+  margin-bottom: 0;
 }
 
-/* ========== ERROR CONTAINER (Top banner) ========== */
 .error-container {
-    background-color: var(--error-light);
-    border-left: 4px solid var(--error);
-    border-radius: var(--radius-md);
-    padding: 8px 12px;
-    margin-bottom: var(--spacing-md);
-    animation: shakeError 0.4s ease;
-    display: none;
-    color: var(--error);
-    font-size: var(--font-sm);
-    font-weight: var(--font-medium);
-    line-height: 1.4;
-    word-break: break-word; 
+  background-color: var(--error-light);
+  border-left: 4px solid var(--error);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: var(--spacing-md);
+  display: none;
+  color: var(--error);
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  line-height: 1.4;
 }
 
-/* ========== FORM STYLES ========== */
 .login-form,
 .register-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
 }
 
-/* ========== INPUT GROUP ========== */
 .input-group {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .input-group label {
-    display: block;
-    font-size: var(--font-sm);
-    font-weight: var(--font-medium);
-    color: var(--gray-dark);
-    margin-bottom: 6px;
-    text-align: left;
+  display: block;
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  color: var(--gray-dark);
+  margin-bottom: 6px;
+  text-align: left;
 }
 
 .input-group input {
-    width: 100%;
-    padding: 11px 14px;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    font-size: var(--font-md);
-    box-sizing: border-box;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-    background-color: var(--white);
-    height: 46px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  box-sizing: border-box;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  background-color: var(--white);
+  height: 46px;
 }
 
 .input-group input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
 }
 
 .input-group input::placeholder {
-    color: var(--gray-light);
-    font-size: var(--font-sm);
+  color: var(--gray-light);
+  font-size: var(--font-sm);
 }
 
-/* ========== ERROR STATE ========== */
 .input-group.error input {
-    border-color: var(--error) !important;
-    background-color: var(--error-light);
-    width: 100%;
-    box-sizing: border-box;
+  border-color: var(--error) !important;
+  background-color: var(--error-light);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-group.error label {
-    color: var(--error);
-    text-align: left;
+  color: var(--error);
+  text-align: left;
 }
 
 .error-text {
-    color: var(--error);
-    font-size: var(--font-xs);
-    font-weight: var(--font-medium);
-    line-height: 1.4;
-    display: block;
-    margin-top: var(--spacing-xs);
-    text-align: left;
+  color: var(--error);
+  font-size: var(--font-xs);
+  font-weight: var(--font-medium);
+  line-height: 1.4;
+  display: block;
+  margin-top: var(--spacing-xs);
+  text-align: left;
 }
 
-/* ========== PASSWORD FIELD WRAPPER ========== */
 .password-field-wrapper {
-    position: relative;
-    width: 100%;
+  position: relative;
+  width: 100%;
 }
 
 .password-field-wrapper input {
-    width: 100%;
-    padding-right: 42px;
-    box-sizing: border-box;
-    height: 46px;
+  width: 100%;
+  padding-right: 42px;
+  box-sizing: border-box;
+  height: 46px;
 }
 
 .password-toggle-btn {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: var(--radius-round);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color var(--transition-fast);
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-round);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
 }
 
 .password-toggle-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .password-toggle-btn img {
-    width: 18px;
-    height: 18px;
-    opacity: 0.6;
-    transition: opacity var(--transition-fast);
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
 }
 
 .password-toggle-btn:hover img {
-    opacity: 1;
+  opacity: 1;
 }
 
-/* Forgot Password Link */
 .reset-pass {
-    text-align: center;
-    margin: var(--spacing-xs) 0 0 0;
+  text-align: center;
+  margin: var(--spacing-xs) 0 0 0;
 }
 
 .reset-pass a {
-    font-size: var(--font-sm);
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: var(--font-medium);
-    transition: color var(--transition-fast);
+  font-size: var(--font-sm);
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  transition: color var(--transition-fast);
 }
 
 .reset-pass a:hover {
-    color: var(--primary-dark);
-    text-decoration: underline;
+  color: var(--primary-dark);
+  text-decoration: underline;
 }
 
-/* Submit Button */
 .submit-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: var(--primary-color);
-    color: var(--white);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: var(--font-md);
-    font-weight: var(--font-semibold);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    margin-top: var(--spacing-sm);
-    height: 48px;
-    box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-top: var(--spacing-sm);
+  height: 48px;
+  box-sizing: border-box;
 }
 
 .submit-btn:hover {
-    background-color: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
 }
 
 .submit-btn:active {
-    transform: translateY(0);
+  transform: translateY(0);
 }
 
 .submit-btn:disabled {
-    background-color: var(--gray-light);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
+  background-color: var(--gray-light);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-/* Register Link (inside login modal) */
 .register-link {
-    text-align: center;
-    font-size: var(--font-sm);
-    color: var(--gray-medium);
-    margin-top: var(--spacing-sm);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--border-light);
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--gray-medium);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
 }
 
 .register-link a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: var(--font-medium);
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: var(--font-medium);
 }
 
 .register-link a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
-/* Login Link (inside register modal) */
 .login-link {
-    text-align: center;
-    font-size: var(--font-sm);
-    color: var(--gray-medium);
-    margin-top: var(--spacing-sm);
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--gray-medium);
+  margin-top: var(--spacing-sm);
 }
 
 .login-link a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: var(--font-medium);
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: var(--font-medium);
 }
 
 .login-link a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
-/* ========== REGISTER MODAL SPECIFIC ========== */
 .form-fields {
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    margin: 0 0 var(--spacing-md) 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin: 0 0 var(--spacing-md) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 .form-fields legend {
-    font-weight: var(--font-semibold);
-    color: var(--gray-dark);
-    padding: 0 10px;
-    font-size: var(--font-sm);
-    width: auto;
+  font-weight: var(--font-semibold);
+  color: var(--gray-dark);
+  padding: 0 10px;
+  font-size: var(--font-sm);
+  width: auto;
 }
 
 .user-type {
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
 .user-type legend {
-    font-weight: var(--font-semibold);
-    color: var(--gray-dark);
-    padding: 0 10px;
-    font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+  color: var(--gray-dark);
+  padding: 0 10px;
+  font-size: var(--font-sm);
 }
 
 .radio-buttons {
-    display: flex;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
 }
 
 .radio-buttons input[type="radio"] {
-    opacity: 0;
-    position: fixed;
-    width: 0;
+  opacity: 0;
+  position: fixed;
+  width: 0;
 }
 
 .radio-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    background-color: var(--gray-bg-light);
-    padding: 10px 14px;
-    border: 2px solid var(--border-light);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-size: var(--font-sm);
-    font-weight: var(--font-medium);
-    text-align: center;
-    flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  background-color: var(--gray-bg-light);
+  padding: 10px 14px;
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  text-align: center;
+  flex: 1;
 }
 
 .radio {
-    background-color: var(--white);
-    border-color: var(--border-medium);
-    color: var(--gray-dark);
+  background-color: var(--white);
+  border-color: var(--border-medium);
+  color: var(--gray-dark);
 }
 
 .radio img {
-    width: 16px;
-    height: 16px;
-    filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(0%) brightness(95%);
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(0%) brightness(95%);
 }
 
 .radio-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .radio:hover {
-    background-color: var(--primary-fade);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+  background-color: var(--primary-fade);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .radio:hover img {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%);
+  filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg)
+    brightness(102%);
 }
 
 .radio-buttons input[type="radio"]:checked + .radio {
-    background-color: var(--primary-fade);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+  background-color: var(--primary-fade);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .radio-buttons input[type="radio"]:checked + .radio img {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%);
+  filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg)
+    brightness(102%);
 }
 
 .user-type.error {
-    animation: shakeError 0.4s ease;
-    border-color: var(--error);
+  border-color: var(--error);
 }
 
-/* ========== ANIMATIONS ========== */
-@keyframes shakeError {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-    20%, 40%, 60%, 80% { transform: translateX(2px); }
-}
-
-/* ========== RESPONSIVE STYLES ========== */
 @media (max-width: 768px) {
-    .modal-content {
-        width: 92%;
-        padding: 22px 20px;
-        max-width: 380px;
-        max-height: 85vh;
-    }
-    
-    .modal-header h1 {
-        font-size: var(--font-xl);
-    }
-    
-    .modal-header p {
-        font-size: var(--font-sm);
-    }
-    
-    .form-fields,
-    .user-type {
-        padding: var(--spacing-md);
-    }
-    
-    .radio-buttons {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-    }
-    
-    .radio-btn {
-        padding: 8px 12px;
-    }
-    
-    .input-group input,
-    .password-field-wrapper input {
-        height: 44px;
-        padding: 10px 12px;
-    }
-    
-    .password-field-wrapper input {
-        padding-right: 40px;
-    }
-    
-    .submit-btn {
-        height: 44px;
-        padding: 10px;
-    }
-    
+  .modal-content {
+    width: 92%;
+    padding: 22px 20px;
+    max-width: 380px;
+    max-height: 85vh;
+  }
+
+  .modal-header h1 {
+    font-size: var(--font-xl);
+  }
+
+  .radio-buttons {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .input-group input,
+  .password-field-wrapper input {
+    height: 44px;
+    padding: 10px 12px;
+  }
+
+  .submit-btn {
+    height: 44px;
+    padding: 10px;
+  }
 }
 
 @media (max-width: 480px) {
-    .modal-content {
-        padding: 18px 16px;
-        width: 95%;
-        max-height: 90vh;
-    }
-    
-    .modal-header {
-        margin-bottom: var(--spacing-md);
-    }
-    
-    .modal-header h1 {
-        font-size: var(--font-lg);
-    }
-    
-    .form-fields,
-    .user-type {
-        padding: 10px;
-    }
-    
-    .form-fields legend,
-    .user-type legend {
-        font-size: var(--font-sm);
-    }
-    
-    .input-group label {
-        font-size: var(--font-sm);
-    }
-    
-    .input-group input,
-    .password-field-wrapper input {
-        padding: 8px 10px;
-        font-size: var(--font-sm);
-        height: 42px;
-    }
-    
-    .submit-btn {
-        padding: 10px;
-        height: 42px;
-    }
-    
-    .radio-btn {
-        padding: 7px 10px;
-        font-size: var(--font-sm);
-    }
-    
-    .error-container .error-message {
-        font-size: var(--font-xs);
-    }
+  .modal-content {
+    padding: 18px 16px;
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .modal-header {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .modal-header h1 {
+    font-size: var(--font-lg);
+  }
+
+  .form-fields,
+  .user-type {
+    padding: 10px;
+  }
+
+  .input-group input,
+  .password-field-wrapper input {
+    padding: 8px 10px;
+    font-size: var(--font-sm);
+    height: 42px;
+  }
+
+  .submit-btn {
+    padding: 10px;
+    height: 42px;
+  }
+
+  .radio-btn {
+    padding: 7px 10px;
+    font-size: var(--font-sm);
+  }
 }

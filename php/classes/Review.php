@@ -1,48 +1,22 @@
 <?php
+
 /**
  * ConsuTrade - Review
  *
  * Domain class representing a buyer's review of a seller.
  *
- * @author     Kamogelo Phale
- * @module     ITECA3-12 Web Development and e-Commerce
- * @institution Eduvos
- * @version    2.0.0
- * @since      2026
- *
- * References:
- * - Pressman, R.S. and Maxim, B.R., 2015. Software Engineering:
- *   A Practitioner's Approach. 8th ed. McGraw-Hill.
- * - Dennis, A., Wixom, B.H. and Tegarden, D., 2015. Systems Analysis
- *   and Design: An Object-Oriented Approach with UML. 6th ed.
- *   John Wiley and Sons.
- * - PHP Group, 2025. Classes and Objects. Available at:
- *   https://www.php.net/manual/en/language.oop5.php
- * - PHP-FIG, 2023. PSR-12: Extended Coding Style. Available at:
- *   https://www.php.fig.org/psr/psr-12/
+ * @author Kamogelo Phale
+ * @version 2.0.0
  */
 
 class Review
 {
-    /** @var int */
     private $reviewId;
-
-    /** @var int */
     private $buyerId;
-
-    /** @var int */
     private $sellerId;
-
-    /** @var int */
     private $orderId;
-
-    /** @var int */
     private $rating;
-
-    /** @var string */
     private $comment;
-
-    /** @var string */
     private $createdAt;
 
     /**
@@ -50,7 +24,7 @@ class Review
      *
      * @param array $data Associative array of review data from the database
      */
-    public function __construct(array $data)
+    public function __construct($data)
     {
         $this->reviewId  = (int) ($data['review_id']  ?? 0);
         $this->buyerId   = (int) ($data['buyer_id']   ?? 0);
@@ -66,9 +40,39 @@ class Review
      *
      * @return int
      */
-    public function getReviewId(): int
+    public function getReviewId()
     {
         return $this->reviewId;
+    }
+
+    /**
+     * Returns the buyer ID.
+     *
+     * @return int
+     */
+    public function getBuyerId()
+    {
+        return $this->buyerId;
+    }
+
+    /**
+     * Returns the seller ID.
+     *
+     * @return int
+     */
+    public function getSellerId()
+    {
+        return $this->sellerId;
+    }
+
+    /**
+     * Returns the order ID.
+     *
+     * @return int
+     */
+    public function getOrderId()
+    {
+        return $this->orderId;
     }
 
     /**
@@ -76,7 +80,7 @@ class Review
      *
      * @return int
      */
-    public function getRating(): int
+    public function getRating()
     {
         return $this->rating;
     }
@@ -86,8 +90,57 @@ class Review
      *
      * @return string
      */
-    public function getComment(): string
+    public function getComment()
     {
         return $this->comment;
+    }
+
+    /**
+     * Returns the creation timestamp.
+     *
+     * @return string
+     */
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * Returns formatted creation date.
+     *
+     * @param string $format
+     * @return string
+     */
+    public function getFormattedCreatedAt($format = 'd M Y, H:i')
+    {
+        return date($format, strtotime($this->createdAt));
+    }
+
+    /**
+     * Returns star rating as HTML.
+     *
+     * @return string
+     */
+    public function getStarRatingHtml()
+    {
+        $html = '';
+        for ($i = 1; $i <= 5; $i++) {
+            if ($i <= $this->rating) {
+                $html .= '<span class="star filled">★</span>';
+            } else {
+                $html .= '<span class="star">☆</span>';
+            }
+        }
+        return $html;
+    }
+
+    /**
+     * Returns rating as a percentage (for star width CSS).
+     *
+     * @return float
+     */
+    public function getRatingPercentage()
+    {
+        return ($this->rating / 5) * 100;
     }
 }

@@ -1,11 +1,5 @@
-/**
- * ConsuTrade - Main Stylesheet
- * Author: Kamogelo Phale
- * 
- * This file imports all specialized CSS files
- */
+/* Main Stylesheet - Imports all CSS files */
 
-/* ========== IMPORTS ========== */
 @import url("variables.css");
 @import url("reset.css");
 @import url("layout.css");
@@ -15,8 +9,6 @@
 @import url("forms.css");
 @import url("animations.css");
 @import url("responsive.css");
-
-/* ========== BASE STYLES (Not covered by other files) ========== */
 
 /* Font Face declarations */
 @font-face {
@@ -40,7 +32,6 @@
   box-sizing: border-box;
 }
 
-/* Body structure */
 html,
 body {
   height: 100%;
@@ -70,7 +61,6 @@ footer {
   }
 }
 
-/* Flash Message */
 .flash-message {
   background: var(--success-light);
   border-left: 4px solid var(--success);
@@ -82,7 +72,6 @@ footer {
   font-weight: var(--font-medium);
 }
 
-/* Error & Loading States */
 .error-message {
   background: var(--error-light);
   color: var(--error);
@@ -91,35 +80,4 @@ footer {
   margin-bottom: var(--spacing-lg);
   text-align: center;
   border-left: 4px solid var(--error);
-}
-
-.loading-spinner {
-  text-align: center;
-  padding: 60px;
-  color: var(--gray-medium);
-  font-size: var(--font-md);
-  grid-column: 1 / -1;
-}
-
-.loading-spinner::before {
-  content: "";
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  margin-right: var(--spacing-sm);
-  border: 2px solid var(--border-light);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  vertical-align: middle;
-}
-
-.error {
-  text-align: center;
-  padding: 40px;
-  color: var(--error);
-  background-color: var(--error-light);
-  border-radius: var(--radius-md);
-  font-size: var(--font-md);
-  grid-column: 1 / -1;
 }

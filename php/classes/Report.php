@@ -7,47 +7,27 @@
  *
  * @author Kamogelo Phale
  * @version 1.0.0
- * @since 2026
  */
 
 class Report
 {
-    /** @var int Report ID */
-    private int $reportId;
-
-    /** @var int Product ID being reported */
-    private int $productId;
-
-    /** @var int User ID of the reporter (buyer) */
-    private int $reporterId;
-
-    /** @var string Report reason (fake_product, wrong_description, counterfeit, scam, other) */
-    private string $reason;
-
-    /** @var string|null Additional description */
-    private ?string $description;
-
-    /** @var string Report status (pending, reviewed, dismissed, action_taken) */
-    private string $status;
-
-    /** @var string|null Admin notes about the report */
-    private ?string $adminNotes;
-
-    /** @var string Creation timestamp */
-    private string $createdAt;
-
-    /** @var string|null Review timestamp */
-    private ?string $reviewedAt;
-
-    /** @var int|null Admin user ID who reviewed the report */
-    private ?int $reviewedBy;
+    private $reportId;
+    private $productId;
+    private $reporterId;
+    private $reason;
+    private $description;
+    private $status;
+    private $adminNotes;
+    private $createdAt;
+    private $reviewedAt;
+    private $reviewedBy;
 
     /**
      * Constructor.
      *
      * @param array $data Associative array of report data from the database
      */
-    public function __construct(array $data)
+    public function __construct($data)
     {
         $this->reportId = (int) ($data['report_id'] ?? 0);
         $this->productId = (int) ($data['product_id'] ?? 0);
@@ -65,42 +45,22 @@ class Report
     //  GETTERS
     // ============================================================
 
-    /**
-     * Returns the report ID.
-     *
-     * @return int
-     */
-    public function getReportId(): int
+    public function getReportId()
     {
         return $this->reportId;
     }
 
-    /**
-     * Returns the product ID.
-     *
-     * @return int
-     */
-    public function getProductId(): int
+    public function getProductId()
     {
         return $this->productId;
     }
 
-    /**
-     * Returns the reporter user ID.
-     *
-     * @return int
-     */
-    public function getReporterId(): int
+    public function getReporterId()
     {
         return $this->reporterId;
     }
 
-    /**
-     * Returns the report reason.
-     *
-     * @return string
-     */
-    public function getReason(): string
+    public function getReason()
     {
         return $this->reason;
     }
@@ -110,7 +70,7 @@ class Report
      *
      * @return string
      */
-    public function getReasonLabel(): string
+    public function getReasonLabel()
     {
         $labels = [
             'fake_product' => 'Fake Product',
@@ -122,22 +82,12 @@ class Report
         return $labels[$this->reason] ?? ucfirst(str_replace('_', ' ', $this->reason));
     }
 
-    /**
-     * Returns the report description.
-     *
-     * @return string|null
-     */
-    public function getDescription(): ?string
+    public function getDescription()
     {
         return $this->description;
     }
 
-    /**
-     * Returns the report status.
-     *
-     * @return string
-     */
-    public function getStatus(): string
+    public function getStatus()
     {
         return $this->status;
     }
@@ -147,7 +97,7 @@ class Report
      *
      * @return string
      */
-    public function getStatusLabel(): string
+    public function getStatusLabel()
     {
         $labels = [
             'pending' => 'Pending Review',
@@ -163,33 +113,23 @@ class Report
      *
      * @return string
      */
-    public function getStatusClass(): string
+    public function getStatusClass()
     {
-        return match ($this->status) {
+        $classes = [
             'pending' => 'status-pending',
             'reviewed' => 'status-reviewed',
             'dismissed' => 'status-dismissed',
-            'action_taken' => 'status-action-taken',
-            default => ''
-        };
+            'action_taken' => 'status-action-taken'
+        ];
+        return $classes[$this->status] ?? '';
     }
 
-    /**
-     * Returns admin notes.
-     *
-     * @return string|null
-     */
-    public function getAdminNotes(): ?string
+    public function getAdminNotes()
     {
         return $this->adminNotes;
     }
 
-    /**
-     * Returns creation timestamp.
-     *
-     * @return string
-     */
-    public function getCreatedAt(): string
+    public function getCreatedAt()
     {
         return $this->createdAt;
     }
@@ -197,20 +137,15 @@ class Report
     /**
      * Returns formatted creation date.
      *
-     * @param string $format Date format (default: 'd M Y, H:i')
+     * @param string $format Date format
      * @return string
      */
-    public function getFormattedCreatedAt(string $format = 'd M Y, H:i'): string
+    public function getFormattedCreatedAt($format = 'd M Y, H:i')
     {
         return date($format, strtotime($this->createdAt));
     }
 
-    /**
-     * Returns review timestamp.
-     *
-     * @return string|null
-     */
-    public function getReviewedAt(): ?string
+    public function getReviewedAt()
     {
         return $this->reviewedAt;
     }
@@ -218,35 +153,24 @@ class Report
     /**
      * Returns formatted review date.
      *
-     * @param string $format Date format (default: 'd M Y, H:i')
+     * @param string $format Date format
      * @return string|null
      */
-    public function getFormattedReviewedAt(string $format = 'd M Y, H:i'): ?string
+    public function getFormattedReviewedAt($format = 'd M Y, H:i')
     {
         return $this->reviewedAt ? date($format, strtotime($this->reviewedAt)) : null;
     }
 
-    /**
-     * Returns the admin user ID who reviewed the report.
-     *
-     * @return int|null
-     */
-    public function getReviewedBy(): ?int
+    public function getReviewedBy()
     {
         return $this->reviewedBy;
     }
 
     // ============================================================
-    //  SETTERS (for business logic)
+    //  SETTERS
     // ============================================================
 
-    /**
-     * Sets the report status.
-     *
-     * @param string $status New status
-     * @return void
-     */
-    public function setStatus(string $status): void
+    public function setStatus($status)
     {
         $validStatuses = ['pending', 'reviewed', 'dismissed', 'action_taken'];
         if (in_array($status, $validStatuses)) {
@@ -254,24 +178,12 @@ class Report
         }
     }
 
-    /**
-     * Sets admin notes.
-     *
-     * @param string|null $notes Admin notes
-     * @return void
-     */
-    public function setAdminNotes(?string $notes): void
+    public function setAdminNotes($notes)
     {
         $this->adminNotes = $notes;
     }
 
-    /**
-     * Sets the review timestamp and reviewer.
-     *
-     * @param int $adminId Admin user ID
-     * @return void
-     */
-    public function markAsReviewed(int $adminId): void
+    public function markAsReviewed($adminId)
     {
         $this->reviewedAt = date('Y-m-d H:i:s');
         $this->reviewedBy = $adminId;
@@ -281,42 +193,22 @@ class Report
     //  BUSINESS LOGIC METHODS
     // ============================================================
 
-    /**
-     * Checks if the report is still pending.
-     *
-     * @return bool
-     */
-    public function isPending(): bool
+    public function isPending()
     {
         return $this->status === 'pending';
     }
 
-    /**
-     * Checks if the report has been dismissed.
-     *
-     * @return bool
-     */
-    public function isDismissed(): bool
+    public function isDismissed()
     {
         return $this->status === 'dismissed';
     }
 
-    /**
-     * Checks if action has been taken on this report.
-     *
-     * @return bool
-     */
-    public function isActionTaken(): bool
+    public function isActionTaken()
     {
         return $this->status === 'action_taken';
     }
 
-    /**
-     * Checks if the report has been reviewed.
-     *
-     * @return bool
-     */
-    public function isReviewed(): bool
+    public function isReviewed()
     {
         return in_array($this->status, ['reviewed', 'dismissed', 'action_taken']);
     }
@@ -327,7 +219,7 @@ class Report
      *
      * @return bool
      */
-    public function isSeriousViolation(): bool
+    public function isSeriousViolation()
     {
         return in_array($this->reason, ['fake_product', 'counterfeit', 'scam']);
     }
@@ -339,7 +231,7 @@ class Report
      * @param string|null $notes Admin notes
      * @return void
      */
-    public function dismiss(int $adminId, ?string $notes = null): void
+    public function dismiss($adminId, $notes = null)
     {
         $this->status = 'dismissed';
         $this->adminNotes = $notes;
@@ -353,7 +245,7 @@ class Report
      * @param string|null $notes Admin notes
      * @return void
      */
-    public function markActionTaken(int $adminId, ?string $notes = null): void
+    public function markActionTaken($adminId, $notes = null)
     {
         $this->status = 'action_taken';
         $this->adminNotes = $notes;
@@ -365,11 +257,11 @@ class Report
     // ============================================================
 
     /**
-     * Exports report data as array for API responses.
+     * Exports report data as array.
      *
-     * @return array<string, mixed>
+     * @return array
      */
-    public function toArray(): array
+    public function toArray()
     {
         return [
             'report_id' => $this->reportId,
@@ -393,12 +285,12 @@ class Report
     }
 
     /**
-     * Exports report with related data (product, reporter, seller) for admin view.
+     * Exports report with related data for admin view.
      *
-     * @param array $extraData Additional data like product_title, seller_name, etc.
-     * @return array<string, mixed>
+     * @param array $extraData Additional data
+     * @return array
      */
-    public function toAdminArray(array $extraData = []): array
+    public function toAdminArray($extraData = [])
     {
         return array_merge($this->toArray(), $extraData);
     }
