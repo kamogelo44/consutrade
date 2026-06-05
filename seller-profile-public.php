@@ -57,7 +57,7 @@ if ($from_product_id > 0 && $from_product_name) {
     <meta name="description" content="View products and reviews from <?php echo htmlspecialchars($seller->getFullName()); ?> on ConsuTrade">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== PUBLIC SELLER PROFILE STYLES ========== */
+        /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
         .public-seller-profile-container {
             width: 100%;
             max-width: 100%;
@@ -65,6 +65,7 @@ if ($from_product_id > 0 && $from_product_name) {
             min-height: calc(100vh - 200px);
         }
 
+        /* Seller Header - Unique to this page */
         .seller-public-header {
             display: flex;
             align-items: center;
@@ -113,6 +114,7 @@ if ($from_product_id > 0 && $from_product_name) {
             margin-bottom: var(--spacing-sm);
         }
 
+        /* Badge variants - slightly different from components (white text) */
         .verified-badge,
         .unverified-badge {
             display: inline-flex;
@@ -163,6 +165,7 @@ if ($from_product_id > 0 && $from_product_name) {
             filter: brightness(0) invert(1);
         }
 
+        /* Stats Cards - Unique to this page */
         .seller-public-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -215,6 +218,7 @@ if ($from_product_id > 0 && $from_product_name) {
             margin-top: var(--spacing-sm);
         }
 
+        /* Products Section Header */
         .seller-public-products {
             width: 100%;
         }
@@ -233,120 +237,6 @@ if ($from_product_id > 0 && $from_product_name) {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: var(--spacing-lg);
-        }
-
-        .seller-info {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .seller-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            overflow: hidden;
-            background: var(--gray-bg);
-            flex-shrink: 0;
-        }
-
-        .seller-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .seller-details {
-            flex: 1;
-        }
-
-        .seller-name {
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-            color: var(--gray-dark);
-        }
-
-        .location {
-            font-size: 10px;
-            color: var(--gray-light);
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .verified-badge-card,
-        .unverified-badge-card {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: var(--radius-round);
-            font-size: 9px;
-            font-weight: var(--font-medium);
-        }
-
-        .verified-badge-card {
-            background: var(--success-light);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .unverified-badge-card {
-            background: var(--warning-light);
-            color: var(--warning);
-            border: 1px solid var(--warning);
-        }
-
-        .add-to-cart-btn {
-            width: 100%;
-            padding: 10px;
-            background: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: var(--radius-md);
-            font-size: var(--font-sm);
-            font-weight: var(--font-bold);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-xs);
-            transition: all var(--transition-fast);
-            margin-top: var(--spacing-sm);
-        }
-
-        .add-to-cart-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .out-of-stock-btn {
-            width: 100%;
-            padding: 10px;
-            background: #ccc;
-            color: #666;
-            border: none;
-            border-radius: var(--radius-md);
-            font-size: var(--font-sm);
-            cursor: not-allowed;
-            margin-top: var(--spacing-sm);
-        }
-
-        .payment-badge {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: var(--spacing-xs);
-            margin-top: var(--spacing-sm);
-            font-size: 9px;
-            color: var(--gray-light);
-        }
-
-        .payment-badge img {
-            height: 14px;
-            width: auto;
         }
 
         /* Reviews Section */
@@ -419,21 +309,6 @@ if ($from_product_id > 0 && $from_product_name) {
             color: var(--dark-bg);
         }
 
-        .review-stars {
-            display: flex;
-            gap: 2px;
-            margin-top: 4px;
-        }
-
-        .review-stars .star {
-            color: #ffc107;
-            font-size: var(--font-base);
-        }
-
-        .review-stars .star.empty {
-            color: #ddd;
-        }
-
         .review-date {
             font-size: var(--font-xs);
             color: var(--gray-light);
@@ -444,22 +319,6 @@ if ($from_product_id > 0 && $from_product_name) {
             line-height: 1.5;
             color: var(--gray-dark);
             margin-top: var(--spacing-md);
-        }
-
-        .empty-reviews,
-        .no-products {
-            text-align: center;
-            padding: var(--spacing-2xl);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            color: var(--gray-medium);
-        }
-
-        .empty-reviews img,
-        .no-products img {
-            opacity: 0.5;
-            margin-bottom: var(--spacing-lg);
         }
 
         /* Responsive */
@@ -575,9 +434,10 @@ if ($from_product_id > 0 && $from_product_name) {
                         ?>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <div class="no-products">
+                    <div class="empty-state">
                         <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
-                        <p>This seller has no products yet.</p>
+                        <h3>No Products Yet</h3>
+                        <p>This seller has no products available at the moment.</p>
                     </div>
                 <?php endif; ?>
             </div>
@@ -608,9 +468,10 @@ if ($from_product_id > 0 && $from_product_name) {
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <div class="empty-reviews">
+                <div class="empty-state">
                     <img src="<?php echo $baseUrl; ?>images/icons/comment-svgrepo-com.svg" width="64" height="64" alt="No reviews">
-                    <p>No reviews yet for this seller.</p>
+                    <h3>No Reviews Yet</h3>
+                    <p>This seller hasn't received any reviews yet.</p>
                 </div>
             <?php endif; ?>
         </div>

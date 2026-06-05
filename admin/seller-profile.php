@@ -1304,7 +1304,6 @@ $verification = $currentUser->viewVerificationStatus();
         </div>
     </main>
 
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <script>
         var baseUrl = '<?php echo $baseUrl; ?>';
         var currentUserId = <?php echo $currentUser->getUserId(); ?>;
@@ -1312,20 +1311,6 @@ $verification = $currentUser->viewVerificationStatus();
         var isLoggedIn = true;
 
         $(function() {
-            function showMessage(message, isError) {
-                if (isError) {
-                    $('#errorMessage').text(message).show();
-                    setTimeout(function() {
-                        $('#errorMessage').fadeOut();
-                    }, 5000);
-                } else {
-                    $('#flashMessage').text(message).show();
-                    setTimeout(function() {
-                        $('#flashMessage').fadeOut();
-                    }, 5000);
-                }
-            }
-
             function loadSellerStats() {
                 $.ajax({
                     url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + currentUserId,
@@ -1335,8 +1320,9 @@ $verification = $currentUser->viewVerificationStatus();
                         if (data.success) {
                             $('#statProducts').text(data.total_products || 0);
                             $('#statSales').text(data.total_sales || 0);
-                            $('#statRevenue').text('R ' + (data.total_sales || 0).toFixed(2));
-                            $('#statRating').text('No reviews yet');
+                            $('#statRevenue').text('R ' + (data.total_revenue || 0).toFixed(2));
+                            var ratingText = data.avg_rating ? data.avg_rating.toFixed(1) + '/5' : 'No reviews yet';
+                            $('#statRating').text(ratingText);
                         }
                     },
                     error: function() {
@@ -1348,6 +1334,7 @@ $verification = $currentUser->viewVerificationStatus();
                 });
             }
 
+            // Profile image upload
             $('#profileImageUpload').on('change', function() {
                 var file = this.files[0];
                 if (file) {
@@ -1370,16 +1357,16 @@ $verification = $currentUser->viewVerificationStatus();
                         dataType: 'json',
                         success: function(data) {
                             if (data.success) {
-                                showMessage(data.message, false);
+                                showSuccessToast(data.message);
                             } else {
-                                showMessage(data.message, true);
+                                showErrorToast(data.message);
                                 setTimeout(function() {
                                     location.reload();
                                 }, 2000);
                             }
                         },
                         error: function() {
-                            showMessage('Error uploading image.', true);
+                            showErrorToast('Error uploading image.');
                         }
                     });
                 }
@@ -1390,6 +1377,7 @@ $verification = $currentUser->viewVerificationStatus();
                 $('#profileImageUpload').click();
             });
 
+            // Profile edit form
             $('#profileEditForm').on('submit', function(e) {
                 e.preventDefault();
                 var formData = new FormData(this);
@@ -1404,21 +1392,21 @@ $verification = $currentUser->viewVerificationStatus();
                     dataType: 'json',
                     success: function(data) {
                         if (data.success) {
-                            showMessage(data.message, false);
+                            showSuccessToast(data.message);
                         } else {
-                            showMessage(data.message, true);
+                            showErrorToast(data.message);
                         }
                     },
                     error: function() {
-                        showMessage('Error updating profile.', true);
+                        showErrorToast('Error updating profile.');
                     }
                 });
             });
 
+            // Verification form
             $('#verificationForm').on('submit', function(e) {
                 e.preventDefault();
                 var formData = new FormData(this);
-                var $msg = $('#verificationMessage');
 
                 $.ajax({
                     url: baseUrl + 'php/endpoints/upload-verification.php',
@@ -1428,18 +1416,17 @@ $verification = $currentUser->viewVerificationStatus();
                     contentType: false,
                     dataType: 'json',
                     success: function(data) {
-                        $msg.show().removeClass('flash-message error-message');
                         if (data.success) {
-                            $msg.addClass('flash-message').text(data.message);
+                            showSuccessToast(data.message);
                             setTimeout(function() {
                                 location.reload();
                             }, 2000);
                         } else {
-                            $msg.addClass('error-message').text(data.message);
+                            showErrorToast(data.message);
                         }
                     },
                     error: function() {
-                        $msg.show().addClass('error-message').text('Could not upload document.');
+                        showErrorToast('Could not upload document.');
                     }
                 });
             });

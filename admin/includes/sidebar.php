@@ -48,7 +48,6 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
                 <li><a href="<?php echo $baseUrl; ?>admin/users.php" class="<?php echo $current_file == 'users.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users"> Users</a></li>
                 <li><a href="<?php echo $baseUrl; ?>admin/all-products.php" class="<?php echo $current_file == 'all-products.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products"> All Products</a></li>
                 <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php" class="<?php echo $current_file == 'all-orders.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders"> All Orders</a></li>
-                <!-- NEW: Flagged Listings Link -->
                 <li><a href="<?php echo $baseUrl; ?>admin/flagged-listings.php" class="<?php echo $current_file == 'flagged-listings.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" alt="Flagged"> Flagged Listings</a></li>
             <?php else: ?>
                 <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="<?php echo $current_file == 'seller-dashboard.php' ? 'active' : ''; ?>"><img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard"> Dashboard</a></li>

@@ -35,6 +35,69 @@
   color: var(--error);
 }
 
+/* ========== REVIEW STARS COMPONENT ========== */
+.review-stars {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.review-stars .star {
+  color: #ffc107;
+  font-size: var(--font-base);
+}
+
+.review-stars .star.empty {
+  color: #ddd;
+}
+
+.star {
+  font-size: 30px;
+  color: #ffc107;
+  display: inline-block;
+}
+
+.star.empty {
+  color: #ddd;
+}
+
+/* Large Stars for Ratings Modals */
+.rating-stars-large {
+  display: flex;
+  gap: 4px;
+}
+
+.rating-stars-large .star {
+  font-size: 24px;
+  color: #ffc107;
+}
+
+.rating-stars-large .star.empty {
+  color: #ddd;
+}
+
+/* Interactive Rating Stars (for review forms) */
+.rating-stars {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.rating-stars .star {
+  font-size: 32px;
+  color: #ddd;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.rating-stars .star:hover {
+  transform: scale(1.1);
+}
+
+.rating-stars .star.active {
+  color: #ffc107;
+}
+
 /* Filter Bar */
 .filters-bar {
   display: flex;

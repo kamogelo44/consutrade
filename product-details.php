@@ -41,7 +41,7 @@ $breadcrumbItems = [
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
 
     <style>
-        /* ========== PRODUCT DETAILS PAGE SPECIFIC STYLES ========== */
+        /* ========== PRODUCT DETAILS PAGE SPECIFIC STYLES ONLY ========== */
         .product-details-main {
             width: 100%;
             max-width: 1400px;
@@ -53,7 +53,7 @@ $breadcrumbItems = [
             width: 100%;
         }
 
-        /* Product Images Gallery */
+        /* Product Images Gallery - Unique to product details */
         .top-items {
             display: flex;
             justify-content: space-between;
@@ -120,7 +120,7 @@ $breadcrumbItems = [
             object-fit: cover;
         }
 
-        /* Product Info Section */
+        /* Product Info Section - Unique layout */
         .product-info {
             display: flex;
             flex-direction: column;
@@ -186,7 +186,7 @@ $breadcrumbItems = [
             gap: var(--spacing-sm);
         }
 
-        /* Seller Reviews Section */
+        /* Seller Reviews Section - Unique to product details */
         .rev-container {
             display: flex;
             flex-direction: column;
@@ -266,17 +266,6 @@ $breadcrumbItems = [
             font-weight: var(--font-bold);
             margin-bottom: var(--spacing-sm);
             color: var(--dark-bg);
-        }
-
-        .star {
-            font-size: 30px;
-            color: #ffc107;
-            cursor: pointer;
-            display: inline-block;
-        }
-
-        .star.empty {
-            color: var(--border-light);
         }
 
         .view-profile {
@@ -406,7 +395,7 @@ $breadcrumbItems = [
             width: auto;
         }
 
-        /* Report Modal */
+        /* Report Modal - Unique to product details */
         .report-modal .modal-content {
             max-width: 500px;
         }
@@ -433,30 +422,6 @@ $breadcrumbItems = [
             border: 1px solid var(--border-medium);
             border-radius: var(--radius-md);
             font-size: var(--font-md);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            font-weight: var(--font-normal);
-            cursor: pointer;
-            color: var(--gray-light);
-            line-height: 1;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--radius-round);
-            transition: all var(--transition-fast);
-        }
-
-        .modal-close:hover {
-            color: var(--error);
-            background-color: var(--error-light);
-            transform: rotate(90deg);
         }
 
         /* Responsive */

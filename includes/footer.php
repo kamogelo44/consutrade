@@ -4,7 +4,6 @@
  * Author: Kamogelo Phale
  * 
  * Includes global JavaScript variables and scripts
- * Uses modular components for cart display
  */
 ?>
 <footer class="site-footer">
@@ -58,101 +57,35 @@
 
 <!-- GLOBAL JAVASCRIPT VARIABLES -->
 <script>
-    // Global variables accessible from any script
+    // global vars for javascript - set from php session
     var baseUrl = '<?php echo $baseUrl; ?>';
     var currentUserId = <?php echo isset($currentUser) ? $currentUser->getUserId() : 0; ?>;
     var currentUserRole = '<?php echo isset($currentUser) ? $currentUser->getRole() : ''; ?>';
     var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
-    var cartCountInitial = <?php echo ($isLoggedIn && isset($currentUser) && $currentUser instanceof Buyer) ? ($_SESSION['cart_count'] ?? 0) : 0; ?>;
 </script>
 
 <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 <script src="<?php echo $baseUrl; ?>js/main.js"></script>
 
-<script>
-    // ========== CART COUNT DISPLAY (Using cached elements) ==========
-    var $cartCountElements = null;
-    var $mobileCartCount = null;
-
-    function cacheFooterElements() {
-        $cartCountElements = $('.cart-badge, .cart-count');
-        $mobileCartCount = $('.mobile-cart-count');
-    }
-
-    function updateCartCountDisplay() {
-        cacheFooterElements();
-
-        $.ajax({
-            url: baseUrl + 'php/endpoints/get-cart.php',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    var count = parseInt(response.item_count) || 0;
-                    if ($cartCountElements.length) {
-                        $cartCountElements.text(count);
-                    }
-                    if ($mobileCartCount.length) {
-                        $mobileCartCount.text(count);
-                    }
-                    if (window.sessionStorage) {
-                        sessionStorage.setItem('cart_count', count);
-                    }
-                }
-            },
-            error: function() {
-                if ($cartCountElements.length) {
-                    $cartCountElements.text('0');
-                }
-                if ($mobileCartCount.length) {
-                    $mobileCartCount.text('0');
-                }
-            }
-        });
-    }
-
-    function loadCachedCartCount() {
-        cacheFooterElements();
-
-        if (window.sessionStorage) {
-            var cachedCount = parseInt(sessionStorage.getItem('cart_count'));
-            if (!isNaN(cachedCount)) {
-                if ($cartCountElements.length) {
-                    $cartCountElements.text(cachedCount);
-                }
-                if ($mobileCartCount.length) {
-                    $mobileCartCount.text(cachedCount);
-                }
-            }
-        }
-    }
-
-    $(function() {
-        cacheFooterElements();
-
-        if (typeof cartCountInitial !== 'undefined' && cartCountInitial > 0) {
-            if ($cartCountElements.length) {
-                $cartCountElements.text(cartCountInitial);
-            }
-            if ($mobileCartCount.length) {
-                $mobileCartCount.text(cartCountInitial);
-            }
-        }
-
-        if (isLoggedIn && currentUserRole === 'buyer') {
-            updateCartCountDisplay();
-            loadCachedCartCount();
-        } else {
-            if ($cartCountElements.length) {
-                $cartCountElements.text('0');
-            }
-            if ($mobileCartCount.length) {
-                $mobileCartCount.text('0');
-            }
-        }
-    });
-</script>
-
 <?php if (isset($load_products_js) && $load_products_js): ?>
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 <?php endif; ?>
+
+<script>
+    // cart count initialization - only for buyers on main site
+    $(function() {
+        // only update cart if user is a buyer (sellers and guests don't need cart)
+        if (isLoggedIn && currentUserRole === 'buyer') {
+            // get cart count from server
+            $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
+                if (data.success) {
+                    var count = data.item_count || 0;
+                    $('.cart-badge, .cart-count, .mobile-cart-count').text(count);
+                }
+            });
+        } else {
+            // non-buyers see zero
+            $('.cart-badge, .cart-count, .mobile-cart-count').text('0');
+        }
+    });
+</script>
