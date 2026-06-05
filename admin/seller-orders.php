@@ -30,9 +30,13 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Seller Orders - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+
+    <!-- CSS Imports - Using component-based architecture -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+
     <style>
+        /* Page-specific styles */
         .seller-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -376,6 +380,7 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             transition: all var(--transition-fast);
         }
 
+        /* Modal styles */
         .order-modal {
             display: none;
             position: fixed;
@@ -446,6 +451,7 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
             border-radius: 0 0 var(--radius-lg) var(--radius-lg);
         }
 
+        /* Order details inner styles */
         .order-info-section {
             margin-bottom: var(--spacing-lg);
         }
@@ -749,22 +755,15 @@ $orders = $orderRepo->getSellerOrders($seller_id, $status_filter, $search_term);
         }
 
         function handleStatusUpdates() {
-            // Process button (pending -> processing)
             $processBtns.off('click').on('click', function() {
                 updateOrderStatus($(this).data('order-id'), 'processing');
             });
-
-            // Ship button (processing -> shipped)
             $shipBtns.off('click').on('click', function() {
                 updateOrderStatus($(this).data('order-id'), 'shipped');
             });
-
-            // Complete button (shipped -> completed)
             $completeBtns.off('click').on('click', function() {
                 updateOrderStatus($(this).data('order-id'), 'completed');
             });
-
-            // Cancel button
             $cancelBtns.off('click').on('click', function() {
                 updateOrderStatus($(this).data('order-id'), 'cancelled');
             });

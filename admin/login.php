@@ -23,16 +23,16 @@ if ($auth->isSeller()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Login - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <!-- Use main.css which imports all component styles -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script>
+        var baseUrl = '<?php echo rtrim($baseUrl, '/') . '/'; ?>';
+    </script>
+    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Page-specific layout - not in components */
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, var(--dark-bg) 0%, #2d2d2d 100%);
@@ -74,108 +74,6 @@ if ($auth->isSeller()) {
             font-size: var(--font-md);
         }
 
-        .login-error {
-            background: var(--error-light);
-            color: var(--error);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            text-align: center;
-            font-size: var(--font-sm);
-            border-left: 4px solid var(--error);
-            display: none;
-        }
-
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-lg);
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-xs);
-        }
-
-        .input-group label {
-            font-weight: var(--font-semibold);
-            color: var(--dark-bg);
-            font-size: var(--font-sm);
-        }
-
-        .input-group select,
-        .input-group input {
-            padding: 12px var(--spacing-md);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-            background: var(--white);
-            width: 100%;
-        }
-
-        .input-group select:focus,
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
-        }
-
-        .password-field-wrapper {
-            position: relative;
-        }
-
-        .password-field-wrapper input {
-            width: 100%;
-            padding-right: 45px;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            opacity: 0.6;
-        }
-
-        .toggle-password:hover {
-            opacity: 1;
-        }
-
-        .toggle-password img {
-            width: 18px;
-            height: 18px;
-        }
-
-        .login-btn {
-            background: var(--primary-color);
-            color: var(--white);
-            border: none;
-            padding: 14px;
-            border-radius: var(--radius-md);
-            font-size: var(--font-base);
-            font-weight: var(--font-bold);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            margin-top: var(--spacing-sm);
-            width: 100%;
-        }
-
-        .login-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .login-btn:disabled {
-            background: var(--gray-light);
-            cursor: not-allowed;
-            transform: none;
-        }
-
         .login-footer {
             text-align: center;
             margin-top: var(--spacing-xl);
@@ -213,80 +111,35 @@ if ($auth->isSeller()) {
                 <h1>Consu<span>Trade</span></h1>
                 <p>Dashboard Access</p>
             </div>
-            <div id="login-error" class="login-error"></div>
-            <form id="dashboard-login-form" class="login-form">
+            <div id="login-error-container" class="error-container" style="display: none;"></div>
+            <form id="login-form" class="login-form">
                 <div class="input-group">
-                    <label for="role_type">Login As</label>
-                    <select id="role_type" name="role_type" required>
+                    <label for="login-role">Login As</label>
+                    <select id="login-role" name="role_type" required>
                         <option value="admin">Administrator</option>
                         <option value="seller">Seller</option>
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" required autocomplete="email" autofocus>
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" name="email" placeholder="Enter your email" required autocomplete="email" autofocus>
                 </div>
                 <div class="input-group">
-                    <label for="password">Password</label>
+                    <label for="login-password">Password</label>
                     <div class="password-field-wrapper">
-                        <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                        <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
+                        <input type="password" id="login-password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('login-password', this)">
                             <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18" alt="Show password">
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="login-btn">Login to Dashboard</button>
+                <button type="submit" class="submit-btn">Login to Dashboard</button>
             </form>
             <div class="login-footer">
                 <a href="<?php echo $baseUrl; ?>index.php">← Back to Homepage</a>
             </div>
         </div>
     </div>
-
-    <script>
-        var baseUrl = '<?php echo rtrim($baseUrl, '/') . '/'; ?>';
-
-        $(function() {
-            $('#dashboard-login-form').on('submit', function(e) {
-                e.preventDefault();
-
-                var formData = $(this).serialize();
-                var $submitBtn = $(this).find('button[type="submit"]');
-                var originalText = $submitBtn.text();
-                var $errorDiv = $('#login-error');
-
-                $errorDiv.hide().empty();
-                $submitBtn.prop('disabled', true).text('Logging in...');
-
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/login.php',
-                    type: 'POST',
-                    data: formData,
-                    dataType: 'json',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            window.location.href = response.redirect;
-                        } else {
-                            $errorDiv.show().text(response.message);
-                            $submitBtn.prop('disabled', false).text(originalText);
-                        }
-                    },
-                    error: function(xhr) {
-                        var errorMsg = 'Login failed. Please try again.';
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            errorMsg = response.message || errorMsg;
-                        } catch (e) {}
-                        $errorDiv.show().text(errorMsg);
-                        $submitBtn.prop('disabled', false).text(originalText);
-                    }
-                });
-            });
-        });
-    </script>
 </body>
 
 </html>

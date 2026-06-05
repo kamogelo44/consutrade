@@ -1,35 +1,15 @@
-/*
- * ConsuTrade - Unified Dashboard JavaScript
- * Author: Kamogelo Phale
- * 
- * Handles both Admin and Seller dashboards
- * Includes shared modal functions for order details
- * 
- * Note: Relies on main.js for:
- *   - escapeHtml()
- *   - fixImageUrl()
- *   - showSuccessToast(), showErrorToast()
- *   - updateOrderStatus()
- *   - getStatusClass()
- *   - capitalizeFirst()
- */
+// dashboard.js - admin and seller dashboard functions
+// Author: Kamogelo Phale
 
-// ========== GLOBAL VARIABLES ==========
-/** @type {string} Base URL for the site */
 var baseUrl = baseUrl || '';
 
-// ========== PRODUCT MANAGEMENT FUNCTIONS ==========
+// ========== PRODUCT MANAGEMENT ==========
 
-/**
- * Toggle product status (suspend/activate)
- * @param {number} productId - Product ID
- * @param {string} currentStatus - Current status ('active' or 'suspended')
- * @param {function} callback - Optional callback function after success
- */
+// toggle product status (suspend/activate)
 window.toggleProductStatus = function(productId, currentStatus, callback) {
-    var newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-    var action = newStatus === 'active' ? 'activate' : 'suspend';
-    var confirmMsg = action === 'suspend' 
+    var newStatus = currentStatus == 'active' ? 'suspended' : 'active';
+    var action = newStatus == 'active' ? 'activate' : 'suspend';
+    var confirmMsg = action == 'suspend' 
         ? 'Suspend this product? It will be hidden from buyers.' 
         : 'Activate this product? It will be visible to buyers.';
     
@@ -37,9 +17,9 @@ window.toggleProductStatus = function(productId, currentStatus, callback) {
     
     var requestData = { product_id: productId, status: newStatus };
     
-    if (action === 'suspend') {
+    if (action == 'suspend') {
         var reason = prompt('Reason for suspension (optional):', '');
-        if (reason !== null && reason.trim() !== '') {
+        if (reason !== null && reason.trim() != '') {
             requestData.reason = reason.trim();
         }
     }
@@ -53,7 +33,7 @@ window.toggleProductStatus = function(productId, currentStatus, callback) {
         success: function(data) {
             if (data.success) {
                 showSuccessToast(data.message || 'Product status updated');
-                if (typeof callback === 'function') {
+                if (typeof callback == 'function') {
                     callback();
                 } else {
                     location.reload();
@@ -63,17 +43,12 @@ window.toggleProductStatus = function(productId, currentStatus, callback) {
             }
         },
         error: function() {
-            showErrorToast('Something went wrong');
+            alert('Something went wrong');
         }
     });
 };
 
-/**
- * Delete a product
- * @param {number} productId - Product ID
- * @param {string} productName - Product name for confirmation message
- * @param {function} callback - Optional callback function after success
- */
+// delete a product
 window.deleteProduct = function(productId, productName, callback) {
     var confirmMsg = productName 
         ? 'Delete "' + productName + '"? This action cannot be undone.'
@@ -89,7 +64,7 @@ window.deleteProduct = function(productId, productName, callback) {
             success: function(data) {
                 if (data.success) {
                     showSuccessToast(data.message || 'Product deleted successfully');
-                    if (typeof callback === 'function') {
+                    if (typeof callback == 'function') {
                         callback();
                     } else {
                         location.reload();
@@ -99,36 +74,27 @@ window.deleteProduct = function(productId, productName, callback) {
                 }
             },
             error: function() {
-                showErrorToast('Something went wrong');
+                alert('Something went wrong');
             }
         });
     }
 };
 
-// ========== SHARED MODAL FUNCTIONS (Wrappers for main.js) ==========
-
+// order action wrappers
 window.processOrder = function(orderId) { 
-    if (typeof updateOrderStatus === 'function') {
-        updateOrderStatus(orderId, 'processing');
-    }
+    updateOrderStatus(orderId, 'processing');
 };
 
 window.shipOrder = function(orderId) { 
-    if (typeof updateOrderStatus === 'function') {
-        updateOrderStatus(orderId, 'shipped');
-    }
+    updateOrderStatus(orderId, 'shipped');
 };
 
 window.completeOrder = function(orderId) { 
-    if (typeof updateOrderStatus === 'function') {
-        updateOrderStatus(orderId, 'completed');
-    }
+    updateOrderStatus(orderId, 'completed');
 };
 
 window.cancelOrder = function(orderId) { 
-    if (typeof updateOrderStatus === 'function') {
-        updateOrderStatus(orderId, 'cancelled');
-    }
+    updateOrderStatus(orderId, 'cancelled');
 };
 
 window.editProduct = function(productId) {
@@ -148,19 +114,14 @@ window.viewOrder = function(orderId) {
     }
 };
 
-// ========== SELLER PRODUCTS FUNCTION ==========
+// ========== SELLER PRODUCTS ==========
 
-var $listingsGrid = null;
-
-function cacheSellerElements() {
-    $listingsGrid = $('#listings-grid');
-}
-
+// load seller's products
 window.loadSellerProducts = function(limit) {
-    cacheSellerElements();
-    if (!$listingsGrid.length) return;
+    var $grid = $('#listings-grid');
+    if (!$grid.length) return;
     
-    $listingsGrid.html('<div class="loading-spinner">Loading your products...</div>');
+    $grid.html('<div class="loading-spinner">Loading your products...</div>');
     var url = baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + currentUserId;
     if (limit) url += '&limit=' + limit;
     
@@ -170,9 +131,28 @@ window.loadSellerProducts = function(limit) {
         dataType: 'json',
         success: function(data) {
             if (data.success && data.products && data.products.length) {
-                displaySellerProducts(data.products);
+                $grid.empty();
+                for (var i = 0; i < data.products.length; i++) {
+                    var product = data.products[i];
+                    var imagePath = fixImageUrl(product.display_image || product.image);
+                    var $card = $('<div>').addClass('product-card');
+                    $card.html(
+                        '<div class="product-image">' +
+                            '<img src="' + imagePath + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                        '</div>' +
+                        '<div class="product-details">' +
+                            '<h4 class="product-title">' + escapeHtml(product.name) + '</h4>' +
+                            '<p class="product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
+                            '<div class="product-actions">' +
+                                '<a href="edit-product.php?id=' + product.id + '" class="edit-btn">Edit</a>' +
+                                '<button class="delete-btn" onclick="deleteProduct(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', function() { location.reload(); })">Delete</button>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                    $grid.append($card);
+                }
             } else {
-                $listingsGrid.html(getEmptyStateHTML(
+                $grid.html(getEmptyStateHTML(
                     'product-catalog-svgrepo-com.svg',
                     'No products found',
                     'You haven\'t listed any products yet.',
@@ -182,36 +162,12 @@ window.loadSellerProducts = function(limit) {
             }
         },
         error: function() {
-            $listingsGrid.html('<div class="error-message"><p>Error loading products. Please refresh the page.</p></div>');
+            $grid.html('<div class="error-message"><p>Error loading products. Please refresh the page.</p></div>');
         }
     });
 };
 
-function displaySellerProducts(products) {
-    cacheSellerElements();
-    $listingsGrid.empty();
-    
-    $.each(products, function(i, product) {
-        var imagePath = fixImageUrl(product.display_image || product.image);
-        var $card = $('<div>').addClass('product-card');
-        $card.html(
-            '<div class="product-image">' +
-                '<img src="' + imagePath + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
-            '</div>' +
-            '<div class="product-details">' +
-                '<h4 class="product-title">' + escapeHtml(product.name) + '</h4>' +
-                '<p class="product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
-                '<div class="product-actions">' +
-                    '<a href="edit-product.php?id=' + product.id + '" class="edit-btn">Edit</a>' +
-                    '<button class="delete-btn" onclick="deleteProduct(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', function() { location.reload(); })">Delete</button>' +
-                '</div>' +
-            '</div>'
-        );
-        $listingsGrid.append($card);
-    });
-}
-
-// ========== ADMIN DASHBOARD FUNCTIONS ==========
+// ========== ADMIN DASHBOARD ==========
 
 function loadAdminStats() {
     $.ajax({
@@ -231,9 +187,6 @@ function loadAdminStats() {
 
 function loadFlaggedReportsCount() {
     var $flaggedReports = $('#flaggedReports');
-    var $flaggedReportsNotice = $('#flaggedReportsNotice');
-    var $flaggedReportsMessage = $('#flaggedReportsMessage');
-    
     if (!$flaggedReports.length) return;
     
     $.ajax({
@@ -246,12 +199,11 @@ function loadFlaggedReportsCount() {
                 var count = data.total || 0;
                 $flaggedReports.text(count);
                 
-                if ($flaggedReportsNotice.length && count > 0) {
-                    var message = count + ' product ' + (count === 1 ? 'report requires' : 'reports require') + ' your attention.';
-                    $flaggedReportsMessage.text(message);
-                    $flaggedReportsNotice.show();
-                } else if ($flaggedReportsNotice.length) {
-                    $flaggedReportsNotice.hide();
+                if (count > 0) {
+                    $('#flaggedReportsNotice').show();
+                    $('#flaggedReportsMessage').text(count + ' product ' + (count == 1 ? 'report requires' : 'reports require') + ' your attention.');
+                } else {
+                    $('#flaggedReportsNotice').hide();
                 }
             } else {
                 $flaggedReports.text('0');
@@ -265,8 +217,6 @@ function loadFlaggedReportsCount() {
 
 function loadPendingVerifications() {
     var $pendingVerifications = $('#pendingVerifications');
-    var $pendingNotice = $('#pendingNotice');
-    var $pendingMessage = $('#pendingMessage');
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-users.php?role=pending',
@@ -277,10 +227,10 @@ function loadPendingVerifications() {
                 var count = data.users ? data.users.length : 0;
                 $pendingVerifications.text(count);
                 if (count > 0) {
-                    if ($pendingNotice.length) $pendingNotice.show();
-                    if ($pendingMessage.length) $pendingMessage.html('<strong>' + count + '</strong> seller(s) waiting for document verification.');
+                    $('#pendingNotice').show();
+                    $('#pendingMessage').html('<strong>' + count + '</strong> seller(s) waiting for document verification.');
                 } else {
-                    if ($pendingNotice.length) $pendingNotice.hide();
+                    $('#pendingNotice').hide();
                 }
             }
         },
@@ -291,8 +241,8 @@ function loadPendingVerifications() {
 }
 
 function loadRecentUsers() {
-    var $recentUsersTable = $('#recent-users-table');
-    if (!$recentUsersTable.length) return;
+    var $table = $('#recent-users-table');
+    if (!$table.length) return;
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-users.php?recent=true',
@@ -300,10 +250,11 @@ function loadRecentUsers() {
         dataType: 'json',
         success: function(data) {
             if (data.success && data.users && data.users.length) {
-                $recentUsersTable.empty();
-                $.each(data.users, function(i, user) {
-                    var roleClass = user.role === 'admin' ? 'role-admin' : (user.role === 'seller' ? 'role-seller' : 'role-buyer');
-                    $recentUsersTable.append(
+                $table.empty();
+                for (var i = 0; i < data.users.length; i++) {
+                    var user = data.users[i];
+                    var roleClass = user.role == 'admin' ? 'role-admin' : (user.role == 'seller' ? 'role-seller' : 'role-buyer');
+                    $table.append(
                         '<tr>' +
                             '<td>' + escapeHtml(user.full_name) + '</td>' +
                             '<td>' + escapeHtml(user.email) + '</td>' +
@@ -311,21 +262,21 @@ function loadRecentUsers() {
                             '<td>' + escapeHtml(user.created_at) + '</td>' +
                         '</tr>'
                     );
-                });
+                }
             } else {
-                $recentUsersTable.html('<tr><td colspan="4" class="empty-cell">No users found</td></tr>');
+                $table.html('<tr><td colspan="4" class="empty-cell">No users found</td></tr>');
             }
         },
         error: function() {
-            $recentUsersTable.html('<tr><td colspan="4" class="error-cell">Error loading users</td></tr>');
+            $table.html('<tr><td colspan="4" class="error-cell">Error loading users</td></tr>');
         }
     });
 }
 
 function loadRecentOrders(limit) {
     limit = limit || 5;
-    var $recentOrdersTable = $('#recent-orders-table');
-    if (!$recentOrdersTable.length) return;
+    var $table = $('#recent-orders-table');
+    if (!$table.length) return;
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-recent-orders.php?limit=' + limit,
@@ -333,10 +284,11 @@ function loadRecentOrders(limit) {
         dataType: 'json',
         success: function(data) {
             if (data.success && data.orders && data.orders.length) {
-                $recentOrdersTable.empty();
-                $.each(data.orders, function(i, order) {
+                $table.empty();
+                for (var i = 0; i < data.orders.length; i++) {
+                    var order = data.orders[i];
                     var statusClass = getStatusClass(order.status);
-                    $recentOrdersTable.append(
+                    $table.append(
                         '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
                             '<td>#' + order.id + '</td>' +
                             '<td>' + escapeHtml(order.buyer_name) + '</td>' +
@@ -345,13 +297,13 @@ function loadRecentOrders(limit) {
                             '<td>' + escapeHtml(order.created_at) + '</td>' +
                         '</tr>'
                     );
-                });
+                }
             } else {
-                $recentOrdersTable.html('<tr><td colspan="5" class="empty-cell">No orders found</td></tr>');
+                $table.html('<tr><td colspan="5" class="empty-cell">No orders found</td></tr>');
             }
         },
         error: function() {
-            $recentOrdersTable.html('<tr><td colspan="5" class="error-cell">Error loading orders</td></tr>');
+            $table.html('<tr><td colspan="5" class="error-cell">Error loading orders</td></tr>');
         }
     });
 }
@@ -364,7 +316,7 @@ function loadAdminDashboard() {
     loadFlaggedReportsCount();
 }
 
-// ========== SELLER DASHBOARD FUNCTIONS ==========
+// ========== SELLER DASHBOARD ==========
 
 function loadSellerStats() {
     $.ajax({
@@ -383,8 +335,8 @@ function loadSellerStats() {
 
 function loadSellerRecentOrders(limit) {
     limit = limit || 5;
-    var $recentOrdersList = $('#recent-orders-list');
-    if (!$recentOrdersList.length) return;
+    var $list = $('#recent-orders-list');
+    if (!$list.length) return;
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-seller-recent-orders.php?limit=' + limit,
@@ -392,14 +344,15 @@ function loadSellerRecentOrders(limit) {
         dataType: 'json',
         success: function(data) {
             if (data.success && data.orders && data.orders.length > 0) {
-                $recentOrdersList.empty();
-                $.each(data.orders, function(i, order) {
+                $list.empty();
+                for (var i = 0; i < data.orders.length; i++) {
+                    var order = data.orders[i];
                     var statusClass = getStatusClass(order.status);
                     var productNames = order.product_names || '';
                     if (productNames.length > 40) {
                         productNames = productNames.substring(0, 37) + '...';
                     }
-                    $recentOrdersList.append(
+                    $list.append(
                         '<div class="order-item" onclick="viewOrder(' + order.id + ')">' +
                             '<div class="order-info">' +
                                 '<span class="order-number">#' + order.id + '</span>' +
@@ -415,9 +368,9 @@ function loadSellerRecentOrders(limit) {
                             '</div>' +
                         '</div>'
                     );
-                });
+                }
             } else {
-                $recentOrdersList.html(getEmptyStateHTML(
+                $list.html(getEmptyStateHTML(
                     'shopping-cart-01-svgrepo-com.svg',
                     'No recent orders',
                     'You haven\'t received any orders yet.',
@@ -427,29 +380,24 @@ function loadSellerRecentOrders(limit) {
             }
         },
         error: function() {
-            $recentOrdersList.html('<div class="error-message"><p>Error loading orders. Please refresh the page.</p></div>');
+            $list.html('<div class="error-message"><p>Error loading orders. Please refresh the page.</p></div>');
         }
     });
 }
 
 function loadSellerDashboard() {
     loadSellerStats();
-    if (typeof window.loadSellerProducts === 'function') {
-        window.loadSellerProducts(4);
-    }
+    window.loadSellerProducts(4);
     loadSellerRecentOrders(5);
 }
 
-// ========== MOBILE SIDEBAR TOGGLE ==========
+// ========== MOBILE SIDEBAR ==========
 
 function initMobileSidebar(prefix) {
     var $hamburger = $('#' + prefix + 'Hamburger');
     var $sideMenu = $('#' + prefix + 'SideMenu');
     var $overlay = $('#' + prefix + 'MenuOverlay');
     var $closeBtn = $('#' + prefix + 'SidebarClose');
-    var $sidebarNavLinks = $('.' + prefix + '-sidebar-nav a, .' + prefix + '-sidebar-link');
-    var $body = $('body');
-    var $window = $(window);
     
     if (!$hamburger.length || !$sideMenu.length) return;
     
@@ -457,50 +405,26 @@ function initMobileSidebar(prefix) {
         $sideMenu.addClass('active');
         if ($overlay.length) $overlay.addClass('active');
         $hamburger.css('opacity', '0').css('visibility', 'hidden');
-        $body.css('overflow', 'hidden');
+        $('body').css('overflow', 'hidden');
     }
     
     function closeSidebar() {
         $sideMenu.removeClass('active');
         if ($overlay.length) $overlay.removeClass('active');
         $hamburger.css('opacity', '1').css('visibility', 'visible');
-        $body.css('overflow', '');
+        $('body').css('overflow', '');
     }
     
     $hamburger.on('click', openSidebar);
     if ($closeBtn.length) $closeBtn.on('click', closeSidebar);
     if ($overlay.length) $overlay.on('click', closeSidebar);
     
-    $sidebarNavLinks.on('click', function() {
-        if ($window.width() <= 1024) closeSidebar();
+    $('.' + prefix + '-sidebar-nav a, .' + prefix + '-sidebar-link').on('click', function() {
+        if ($(window).width() <= 1024) closeSidebar();
     });
 }
 
-function initModalSidebarHandler() {
-    var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
-    var $sideMenu = $('#' + prefix + 'SideMenu');
-    var $menuOverlay = $('#' + prefix + 'MenuOverlay');
-    var $viewDetailsBtns = $('.view-details-btn, .view-btn, [data-modal-open]');
-    var $modalCloseBtns = $('.modal-close');
-    
-    $viewDetailsBtns.on('click', function() {
-        if ($sideMenu.hasClass('active')) {
-            $sideMenu.data('was-open', true);
-            $sideMenu.removeClass('active');
-            if ($menuOverlay.length) $menuOverlay.removeClass('active');
-        }
-    });
-    
-    $modalCloseBtns.on('click', function() {
-        if ($sideMenu.data('was-open') === true) {
-            $sideMenu.addClass('active');
-            if ($menuOverlay.length) $menuOverlay.addClass('active');
-            $sideMenu.removeData('was-open');
-        }
-    });
-}
-
-// ========== GALLERY IMAGE FUNCTIONS ==========
+// ========== GALLERY FUNCTIONS ==========
 
 function removeGalleryImage(imageId, productId) {
     if (!confirm('Remove this image from the gallery? This action cannot be undone.')) {
@@ -517,20 +441,14 @@ function removeGalleryImage(imageId, productId) {
             if (data.success) {
                 $galleryItem.fadeOut(300, function() {
                     $(this).remove();
-                    if (typeof showSuccessToast === 'function') {
-                        showSuccessToast('Image removed successfully');
-                    }
+                    showSuccessToast('Image removed successfully');
                 });
             } else {
-                if (typeof showErrorToast === 'function') {
-                    showErrorToast(data.message || 'Could not remove image');
-                }
+                showErrorToast(data.message || 'Could not remove image');
             }
         },
         error: function() {
-            if (typeof showErrorToast === 'function') {
-                showErrorToast('Something went wrong. Please try again.');
-            }
+            showErrorToast('Something went wrong. Please try again.');
         }
     });
 }
@@ -540,7 +458,6 @@ function removeGalleryImage(imageId, productId) {
 $(function() {
     initMobileSidebar('admin');
     initMobileSidebar('seller');
-    initModalSidebarHandler();
     
     if ($('#totalUsers').length || $('#recent-users-table').length) {
         loadAdminDashboard();

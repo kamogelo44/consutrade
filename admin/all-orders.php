@@ -23,9 +23,13 @@ if (!$auth->isAdmin()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Orders - ConsuTrade Admin</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+
+    <!-- CSS Imports - Using component-based architecture -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+
     <style>
+        /* Page-specific styles that don't belong in components */
         .admin-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -68,6 +72,7 @@ if (!$auth->isAdmin()) {
             flex-wrap: wrap;
         }
 
+        /* Filter button styles - using component pattern */
         .filter-btn {
             padding: 8px 16px;
             border-radius: var(--radius-md);
@@ -157,6 +162,7 @@ if (!$auth->isAdmin()) {
             background: var(--gray-bg-light);
         }
 
+        /* Status badges - using component styles from main.css */
         .status-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -250,61 +256,7 @@ if (!$auth->isAdmin()) {
             color: white;
         }
 
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            padding: 8px 14px;
-            border: 1px solid var(--border-light);
-            background: var(--white);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .page-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .page-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-            cursor: default;
-        }
-
-        .page-dots {
-            padding: 8px 4px;
-            color: var(--gray-light);
-        }
-
-        .loading-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--gray-medium);
-        }
-
-        .error-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--error);
-            background: var(--error-light);
-        }
-
-        .empty-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--gray-medium);
-        }
-
+        /* Modal styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -393,12 +345,70 @@ if (!$auth->isAdmin()) {
             gap: var(--spacing-sm);
         }
 
+        /* Pagination - using component styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xl);
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            padding: 8px 14px;
+            border: 1px solid var(--border-light);
+            background: var(--white);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: var(--font-sm);
+        }
+
+        .page-btn:hover {
+            background: var(--primary-fade);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .page-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            cursor: default;
+        }
+
+        .page-dots {
+            padding: 8px 4px;
+            color: var(--gray-light);
+        }
+
+        /* Loading and empty states */
+        .loading-cell {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--gray-medium);
+        }
+
+        .error-cell {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--error);
+            background: var(--error-light);
+        }
+
+        .empty-cell {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--gray-medium);
+        }
+
         .loading-spinner {
             text-align: center;
             padding: var(--spacing-xl);
             color: var(--gray-medium);
         }
 
+        /* Order details styles */
         .order-info-section {
             margin-bottom: var(--spacing-lg);
         }
@@ -692,6 +702,7 @@ if (!$auth->isAdmin()) {
         </div>
     </main>
 
+    <!-- Modal -->
     <div id="orderModal" class="modal-overlay">
         <div class="modal-container">
             <div class="modal-header">
@@ -732,7 +743,7 @@ if (!$auth->isAdmin()) {
 
         // ========== LOAD ORDERS ==========
         function loadOrders() {
-            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...</td></tr>');
+            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...<\/td><\/tr>');
             $.ajax({
                 url: baseUrl + 'php/endpoints/get-all-orders.php',
                 type: 'GET',
@@ -744,10 +755,8 @@ if (!$auth->isAdmin()) {
                 },
                 success: function(data) {
                     if (data.success && data.orders && data.orders.length) {
-                        // Use the shared renderAdminOrdersTable function from main.js
                         renderAdminOrdersTable(data.orders, $ordersTable);
                         totalPages = data.total_pages || 1;
-                        // Use main.js renderPagination function
                         renderPagination($pagination, currentPage, totalPages, function(page) {
                             currentPage = page;
                             loadOrders();
@@ -756,12 +765,12 @@ if (!$auth->isAdmin()) {
                             }, 'smooth');
                         });
                     } else {
-                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
+                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found<\/td><\/tr>');
                         $pagination.empty();
                     }
                 },
                 error: function() {
-                    $ordersTable.html('<tr><td colspan="8" class="error-cell">Error loading orders</td></tr>');
+                    $ordersTable.html('</td><td colspan="8" class="error-cell">Error loading orders<\/td><\/tr>');
                 }
             });
         }
@@ -798,7 +807,6 @@ if (!$auth->isAdmin()) {
                 if (e.which === 13) $searchBtn.click();
             });
 
-            // Modal close handlers
             $('.modal-close').on('click', function() {
                 closeOrderModal();
             });

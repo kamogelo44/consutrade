@@ -876,12 +876,17 @@
   color: var(--white);
 }
 
+.trust .card:hover h2 {
+  color: var(--dark-bg);
+  transform: scale(1.02);
+}
+
 .trust .card p {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.trust .card .icon {
-  filter: brightness(0) invert(1);
+.trust .card img {
+  filter: brightness(0) invert(1) !important;
 }
 
 /* ========== FEATURED PRODUCTS SECTION ========== */
