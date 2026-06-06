@@ -6,6 +6,7 @@
 
 require_once dirname(__DIR__, 2) . '/init.php';
 
+
 if (!$isLoggedIn || !$currentUser instanceof Seller) {
     $_SESSION['error'] = 'Unauthorized. Please login as a seller.';
     header('Location: ' . getBaseUrl() . 'admin/add-product.php');

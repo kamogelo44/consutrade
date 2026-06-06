@@ -2,10 +2,13 @@
 /*
  * ConsuTrade - Edit Product Handler
  * Author: Kamogelo Phale
+ * 
+ * Handles product updates including main image replacement and new gallery images.
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
 
+// Verify seller access
 if (!$isLoggedIn || !$currentUser instanceof Seller) {
     header('Location: ' . getBaseUrl() . 'admin/login.php');
     exit;
@@ -28,6 +31,7 @@ if (!$product || $product->getSellerId() !== $sellerId) {
     exit;
 }
 
+// Get form data
 $title = trim($_POST['title'] ?? '');
 $categoryId = isset($_POST['category_id']) ? (int) $_POST['category_id'] : 0;
 $price = isset($_POST['price']) ? (float) $_POST['price'] : 0;
@@ -36,6 +40,7 @@ $description = trim($_POST['description'] ?? '');
 $condition = $_POST['condition'] ?? '';
 $location = trim($_POST['location'] ?? '');
 
+// Validate input
 $errors = [];
 if (empty($title)) $errors[] = 'Product title is required';
 if ($categoryId <= 0) $errors[] = 'Please select a category';
@@ -49,6 +54,7 @@ if (!empty($errors)) {
     exit;
 }
 
+// Update product fields
 $product->setTitle($title);
 $product->setCategoryId($categoryId);
 $product->setPrice($price);
@@ -57,17 +63,22 @@ $product->setDescription($description);
 $product->setCondition($condition);
 $product->setLocation($location);
 
+// Handle main image replacement
 if (isset($_FILES['main_image']) && $_FILES['main_image']['error'] === UPLOAD_ERR_OK) {
-    $newImage = $productRepo->convertToWebP($_FILES['main_image'], $sellerId, $title, 'main');
+    $oldImage = $product->getImageUrl();
+    $newImage = $productRepo->uploadProductImage($_FILES['main_image'], $sellerId, $title, 'main');
+
     if ($newImage) {
-        $productRepo->deleteProductImage($product->getImageUrl());
+        $productRepo->deleteImageFile($oldImage);
         $product->setImageUrl($newImage);
     }
 }
 
+// Save product changes
 $result = $productRepo->saveProduct($product);
 
 if ($result) {
+    // Upload new gallery images
     if (isset($_FILES['new_gallery_images']) && !empty($_FILES['new_gallery_images']['name'][0])) {
         $uploadedUrls = [];
         $files = $_FILES['new_gallery_images'];
@@ -82,9 +93,10 @@ if ($result) {
                     'error' => $files['error'][$i],
                     'size' => $files['size'][$i]
                 ];
-                $thumb = $productRepo->convertToWebP($singleFile, $sellerId, $title, 'thumb_' . ($i + time()));
-                if ($thumb) {
-                    $uploadedUrls[] = $thumb;
+
+                $imagePath = $productRepo->uploadProductImage($singleFile, $sellerId, $title, 'gallery_' . ($i + time()));
+                if ($imagePath) {
+                    $uploadedUrls[] = $imagePath;
                 }
             }
         }

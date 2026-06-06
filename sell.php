@@ -36,7 +36,7 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
         }
 
         /* Hero Section */
-        c .seller-hero {
+        .seller-hero {
             background: linear-gradient(135deg, var(--primary-color) 0%, #2a52be 100%);
             padding: 80px var(--spacing-xl);
             text-align: center;

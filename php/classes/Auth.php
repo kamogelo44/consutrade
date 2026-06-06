@@ -6,8 +6,9 @@
  * Handles ALL authentication and session management.
  * 
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 2.1.0
  */
+
 class Auth
 {
     /** @var mysqli Database connection */
@@ -17,14 +18,16 @@ class Auth
     private UserRepository $userRepo;
 
     /**
-     * Constructor.
+     * Constructor with Dependency Injection.
      * 
      * @param mysqli $db Database connection
+     * @param UserRepository|null $userRepo user repository 
      */
-    public function __construct(mysqli $db)
+    public function __construct(mysqli $db, ?UserRepository $userRepo = null)
     {
         $this->db = $db;
-        $this->userRepo = new UserRepository($db);
+        // Use provided repository
+        $this->userRepo = $userRepo;
     }
 
     /**

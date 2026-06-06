@@ -2,6 +2,8 @@
 /*
  * ConsuTrade - Get Single Product (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * Returns product details including gallery images and seller info.
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -26,15 +28,18 @@ if (!$product || !$product->isAvailable()) {
     exit;
 }
 
+// Get gallery images
 $gallery = $productImageRepo->getByProductId($productId);
 $galleryUrls = [];
 foreach ($gallery as $img) {
-    $galleryUrls[] = $productRepo->getProductImageUrl($img['image_url']);
+    $galleryUrls[] = $productRepo->getImageUrl($img['image_url']);
 }
 
+// Get seller rating
 $rating = $reviewRepo->getSellerRating($product->getSellerId());
 $categoryName = $categoryRepo->getCategoryName($product->getCategoryId()) ?? 'General';
 
+// Get seller info
 $seller = $userRepo->findById($product->getSellerId());
 $sellerProfileImage = $seller ? $seller->getProfileImageUrl() : getBaseUrl() . 'images/icons/profile-svgrepo-com.svg';
 
@@ -48,16 +53,17 @@ $response['product'] = [
     'location' => $product->getLocation(),
     'category_id' => $product->getCategoryId(),
     'category_name' => $categoryName,
-    'image_url' => $productRepo->getProductImageUrl($product->getImageUrl()),
+    'image_url' => $productRepo->getImageUrl($product->getImageUrl()),
     'gallery_images' => $galleryUrls,
     'seller_id' => $product->getSellerId(),
     'seller_name' => $seller ? $seller->getFullName() : 'Unknown',
     'seller_profile_image' => $sellerProfileImage,
     'is_verified' => $seller ? $seller->isVerified() : false,
     'stock_quantity' => $product->getStockQuantity(),
-    'avg_rating' => $rating['avg_rating'],
-    'review_count' => $rating['review_count']
+    'avg_rating' => $rating['avg_rating'] ?? 0,
+    'review_count' => $rating['review_count'] ?? 0
 ];
 $response['success'] = true;
 
 echo json_encode($response);
+exit;

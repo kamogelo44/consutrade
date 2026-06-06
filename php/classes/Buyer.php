@@ -4,31 +4,23 @@
  * ConsuTrade - Buyer
  *
  * Domain class representing a buyer user type.
+ * Contains ONLY business logic, no database operations.
  *
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 class Buyer extends User
 {
-    /** @var CartRepository Cart repository instance */
-    private $cartRepo;
-
-    /** @var OrderRepository Order repository instance */
-    private $orderRepo;
-
     /**
      * Constructor.
      *
-     * @param array $data User data
-     * @param CartRepository|null $cartRepo Cart repository
-     * @param OrderRepository|null $orderRepo Order repository
+     * @param array $data User data from database
      */
-    public function __construct($data, $cartRepo = null, $orderRepo = null)
+    public function __construct(array $data)
     {
         parent::__construct($data);
-        $this->cartRepo = $cartRepo;
-        $this->orderRepo = $orderRepo;
+        // No repositories here!
     }
 
     /**
@@ -36,67 +28,50 @@ class Buyer extends User
      *
      * @return string
      */
-    public function getDisplayName()
+    public function getDisplayName(): string
     {
         return $this->fullName;
     }
 
     /**
-     * Get cart items for this buyer.
+     * Check if buyer can leave a review for a product.
+     * Business logic only - buyer must have purchased the product.
      *
-     * @return array
+     * @param int $productId Product ID to check
+     * @param array $purchasedProductIds List of product IDs buyer has purchased
+     * @return bool
      */
-    public function getCartItems()
+    public function canReviewProduct(int $productId, array $purchasedProductIds): bool
     {
-        if (!$this->cartRepo) {
-            return [];
-        }
-        return $this->cartRepo->getCartItems($this->userId);
+        return in_array($productId, $purchasedProductIds);
     }
 
     /**
-     * Get cart count for this buyer.
+     * Check if buyer has reached max cart items (business rule).
      *
-     * @return int
+     * @param int $currentCartCount Current items in cart
+     * @param int $maxItems Maximum allowed (default 50)
+     * @return bool
      */
-    public function getCartCount()
+    public function canAddToCart(int $currentCartCount, int $maxItems = 50): bool
     {
-        if (!$this->cartRepo) {
-            return 0;
-        }
-        return $this->cartRepo->getCartCount($this->userId);
+        return $currentCartCount < $maxItems;
     }
 
     /**
-     * Get orders for this buyer.
+     * Get buyer statistics as array (calculated from passed data).
      *
-     * @param string $filter Status filter
-     * @param string $search Search term
+     * @param int $totalOrders Total orders from repository
+     * @param float $totalSpent Total spent from repository
      * @return array
      */
-    public function getOrders($filter = 'all', $search = '')
+    public function getStats(int $totalOrders, float $totalSpent): array
     {
-        if (!$this->orderRepo) {
-            return [];
-        }
-        return $this->orderRepo->getBuyerOrders($this->userId, $filter, $search);
-    }
-
-    /**
-     * Get buyer statistics.
-     *
-     * @return array
-     */
-    public function getStats()
-    {
-        if (!$this->orderRepo) {
-            return [
-                'total_orders' => 0,
-                'total_spent' => 0,
-                'pending_orders' => 0,
-                'completed_orders' => 0
-            ];
-        }
-        return $this->orderRepo->getBuyerStats($this->userId);
+        return [
+            'total_orders' => $totalOrders,
+            'total_spent' => $totalSpent,
+            'member_since' => date('F Y', strtotime($this->createdAt)),
+            'is_active' => $this->status === 'active'
+        ];
     }
 }

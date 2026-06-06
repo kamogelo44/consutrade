@@ -3,7 +3,7 @@
  * ConsuTrade - Get All Products (Admin AJAX)
  * Author: Kamogelo Phale
  * 
- * Returns paginated list of all products for admin management using ProductRepository
+ * Returns paginated list of all products for admin management.
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -17,10 +17,10 @@ if (!$auth->isAdmin()) {
     exit;
 }
 
-$page   = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $status = $_GET['status'] ?? 'all';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$limit  = 12;
+$limit = 12;
 $offset = ($page - 1) * $limit;
 
 $products = $productRepo->getAllProductsForAdmin($status, $search, $limit, $offset);
@@ -33,3 +33,4 @@ $response['total_pages'] = $totalPages;
 $response['current_page'] = $page;
 
 echo json_encode($response);
+exit;

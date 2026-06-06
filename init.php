@@ -82,6 +82,8 @@ $GLOBALS['currentUser'] = $currentUser;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;
 $GLOBALS['baseUrl'] = $baseUrl;
 
+extract($GLOBALS);
+
 if ($isLoggedIn) {
     header('Cache-Control: no-cache, no-store, must-revalidate');
     header('Pragma: no-cache');

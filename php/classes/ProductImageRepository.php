@@ -3,10 +3,11 @@
 /**
  * ConsuTrade - ProductImageRepository
  *
- * Handles all product image database operations.
+ * Handles all product gallery image database operations.
+ * Gallery images are stored in the same uploads/products/ directory.
  *
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 class ProductImageRepository
@@ -25,39 +26,12 @@ class ProductImageRepository
     }
 
     /**
-     * Helper to get full file path for an image
-     *
-     * @param string $imageUrl Relative image path
-     * @return string Full system path
-     */
-    private function getFullPath($imageUrl)
-    {
-        // Try multiple possible base paths
-        $basePaths = [
-            $_SERVER['DOCUMENT_ROOT'] . '/',
-            $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/',
-            dirname(__DIR__, 2) . '/',
-            __DIR__ . '/../../',
-        ];
-
-        foreach ($basePaths as $basePath) {
-            $fullPath = rtrim($basePath, '/') . '/' . ltrim($imageUrl, '/');
-            if (file_exists(dirname($fullPath))) {
-                return $fullPath;
-            }
-        }
-
-        // Fallback
-        return $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($imageUrl, '/');
-    }
-
-    /**
      * Get all images for a product.
      *
      * @param int $productId Product ID
      * @return array
      */
-    public function getByProductId($productId)
+    public function getByProductId(int $productId): array
     {
         $sql = "SELECT image_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -82,7 +56,7 @@ class ProductImageRepository
      * @param int $productId Product ID
      * @return array|null
      */
-    public function getPrimaryImage($productId)
+    public function getPrimaryImage(int $productId): ?array
     {
         $sql = "SELECT image_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -107,7 +81,7 @@ class ProductImageRepository
      * @param int $imageId Image ID
      * @return array|null
      */
-    public function getById($imageId)
+    public function getById(int $imageId): ?array
     {
         $sql = "SELECT image_id, product_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -126,7 +100,7 @@ class ProductImageRepository
     }
 
     /**
-     * Add a gallery image to a product.
+     * Add a single gallery image (database only).
      *
      * @param int $productId Product ID
      * @param string $imageUrl Image path
@@ -134,7 +108,7 @@ class ProductImageRepository
      * @param int $sortOrder Sort order
      * @return int|false Insert ID or false on failure
      */
-    public function add($productId, $imageUrl, $isPrimary = false, $sortOrder = 0)
+    public function add(int $productId, string $imageUrl, bool $isPrimary = false, int $sortOrder = 0): int|false
     {
         $primaryInt = $isPrimary ? 1 : 0;
         $stmt = $this->db->prepare(
@@ -152,13 +126,13 @@ class ProductImageRepository
     }
 
     /**
-     * Add multiple gallery images to a product.
+     * Add multiple gallery images.
      *
      * @param int $productId Product ID
      * @param array $imageUrls Array of image paths
      * @return int Number of images successfully added
      */
-    public function addMultiple($productId, $imageUrls)
+    public function addMultiple(int $productId, array $imageUrls): int
     {
         $count = 0;
 
@@ -189,13 +163,15 @@ class ProductImageRepository
      * @param int $imageId Image ID to set as primary
      * @return bool
      */
-    public function setPrimary($productId, $imageId)
+    public function setPrimary(int $productId, int $imageId): bool
     {
+        // Clear existing primary
         $clearStmt = $this->db->prepare("UPDATE product_images SET is_primary = 0 WHERE product_id = ?");
         $clearStmt->bind_param('i', $productId);
         $clearStmt->execute();
         $clearStmt->close();
 
+        // Set new primary
         $setStmt = $this->db->prepare("UPDATE product_images SET is_primary = 1 WHERE image_id = ? AND product_id = ?");
         $setStmt->bind_param('ii', $imageId, $productId);
         $result = $setStmt->execute();
@@ -211,7 +187,7 @@ class ProductImageRepository
      * @param int $sortOrder New sort order
      * @return bool
      */
-    public function updateSortOrder($imageId, $sortOrder)
+    public function updateSortOrder(int $imageId, int $sortOrder): bool
     {
         $stmt = $this->db->prepare("UPDATE product_images SET sort_order = ? WHERE image_id = ?");
         $stmt->bind_param('ii', $sortOrder, $imageId);
@@ -227,13 +203,15 @@ class ProductImageRepository
      * @param int $productId Product ID (for verification)
      * @return bool
      */
-    public function delete($imageId, $productId)
+    public function delete(int $imageId, int $productId): bool
     {
         $image = $this->getById($imageId);
+
+        // Delete the physical file using ProductRepository
         if ($image && $image['product_id'] == $productId) {
-            $fullPath = $this->getFullPath($image['image_url']);
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
+            global $productRepo;
+            if ($productRepo && method_exists($productRepo, 'deleteImageFile')) {
+                $productRepo->deleteImageFile($image['image_url']);
             }
         }
 
@@ -251,13 +229,15 @@ class ProductImageRepository
      * @param int $productId Product ID
      * @return bool
      */
-    public function deleteByProductId($productId)
+    public function deleteByProductId(int $productId): bool
     {
         $images = $this->getByProductId($productId);
-        foreach ($images as $image) {
-            $fullPath = $this->getFullPath($image['image_url']);
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
+
+        // Delete physical files
+        global $productRepo;
+        if ($productRepo && method_exists($productRepo, 'deleteImageFile')) {
+            foreach ($images as $image) {
+                $productRepo->deleteImageFile($image['image_url']);
             }
         }
 

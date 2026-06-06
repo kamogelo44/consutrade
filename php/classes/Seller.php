@@ -4,247 +4,73 @@
  * ConsuTrade - Seller
  *
  * Domain class representing a seller user type.
+ * Contains ONLY business logic, no database operations.
  *
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 class Seller extends User
 {
-    /** @var ProductRepository */
-    private $productRepo;
-
-    /** @var OrderRepository */
-    private $orderRepo;
-
-    /** @var SellerVerification|null */
-    private $verification;
+    /** @var SellerVerification|null Verification data (domain object, not repository) */
+    private ?SellerVerification $verification;
 
     /**
      * Constructor.
      *
-     * @param array $data User data
-     * @param ProductRepository $productRepo Product repository
-     * @param OrderRepository $orderRepo Order repository
-     * @param SellerVerification|null $verification Verification data
+     * @param array $data User data from database
+     * @param SellerVerification|null $verification Verification data (optional)
      */
-    public function __construct($data, $productRepo, $orderRepo, $verification = null)
+    public function __construct(array $data, ?SellerVerification $verification = null)
     {
         parent::__construct($data);
-        $this->productRepo = $productRepo;
-        $this->orderRepo = $orderRepo;
         $this->verification = $verification;
     }
 
     /**
-     * Get the seller's display name.
+     * Get the seller's display name with verification badge.
      *
      * @return string
      */
-    public function getDisplayName()
+    public function getDisplayName(): string
     {
         $verifiedBadge = $this->idVerified ? ' ✓' : '';
         return $this->fullName . $verifiedBadge;
     }
 
     /**
-     * Get seller's products
+     * Check if seller can add more products.
+     * Business rule: max 50 products per seller.
      *
-     * @param string $filter Status filter
-     * @param string $search Search term
-     * @param int $limit Limit
-     * @param int $offset Offset
-     * @return array
-     */
-    public function getProducts($filter = 'all', $search = '', $limit = 0, $offset = 0)
-    {
-        return $this->productRepo->getSellerProducts($this->userId, $filter, $search, $limit, $offset);
-    }
-
-    /**
-     * Get seller's products as Product objects
-     *
-     * @param string $filter Status filter
-     * @param string $search Search term
-     * @param int $limit Limit
-     * @param int $offset Offset
-     * @return array
-     */
-    public function getProductObjects($filter = 'all', $search = '', $limit = 0, $offset = 0)
-    {
-        return $this->productRepo->getSellerProductObjects($this->userId, $filter, $search, $limit, $offset);
-    }
-
-    /**
-     * Get seller's orders
-     *
-     * @param string $filter Status filter
-     * @param string $search Search term
-     * @return array
-     */
-    public function getOrders($filter = 'all', $search = '')
-    {
-        return $this->orderRepo->getSellerOrders($this->userId, $filter, $search);
-    }
-
-    /**
-     * Get recent orders for dashboard
-     *
-     * @param int $limit Number of orders
-     * @return array
-     */
-    public function getRecentOrders($limit = 5)
-    {
-        return $this->orderRepo->getSellerRecentOrders($this->userId, $limit);
-    }
-
-    /**
-     * Get seller statistics
-     *
-     * @return array
-     */
-    public function getStats()
-    {
-        $totalProducts = $this->productRepo->countUserProducts($this->userId);
-        $totalOrders = $this->orderRepo->getSellerTotalOrders($this->userId);
-        $totalRevenue = $this->orderRepo->getSellerTotalRevenue($this->userId);
-        $avgRating = $this->getAverageRating();
-
-        return [
-            'total_products' => $totalProducts,
-            'total_orders' => $totalOrders,
-            'total_revenue' => $totalRevenue,
-            'avg_rating' => $avgRating,
-            'is_verified' => $this->idVerified,
-            'has_verification_document' => $this->verification !== null
-        ];
-    }
-
-    /**
-     * Get seller's average rating from reviews
-     *
-     * @return float
-     */
-    public function getAverageRating()
-    {
-        $reviewRepo = new ReviewRepository($this->productRepo->db ?? null);
-        // Note: This needs a db connection - would need to be passed in
-        // For now, return 0
-        return 0;
-    }
-
-    /**
-     * Add a new product
-     *
-     * @param array $productData Product data
-     * @return int|false
-     */
-    public function addProduct($productData)
-    {
-        $product = new Product([
-            'seller_id' => $this->userId,
-            'category_id' => $productData['category_id'],
-            'title' => $productData['title'],
-            'description' => $productData['description'],
-            'price' => $productData['price'],
-            'stock_quantity' => $productData['stock_quantity'],
-            'condition' => $productData['condition'],
-            'location' => $productData['location'],
-            'image_url' => $productData['image_url'] ?? '',
-            'status' => 'active'
-        ]);
-
-        return $this->productRepo->createProduct($product);
-    }
-
-    /**
-     * Update an existing product
-     *
-     * @param int $productId Product ID
-     * @param array $productData Product data
-     * @return array
-     */
-    public function updateProduct($productId, $productData)
-    {
-        // Verify ownership
-        $existing = $this->productRepo->getProductForEdit($productId, $this->userId);
-        if (!$existing) {
-            return ['success' => false, 'message' => 'Product not found'];
-        }
-
-        return $this->productRepo->updateSellerProduct($productId, $this->userId, $productData);
-    }
-
-    /**
-     * Delete a product (soft delete)
-     *
-     * @param int $productId Product ID
-     * @return array
-     */
-    public function deleteProduct($productId)
-    {
-        return $this->productRepo->deleteSellerProduct($productId, $this->userId);
-    }
-
-    /**
-     * Suspend a product (seller action)
-     *
-     * @param int $productId Product ID
-     * @param string $reason Suspension reason
-     * @return array
-     */
-    public function suspendProduct($productId, $reason = '')
-    {
-        return $this->productRepo->updateProductStatus($productId, $this->userId, 'suspend', 'seller', $reason);
-    }
-
-    /**
-     * Reactivate a suspended product (seller action)
-     *
-     * @param int $productId Product ID
-     * @return array
-     */
-    public function reactivateProduct($productId)
-    {
-        return $this->productRepo->updateProductStatus($productId, $this->userId, 'activate', 'seller');
-    }
-
-    /**
-     * Update order status (seller action)
-     *
-     * @param int $orderId Order ID
-     * @param string $status New status
-     * @return array
-     */
-    public function updateOrderStatus($orderId, $status)
-    {
-        $orderDetails = $this->orderRepo->getOrderDetails($orderId, $this->userId, 'seller');
-        if (!$orderDetails) {
-            return ['success' => false, 'message' => 'Order not found'];
-        }
-
-        return $this->orderRepo->updateSellerOrderStatus($orderId, $this->userId, $status);
-    }
-
-    /**
-     * Check if seller can add more products
-     *
+     * @param int $currentProductCount Current product count from repository
      * @param int $maxProducts Maximum allowed (default 50)
      * @return bool
      */
-    public function canAddMoreProducts($maxProducts = 50)
+    public function canAddMoreProducts(int $currentProductCount, int $maxProducts = 50): bool
     {
-        $currentCount = $this->productRepo->countUserProducts($this->userId);
-        return $currentCount < $maxProducts;
+        return $currentProductCount < $maxProducts;
     }
 
     /**
-     * Get seller verification status
+     * Check if seller can edit a product.
+     * Business logic: can only edit if product belongs to them.
+     *
+     * @param int $productSellerId Seller ID of the product
+     * @return bool
+     */
+    public function ownsProduct(int $productSellerId): bool
+    {
+        return $this->userId === $productSellerId;
+    }
+
+    /**
+     * Get seller verification status (business logic only).
      *
      * @return array
      */
-    public function getVerificationStatus()
+    public function getVerificationStatus(): array
     {
+        // Already verified by admin
         if ($this->idVerified) {
             return [
                 'is_verified' => true,
@@ -253,7 +79,17 @@ class Seller extends User
             ];
         }
 
-        if ($this->verification && $this->verification->isPending()) {
+        // No verification document submitted
+        if (!$this->verification) {
+            return [
+                'is_verified' => false,
+                'status' => 'not_submitted',
+                'message' => 'Submit verification documents to become a verified seller'
+            ];
+        }
+
+        // Verification pending review
+        if ($this->verification->isPending()) {
             return [
                 'is_verified' => false,
                 'status' => 'pending',
@@ -261,7 +97,8 @@ class Seller extends User
             ];
         }
 
-        if ($this->verification && $this->verification->isRejected()) {
+        // Verification was rejected
+        if ($this->verification->isRejected()) {
             return [
                 'is_verified' => false,
                 'status' => 'rejected',
@@ -272,44 +109,48 @@ class Seller extends User
 
         return [
             'is_verified' => false,
-            'status' => 'not_submitted',
-            'message' => 'Submit verification documents to become a verified seller'
+            'status' => 'unknown',
+            'message' => 'Verification status unknown'
         ];
     }
 
     /**
-     * Submit verification documents
+     * Calculate seller statistics from provided data.
+     * This method receives data from repositories, doesn't fetch it.
      *
-     * @param string $documentPath Path to uploaded document
-     * @param string $documentType Type of document (id, business_license, etc.)
-     * @return bool
+     * @param int $totalProducts Total products count
+     * @param int $totalOrders Total orders count
+     * @param float $totalRevenue Total revenue
+     * @param float $averageRating Average rating from reviews
+     * @return array
      */
-    public function submitVerificationDocuments($documentPath, $documentType = 'id')
-    {
-        $stmt = $this->db->prepare("
-            INSERT INTO seller_verification (seller_id, document_path, document_type, submitted_at) 
-            VALUES (?, ?, ?, NOW())
-            ON DUPLICATE KEY UPDATE 
-            document_path = ?, document_type = ?, document_verified = 0, submitted_at = NOW(), rejection_reason = NULL
-        ");
-        $stmt->bind_param('isss', $this->userId, $documentPath, $documentType, $documentPath, $documentType);
-        $result = $stmt->execute();
-        $stmt->close();
-
-        return $result;
+    public function calculateStats(
+        int $totalProducts,
+        int $totalOrders,
+        float $totalRevenue,
+        float $averageRating
+    ): array {
+        return [
+            'total_products' => $totalProducts,
+            'total_orders' => $totalOrders,
+            'total_revenue' => $totalRevenue,
+            'avg_rating' => round($averageRating, 1),
+            'is_verified' => $this->idVerified,
+            'has_verification_document' => $this->verification !== null,
+            'member_since' => date('F Y', strtotime($this->createdAt))
+        ];
     }
 
     /**
-     * Get seller's public profile data
+     * Get seller's public profile data.
+     * Receives products and stats from repositories.
      *
+     * @param array $products List of products (from ProductRepository)
+     * @param array $stats Pre-calculated stats
      * @return array
      */
-    public function getPublicProfile()
+    public function getPublicProfile(array $products, array $stats): array
     {
-        $products = $this->productRepo->getSellerProductsForDisplay($this->userId, false, 12);
-        $stats = $this->getStats();
-        $reviews = []; // Would need review repository
-
         return [
             'seller_id' => $this->userId,
             'full_name' => $this->fullName,
@@ -319,8 +160,18 @@ class Seller extends User
             'member_since' => date('F Y', strtotime($this->createdAt)),
             'total_products' => $stats['total_products'],
             'total_sales' => $stats['total_orders'],
-            'rating' => 0, // Would need to calculate from reviews
+            'rating' => $stats['avg_rating'] ?? 0,
             'products' => $products
         ];
+    }
+
+    /**
+     * Get verification document info (if exists).
+     *
+     * @return SellerVerification|null
+     */
+    public function getVerification(): ?SellerVerification
+    {
+        return $this->verification;
     }
 }

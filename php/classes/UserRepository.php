@@ -4,27 +4,28 @@
  * ConsuTrade - UserRepository
  *
  * Handles all user database operations.
+ * Returns domain models WITHOUT repositories inside them.
  *
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 class UserRepository
 {
-    private $db;
+    private mysqli $db;
 
-    public function __construct($db)
+    public function __construct(mysqli $db)
     {
         $this->db = $db;
     }
 
     /**
-     * Find user by ID and return User object
+     * Find user by ID and return User object.
      *
      * @param int $id User ID
      * @return User|null
      */
-    public function findById($id)
+    public function findById(int $id): ?User
     {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE user_id = ?");
         $stmt->bind_param('i', $id);
@@ -41,12 +42,12 @@ class UserRepository
     }
 
     /**
-     * Find user by email and return User object
+     * Find user by email and return User object.
      *
      * @param string $email User email
      * @return User|null
      */
-    public function findByEmail($email)
+    public function findByEmail(string $email): ?User
     {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->bind_param('s', $email);
@@ -63,12 +64,12 @@ class UserRepository
     }
 
     /**
-     * Find user by phone and return User object
+     * Find user by phone and return User object.
      *
      * @param string $phone User phone number
      * @return User|null
      */
-    public function findByPhone($phone)
+    public function findByPhone(string $phone): ?User
     {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE phone = ?");
         $stmt->bind_param('s', $phone);
@@ -85,12 +86,12 @@ class UserRepository
     }
 
     /**
-     * Find users by role
+     * Find users by role.
      *
      * @param string $role User role (buyer, seller, admin)
-     * @return array
+     * @return array Array of User objects
      */
-    public function findByRole($role)
+    public function findByRole(string $role): array
     {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE role = ?");
         $stmt->bind_param('s', $role);
@@ -107,37 +108,37 @@ class UserRepository
     }
 
     /**
-     * Hydrate database row into appropriate User subclass
+     * Hydrate database row into appropriate User subclass.
+     * NO repositories are injected into domain models!
      *
      * @param array $data Database row
      * @return User
      */
-    private function hydrate($data)
+    private function hydrate(array $data): User
     {
         $role = $data['role'] ?? 'buyer';
 
         switch ($role) {
             case 'admin':
-                return new Admin($data, $this->db);
+                return new Admin($data);
+
             case 'seller':
                 $verification = $this->getSellerVerification($data['user_id']);
-                $productRepo = new ProductRepository($this->db);
-                $orderRepo = new OrderRepository($this->db);
-                return new Seller($data, $productRepo, $orderRepo, $verification);
+                return new Seller($data, $verification);
+
+            case 'buyer':
             default:
-                $cartRepo = new CartRepository($this->db);
-                $orderRepo = new OrderRepository($this->db);
-                return new Buyer($data, $cartRepo, $orderRepo);
+                return new Buyer($data);
         }
     }
 
     /**
-     * Get seller verification data
+     * Get seller verification data as domain object.
      *
      * @param int $sellerId Seller ID
      * @return SellerVerification|null
      */
-    private function getSellerVerification($sellerId)
+    private function getSellerVerification(int $sellerId): ?SellerVerification
     {
         $stmt = $this->db->prepare("SELECT * FROM seller_verification WHERE seller_id = ?");
         $stmt->bind_param('i', $sellerId);
@@ -154,12 +155,12 @@ class UserRepository
     }
 
     /**
-     * Create a new user
+     * Create a new user.
      *
-     * @param array $userData User data
-     * @return int|false
+     * @param array $userData User data (full_name, email, phone, password, role)
+     * @return int|false Insert ID or false on failure
      */
-    public function createUser($userData)
+    public function createUser(array $userData): int|false
     {
         $stmt = $this->db->prepare(
             "INSERT INTO users (full_name, email, phone, password, role, created_at) 
@@ -186,13 +187,13 @@ class UserRepository
     }
 
     /**
-     * Update user profile
+     * Update user profile.
      *
      * @param int $userId User ID
-     * @param array $data Profile data
+     * @param array $data Profile data (full_name, phone, location)
      * @return bool
      */
-    public function updateProfile($userId, $data)
+    public function updateProfile(int $userId, array $data): bool
     {
         $fields = [];
         $params = [];
@@ -231,13 +232,13 @@ class UserRepository
     }
 
     /**
-     * Update user profile image
+     * Update user profile image.
      *
      * @param int $userId User ID
      * @param string $imagePath Image path
      * @return bool
      */
-    public function updateProfileImage($userId, $imagePath)
+    public function updateProfileImage(int $userId, string $imagePath): bool
     {
         $stmt = $this->db->prepare("UPDATE users SET profile_image = ? WHERE user_id = ?");
         $stmt->bind_param('si', $imagePath, $userId);
@@ -247,13 +248,13 @@ class UserRepository
     }
 
     /**
-     * Update user password
+     * Update user password.
      *
      * @param int $userId User ID
      * @param string $hashedPassword New hashed password
      * @return bool
      */
-    public function updatePassword($userId, $hashedPassword)
+    public function updatePassword(int $userId, string $hashedPassword): bool
     {
         $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE user_id = ?");
         $stmt->bind_param('si', $hashedPassword, $userId);
@@ -263,13 +264,13 @@ class UserRepository
     }
 
     /**
-     * Update user status (active, suspended, banned)
+     * Update user status (active, suspended, banned).
      *
      * @param int $userId User ID
      * @param string $status New status
      * @return bool
      */
-    public function updateStatus($userId, $status)
+    public function updateStatus(int $userId, string $status): bool
     {
         $validStatuses = ['active', 'suspended', 'banned'];
         if (!in_array($status, $validStatuses)) {
@@ -284,7 +285,7 @@ class UserRepository
     }
 
     /**
-     * Get all users as array (for admin listing)
+     * Get all users as array (for admin listing).
      *
      * @param string $filter Status filter
      * @param string $search Search term
@@ -292,9 +293,9 @@ class UserRepository
      * @param int $offset Offset
      * @return array
      */
-    public function getAll($filter = 'all', $search = '', $limit = 0, $offset = 0)
+    public function getAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at, status
                 FROM users 
                 WHERE 1=1";
         $params = [];
@@ -340,7 +341,7 @@ class UserRepository
     }
 
     /**
-     * Get users by role with pagination (for admin)
+     * Get users by role with pagination (for admin).
      *
      * @param string $role User role
      * @param string $search Search term
@@ -348,7 +349,7 @@ class UserRepository
      * @param int $offset Offset
      * @return array
      */
-    public function getUsersByRoleWithPagination($role, $search = '', $limit = 10, $offset = 0)
+    public function getUsersByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
     {
         $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at, status
                 FROM users 
@@ -384,13 +385,13 @@ class UserRepository
     }
 
     /**
-     * Count users by role (for admin pagination)
+     * Count users by role (for admin pagination).
      *
      * @param string $role User role
      * @param string $search Search term
      * @return int
      */
-    public function countUsersByRole($role, $search = '')
+    public function countUsersByRole(string $role, string $search = ''): int
     {
         $sql = "SELECT COUNT(*) as total FROM users WHERE role = ?";
         $params = [$role];
@@ -415,12 +416,12 @@ class UserRepository
     }
 
     /**
-     * Get recent users for admin dashboard
+     * Get recent users for admin dashboard.
      *
      * @param int $limit Number of users
      * @return array
      */
-    public function getRecentUsers($limit = 5)
+    public function getRecentUsers(int $limit = 5): array
     {
         $sql = "SELECT user_id, full_name, email, role, id_verified, created_at 
                 FROM users 
@@ -434,7 +435,12 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
-            $roleClass = $row['role'] === 'admin' ? 'role-admin' : ($row['role'] === 'seller' ? 'role-seller' : 'role-buyer');
+            $roleClass = match ($row['role']) {
+                'admin' => 'role-admin',
+                'seller' => 'role-seller',
+                default => 'role-buyer'
+            };
+
             $users[] = [
                 'user_id' => (int) $row['user_id'],
                 'full_name' => $row['full_name'],
@@ -451,13 +457,51 @@ class UserRepository
     }
 
     /**
-     * Get pending seller verifications with pagination
+     * Get total user count (optionally by role).
+     *
+     * @param string|null $role Optional role filter
+     * @return int
+     */
+    public function getTotalUsers(?string $role = null): int
+    {
+        if ($role) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users WHERE role = ?");
+            $stmt->bind_param('s', $role);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users");
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+
+        return $total;
+    }
+
+    /**
+     * Get user statistics for admin dashboard.
+     *
+     * @return array
+     */
+    public function getUserStats(): array
+    {
+        return [
+            'total_users' => $this->getTotalUsers(),
+            'total_buyers' => $this->getTotalUsers('buyer'),
+            'total_sellers' => $this->getTotalUsers('seller'),
+            'pending_verifications' => $this->getPendingVerificationsCount()
+        ];
+    }
+
+    /**
+     * Get pending seller verifications with pagination.
      *
      * @param int $limit Limit
      * @param int $offset Offset
      * @return array
      */
-    public function getPendingVerificationsWithPagination($limit = 10, $offset = 0)
+    public function getPendingVerificationsWithPagination(int $limit = 10, int $offset = 0): array
     {
         $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, 
                    DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
@@ -493,11 +537,11 @@ class UserRepository
     }
 
     /**
-     * Get count of pending seller verifications
+     * Get count of pending seller verifications.
      *
      * @return int
      */
-    public function getPendingVerificationsCount()
+    public function getPendingVerificationsCount(): int
     {
         $sql = "SELECT COUNT(*) as total FROM users u 
                 INNER JOIN seller_verification sv ON u.user_id = sv.seller_id 
@@ -513,35 +557,12 @@ class UserRepository
     }
 
     /**
-     * Get total user count (optionally by role)
-     *
-     * @param string|null $role Optional role filter
-     * @return int
-     */
-    public function getTotalUsers($role = null)
-    {
-        if ($role) {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users WHERE role = ?");
-            $stmt->bind_param('s', $role);
-        } else {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users");
-        }
-
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
-        $stmt->close();
-
-        return $total;
-    }
-
-    /**
-     * Get seller public profile
+     * Get seller public profile data (array, not object).
      *
      * @param int $sellerId Seller ID
      * @return array|null
      */
-    public function getSellerPublicProfile($sellerId)
+    public function getSellerPublicProfile(int $sellerId): ?array
     {
         $sql = "SELECT user_id, full_name, profile_image, location, id_verified, created_at 
                 FROM users 
@@ -561,12 +582,12 @@ class UserRepository
     }
 
     /**
-     * Search users by name or email
+     * Search users by name or email.
      *
      * @param string $query Search query
      * @return array
      */
-    public function searchUsers($query)
+    public function searchUsers(string $query): array
     {
         $sql = "SELECT user_id, full_name, email, phone, role, id_verified, created_at 
                 FROM users 
@@ -589,45 +610,45 @@ class UserRepository
     }
 
     /**
-     * Suspend a user account
+     * Suspend a user account.
      *
      * @param int $userId User ID
      * @return bool
      */
-    public function suspendUser($userId)
+    public function suspendUser(int $userId): bool
     {
         return $this->updateStatus($userId, 'suspended');
     }
 
     /**
-     * Reinstate a suspended user account
+     * Reinstate a suspended user account.
      *
      * @param int $userId User ID
      * @return bool
      */
-    public function reinstateUser($userId)
+    public function reinstateUser(int $userId): bool
     {
         return $this->updateStatus($userId, 'active');
     }
 
     /**
-     * Ban a user account
+     * Ban a user account.
      *
      * @param int $userId User ID
      * @return bool
      */
-    public function banUser($userId)
+    public function banUser(int $userId): bool
     {
         return $this->updateStatus($userId, 'banned');
     }
 
     /**
-     * Upgrade a buyer to seller
+     * Upgrade a buyer to seller.
      *
      * @param int $userId User ID
      * @return bool
      */
-    public function upgradeToSeller($userId)
+    public function upgradeToSeller(int $userId): bool
     {
         $stmt = $this->db->prepare("UPDATE users SET role = 'seller' WHERE user_id = ? AND role = 'buyer'");
         $stmt->bind_param('i', $userId);
@@ -637,12 +658,12 @@ class UserRepository
     }
 
     /**
-     * Verify a seller's ID (mark as verified)
+     * Verify a seller's ID (mark as verified).
      *
      * @param int $sellerId Seller ID
      * @return bool
      */
-    public function verifySeller($sellerId)
+    public function verifySeller(int $sellerId): bool
     {
         $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ? AND role = 'seller'");
         $stmt->bind_param('i', $sellerId);
@@ -652,12 +673,12 @@ class UserRepository
     }
 
     /**
-     * Unverify a seller's ID
+     * Unverify a seller's ID.
      *
      * @param int $sellerId Seller ID
      * @return bool
      */
-    public function unverifySeller($sellerId)
+    public function unverifySeller(int $sellerId): bool
     {
         $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ? AND role = 'seller'");
         $stmt->bind_param('i', $sellerId);
@@ -667,13 +688,13 @@ class UserRepository
     }
 
     /**
-     * Check if email already exists
+     * Check if email already exists.
      *
      * @param string $email Email to check
      * @param int $excludeUserId Optional user ID to exclude
      * @return bool
      */
-    public function emailExists($email, $excludeUserId = 0)
+    public function emailExists(string $email, int $excludeUserId = 0): bool
     {
         if ($excludeUserId > 0) {
             $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE email = ? AND user_id != ?");
@@ -690,13 +711,13 @@ class UserRepository
     }
 
     /**
-     * Check if phone already exists
+     * Check if phone already exists.
      *
      * @param string $phone Phone to check
      * @param int $excludeUserId Optional user ID to exclude
      * @return bool
      */
-    public function phoneExists($phone, $excludeUserId = 0)
+    public function phoneExists(string $phone, int $excludeUserId = 0): bool
     {
         if ($excludeUserId > 0) {
             $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE phone = ? AND user_id != ?");

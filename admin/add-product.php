@@ -2,9 +2,13 @@
 /*
  * ConsuTrade - Add Product Page
  * Author: Kamogelo Phale
+ * 
+ * Allows sellers to add new products to the marketplace
  */
 
 require_once dirname(__DIR__) . '/init.php';
+include dirname(__DIR__) . '/includes/session-vars.php';
+include dirname(__DIR__) . '/includes/functions.php';
 
 if (!$auth->isSeller()) {
     header('Location: login.php');
@@ -21,6 +25,11 @@ $breadcrumbItems = [
     ['url' => 'admin/my-products.php', 'label' => 'My Products'],
     ['label' => 'Add New Product']
 ];
+
+// Get flash messages from session (set by endpoint)
+$error = $_SESSION['product_error'] ?? null;
+$success = $_SESSION['product_success'] ?? null;
+unset($_SESSION['product_error'], $_SESSION['product_success']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,10 +38,14 @@ $breadcrumbItems = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Add New Product - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+
+    <!-- CSS Imports - Using component-based architecture -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+
     <style>
+        /* Page-specific styles */
         .admin-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -85,10 +98,11 @@ $breadcrumbItems = [
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
             font-size: var(--font-md);
+            transition: all var(--transition-fast);
         }
 
         .form-group input:focus,
@@ -165,23 +179,8 @@ $breadcrumbItems = [
             background: var(--border-light);
         }
 
-        .error-msg {
-            background: var(--error-light);
-            color: var(--error);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--error);
-        }
-
-        .success-msg {
-            background: var(--success-light);
-            color: var(--success);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--success);
-        }
+        /* Using global error/success message styles from main.css */
+        /* .error-msg and .success-msg classes are now handled by .error-message and .flash-message */
 
         @media (max-width: 1024px) {
             .admin-main-content {
@@ -232,15 +231,8 @@ $breadcrumbItems = [
                 <p>Fill in the details below to list your product</p>
             </div>
 
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="error-msg"><?php echo htmlspecialchars($_SESSION['error']);
-                                        unset($_SESSION['error']); ?></div>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="success-msg"><?php echo htmlspecialchars($_SESSION['success']);
-                                            unset($_SESSION['success']); ?></div>
-            <?php endif; ?>
+            <!-- Flash messages using global styles -->
+            <?php include '..includes/flash-message.php' ?>
 
             <div class="form-container">
                 <form id="product-form" action="<?php echo $baseUrl; ?>php/endpoints/add-product.php" method="post" enctype="multipart/form-data">
@@ -314,22 +306,25 @@ $breadcrumbItems = [
         </div>
     </main>
 
+    <!-- Gallery preview script - uses jQuery from sidebar.php -->
     <script>
-        $('input[name="gallery_images[]"]').on('change', function(e) {
-            var preview = $('#gallery-preview');
-            preview.empty();
-            var files = this.files;
-            var maxFiles = Math.min(files.length, 4);
+        $(document).ready(function() {
+            $('input[name="gallery_images[]"]').on('change', function(e) {
+                var preview = $('#gallery-preview');
+                preview.empty();
+                var files = this.files;
+                var maxFiles = Math.min(files.length, 4);
 
-            for (var i = 0; i < maxFiles; i++) {
-                var reader = new FileReader();
-                reader.onload = (function(fileIndex) {
-                    return function(event) {
-                        preview.append('<div class="gallery-item"><img src="' + event.target.result + '" alt="Preview ' + (fileIndex + 1) + '"></div>');
-                    };
-                })(i);
-                reader.readAsDataURL(files[i]);
-            }
+                for (var i = 0; i < maxFiles; i++) {
+                    var reader = new FileReader();
+                    reader.onload = (function(fileIndex) {
+                        return function(event) {
+                            preview.append('<div class="gallery-item"><img src="' + event.target.result + '" alt="Preview ' + (fileIndex + 1) + '"></div>');
+                        };
+                    })(i);
+                    reader.readAsDataURL(files[i]);
+                }
+            });
         });
     </script>
 </body>

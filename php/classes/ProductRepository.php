@@ -3,17 +3,23 @@
 /**
  * ConsuTrade - ProductRepository
  *
- * Handles all product database operations.
- * NOTE: Product images are handled by ProductImageRepository.
+ * Handles all product database operations and image uploads.
+ * Images are stored in uploads/products/ directory as WebP format.
  *
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 class ProductRepository
 {
     /** @var mysqli Database connection */
     private $db;
+
+    /** @var string Absolute path to upload directory */
+    private string $uploadPath;
+
+    /** @var string Web-accessible URL path to uploads */
+    private string $uploadUrl;
 
     /**
      * Constructor.
@@ -23,224 +29,245 @@ class ProductRepository
     public function __construct($db)
     {
         $this->db = $db;
+        $this->initializeUploadPaths();
+    }
+
+    /**
+     * Initialize upload directory paths.
+     * Uses project root relative paths for reliability.
+     */
+    private function initializeUploadPaths(): void
+    {
+        // Detect project root (where init.php lives)
+        $projectRoot = $this->detectProjectRoot();
+
+        $this->uploadPath = $projectRoot . '/uploads/products/';
+        $this->uploadUrl = '/uploads/products/';
+
+        // Create directory if it doesn't exist
+        if (!is_dir($this->uploadPath)) {
+            mkdir($this->uploadPath, 0755, true);
+        }
+    }
+
+    /**
+     * Detect the project root directory.
+     * Traverses up from current file location until finding init.php or uploads folder.
+     *
+     * @return string Absolute path to project root
+     */
+    private function detectProjectRoot(): string
+    {
+        $currentDir = __DIR__;
+
+        // Look for uploads directory or init.php as markers
+        for ($i = 0; $i < 5; $i++) {
+            if (is_dir($currentDir . '/uploads') || file_exists($currentDir . '/init.php')) {
+                return $currentDir;
+            }
+            $currentDir = dirname($currentDir);
+        }
+
+        // Fallback to document root (less reliable but works on most hosts)
+        return rtrim($_SERVER['DOCUMENT_ROOT'], '/');
     }
 
     // ============================================================
-    //  PRODUCT OBJECT METHODS (OOP)
+    //  IMAGE UPLOAD METHODS
     // ============================================================
 
     /**
-     * Get product as Product object.
-     *
-     * @param int $productId Product ID
-     * @return Product|null
+     * Upload and convert product image to WebP.
+     * 
+     * @param array $file The uploaded file from $_FILES
+     * @param int $sellerId The seller's ID (used in filename)
+     * @param string $productTitle The product title (used in filename)
+     * @param string $prefix Filename prefix (main, gallery, thumb)
+     * @return string|false Relative path on success, false on failure
      */
-    public function getProductObject($productId)
+    public function uploadProductImage(array $file, int $sellerId, string $productTitle, string $prefix = 'main'): string|false
     {
-        $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
-                       p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
-                       p.status, p.created_at, p.suspended_by, p.suspended_reason
-                FROM products p
-                WHERE p.product_id = ? AND p.status != 'deleted'";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $productId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            return new Product($row);
-        }
-        $stmt->close();
-        return null;
-    }
-
-    /**
-     * Get public products as Product objects (not arrays)
-     *
-     * @param array $filters Associative array of filters
-     * @return Product[]
-     */
-    public function getPublicProductObjects($filters = [])
-    {
-        $result = $this->getPublicProducts($filters);
-        $products = [];
-
-        foreach ($result['products'] as $productData) {
-            // Map the array data to match Product constructor expectations
-            $mappedData = [
-                'product_id' => $productData['id'],
-                'seller_id' => $productData['seller_id'],
-                'title' => $productData['name'],
-                'price' => $productData['price'],
-                'image_url' => $productData['image'],
-                'condition' => $productData['condition'],
-                'stock_quantity' => $productData['stock_quantity'],
-                'location' => $productData['location'],
-                'status' => 'active'
-            ];
-            $products[] = new Product($mappedData);
+        // Validate upload
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            error_log("[ProductRepository] Upload error: " . $this->getUploadErrorMessage($file['error']));
+            return false;
         }
 
-        return $products;
-    }
-
-    /**
-     * Get seller products as Product objects.
-     *
-     * @param int $sellerId Seller ID
-     * @param string $filter Status filter
-     * @param string $search Search term
-     * @param int $limit Limit
-     * @param int $offset Offset
-     * @return Product[]
-     */
-    public function getSellerProductObjects($sellerId, $filter = 'all', $search = '', $limit = 0, $offset = 0)
-    {
-        $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
-                       p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
-                       p.status, p.created_at, p.suspended_by, p.suspended_reason
-                FROM products p
-                WHERE p.seller_id = ? AND p.status != 'deleted'";
-
-        $params = [$sellerId];
-        $types = "i";
-
-        if ($filter !== 'all') {
-            $sql .= " AND p.status = ?";
-            $params[] = $filter;
-            $types .= "s";
+        // Validate file size (5MB max)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            error_log("[ProductRepository] File too large: " . $file['size'] . " bytes");
+            return false;
         }
 
-        if (!empty($search)) {
-            $sql .= " AND (p.title LIKE ? OR p.product_id LIKE ?)";
-            $searchParam = "%$search%";
-            $params[] = $searchParam;
-            $params[] = $searchParam;
-            $types .= "ss";
+        // Validate image type
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        $image = $this->loadImageFromFile($file['tmp_name'], $mimeType);
+        if (!$image) {
+            error_log("[ProductRepository] Failed to load image: " . $mimeType);
+            return false;
         }
 
-        $sql .= " ORDER BY p.created_at DESC";
+        // Resize if needed (max 1200px)
+        $image = $this->resizeImage($image, 1200);
 
-        if ($limit > 0) {
-            $sql .= " LIMIT ? OFFSET ?";
-            $params[] = $limit;
-            $params[] = $offset;
-            $types .= "ii";
+        // Generate unique filename
+        $safeTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $productTitle);
+        $safeTitle = substr($safeTitle, 0, 50) ?: 'product';
+        $filename = sprintf('%d_%d_%s_%s.webp', $sellerId, time(), $prefix, $safeTitle);
+        $destination = $this->uploadPath . $filename;
+
+        // Save as WebP with 80% quality
+        $success = imagewebp($image, $destination, 80);
+        imagedestroy($image);
+
+        if ($success && file_exists($destination)) {
+            return $this->uploadUrl . $filename;
         }
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param($types, ...$params);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $products = [];
-        while ($row = $result->fetch_assoc()) {
-            $products[] = new Product($row);
-        }
-        $stmt->close();
-
-        return $products;
-    }
-
-    /**
-     * Save product changes to database.
-     *
-     * @param Product $product Product object
-     * @return bool
-     */
-    public function saveProduct($product)
-    {
-        $title = $product->getTitle();
-        $description = $product->getDescription();
-        $price = $product->getPrice();
-        $stockQuantity = $product->getStockQuantity();
-        $condition = $product->getCondition();
-        $location = $product->getLocation();
-        $categoryId = $product->getCategoryId();
-        $imageUrl = $product->getImageUrl();
-        $status = $product->getStatus();
-        $productId = $product->getProductId();
-        $sellerId = $product->getSellerId();
-
-        $sql = "UPDATE products SET 
-                    title = ?,
-                    description = ?,
-                    price = ?,
-                    stock_quantity = ?,
-                    `condition` = ?,
-                    location = ?,
-                    category_id = ?,
-                    image_url = ?,
-                    status = ?
-                WHERE product_id = ? AND seller_id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param(
-            'ssdisssssii',
-            $title,
-            $description,
-            $price,
-            $stockQuantity,
-            $condition,
-            $location,
-            $categoryId,
-            $imageUrl,
-            $status,
-            $productId,
-            $sellerId
-        );
-
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Create a new product from Product object.
-     *
-     * @param Product $product Product object (without product_id)
-     * @return int|false Insert ID or false on failure
-     */
-    public function createProduct($product)
-    {
-        $sellerId = $product->getSellerId();
-        $categoryId = $product->getCategoryId();
-        $title = $product->getTitle();
-        $description = $product->getDescription();
-        $price = $product->getPrice();
-        $stockQuantity = $product->getStockQuantity();
-        $condition = $product->getCondition();
-        $location = $product->getLocation();
-        $imageUrl = $product->getImageUrl();
-        $status = $product->getStatus();
-
-        $sql = "INSERT INTO products (seller_id, category_id, title, description, price, stock_quantity, `condition`, location, image_url, status, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param(
-            'iissdissss',
-            $sellerId,
-            $categoryId,
-            $title,
-            $description,
-            $price,
-            $stockQuantity,
-            $condition,
-            $location,
-            $imageUrl,
-            $status
-        );
-
-        if ($stmt->execute()) {
-            $productId = $stmt->insert_id;
-            $stmt->close();
-            return $productId;
-        }
-        $stmt->close();
+        error_log("[ProductRepository] Failed to save WebP: " . $destination);
         return false;
+    }
+
+    /**
+     * Load image from file based on MIME type.
+     *
+     * @param string $filePath Path to uploaded file
+     * @param string $mimeType MIME type of the file
+     * @return GdImage|false
+     */
+    private function loadImageFromFile(string $filePath, string $mimeType): mixed
+    {
+        return match ($mimeType) {
+            'image/jpeg' => imagecreatefromjpeg($filePath),
+            'image/png' => $this->loadPngWithAlpha($filePath),
+            'image/webp' => imagecreatefromwebp($filePath),
+            'image/gif' => imagecreatefromgif($filePath),
+            default => false,
+        };
+    }
+
+    /**
+     * Load PNG image preserving transparency.
+     *
+     * @param string $filePath Path to PNG file
+     * @return GdImage|false
+     */
+    private function loadPngWithAlpha(string $filePath): mixed
+    {
+        $image = imagecreatefrompng($filePath);
+        if ($image) {
+            imagepalettetotruecolor($image);
+            imagealphablending($image, true);
+            imagesavealpha($image, true);
+        }
+        return $image;
+    }
+
+    /**
+     * Resize image to fit within max dimensions.
+     *
+     * @param GdImage $image Source image
+     * @param int $maxSize Maximum width/height in pixels
+     * @return GdImage Resized image (original if no resize needed)
+     */
+    private function resizeImage($image, int $maxSize): mixed
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        if ($width <= $maxSize && $height <= $maxSize) {
+            return $image;
+        }
+
+        $ratio = min($maxSize / $width, $maxSize / $height);
+        $newWidth = (int) round($width * $ratio);
+        $newHeight = (int) round($height * $ratio);
+
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+
+        // Preserve transparency for PNG
+        imagealphablending($resized, false);
+        imagesavealpha($resized, true);
+        $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
+        imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
+
+        imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        imagedestroy($image);
+
+        return $resized;
+    }
+
+    /**
+     * Delete a product image file from disk.
+     *
+     * @param string|null $imageUrl Relative URL of the image
+     * @return bool True if deleted or not needed, false on failure
+     */
+    public function deleteImageFile(?string $imageUrl): bool
+    {
+        if (empty($imageUrl)) {
+            return true;
+        }
+
+        // Extract filename from URL
+        $filename = basename($imageUrl);
+        $filePath = $this->uploadPath . $filename;
+
+        if (file_exists($filePath)) {
+            return unlink($filePath);
+        }
+
+        return true; // File doesn't exist, nothing to delete
+    }
+
+    /**
+     * Get full URL for a product image.
+     *
+     * @param string|null $imageUrl Stored image path
+     * @return string Full URL with fallback to default
+     */
+    public function getImageUrl(?string $imageUrl): string
+    {
+        $baseUrl = getBaseUrl();
+
+        if (empty($imageUrl)) {
+            return $baseUrl . 'images/default-product.png';
+        }
+
+        // Already absolute URL
+        if (str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {
+            return $imageUrl;
+        }
+
+        // Check if file actually exists
+        $filename = basename($imageUrl);
+        if (file_exists($this->uploadPath . $filename)) {
+            return $baseUrl . ltrim($imageUrl, '/');
+        }
+
+        return $baseUrl . 'images/default-product.png';
+    }
+
+    /**
+     * Get user-friendly upload error message.
+     *
+     * @param int $errorCode PHP upload error code
+     * @return string
+     */
+    private function getUploadErrorMessage(int $errorCode): string
+    {
+        return match ($errorCode) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'File too large (max 5MB)',
+            UPLOAD_ERR_PARTIAL => 'File only partially uploaded',
+            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            UPLOAD_ERR_EXTENSION => 'Upload stopped by extension',
+            default => 'Unknown upload error',
+        };
     }
 
     // ============================================================
@@ -257,7 +284,7 @@ class ProductRepository
      * @param int $offset Pagination offset
      * @return array
      */
-    public function getSellerProducts($id, $filter = 'all', $search = '', $limit = 0, $offset = 0)
+    public function getSellerProducts(int $id, string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
         $sql = "SELECT p.product_id, p.title, p.price, p.image_url, p.status,
                        p.stock_quantity, p.created_at, p.suspended_by, p.suspended_reason,
@@ -321,6 +348,33 @@ class ProductRepository
     }
 
     /**
+     * Get single product as Product object.
+     *
+     * @param int $productId Product ID
+     * @return Product|null
+     */
+    public function getProductObject(int $productId): ?Product
+    {
+        $sql = "SELECT p.product_id, p.seller_id, p.category_id, p.title, p.description, 
+                       p.price, p.stock_quantity, p.`condition`, p.location, p.image_url, 
+                       p.status, p.created_at, p.suspended_by, p.suspended_reason
+                FROM products p
+                WHERE p.product_id = ? AND p.status != 'deleted'";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return new Product($row);
+        }
+        $stmt->close();
+        return null;
+    }
+
+    /**
      * Update product status with suspension tracking.
      *
      * @param int $id Product ID
@@ -330,7 +384,7 @@ class ProductRepository
      * @param string $suspendedReason Optional reason for suspension
      * @return array
      */
-    public function updateProductStatus($id, $sellerId, $action, $suspendedBy = 'seller', $suspendedReason = '')
+    public function updateProductStatus(int $id, int $sellerId, string $action, string $suspendedBy = 'seller', string $suspendedReason = ''): array
     {
         $checkSql = "SELECT product_id, status, suspended_by FROM products
                      WHERE product_id = ? AND seller_id = ? AND status != 'deleted'";
@@ -378,43 +432,89 @@ class ProductRepository
     }
 
     /**
-     * Get product data for display (lightweight, for breadcrumb).
+     * Save product changes to database.
      *
-     * @param int $productId Product ID
-     * @return array|null
+     * @param Product $product Product object
+     * @return bool
      */
-    public function getProductForDisplay($productId)
+    public function saveProduct(Product $product): bool
     {
-        $sql = "SELECT p.product_id, p.title, p.image_url
-                FROM products p
-                WHERE p.product_id = ? AND p.status = 'active'";
+        $sql = "UPDATE products SET 
+                    title = ?,
+                    description = ?,
+                    price = ?,
+                    stock_quantity = ?,
+                    `condition` = ?,
+                    location = ?,
+                    category_id = ?,
+                    image_url = ?,
+                    status = ?
+                WHERE product_id = ? AND seller_id = ?";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $productId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->bind_param(
+            'ssdisssssii',
+            $product->getTitle(),
+            $product->getDescription(),
+            $product->getPrice(),
+            $product->getStockQuantity(),
+            $product->getCondition(),
+            $product->getLocation(),
+            $product->getCategoryId(),
+            $product->getImageUrl(),
+            $product->getStatus(),
+            $product->getProductId(),
+            $product->getSellerId()
+        );
 
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            return [
-                'id' => (int)$row['product_id'],
-                'title' => $row['title'],
-                'image_url' => $row['image_url']
-            ];
-        }
-
+        $result = $stmt->execute();
         $stmt->close();
-        return null;
+        return $result;
     }
 
     /**
-     * Get single product for editing (with ownership verification).
+     * Create a new product from Product object.
+     *
+     * @param Product $product Product object (without product_id)
+     * @return int|false Insert ID or false on failure
+     */
+    public function createProduct(Product $product): int|false
+    {
+        $sql = "INSERT INTO products (seller_id, category_id, title, description, price, stock_quantity, `condition`, location, image_url, status, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param(
+            'iissdissss',
+            $product->getSellerId(),
+            $product->getCategoryId(),
+            $product->getTitle(),
+            $product->getDescription(),
+            $product->getPrice(),
+            $product->getStockQuantity(),
+            $product->getCondition(),
+            $product->getLocation(),
+            $product->getImageUrl(),
+            $product->getStatus()
+        );
+
+        if ($stmt->execute()) {
+            $productId = $stmt->insert_id;
+            $stmt->close();
+            return $productId;
+        }
+        $stmt->close();
+        return false;
+    }
+
+    /**
+     * Get product for editing (with ownership verification).
      *
      * @param int $productId Product ID
      * @param int $sellerId Seller ID
      * @return array|null
      */
-    public function getProductForEdit($productId, $sellerId)
+    public function getProductForEdit(int $productId, int $sellerId): ?array
     {
         $sql = "SELECT p.product_id, p.title, p.description, p.price, p.stock_quantity,
                        p.`condition`, p.location, p.category_id, p.image_url, p.status
@@ -436,56 +536,13 @@ class ProductRepository
     }
 
     /**
-     * Update product information.
-     *
-     * @param int $id Product ID
-     * @param int $sellerId Seller ID
-     * @param array $data Product data
-     * @return array
-     */
-    public function updateSellerProduct($id, $sellerId, $data)
-    {
-        $sql = "UPDATE products SET
-                    title = ?,
-                    description = ?,
-                    price = ?,
-                    stock_quantity = ?,
-                    `condition` = ?,
-                    location = ?,
-                    category_id = ?
-                WHERE product_id = ? AND seller_id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param(
-            'ssdissiii',
-            $data['title'],
-            $data['description'],
-            $data['price'],
-            $data['stock_quantity'],
-            $data['condition'],
-            $data['location'],
-            $data['category_id'],
-            $id,
-            $sellerId
-        );
-
-        if ($stmt->execute()) {
-            $stmt->close();
-            return ['success' => true, 'message' => 'Product updated.'];
-        }
-
-        $stmt->close();
-        return ['success' => false, 'message' => 'Failed to update product.'];
-    }
-
-    /**
      * Delete product (soft delete).
      *
      * @param int $id Product ID
      * @param int $sellerId Seller ID
      * @return array
      */
-    public function deleteSellerProduct($id, $sellerId)
+    public function deleteSellerProduct(int $id, int $sellerId): array
     {
         $checkSql = "SELECT product_id, image_url FROM products
                      WHERE product_id = ? AND seller_id = ?";
@@ -511,7 +568,7 @@ class ProductRepository
             $deleteStmt->close();
 
             if (!empty($product['image_url'])) {
-                $this->deleteProductImage($product['image_url']);
+                $this->deleteImageFile($product['image_url']);
             }
 
             return ['success' => true, 'message' => 'Product deleted.'];
@@ -521,10 +578,6 @@ class ProductRepository
         return ['success' => false, 'message' => 'Failed to delete product.'];
     }
 
-    // ============================================================
-    //  STOCK MANAGEMENT
-    // ============================================================
-
     /**
      * Update product stock quantity.
      *
@@ -532,7 +585,7 @@ class ProductRepository
      * @param int $qty Quantity to add (negative to subtract)
      * @return bool
      */
-    public function updateStock($productId, $qty)
+    public function updateStock(int $productId, int $qty): bool
     {
         if ($qty >= 0) {
             $stmt = $this->db->prepare(
@@ -553,78 +606,12 @@ class ProductRepository
     }
 
     /**
-     * Decrease product stock after purchase.
-     *
-     * @param int $productId Product ID
-     * @param int $qty Quantity ordered
-     * @return bool
-     */
-    public function decreaseProductStock($productId, $qty)
-    {
-        $stmt = $this->db->prepare(
-            "UPDATE products SET stock_quantity = stock_quantity - ?
-             WHERE product_id = ? AND stock_quantity >= ?"
-        );
-        $stmt->bind_param('iii', $qty, $productId, $qty);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Restore stock when an order is cancelled.
-     *
-     * @param int $orderId Order ID
-     * @return bool
-     */
-    public function restoreOrderStock($orderId)
-    {
-        $itemsSql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
-        $itemsStmt = $this->db->prepare($itemsSql);
-        $itemsStmt->bind_param('i', $orderId);
-        $itemsStmt->execute();
-        $itemsResult = $itemsStmt->get_result();
-
-        $success = true;
-        while ($item = $itemsResult->fetch_assoc()) {
-            $stockSql = "UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?";
-            $stockStmt = $this->db->prepare($stockSql);
-            $stockStmt->bind_param('ii', $item['quantity'], $item['product_id']);
-            if (!$stockStmt->execute()) {
-                $success = false;
-            }
-            $stockStmt->close();
-        }
-        $itemsStmt->close();
-
-        return $success;
-    }
-
-    /**
-     * Get product stock quantity.
-     *
-     * @param int $productId Product ID
-     * @return int
-     */
-    public function getProductStock($productId)
-    {
-        $stmt = $this->db->prepare("SELECT stock_quantity FROM products WHERE product_id = ?");
-        $stmt->bind_param('i', $productId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $stock = (int) ($row['stock_quantity'] ?? 0);
-        $stmt->close();
-        return $stock;
-    }
-
-    /**
-     * Count active products for a user (seller).
+     * Count active products for a seller.
      *
      * @param int $userId User ID
      * @return int
      */
-    public function countUserProducts($userId)
+    public function countUserProducts(int $userId): int
     {
         $sql = "SELECT COUNT(*) as total FROM products WHERE seller_id = ? AND status = 'active'";
         $stmt = $this->db->prepare($sql);
@@ -637,199 +624,6 @@ class ProductRepository
     }
 
     // ============================================================
-    //  IMAGE FILE OPERATIONS
-    // ============================================================
-
-    /**
-     * Helper to get full system path for an image.
-     *
-     * @param string $imagePath Relative image path
-     * @return string
-     */
-    private function getFullPath($imagePath)
-    {
-        $basePaths = [
-            $_SERVER['DOCUMENT_ROOT'] . '/',
-            $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/',
-            dirname(__DIR__, 2) . '/',
-            __DIR__ . '/../../',
-        ];
-
-        foreach ($basePaths as $basePath) {
-            $fullPath = rtrim($basePath, '/') . '/' . ltrim($imagePath, '/');
-            if (file_exists(dirname($fullPath))) {
-                return $fullPath;
-            }
-        }
-
-        return $_SERVER['DOCUMENT_ROOT'] . '/' . ltrim($imagePath, '/');
-    }
-
-    /**
-     * Delete a product image file from disk.
-     *
-     * @param string $imagePath Relative path to the image
-     * @return bool
-     */
-    public function deleteProductImage($imagePath)
-    {
-        if (empty($imagePath)) {
-            return true;
-        }
-
-        $fullPath = $this->getFullPath($imagePath);
-
-        if (file_exists($fullPath)) {
-            return unlink($fullPath);
-        }
-
-        return true;
-    }
-
-    /**
-     * Get the full URL for a product image, with fallback to default.
-     *
-     * @param string $imagePath The stored image path
-     * @return string
-     */
-    public function getProductImageUrl($imagePath)
-    {
-        $baseUrl = getBaseUrl();
-
-        if (empty($imagePath)) {
-            return $baseUrl . 'images/default-product.png';
-        }
-
-        if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://')) {
-            return $imagePath;
-        }
-
-        if (str_starts_with($imagePath, '/')) {
-            $imagePath = ltrim($imagePath, '/');
-        }
-
-        $fullPath = $this->getFullPath($imagePath);
-        if (file_exists($fullPath)) {
-            return $baseUrl . $imagePath;
-        }
-
-        return $baseUrl . 'images/default-product.png';
-    }
-
-    /**
-     * Convert an uploaded image to WebP format.
-     *
-     * @param array $file The uploaded file from $_FILES
-     * @param int $sellerId The seller's ID
-     * @param string $productTitle The product title
-     * @param string $prefix Optional filename prefix
-     * @return string|false
-     */
-    public function convertToWebP($file, $sellerId, $productTitle, $prefix = 'main')
-    {
-        $uploadPaths = [
-            $_SERVER['DOCUMENT_ROOT'] . '/uploads/products/',
-            $_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/uploads/products/',
-            dirname(__DIR__, 2) . '/uploads/products/',
-            __DIR__ . '/../../uploads/products/',
-        ];
-
-        $uploadDir = '';
-        foreach ($uploadPaths as $path) {
-            if (is_dir(dirname($path)) || mkdir(dirname($path), 0777, true)) {
-                $uploadDir = $path;
-                break;
-            }
-        }
-
-        if (empty($uploadDir)) {
-            $uploadDir = __DIR__ . '/../../uploads/products/';
-        }
-
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        $timestamp   = time();
-        $safeTitle   = preg_replace('/[^a-zA-Z0-9_-]/', '_', $productTitle);
-        $safeTitle   = substr($safeTitle, 0, 50);
-        $filename    = "{$sellerId}_{$timestamp}_{$prefix}_{$safeTitle}.webp";
-        $destination = $uploadDir . $filename;
-
-        $source    = $file['tmp_name'];
-        $imageInfo = getimagesize($source);
-
-        if (!$imageInfo) {
-            return false;
-        }
-
-        switch ($imageInfo['mime']) {
-            case 'image/jpeg':
-                $image = imagecreatefromjpeg($source);
-                break;
-            case 'image/png':
-                $image = imagecreatefrompng($source);
-                imagepalettetotruecolor($image);
-                imagealphablending($image, true);
-                imagesavealpha($image, true);
-                break;
-            case 'image/webp':
-                $image = imagecreatefromwebp($source);
-                break;
-            case 'image/gif':
-                $image = imagecreatefromgif($source);
-                break;
-            default:
-                return false;
-        }
-
-        if (!$image) {
-            return false;
-        }
-
-        $origWidth  = imagesx($image);
-        $origHeight = imagesy($image);
-        $maxDim     = 1200;
-
-        if ($origWidth > $maxDim || $origHeight > $maxDim) {
-            $ratio     = min($maxDim / $origWidth, $maxDim / $origHeight);
-            $newWidth  = (int) round($origWidth * $ratio);
-            $newHeight = (int) round($origHeight * $ratio);
-
-            $resized = imagecreatetruecolor($newWidth, $newHeight);
-
-            if ($imageInfo['mime'] === 'image/png') {
-                imagealphablending($resized, false);
-                imagesavealpha($resized, true);
-                $transparent = imagecolorallocatealpha($resized, 255, 255, 255, 127);
-                imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
-            }
-
-            imagecopyresampled(
-                $resized,
-                $image,
-                0,
-                0,
-                0,
-                0,
-                $newWidth,
-                $newHeight,
-                $origWidth,
-                $origHeight
-            );
-            $image = $resized;
-        }
-
-        $success = imagewebp($image, $destination, 80);
-
-        if ($success) {
-            return 'uploads/products/' . $filename;
-        }
-
-        return false;
-    }
-
-    // ============================================================
     //  PUBLIC PRODUCT LISTINGS
     // ============================================================
 
@@ -839,7 +633,7 @@ class ProductRepository
      * @param array $filters Associative array of filters
      * @return array
      */
-    public function getPublicProducts($filters = [])
+    public function getPublicProducts(array $filters = []): array
     {
         $categories  = $filters['categories'] ?? [];
         $priceRange  = $filters['price_range'] ?? '';
@@ -960,7 +754,7 @@ class ProductRepository
      * @param array $filters Filters
      * @return array
      */
-    public function searchProducts($search, $filters = [])
+    public function searchProducts(string $search, array $filters = []): array
     {
         $categories  = $filters['categories'] ?? [];
         $priceRange  = $filters['price_range'] ?? '';
@@ -1039,16 +833,11 @@ class ProductRepository
 
         $products = [];
         while ($row = $result->fetch_assoc()) {
-            $imagePath = $row['image_url'];
-            if (empty($imagePath)) {
-                $imagePath = 'images/default-product.png';
-            }
-
             $products[] = [
                 'id'             => (int) $row['product_id'],
                 'name'           => $row['product_name'],
                 'price'          => (float) $row['price'],
-                'image'          => $imagePath,
+                'image'          => $row['image_url'] ?: 'images/default-product.png',
                 'seller_name'    => $row['seller_name'],
                 'seller_id'      => (int) $row['seller_id'],
                 'location'       => $row['location'] ?? 'South Africa',
@@ -1129,7 +918,7 @@ class ProductRepository
      * @param int $offset Pagination offset
      * @return array
      */
-    public function getAllProductsForAdmin($status = 'all', $search = '', $limit = 12, $offset = 0)
+    public function getAllProductsForAdmin(string $status = 'all', string $search = '', int $limit = 12, int $offset = 0): array
     {
         $sql = "SELECT p.product_id as id, p.title as name, p.price, p.status,
                 p.stock_quantity, p.created_at,
@@ -1178,8 +967,8 @@ class ProductRepository
                 'status'         => $row['status'],
                 'stock_quantity' => (int) $row['stock_quantity'],
                 'created_at'     => date('d M Y', strtotime($row['created_at'])),
-                'display_image'  => $this->getProductImageUrl($row['display_image']),
-                'image'          => $this->getProductImageUrl($row['display_image']),
+                'display_image'  => $this->getImageUrl($row['display_image']),
+                'image'          => $this->getImageUrl($row['display_image']),
                 'seller_name'    => $row['seller_name'] ?? 'Unknown'
             ];
         }
@@ -1194,7 +983,7 @@ class ProductRepository
      * @param string $search Search term
      * @return int
      */
-    public function getProductsCountForAdmin($status = 'all', $search = '')
+    public function getProductsCountForAdmin(string $status = 'all', string $search = ''): int
     {
         $sql = "SELECT COUNT(*) as total FROM products p
                 LEFT JOIN users u ON p.seller_id = u.user_id
@@ -1229,83 +1018,36 @@ class ProductRepository
     }
 
     // ============================================================
-    //  SELLER DASHBOARD PRODUCT DISPLAY
+    //  LEGACY METHODS (for backward compatibility)
     // ============================================================
 
     /**
-     * Get seller products for dashboard or public view.
-     *
-     * @param int $sellerId Seller ID
-     * @param bool $isOwner Whether the viewer is the seller themselves
-     * @param int $limit Maximum products to return
-     * @return array
+     * Legacy method - use uploadProductImage() instead.
+     * 
+     * @deprecated Use uploadProductImage() instead
      */
-    public function getSellerProductsForDisplay($sellerId, $isOwner = false, $limit = 0)
+    public function convertToWebP($file, $sellerId, $productTitle, $prefix = 'main')
     {
-        if ($isOwner) {
-            $sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,
-                       p.condition, p.stock_quantity, p.created_at, p.status, p.suspended_by, p.suspended_reason,
-                       COALESCE(pi.image_url, p.image_url) AS display_image,
-                       c.category_name
-                FROM products p
-                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                LEFT JOIN categories c ON p.category_id = c.category_id
-                WHERE p.seller_id = ? AND p.status != 'deleted'
-                ORDER BY p.created_at DESC";
-        } else {
-            $sql = "SELECT p.product_id as id, p.title as name, p.price, p.image_url as image,
-                       p.condition, p.stock_quantity, p.created_at,
-                       COALESCE(pi.image_url, p.image_url) AS display_image,
-                       c.category_name
-                FROM products p
-                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                LEFT JOIN categories c ON p.category_id = c.category_id
-                WHERE p.seller_id = ? AND p.status = 'active'
-                ORDER BY p.created_at DESC";
-        }
+        return $this->uploadProductImage($file, $sellerId, $productTitle, $prefix);
+    }
 
-        if ($limit > 0) {
-            $sql .= " LIMIT ?";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('ii', $sellerId, $limit);
-        } else {
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('i', $sellerId);
-        }
+    /**
+     * Legacy method - use getImageUrl() instead.
+     * 
+     * @deprecated Use getImageUrl() instead
+     */
+    public function getProductImageUrl($imagePath)
+    {
+        return $this->getImageUrl($imagePath);
+    }
 
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $products = [];
-        while ($row = $result->fetch_assoc()) {
-            $imagePath = $row['display_image'] ?? $row['image'];
-            if ($imagePath && !preg_match('/^http/', $imagePath)) {
-                $imagePath = getBaseUrl() . $imagePath;
-            }
-
-            $productData = [
-                'id' => (int)$row['id'],
-                'name' => $row['name'],
-                'price' => (float)$row['price'],
-                'image' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
-                'image_url' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
-                'display_image' => $imagePath ?: getBaseUrl() . 'images/default-product.png',
-                'condition' => ucfirst($row['condition'] ?? 'Good'),
-                'stock_quantity' => (int)($row['stock_quantity'] ?? 0),
-                'created_at' => $row['created_at'],
-                'category_name' => $row['category_name'] ?? 'General'
-            ];
-
-            if ($isOwner) {
-                $productData['status'] = $row['status'];
-                $productData['suspended_by'] = $row['suspended_by'] ?? null;
-                $productData['suspended_reason'] = $row['suspended_reason'] ?? null;
-            }
-
-            $products[] = $productData;
-        }
-        $stmt->close();
-
-        return $products;
+    /**
+     * Legacy method - use deleteImageFile() instead.
+     * 
+     * @deprecated Use deleteImageFile() instead
+     */
+    public function deleteProductImage($imagePath)
+    {
+        return $this->deleteImageFile($imagePath);
     }
 }
