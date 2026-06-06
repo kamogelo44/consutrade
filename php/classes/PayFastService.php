@@ -4,20 +4,38 @@
  * ConsuTrade - PayFastService
  *
  * Handles PayFast payment verification and processing.
+ * This is a SERVICE class that coordinates multiple repositories.
+ * 
+ * NOTE: This class does NOT generate HTML forms - that belongs in frontend views.
  *
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 2.1.0
  */
+
 class PayFastService
 {
-    private $db;
-    private $orderRepo;
-    private $productRepo;
-    private $cartRepo;
-    private $transactionRepo;
+    private mysqli $db;
+    private OrderRepository $orderRepo;
+    private ProductRepository $productRepo;
+    private CartRepository $cartRepo;
+    private TransactionRepository $transactionRepo;
 
-    public function __construct($db, $orderRepo, $productRepo, $cartRepo, $transactionRepo)
-    {
+    /**
+     * Constructor with dependency injection.
+     *
+     * @param mysqli $db Database connection
+     * @param OrderRepository $orderRepo Order repository
+     * @param ProductRepository $productRepo Product repository
+     * @param CartRepository $cartRepo Cart repository
+     * @param TransactionRepository $transactionRepo Transaction repository
+     */
+    public function __construct(
+        mysqli $db,
+        OrderRepository $orderRepo,
+        ProductRepository $productRepo,
+        CartRepository $cartRepo,
+        TransactionRepository $transactionRepo
+    ) {
         $this->db = $db;
         $this->orderRepo = $orderRepo;
         $this->productRepo = $productRepo;
@@ -26,9 +44,12 @@ class PayFastService
     }
 
     /**
-     * Handle PayFast ITN request
+     * Handle PayFast ITN (Instant Transaction Notification) request.
+     *
+     * @param array $postData $_POST data from PayFast
+     * @return array Response with success flag and message
      */
-    public function handleItn($postData)
+    public function handleItn(array $postData): array
     {
         if (!$this->verifySignature($postData)) {
             return ['success' => false, 'message' => 'Invalid signature'];
@@ -42,9 +63,12 @@ class PayFastService
     }
 
     /**
-     * Verify PayFast signature
+     * Verify PayFast signature.
+     * 
+     * @param array $data POST data from PayFast
+     * @return bool True if signature is valid
      */
-    private function verifySignature($data)
+    private function verifySignature(array $data): bool
     {
         if (!isset($data['signature'])) {
             return false;
@@ -59,15 +83,18 @@ class PayFastService
         $pfParamString = rtrim($pfParamString, '&');
 
         $expectedSignature = md5($pfParamString);
-        return $expectedSignature === $data['signature'];
+        return hash_equals($expectedSignature, $data['signature']);
     }
 
     /**
-     * Validate with PayFast server
+     * Validate payment with PayFast server (server-to-server confirmation).
+     *
+     * @param array $data POST data from PayFast
+     * @return bool True if PayFast confirms payment
      */
-    private function validateWithPayFast($data)
+    private function validateWithPayFast(array $data): bool
     {
-        $payfast_url = PAYFAST_SANDBOX
+        $payfastUrl = PAYFAST_SANDBOX
             ? 'https://sandbox.payfast.co.za/eng/query/validate'
             : 'https://www.payfast.co.za/eng/query/validate';
 
@@ -78,7 +105,7 @@ class PayFastService
         $pfRequest = rtrim($pfRequest, '&');
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $payfast_url);
+        curl_setopt($ch, CURLOPT_URL, $payfastUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_POST, true);
@@ -91,6 +118,7 @@ class PayFastService
         curl_close($ch);
 
         if ($error) {
+            error_log("PayFast validation CURL error: " . $error);
             return false;
         }
 
@@ -98,15 +126,19 @@ class PayFastService
     }
 
     /**
-     * Process successful payment
+     * Process successful payment.
+     *
+     * @param array $data Validated POST data from PayFast
+     * @return array Result with success flag and details
      */
-    private function processPayment($data)
+    private function processPayment(array $data): array
     {
         $paymentStatus = $data['payment_status'] ?? '';
         $paymentId = $data['m_payment_id'] ?? '';
         $payfastRef = $data['pf_payment_id'] ?? '';
         $amountReceived = (float)($data['amount'] ?? 0);
 
+        // Parse payment ID format: "orderId_userId_timestamp"
         $parts = explode('_', $paymentId);
         $orderId = (int)($parts[0] ?? 0);
         $userId = (int)($parts[1] ?? 0);
@@ -118,9 +150,11 @@ class PayFastService
         $this->db->begin_transaction();
 
         try {
+            // Try to find orders by payment_id first (supports multiple orders)
             $orders = $this->getOrdersByPaymentId($paymentId, $userId);
 
             if (empty($orders)) {
+                // Fallback to single order lookup
                 $order = $this->getSingleOrder($orderId, $userId);
                 if ($order) {
                     $orders = [$order];
@@ -137,6 +171,7 @@ class PayFastService
             foreach ($orders as $order) {
                 $totalAmount += $order['total_price'];
 
+                // Update order status
                 $this->orderRepo->updateOrderStatusDirect($order['order_id'], 'processing');
 
                 // Create transaction record
@@ -147,21 +182,23 @@ class PayFastService
                 );
                 $transactions[] = $transaction;
 
+                // Decrease stock for items in this order
                 $this->decreaseOrderStock($order['order_id']);
             }
 
-            // Log amount mismatch but don't fail
+            // Log amount mismatch but don't fail the transaction
             if (abs($totalAmount - $amountReceived) >= 0.01) {
-                error_log("PayFast amount mismatch for payment_id: $paymentId");
+                error_log("PayFast amount mismatch for payment_id: $paymentId. Expected: $totalAmount, Received: $amountReceived");
             }
 
+            // Clear user's cart after successful payment
             $this->cartRepo->clearUserCart($userId);
 
             $this->db->commit();
 
             return [
                 'success' => true,
-                'message' => 'Payment processed',
+                'message' => 'Payment processed successfully',
                 'transactions' => $transactions
             ];
         } catch (Exception $e) {
@@ -171,7 +208,14 @@ class PayFastService
         }
     }
 
-    private function getOrdersByPaymentId($paymentId, $userId)
+    /**
+     * Get orders by payment ID (supports multiple orders in one payment).
+     *
+     * @param string $paymentId Payment ID from frontend
+     * @param int $userId Buyer user ID
+     * @return array List of orders
+     */
+    private function getOrdersByPaymentId(string $paymentId, int $userId): array
     {
         $sql = "SELECT order_id, total_price FROM orders 
                 WHERE payment_id = ? AND buyer_id = ? AND status = 'pending'";
@@ -189,7 +233,14 @@ class PayFastService
         return $orders;
     }
 
-    private function getSingleOrder($orderId, $userId)
+    /**
+     * Get a single order by order ID (fallback method).
+     *
+     * @param int $orderId Order ID
+     * @param int $userId Buyer user ID
+     * @return array|null Order data or null
+     */
+    private function getSingleOrder(int $orderId, int $userId): ?array
     {
         $sql = "SELECT order_id, total_price FROM orders 
                 WHERE order_id = ? AND buyer_id = ? AND status = 'pending'";
@@ -204,7 +255,13 @@ class PayFastService
         return $order ?: null;
     }
 
-    private function decreaseOrderStock($orderId)
+    /**
+     * Decrease stock for all items in an order.
+     *
+     * @param int $orderId Order ID
+     * @return void
+     */
+    private function decreaseOrderStock(int $orderId): void
     {
         $sql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -216,5 +273,33 @@ class PayFastService
             $this->productRepo->decreaseProductStock($item['product_id'], $item['quantity']);
         }
         $stmt->close();
+    }
+
+    /**
+     * Prepare PayFast data array (NOT HTML form).
+     * Returns data that the frontend view will use to build the form.
+     *
+     * @param array $orderData Order information
+     * @param string $baseUrl Site base URL
+     * @return array PayFast parameters
+     */
+    public function preparePayFastData(array $orderData, string $baseUrl): array
+    {
+        return [
+            'merchant_id' => PAYFAST_MERCHANT_ID,
+            'merchant_key' => PAYFAST_MERCHANT_KEY,
+            'return_url' => $baseUrl . 'order-confirmation.php',
+            'cancel_url' => $baseUrl . 'cart.php',
+            'notify_url' => $baseUrl . 'php/endpoints/payfast-notify.php',
+            'm_payment_id' => $orderData['payment_id'],
+            'amount' => number_format($orderData['total'], 2, '.', ''),
+            'item_name' => 'ConsuTrade Order #' . ($orderData['primary_order_id'] ?? ''),
+            'item_description' => 'Purchase from ConsuTrade',
+            'name_first' => explode(' ', $orderData['buyer_name'] ?? 'Customer')[0],
+            'name_last' => count(explode(' ', $orderData['buyer_name'] ?? 'Customer')) > 1
+                ? substr($orderData['buyer_name'], strpos($orderData['buyer_name'], ' ') + 1)
+                : 'Customer',
+            'email_address' => $orderData['buyer_email'] ?? ''
+        ];
     }
 }

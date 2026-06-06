@@ -439,6 +439,19 @@ class ProductRepository
      */
     public function saveProduct(Product $product): bool
     {
+        // Store values in variables first
+        $title = $product->getTitle();
+        $description = $product->getDescription();
+        $price = $product->getPrice();
+        $stockQuantity = $product->getStockQuantity();
+        $condition = $product->getCondition();
+        $location = $product->getLocation();
+        $categoryId = $product->getCategoryId();
+        $imageUrl = $product->getImageUrl();
+        $status = $product->getStatus();
+        $productId = $product->getProductId();
+        $sellerId = $product->getSellerId();
+
         $sql = "UPDATE products SET 
                     title = ?,
                     description = ?,
@@ -454,17 +467,17 @@ class ProductRepository
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param(
             'ssdisssssii',
-            $product->getTitle(),
-            $product->getDescription(),
-            $product->getPrice(),
-            $product->getStockQuantity(),
-            $product->getCondition(),
-            $product->getLocation(),
-            $product->getCategoryId(),
-            $product->getImageUrl(),
-            $product->getStatus(),
-            $product->getProductId(),
-            $product->getSellerId()
+            $title,
+            $description,
+            $price,
+            $stockQuantity,
+            $condition,
+            $location,
+            $categoryId,
+            $imageUrl,
+            $status,
+            $productId,
+            $sellerId
         );
 
         $result = $stmt->execute();
@@ -480,22 +493,33 @@ class ProductRepository
      */
     public function createProduct(Product $product): int|false
     {
+        $sellerId = $product->getSellerId();
+        $categoryId = $product->getCategoryId();
+        $title = $product->getTitle();
+        $description = $product->getDescription();
+        $price = $product->getPrice();
+        $stockQuantity = $product->getStockQuantity();
+        $condition = $product->getCondition();
+        $location = $product->getLocation();
+        $imageUrl = $product->getImageUrl();
+        $status = $product->getStatus();
+
         $sql = "INSERT INTO products (seller_id, category_id, title, description, price, stock_quantity, `condition`, location, image_url, status, created_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param(
             'iissdissss',
-            $product->getSellerId(),
-            $product->getCategoryId(),
-            $product->getTitle(),
-            $product->getDescription(),
-            $product->getPrice(),
-            $product->getStockQuantity(),
-            $product->getCondition(),
-            $product->getLocation(),
-            $product->getImageUrl(),
-            $product->getStatus()
+            $sellerId,
+            $categoryId,
+            $title,
+            $description,
+            $price,
+            $stockQuantity,
+            $condition,
+            $location,
+            $imageUrl,
+            $status
         );
 
         if ($stmt->execute()) {
@@ -578,6 +602,10 @@ class ProductRepository
         return ['success' => false, 'message' => 'Failed to delete product.'];
     }
 
+    // ============================================================
+    //  STOCK MANAGEMENT METHODS
+    // ============================================================
+
     /**
      * Update product stock quantity.
      *
@@ -603,6 +631,82 @@ class ProductRepository
         $result = $stmt->execute();
         $stmt->close();
         return $result;
+    }
+
+    /**
+     * Get current stock quantity for a product.
+     *
+     * @param int $productId Product ID
+     * @return int Current stock quantity
+     */
+    public function getProductStock(int $productId): int
+    {
+        $stmt = $this->db->prepare("SELECT stock_quantity FROM products WHERE product_id = ?");
+        $stmt->bind_param('i', $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stock = (int) ($row['stock_quantity'] ?? 0);
+        $stmt->close();
+        return $stock;
+    }
+
+    /**
+     * Decrease product stock after purchase.
+     * This method ensures we don't go below zero stock.
+     *
+     * @param int $productId Product ID
+     * @param int $quantity Quantity to decrease by
+     * @return bool True on success, false on failure (insufficient stock)
+     */
+    public function decreaseProductStock(int $productId, int $quantity): bool
+    {
+        // First check if we have enough stock
+        $currentStock = $this->getProductStock($productId);
+
+        if ($currentStock < $quantity) {
+            error_log("Insufficient stock for product ID: $productId. Stock: $currentStock, Requested: $quantity");
+            return false;
+        }
+
+        $stmt = $this->db->prepare(
+            "UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND stock_quantity >= ?"
+        );
+        $stmt->bind_param('iii', $quantity, $productId, $quantity);
+        $result = $stmt->execute();
+        $stmt->close();
+
+        return $result;
+    }
+
+    /**
+     * Restore stock when an order is cancelled.
+     *
+     * @param int $orderId Order ID
+     * @return bool
+     */
+    public function restoreOrderStock(int $orderId): bool
+    {
+        $itemsSql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
+        $itemsStmt = $this->db->prepare($itemsSql);
+        $itemsStmt->bind_param('i', $orderId);
+        $itemsStmt->execute();
+        $itemsResult = $itemsStmt->get_result();
+
+        $success = true;
+        while ($item = $itemsResult->fetch_assoc()) {
+            $stockSql = "UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?";
+            $stockStmt = $this->db->prepare($stockSql);
+            $stockStmt->bind_param('ii', $item['quantity'], $item['product_id']);
+            if (!$stockStmt->execute()) {
+                $success = false;
+                error_log("Failed to restore stock for product ID: {$item['product_id']}");
+            }
+            $stockStmt->close();
+        }
+        $itemsStmt->close();
+
+        return $success;
     }
 
     /**

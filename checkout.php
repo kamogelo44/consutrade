@@ -10,11 +10,6 @@
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 
-// Define PayFast constants if not already defined
-if (!defined('PAYFAST_PROCESS_URL')) {
-    define('PAYFAST_PROCESS_URL', 'https://sandbox.payfast.co.za/eng/process');
-}
-
 $breadcrumbItems = [
     ['url' => 'cart.php', 'label' => 'Shopping Cart'],
     ['label' => 'Checkout']
@@ -32,17 +27,22 @@ $subtotal    = $data['subtotal'];
 $delivery_fee = $data['delivery_fee'];
 $total       = $data['total'];
 
-// Prepare PayFast form data
-$payfast_data = $cartRepo->preparePayFastData([
-    'payment_id'       => $data['payment_id'],
+// Prepare PayFast form data using the service method
+$payfast_data = $payfastService->preparePayFastData([
+    'payment_id' => $data['payment_id'],
     'primary_order_id' => $data['primary_order_id'],
-    'total'            => $total,
-    'buyer_name'       => $data['buyer_name'],
-    'buyer_email'      => $data['buyer_email'],
+    'total' => $total,
+    'buyer_name' => $data['buyer_name'],
+    'buyer_email' => $data['buyer_email'],
 ], $baseUrl);
 
 // Clear checkout data after displaying (prevents double submission on refresh)
 unset($_SESSION['checkout_data']);
+
+// PayFast process URL
+$payfastProcessUrl = PAYFAST_SANDBOX
+    ? 'https://sandbox.payfast.co.za/eng/process'
+    : 'https://www.payfast.co.za/eng/process';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -374,20 +374,21 @@ unset($_SESSION['checkout_data']);
                     </div>
                 </div>
 
-                <!-- PayFast Payment Form -->
-                <form action="<?php echo PAYFAST_PROCESS_URL; ?>" method="post" id="payfast-form">
-                    <input type="hidden" name="merchant_id" value="<?php echo $payfast_data['merchant_id']; ?>">
-                    <input type="hidden" name="merchant_key" value="<?php echo $payfast_data['merchant_key']; ?>">
-                    <input type="hidden" name="return_url" value="<?php echo $payfast_data['return_url']; ?>">
-                    <input type="hidden" name="cancel_url" value="<?php echo $payfast_data['cancel_url']; ?>">
-                    <input type="hidden" name="notify_url" value="<?php echo $payfast_data['notify_url']; ?>">
+                <!-- PayFast Payment Form - HTML belongs in view, not in service -->
+                <form action="<?php echo htmlspecialchars($payfastProcessUrl); ?>" method="post" id="payfast-form">
+                    <input type="hidden" name="merchant_id" value="<?php echo htmlspecialchars($payfast_data['merchant_id']); ?>">
+                    <input type="hidden" name="merchant_key" value="<?php echo htmlspecialchars($payfast_data['merchant_key']); ?>">
+                    <input type="hidden" name="return_url" value="<?php echo htmlspecialchars($payfast_data['return_url']); ?>">
+                    <input type="hidden" name="cancel_url" value="<?php echo htmlspecialchars($payfast_data['cancel_url']); ?>">
+                    <input type="hidden" name="notify_url" value="<?php echo htmlspecialchars($payfast_data['notify_url']); ?>">
 
-                    <input type="hidden" name="m_payment_id" value="<?php echo $payfast_data['m_payment_id']; ?>">
-                    <input type="hidden" name="amount" value="<?php echo $payfast_data['amount']; ?>">
-                    <input type="hidden" name="item_name" value="<?php echo $payfast_data['item_name']; ?>">
-                    <input type="hidden" name="item_description" value="<?php echo $payfast_data['item_description']; ?>">
+                    <input type="hidden" name="m_payment_id" value="<?php echo htmlspecialchars($payfast_data['m_payment_id']); ?>">
+                    <input type="hidden" name="amount" value="<?php echo htmlspecialchars($payfast_data['amount']); ?>">
+                    <input type="hidden" name="item_name" value="<?php echo htmlspecialchars($payfast_data['item_name']); ?>">
+                    <input type="hidden" name="item_description" value="<?php echo htmlspecialchars($payfast_data['item_description']); ?>">
 
                     <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($payfast_data['name_first']); ?>">
+                    <input type="hidden" name="name_last" value="<?php echo htmlspecialchars($payfast_data['name_last']); ?>">
                     <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($payfast_data['email_address']); ?>">
                     <?php if (!empty($data['buyer_phone'])): ?>
                         <input type="hidden" name="cell_number" value="<?php echo htmlspecialchars($data['buyer_phone']); ?>">
@@ -419,9 +420,9 @@ unset($_SESSION['checkout_data']);
         var baseUrl = '<?php echo $baseUrl; ?>';
 
         // ========== CACHED DOM ELEMENTS ==========
-        var $payfastForm = null;
-        var $payNowBtn = null;
-        var $loadingOverlay = null;
+        let $payfastForm = null;
+        let $payNowBtn = null;
+        let $loadingOverlay = null;
 
         // ========== CACHE FUNCTION ==========
         function cacheCheckoutElements() {
@@ -439,18 +440,20 @@ unset($_SESSION['checkout_data']);
 
         // ========== HANDLE FORM SUBMIT ==========
         function handleFormSubmit() {
-            $payfastForm.off('submit').on('submit', function(e) {
-                // Disable button to prevent double submission
-                if ($payNowBtn) {
-                    $payNowBtn.prop('disabled', true);
-                }
+            if ($payfastForm) {
+                $payfastForm.off('submit').on('submit', function(e) {
+                    // Disable button to prevent double submission
+                    if ($payNowBtn) {
+                        $payNowBtn.prop('disabled', true);
+                    }
 
-                // Show loading overlay
-                showLoading();
+                    // Show loading overlay
+                    showLoading();
 
-                // Allow form to submit naturally
-                return true;
-            });
+                    // Allow form to submit naturally
+                    return true;
+                });
+            }
         }
 
         // ========== PREVENT BACK BUTTON AFTER CHECKOUT ==========

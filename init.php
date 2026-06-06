@@ -2,6 +2,12 @@
 
 /**
  * ConsuTrade - Application Initialization
+ * 
+ * This file bootstraps the entire application.
+ * It should be included at the top of every page.
+ *
+ * @author Kamogelo Phale
+ * @version 2.1.0
  */
 
 // Session settings - use single session
@@ -29,6 +35,7 @@ require_once __DIR__ . '/php/classes/ReviewRepository.php';
 require_once __DIR__ . '/php/classes/TransactionRepository.php';
 require_once __DIR__ . '/php/classes/ReportRepository.php';
 
+// Create repository instances
 $userRepo = new UserRepository($conn);
 $categoryRepo = new CategoryRepository($conn);
 $productRepo = new ProductRepository($conn);
@@ -37,7 +44,7 @@ $orderRepo = new OrderRepository($conn);
 $cartRepo = new CartRepository($conn);
 $reviewRepo = new ReviewRepository($conn);
 $transactionRepo = new TransactionRepository($conn);
-$reportRepo = new ReportRepository($conn);
+$reportRepo = new ReportRepository($conn, $productRepo);
 
 // Load domain models
 require_once __DIR__ . '/php/classes/Product.php';
@@ -57,7 +64,17 @@ require_once __DIR__ . '/php/classes/Report.php';
 require_once __DIR__ . '/php/classes/PayFastService.php';
 require_once __DIR__ . '/php/classes/Auth.php';
 
-$auth = new Auth($conn);
+// Create Auth instance (with UserRepository injected)
+$auth = new Auth($conn, $userRepo);
+
+// Create PayFastService instance (needed for checkout)
+$payfastService = new PayFastService(
+    $conn,
+    $orderRepo,
+    $productRepo,
+    $cartRepo,
+    $transactionRepo
+);
 
 // Start session and get user
 $currentUser = $auth->getCurrentUser();
@@ -65,7 +82,7 @@ $isLoggedIn = $auth->isLoggedIn();
 
 $baseUrl = getBaseUrl();
 
-// Set global variables
+// Set global variables for easy access in templates
 $GLOBALS['conn'] = $conn;
 $GLOBALS['db'] = $db;
 $GLOBALS['auth'] = $auth;
@@ -78,12 +95,12 @@ $GLOBALS['cartRepo'] = $cartRepo;
 $GLOBALS['reviewRepo'] = $reviewRepo;
 $GLOBALS['transactionRepo'] = $transactionRepo;
 $GLOBALS['reportRepo'] = $reportRepo;
+$GLOBALS['payfastService'] = $payfastService;
 $GLOBALS['currentUser'] = $currentUser;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;
 $GLOBALS['baseUrl'] = $baseUrl;
 
-extract($GLOBALS);
-
+// Set cache control headers for logged-in users to prevent back-button issues
 if ($isLoggedIn) {
     header('Cache-Control: no-cache, no-store, must-revalidate');
     header('Pragma: no-cache');

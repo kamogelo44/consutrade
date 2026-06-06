@@ -7,7 +7,7 @@
  * Uses the Report domain class.
  *
  * @author Kamogelo Phale
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 class ReportRepository
@@ -15,14 +15,19 @@ class ReportRepository
     /** @var mysqli Database connection */
     private $db;
 
+    /** @var ProductRepository Product repository for image URLs and product data */
+    private $productRepo;
+
     /**
      * Constructor.
      *
      * @param mysqli $db Database connection
+     * @param ProductRepository $productRepo Product repository instance
      */
-    public function __construct($db)
+    public function __construct($db, ProductRepository $productRepo)
     {
         $this->db = $db;
+        $this->productRepo = $productRepo;
     }
 
     // ============================================================
@@ -152,6 +157,7 @@ class ReportRepository
         $sql = "SELECT 
                     pr.*,
                     p.title as product_title, p.price as product_price, p.status as product_status,
+                    p.image_url as product_image_url,
                     p.seller_id,
                     u_seller.full_name as seller_name,
                     u_reporter.full_name as reporter_name, u_reporter.email as reporter_email,
@@ -171,11 +177,15 @@ class ReportRepository
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
             $report = $this->hydrate($row);
+
+            // Use ProductRepository to get the correct image URL
+            $productImage = $this->productRepo->getImageUrl($row['product_image'] ?? $row['product_image_url']);
+
             return $report->toAdminArray([
                 'product_title' => $row['product_title'],
                 'product_price' => (float) $row['product_price'],
                 'product_status' => $row['product_status'],
-                'product_image' => $this->getProductImageUrl($row['product_image']),
+                'product_image' => $productImage,
                 'seller_id' => (int) $row['seller_id'],
                 'seller_name' => $row['seller_name'],
                 'reporter_name' => $row['reporter_name'],
@@ -231,6 +241,7 @@ class ReportRepository
         $sql = "SELECT 
                     pr.*,
                     p.title as product_title, p.price as product_price, p.status as product_status,
+                    p.image_url as product_image_url,
                     p.seller_id,
                     u_seller.full_name as seller_name,
                     u_reporter.full_name as reporter_name, u_reporter.email as reporter_email,
@@ -252,11 +263,15 @@ class ReportRepository
         $reports = [];
         while ($row = $result->fetch_assoc()) {
             $report = $this->hydrate($row);
+
+            // Use ProductRepository to get the correct image URL
+            $productImage = $this->productRepo->getImageUrl($row['product_image'] ?? $row['product_image_url']);
+
             $reports[] = $report->toAdminArray([
                 'product_title' => $row['product_title'],
                 'product_price' => (float) $row['product_price'],
                 'product_status' => $row['product_status'],
-                'product_image' => $this->getProductImageUrl($row['product_image']),
+                'product_image' => $productImage,
                 'seller_id' => (int) $row['seller_id'],
                 'seller_name' => $row['seller_name'],
                 'reporter_name' => $row['reporter_name'],
@@ -307,6 +322,7 @@ class ReportRepository
         $sql = "SELECT 
                     pr.*,
                     p.title as product_title, p.status as product_status,
+                    p.image_url as product_image_url,
                     u_seller.full_name as seller_name,
                     u_reporter.full_name as reporter_name, u_reporter.email as reporter_email,
                     COALESCE(pi.image_url, p.image_url) AS product_image
@@ -339,10 +355,14 @@ class ReportRepository
         $reports = [];
         while ($row = $result->fetch_assoc()) {
             $report = $this->hydrate($row);
+
+            // Use ProductRepository to get the correct image URL
+            $productImage = $this->productRepo->getImageUrl($row['product_image'] ?? $row['product_image_url']);
+
             $reports[] = $report->toAdminArray([
                 'product_title' => $row['product_title'],
                 'product_status' => $row['product_status'],
-                'product_image' => $this->getProductImageUrl($row['product_image']),
+                'product_image' => $productImage,
                 'seller_name' => $row['seller_name'],
                 'reporter_name' => $row['reporter_name'],
                 'reporter_email' => $row['reporter_email']
@@ -573,29 +593,8 @@ class ReportRepository
     }
 
     // ============================================================
-    //  HELPER METHODS
+    //  STATIC HELPERS (No database needed)
     // ============================================================
-
-    /**
-     * Get product image URL.
-     *
-     * @param string|null $imagePath The stored image path
-     * @return string Full URL to image
-     */
-    private function getProductImageUrl($imagePath)
-    {
-        $baseUrl = getBaseUrl();
-
-        if (empty($imagePath)) {
-            return $baseUrl . 'images/default-product.png';
-        }
-
-        if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://')) {
-            return $imagePath;
-        }
-
-        return $baseUrl . $imagePath;
-    }
 
     /**
      * Get human-readable label for report reason (static helper).
