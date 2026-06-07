@@ -232,7 +232,7 @@ unset($_SESSION['product_error'], $_SESSION['product_success']);
             </div>
 
             <!-- Flash messages using global styles -->
-            <?php include '..includes/flash-message.php' ?>
+            <?php include dirname(__DIR__) . '/includes/flash-message.php'; ?>
 
             <div class="form-container">
                 <form id="product-form" action="<?php echo $baseUrl; ?>php/endpoints/add-product.php" method="post" enctype="multipart/form-data">

@@ -11,15 +11,22 @@ include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
 if ($product_id <= 0) {
     header('Location: product-listings.php');
     exit;
 }
 
-// Use ProductRepository to get product data for breadcrumb
-$productData = $productRepo->getProductForDisplay($product_id);
-$product_name = $productData['title'] ?? 'Product Details';
+// Get product title for breadcrumb only
+$product_name = 'Product Details';
+try {
+    $productData = $productRepo->getProductForDisplay($product_id);
+    if ($productData && isset($productData['title'])) {
+        $product_name = $productData['title'];
+    }
+} catch (Exception $e) {
+    // Fallback to default
+    $product_name = 'Product Details';
+}
 
 // Set breadcrumb
 $breadcrumbItems = [

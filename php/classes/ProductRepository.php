@@ -375,6 +375,36 @@ class ProductRepository
     }
 
     /**
+     * Get product data for display (lightweight, for breadcrumb)
+     *
+     * @param int $productId Product ID
+     * @return array|null
+     */
+    public function getProductForDisplay($productId)
+    {
+        $sql = "SELECT product_id, title, image_url
+            FROM products
+            WHERE product_id = ? AND status != 'deleted'";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return [
+                'id' => (int)$row['product_id'],
+                'title' => $row['title'],
+                'image_url' => $row['image_url']
+            ];
+        }
+
+        $stmt->close();
+        return null;
+    }
+
+    /**
      * Update product status with suspension tracking.
      *
      * @param int $id Product ID
@@ -849,6 +879,58 @@ class ProductRepository
             'products' => $products,
             'total'    => $total
         ];
+    }
+
+    // ============================================================
+    //  PUBLIC PRODUCT METHODS (Object-based)
+    // ============================================================
+
+    /**
+     * Get public products as Product objects (for featured sections)
+     *
+     * @param array $filters Associative array of filters (limit, etc.)
+     * @return Product[] Array of Product objects
+     */
+    public function getPublicProductObjects(array $filters = []): array
+    {
+        $limit = $filters['limit'] ?? 12;
+
+        $result = $this->getPublicProducts(['limit' => $limit]);
+        $products = [];
+
+        foreach ($result['products'] as $productData) {
+            $mappedData = [
+                'product_id' => $productData['id'],
+                'seller_id' => $productData['seller_id'],
+                'title' => $productData['name'],
+                'price' => $productData['price'],
+                'image_url' => $productData['image'],
+                'condition' => $productData['condition'] ?? 'Good',
+                'stock_quantity' => $productData['stock_quantity'] ?? 1,
+                'location' => $productData['location'] ?? '',
+                'status' => 'active'
+            ];
+            $products[] = new Product($mappedData);
+        }
+
+        return $products;
+    }
+
+    /**
+     * Get single product as Product object for public view
+     *
+     * @param int $productId Product ID
+     * @return Product|null
+     */
+    public function getPublicProductObject(int $productId): ?Product
+    {
+        $product = $this->getProductObject($productId);
+
+        if ($product && $product->getStatus() === 'active') {
+            return $product;
+        }
+
+        return null;
     }
 
     /**
