@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
+// Check authentication using globals from init.php
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     $response['message'] = 'Please login to update cart';
     echo json_encode($response);
@@ -29,6 +30,7 @@ if ($cartId <= 0) {
 
 $quantity = max(1, min(99, $quantity));
 
+// Get product ID from cart using the connection from init.php
 $productStmt = $conn->prepare("SELECT product_id FROM cart WHERE cart_id = ? AND user_id = ?");
 $productStmt->bind_param('ii', $cartId, $userId);
 $productStmt->execute();
@@ -42,6 +44,7 @@ if (!$productRow) {
     exit;
 }
 
+// Use productRepo from init.php
 $product = $productRepo->getProductObject($productRow['product_id']);
 
 if (!$product) {
@@ -56,12 +59,46 @@ if (!$product->canDecreaseStock($quantity)) {
     exit;
 }
 
+// Use cartRepo from init.php
 $result = $cartRepo->updateCartQuantity($cartId, $userId, $quantity);
 
 if ($result) {
+    // Refresh cart count in auth session
     $auth->refreshCartCount();
+
+    // Get fresh cart data using cartRepo
+    $freshCartItems = $cartRepo->getCartItems($userId);
+    $freshTotals = $cartRepo->calculateCartTotals($freshCartItems);
+    $items = [];
+    $itemCount = 0;
+
+    foreach ($freshCartItems as $item) {
+        $itemCount += $item['quantity'];
+        // Use productRepo to fix image URL
+        $imageUrl = $productRepo->getImageUrl($item['image_url']);
+
+        $items[] = [
+            'cart_id' => (int) $item['cart_id'],
+            'product_id' => (int) $item['product_id'],
+            'product_name' => $item['title'],
+            'price' => (float) $item['price'],
+            'quantity' => (int) $item['quantity'],
+            'image' => $imageUrl,
+            'seller_name' => $item['seller_name'] ?? 'Unknown Seller',
+            'stock_quantity' => (int) ($item['stock_quantity'] ?? 1),
+            'is_verified' => (bool) ($item['is_verified'] ?? false)
+        ];
+    }
+
     $response['success'] = true;
     $response['message'] = 'Cart updated';
+    $response['cart'] = [
+        'items' => $items,
+        'item_count' => $itemCount,
+        'subtotal' => number_format($freshTotals['subtotal'], 2),
+        'delivery_fee' => number_format($freshTotals['delivery_fee'], 2),
+        'total' => number_format($freshTotals['total'], 2)
+    ];
 } else {
     $response['message'] = 'Failed to update cart';
 }

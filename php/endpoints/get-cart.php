@@ -18,18 +18,26 @@ $response = [
     'total' => 0
 ];
 
+// Check if user is logged in and is a buyer using globals from init.php
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     echo json_encode($response);
     exit;
 }
 
-$cartItems = $cartRepo->getCartItems($currentUser->getUserId());
+$userId = $currentUser->getUserId();
+
+// Use cartRepo from init.php
+$cartItems = $cartRepo->getCartItems($userId);
 $totals = $cartRepo->calculateCartTotals($cartItems);
+
 $items = [];
 $itemCount = 0;
 
 foreach ($cartItems as $item) {
     $itemCount += $item['quantity'];
+
+    // Use productRepo from init.php to fix image URL
+    $imageUrl = $productRepo->getImageUrl($item['image_url']);
 
     $items[] = [
         'cart_id' => (int) $item['cart_id'],
@@ -37,10 +45,10 @@ foreach ($cartItems as $item) {
         'product_name' => $item['title'],
         'price' => (float) $item['price'],
         'quantity' => (int) $item['quantity'],
-        'image' => $item['image_url'],
+        'image' => $imageUrl,
         'seller_name' => $item['seller_name'] ?? 'Unknown Seller',
         'stock_quantity' => (int) ($item['stock_quantity'] ?? 1),
-        'is_verified' => (bool) ($item['id_verified'] ?? false)
+        'is_verified' => (bool) ($item['is_verified'] ?? false)
     ];
 }
 

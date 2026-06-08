@@ -507,7 +507,7 @@ if (!$auth->isAdmin()) {
     </div>
 
     <script>
-        // Use existing baseUrl from main.js if available
+        // Use existing baseUrl from main.js
         var baseUrl = window.baseUrl || '<?php echo $baseUrl; ?>';
 
         var currentPage = 1;

@@ -21,7 +21,7 @@ $user_name = $currentUser->getFullName();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Admin Dashboard - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>

@@ -7,9 +7,6 @@ var baseUrl = baseUrl || '';
 
 // global vars - yeah i know global is bad but it works
 var $toastContainer = null;
-var $orderModal = null;
-var $orderModalBody = null;
-var $orderModalFooter = null;
 var $registerModal = null;
 var $loginModal = null;
 var $deleteModal = null;
@@ -52,17 +49,35 @@ function getStatusLabel(status) {
 function fixImageUrl(url, defaultPath) {
     defaultPath = defaultPath || 'images/default-product.png';
     if (!url || url == '') return baseUrl + defaultPath;
+    
+    // Already absolute URL - return as is
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     
-    var parts = url.split('/');
-    var filename = parts[parts.length - 1];
+    // Remove leading slash if present
+    var cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     
-    if (url.includes('/products/')) return baseUrl + 'uploads/products/' + filename;
-    if (url.includes('/profiles/')) return baseUrl + 'uploads/profiles/' + filename;
+    // If it already has uploads/ or images/ in the path, just prepend baseUrl
+    if (cleanUrl.startsWith('uploads/') || cleanUrl.startsWith('images/')) {
+        return baseUrl + cleanUrl;
+    }
     
-    var uploadsIndex = url.indexOf('uploads/');
-    if (uploadsIndex !== -1) return baseUrl + url.substring(uploadsIndex);
+    // Check for paths that contain uploads/ or images/ anywhere
+    var uploadsIndex = cleanUrl.indexOf('uploads/');
+    if (uploadsIndex !== -1) {
+        return baseUrl + cleanUrl.substring(uploadsIndex);
+    }
     
+    var imagesIndex = cleanUrl.indexOf('images/');
+    if (imagesIndex !== -1) {
+        return baseUrl + cleanUrl.substring(imagesIndex);
+    }
+    
+    // If it's just a filename, I just assume it belongs in uploads/products/
+    if (!cleanUrl.includes('/')) {
+        return baseUrl + 'uploads/products/' + cleanUrl;
+    }
+    
+    // Fallback to default
     return baseUrl + defaultPath;
 }
 
@@ -423,7 +438,7 @@ function clearRegisterErrors() {
 // get cart count elements - cached but whatever
 function getCartCountElements() {
     if (!$cartCountElements) {
-        $cartCountElements = $('.cart-count, .item-num, .cart-badge');
+        $cartCountElements = $('.cart-count, .item-num, .cart-badge, .mobile-cart-count');
     }
     return $cartCountElements;
 }
@@ -465,8 +480,11 @@ function removeFromCart(productId) {
         success: function(data) {
             if (data.success) {
                 updateCartCountDisplay(data.cart_count || 0);
-                if (window.location.pathname.includes('cart.php')) location.reload();
-                else showSuccessToast(data.message || 'Item removed from cart');
+                if (window.location.pathname.includes('cart.php')) {
+                    refreshCart();
+                } else {
+                    showSuccessToast(data.message || 'Item removed from cart');
+                }
             } else {
                 showErrorToast(data.message || 'Error removing item from cart');
             }
@@ -475,32 +493,103 @@ function removeFromCart(productId) {
     });
 }
 
-// update cart count from cache or server
+// ============================================
+// CART FUNCTIONS
+// ============================================
+
+// loads cart on cart.php using pre-loaded php data - no extra ajax call needed
+function loadCartPage() {
+    if (!window.location.pathname.includes('cart.php')) return;
+    
+    // Check if initialCartData exists
+    if (typeof initialCartData === 'undefined') {
+        console.warn('initialCartData not defined - cart may not load properly');
+        $('#cart-layout').hide();
+        $('#empty-cart').show();
+        return;
+    }
+    
+    // Check if items array exists
+    if (!initialCartData.items) {
+        console.warn('initialCartData.items is missing');
+        $('#cart-layout').hide();
+        $('#empty-cart').show();
+        return;
+    }
+    
+    if (initialCartData.items.length > 0) {
+        displayCartItems(initialCartData);
+        updateCartTotalsDisplay(initialCartData);
+        updateCartCountDisplay(initialCartData.items.length);
+    } else {
+        $('#cart-layout').hide();
+        $('#empty-cart').show();
+    }
+}
+
+// updates the totals in the order summary section
+function updateCartTotalsDisplay(cartData) {
+    $('.sub-total-val').text('R ' + parseFloat(cartData.subtotal).toFixed(2));
+    $('.deliv-fee-val').text('R ' + parseFloat(cartData.delivery_fee).toFixed(2));
+    $('.total-val').text('R ' + parseFloat(cartData.total).toFixed(2));
+}
+
+// refreshes cart via ajax - used after quantity updates or removals on cart page
+function refreshCart() {
+    if (!window.location.pathname.includes('cart.php')) return;
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/get-cart.php',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data.success && data.items) {
+                displayCartItems(data);
+                updateCartTotalsDisplay(data);
+                updateCartCountDisplay(data.item_count);
+                // Update session storage
+                sessionStorage.setItem('cart_count', data.item_count);
+            } else if (data.success && (!data.items || data.items.length === 0)) {
+                // Empty cart
+                $('#cart-layout').hide();
+                $('#empty-cart').show();
+                updateCartCountDisplay(0);
+            } else {
+                showErrorToast('Failed to load cart data');
+            }
+        },
+        error: function() {
+            showErrorToast('Failed to refresh cart');
+        }
+    });
+}
+
+// updates cart count from server - only called on non-cart pages
 function updateCartCount() {
+    // only run if user is a buyer (sellers and guests don't need cart)
+    if (!isLoggedIn || currentUserRole !== 'buyer') {
+        updateCartCountDisplay(0);
+        return;
+    }
+    
     var cachedCount = sessionStorage.getItem('cart_count');
     if (cachedCount && !isNaN(parseInt(cachedCount))) {
         updateCartCountDisplay(parseInt(cachedCount));
+        // Still refresh in background to ensure accuracy
+        $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
+            if (data.success && data.item_count !== parseInt(cachedCount)) {
+                updateCartCountDisplay(data.item_count);
+                sessionStorage.setItem('cart_count', data.item_count);
+            }
+        });
     } else {
         $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
             if (data.success) {
                 updateCartCountDisplay(data.item_count);
+                sessionStorage.setItem('cart_count', data.item_count);
             }
         });
     }
-}
-
-// load cart items on cart page
-function loadCart() {
-    if (!window.location.pathname.includes('cart.php')) return;
-    
-    $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
-        if (data.success) {
-            displayCartItems(data);
-            $('.sub-total-val').text(data.subtotal);
-            $('.deliv-fee-val').text(data.delivery_fee);
-            $('.total-val').text(data.total);
-        }
-    });
 }
 
 // display cart items in table and mobile view
@@ -511,7 +600,25 @@ function displayCartItems(cartData) {
     var $cartLayout = $('#cart-layout');
     var $cartItemCount = $('#cart-item-count');
     
-    if (!cartData.items || cartData.items.length == 0) {
+    // Safety check - make sure cartData is valid
+    if (!cartData) {
+        console.error('displayCartItems: cartData is null or undefined');
+        if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'flex');
+        if ($cartLayout.length) $cartLayout.css('display', 'none');
+        return;
+    }
+    
+    // Get items array - handles both formats (direct array or items property)
+    var items = cartData.items || cartData;
+    
+    if (!items || !Array.isArray(items)) {
+        console.error('displayCartItems: items is not an array', items);
+        if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'flex');
+        if ($cartLayout.length) $cartLayout.css('display', 'none');
+        return;
+    }
+    
+    if (items.length == 0) {
         if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'flex');
         if ($cartLayout.length) $cartLayout.css('display', 'none');
         if ($cartItemCount.length) $cartItemCount.text('0');
@@ -520,44 +627,58 @@ function displayCartItems(cartData) {
     
     if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'none');
     if ($cartLayout.length) $cartLayout.css('display', 'flex');
-    if ($cartItemCount.length) $cartItemCount.text(cartData.items.length);
+    if ($cartItemCount.length) $cartItemCount.text(items.length);
     
     if ($desktopTableBody.length) $desktopTableBody.empty();
     if ($mobileContainer.length) $mobileContainer.empty();
     
-    for (var i = 0; i < cartData.items.length; i++) {
-        var item = cartData.items[i];
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        
+        // Skip invalid items
+        if (!item || !item.product_id) {
+            console.warn('Skipping invalid cart item:', item);
+            continue;
+        }
+        
         var verifiedBadge = item.is_verified ? 
             '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' : 
             '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
         
-        var imagePath = fixImageUrl(item.image);
+        var imagePath = fixImageUrl(item.image || item.image_url);
+        var productName = item.product_name || item.title || 'Product';
+        var sellerName = item.seller_name || 'Unknown Seller';
+        var price = parseFloat(item.price) || 0;
+        var quantity = parseInt(item.quantity) || 1;
+        var cartId = item.cart_id;
+        var productId = item.product_id;
+        var stockQty = parseInt(item.stock_quantity) || 99;
         
         if ($desktopTableBody.length) {
             var row = $('<tr>').html(
                 '<td class="product-cell" data-label="Product">' +
                     '<div class="cart-product-wrapper">' +
-                        '<div class="cart-img-container"><img src="' + imagePath + '" alt="' + escapeHtml(item.product_name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'"></div>' +
-                        '<div class="cart-prod-info"><p class="prod-name">' + escapeHtml(item.product_name) + '</p></div>' +
+                        '<div class="cart-img-container"><img src="' + imagePath + '" alt="' + escapeHtml(productName) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'"></div>' +
+                        '<div class="cart-prod-info"><p class="prod-name">' + escapeHtml(productName) + '</p></div>' +
                     '</div>' +
                 '</td>' +
                 '<td class="seller-cell" data-label="Seller">' +
                     '<div class="seller-cart-info">' +
-                        '<p class="seller-name">' + escapeHtml(item.seller_name) + '</p>' +
+                        '<p class="seller-name">' + escapeHtml(sellerName) + '</p>' +
                         '<div class="verification">' + verifiedBadge + '</div>' +
                     '</div>' +
                 '</td>' +
-                '<td class="price-cell" data-label="Price">R ' + parseFloat(item.price).toFixed(2) + '</td>' +
+                '<td class="price-cell" data-label="Price">R ' + price.toFixed(2) + '</td>' +
                 '<td class="quantity-cell" data-label="Quantity">' +
                     '<div class="quantity-controls">' +
-                        '<button class="qty-decrease" data-cart-id="' + item.cart_id + '">-</button>' +
-                        '<input type="number" class="qty-input" value="' + item.quantity + '" min="1" max="' + Math.min(99, item.stock_quantity || 99) + '" data-cart-id="' + item.cart_id + '" style="width: 60px; text-align: center;">' +
-                        '<button class="qty-increase" data-cart-id="' + item.cart_id + '">+</button>' +
+                        '<button class="qty-decrease" data-cart-id="' + cartId + '">-</button>' +
+                        '<input type="number" class="qty-input" value="' + quantity + '" min="1" max="' + Math.min(99, stockQty) + '" data-cart-id="' + cartId + '" style="width: 60px; text-align: center;">' +
+                        '<button class="qty-increase" data-cart-id="' + cartId + '">+</button>' +
                     '</div>' +
-                    (item.quantity >= (item.stock_quantity || 99) && (item.stock_quantity || 0) > 0 ? '<small class="stock-warning">Max ' + item.stock_quantity + ' available</small>' : '') +
+                    (quantity >= stockQty && stockQty > 0 ? '<small class="stock-warning">Max ' + stockQty + ' available</small>' : '') +
                 '</td>' +
                 '<td class="actions-cell" data-label="Actions">' +
-                    '<button class="remove-btn" data-product-id="' + item.product_id + '">' +
+                    '<button class="remove-btn" data-product-id="' + productId + '">' +
                         '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove"> Remove' +
                     '</button>' +
                 '</td>'
@@ -568,21 +689,21 @@ function displayCartItems(cartData) {
         if ($mobileContainer.length) {
             var card = $('<div>').addClass('cart-card').html(
                 '<div class="cart-card-header">' +
-                    '<img src="' + imagePath + '" alt="' + escapeHtml(item.product_name) + '" class="cart-card-img" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                    '<img src="' + imagePath + '" alt="' + escapeHtml(productName) + '" class="cart-card-img" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
                     '<div>' +
-                        '<h4>' + escapeHtml(item.product_name) + '</h4>' +
-                        '<p class="seller-name">' + escapeHtml(item.seller_name) + '</p>' +
+                        '<h4>' + escapeHtml(productName) + '</h4>' +
+                        '<p class="seller-name">' + escapeHtml(sellerName) + '</p>' +
                         verifiedBadge +
                     '</div>' +
                 '</div>' +
                 '<div class="cart-card-body">' +
-                    '<div class="cart-card-price">R ' + parseFloat(item.price).toFixed(2) + '</div>' +
+                    '<div class="cart-card-price">R ' + price.toFixed(2) + '</div>' +
                     '<div class="quantity-controls">' +
-                        '<button class="qty-decrease" data-cart-id="' + item.cart_id + '">-</button>' +
-                        '<input type="number" class="qty-input" value="' + item.quantity + '" min="1" max="' + Math.min(99, item.stock_quantity || 99) + '" data-cart-id="' + item.cart_id + '" style="width: 50px; text-align: center;">' +
-                        '<button class="qty-increase" data-cart-id="' + item.cart_id + '">+</button>' +
+                        '<button class="qty-decrease" data-cart-id="' + cartId + '">-</button>' +
+                        '<input type="number" class="qty-input" value="' + quantity + '" min="1" max="' + Math.min(99, stockQty) + '" data-cart-id="' + cartId + '" style="width: 50px; text-align: center;">' +
+                        '<button class="qty-increase" data-cart-id="' + cartId + '">+</button>' +
                     '</div>' +
-                    '<button class="remove-btn" data-product-id="' + item.product_id + '">' +
+                    '<button class="remove-btn" data-product-id="' + productId + '">' +
                         '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove"> Remove' +
                     '</button>' +
                 '</div>'
@@ -638,7 +759,7 @@ function displayCartItems(cartData) {
     });
 }
 
-// update cart quantity via ajax
+// update cart quantity via ajax - now refreshes the cart display after update
 function updateCartQuantity(cartId, quantity) {
     $.ajax({
         url: baseUrl + 'php/endpoints/update-cart.php',
@@ -647,10 +768,24 @@ function updateCartQuantity(cartId, quantity) {
         data: JSON.stringify({ cart_id: cartId, quantity: quantity }),
         dataType: 'json',
         success: function(response) {
-            if (response.success) location.reload();
-            else alert('Error: ' + response.message);
+            if (response.success) {
+                if (response.cart) {
+                    displayCartItems(response.cart);
+                    updateCartTotalsDisplay(response.cart);
+                    updateCartCountDisplay(response.cart.item_count);
+                } else {
+                    refreshCart();
+                }
+                showSuccessToast(response.message);
+            } else {
+                showErrorToast(response.message);
+                location.reload();
+            }
         },
-        error: function() { alert('Something went wrong.'); }
+        error: function() {
+            showErrorToast('Something went wrong.');
+            location.reload();
+        }
     });
 }
 
@@ -976,8 +1111,17 @@ $(function() {
     initAjaxLogin();
     initAjaxRegister();
     
-    if (!window.location.pathname.includes('cart.php')) {
-        updateCartCount();
-        loadCart();
+    // cart initialization - only for buyers
+    if (isLoggedIn && currentUserRole === 'buyer') {
+        if (window.location.pathname.includes('cart.php')) {
+            // on cart page use the pre-loaded php data so we dont make an extra request
+            loadCartPage();
+        } else {
+            // on other pages we just need the cart count in the header
+            updateCartCount();
+        }
+    } else {
+        // non-buyers see zero in cart badge
+        updateCartCountDisplay(0);
     }
 });

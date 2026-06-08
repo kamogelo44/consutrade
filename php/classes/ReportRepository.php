@@ -7,7 +7,7 @@
  * Uses the Report domain class.
  *
  * @author Kamogelo Phale
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 class ReportRepository
@@ -176,21 +176,29 @@ class ReportRepository
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
-            $report = $this->hydrate($row);
-
-            // Use ProductRepository to get the correct image URL
             $productImage = $this->productRepo->getImageUrl($row['product_image'] ?? $row['product_image_url']);
 
-            return $report->toAdminArray([
+            return [
+                'report_id' => (int)$row['report_id'],
+                'product_id' => (int)$row['product_id'],
                 'product_title' => $row['product_title'],
-                'product_price' => (float) $row['product_price'],
+                'product_price' => (float)$row['product_price'],
                 'product_status' => $row['product_status'],
                 'product_image' => $productImage,
-                'seller_id' => (int) $row['seller_id'],
+                'seller_id' => (int)$row['seller_id'],
                 'seller_name' => $row['seller_name'],
+                'reporter_id' => (int)$row['reporter_id'],
                 'reporter_name' => $row['reporter_name'],
-                'reporter_email' => $row['reporter_email']
-            ]);
+                'reporter_email' => $row['reporter_email'],
+                'reason' => $row['reason'],
+                'reason_label' => self::getReasonLabel($row['reason']),
+                'description' => $row['description'] ?? '',
+                'status' => $row['status'],
+                'created_at' => date('d M Y, H:i', strtotime($row['created_at'])),
+                'admin_notes' => $row['admin_notes'] ?? null,
+                'reviewed_at' => $row['reviewed_at'],
+                'reviewed_by' => $row['reviewed_by']
+            ];
         }
 
         $stmt->close();
@@ -262,21 +270,29 @@ class ReportRepository
 
         $reports = [];
         while ($row = $result->fetch_assoc()) {
-            $report = $this->hydrate($row);
-
-            // Use ProductRepository to get the correct image URL
             $productImage = $this->productRepo->getImageUrl($row['product_image'] ?? $row['product_image_url']);
 
-            $reports[] = $report->toAdminArray([
+            $reports[] = [
+                'report_id' => (int)$row['report_id'],
+                'product_id' => (int)$row['product_id'],
                 'product_title' => $row['product_title'],
-                'product_price' => (float) $row['product_price'],
+                'product_price' => (float)$row['product_price'],
                 'product_status' => $row['product_status'],
                 'product_image' => $productImage,
-                'seller_id' => (int) $row['seller_id'],
+                'seller_id' => (int)$row['seller_id'],
                 'seller_name' => $row['seller_name'],
+                'reporter_id' => (int)$row['reporter_id'],
                 'reporter_name' => $row['reporter_name'],
-                'reporter_email' => $row['reporter_email']
-            ]);
+                'reporter_email' => $row['reporter_email'],
+                'reason' => $row['reason'],
+                'reason_label' => self::getReasonLabel($row['reason']),
+                'description' => $row['description'] ?? '',
+                'status' => $row['status'],
+                'created_at' => date('d M Y, H:i', strtotime($row['created_at'])),
+                'admin_notes' => $row['admin_notes'] ?? null,
+                'reviewed_at' => $row['reviewed_at'],
+                'reviewed_by' => $row['reviewed_by']
+            ];
         }
         $stmt->close();
 
@@ -354,19 +370,27 @@ class ReportRepository
 
         $reports = [];
         while ($row = $result->fetch_assoc()) {
-            $report = $this->hydrate($row);
-
-            // Use ProductRepository to get the correct image URL
             $productImage = $this->productRepo->getImageUrl($row['product_image'] ?? $row['product_image_url']);
 
-            $reports[] = $report->toAdminArray([
+            $reports[] = [
+                'report_id' => (int)$row['report_id'],
+                'product_id' => (int)$row['product_id'],
                 'product_title' => $row['product_title'],
                 'product_status' => $row['product_status'],
                 'product_image' => $productImage,
                 'seller_name' => $row['seller_name'],
+                'reporter_id' => (int)$row['reporter_id'],
                 'reporter_name' => $row['reporter_name'],
-                'reporter_email' => $row['reporter_email']
-            ]);
+                'reporter_email' => $row['reporter_email'],
+                'reason' => $row['reason'],
+                'reason_label' => self::getReasonLabel($row['reason']),
+                'description' => $row['description'] ?? '',
+                'status' => $row['status'],
+                'created_at' => date('d M Y, H:i', strtotime($row['created_at'])),
+                'admin_notes' => $row['admin_notes'] ?? null,
+                'reviewed_at' => $row['reviewed_at'],
+                'reviewed_by' => $row['reviewed_by']
+            ];
         }
         $stmt->close();
 
@@ -597,7 +621,7 @@ class ReportRepository
     // ============================================================
 
     /**
-     * Get human-readable label for report reason (static helper).
+     * Get human-readable label for report reason.
      *
      * @param string $reason The reason code
      * @return string

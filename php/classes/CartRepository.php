@@ -96,21 +96,25 @@ class CartRepository
         $sql = "SELECT c.cart_id, c.quantity, c.added_at,
             p.product_id, p.title, p.price, p.image_url, p.seller_id, p.stock_quantity,
             u.full_name as seller_name, u.id_verified as is_verified
-        FROM cart c
-        JOIN products p ON c.product_id = p.product_id
-        JOIN users u ON p.seller_id = u.user_id
-        WHERE c.user_id = ?
-        ORDER BY c.added_at DESC";
+            FROM cart c
+            JOIN products p ON c.product_id = p.product_id
+            JOIN users u ON p.seller_id = u.user_id
+            WHERE c.user_id = ?
+            ORDER BY c.added_at DESC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $result = $stmt->get_result();
 
+        // create ProductRepository once outside the loop
+        $productRepo = new ProductRepository($this->db);
         $items = [];
+
         while ($row = $result->fetch_assoc()) {
             $row['subtotal']  = $row['price'] * $row['quantity'];
-            $row['image_url'] = (new ProductRepository($this->db))->getProductImageUrl($row['image_url']);
+            // use the existing repo instance
+            $row['image_url'] = $productRepo->getImageUrl($row['image_url']);
             $row['is_verified'] = (bool)($row['is_verified'] ?? false);
             $items[] = $row;
         }

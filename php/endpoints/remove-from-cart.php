@@ -10,33 +10,35 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
-if (!$auth->isLoggedIn()) {
-    $response['message'] = 'Please login to remove items';
+// Check authentication using globals from init.php
+if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+    $response['message'] = 'Please login to remove items from cart';
     echo json_encode($response);
     exit;
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-$product_id = isset($input['product_id']) ? (int)$input['product_id'] : 0;
+$productId = (int) ($input['product_id'] ?? 0);
+$userId = $currentUser->getUserId();
 
-if ($product_id <= 0) {
+if ($productId <= 0) {
     $response['message'] = 'Invalid product';
     echo json_encode($response);
     exit;
 }
 
-// Use User object to get user ID
-$user_id = $currentUser->getUserId();
-
-$result = $cartRepo->removeCartItemByProductId($product_id, $user_id);
+// Use cartRepo from init.php
+$result = $cartRepo->removeCartItemByProductId($productId, $userId);
 
 if ($result) {
+    $cartCount = $cartRepo->getCartCount($userId);
     $auth->refreshCartCount();
+
     $response['success'] = true;
     $response['message'] = 'Item removed from cart';
-    $response['cart_count'] = $_SESSION['cart_count'] ?? 0;
+    $response['cart_count'] = $cartCount;
 } else {
-    $response['message'] = 'Failed to remove item';
+    $response['message'] = 'Failed to remove item from cart';
 }
 
 echo json_encode($response);

@@ -2,6 +2,7 @@
 /*
  * ConsuTrade - Product Display Helpers
  * Uses existing Product OOP methods to avoid duplication
+ * Author: Kamogelo Phale
  */
 
 if (!function_exists('displayProductCard')) {
@@ -9,7 +10,7 @@ if (!function_exists('displayProductCard')) {
      * Generate product card HTML using Product object
      * 
      * @param Product $product Product object
-     * @param User $seller Seller object (optional, will fetch if not provided)
+     * @param User|null $seller Seller object (optional, will fetch if not provided)
      * @return string HTML for product card
      */
     function displayProductCard(Product $product, ?User $seller = null): string
@@ -21,32 +22,45 @@ if (!function_exists('displayProductCard')) {
             $seller = $GLOBALS['userRepo']->findById($product->getSellerId());
         }
 
-        $imageUrl = getProductImageUrl($product->getImageUrl());
+        // Use ProductRepository from globals for consistent image URLs
+        $imageUrl = isset($GLOBALS['productRepo'])
+            ? $GLOBALS['productRepo']->getImageUrl($product->getImageUrl())
+            : $baseUrl . 'images/default-product.png';
+
         $productName = htmlspecialchars($product->getTitle());
         $formattedPrice = $product->getFormattedPrice();
         $conditionClass = $product->getConditionClass();
         $conditionText = htmlspecialchars($product->getCondition());
 
         // Stock badge
-        $stockBadge = '';
-        if ($product->isOutOfStock()) {
-            $stockBadge = '<div class="out-of-stock-badge-card">Out of Stock</div>';
-        } elseif ($product->isLowStock()) {
-            $stockBadge = '<div class="low-stock-badge-card">Only ' . $product->getStockQuantity() . ' left</div>';
-        }
+        $stockBadge = $product->getStockBadgeText()
+            ? '<div class="' . $product->getStockBadgeClass() . '-badge-card">' . $product->getStockBadgeText() . '</div>'
+            : '';
 
         // Seller info
         $sellerName = $seller ? htmlspecialchars($seller->getFullName()) : 'Unknown Seller';
-        $sellerAvatar = $seller ? $seller->getProfileImageUrl() : $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+
+        // Seller avatar with proper fallback
+        $sellerAvatar = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
+        if ($seller) {
+            $avatarUrl = $seller->getProfileImageUrl();
+            if (!empty($avatarUrl) && $avatarUrl !== $baseUrl . 'images/icons/profile-svgrepo-com.svg') {
+                $sellerAvatar = $avatarUrl;
+            }
+        }
+
         $sellerLocation = $seller ? htmlspecialchars($seller->getLocation() ?: 'South Africa') : 'South Africa';
+
         $verifiedBadge = $seller && $seller->isVerified()
             ? '<div class="verified-badge-card"><img src="' . $baseUrl . 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>'
             : '<div class="unverified-badge-card"><img src="' . $baseUrl . 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
 
-        // Add to cart button (disabled if out of stock)
+        // Add to cart button - use json_encode for safe JS string
         $addToCartButton = '';
         if (!$product->isOutOfStock()) {
-            $addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' . $product->getProductId() . ', \'' . addslashes($product->getTitle()) . '\', ' . $product->getPrice() . ')">
+            $escapedTitle = json_encode($product->getTitle(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS);
+            $addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart('
+                . $product->getProductId() . ', ' . $escapedTitle . ', ' . $product->getPrice() . ')">
                 <img src="' . $baseUrl . 'images/icons/shopping-cart-01-svgrepo-com.svg" width="16" height="16"> Add to Cart
             </button>';
         } else {
@@ -80,30 +94,27 @@ if (!function_exists('displayProductCard')) {
     }
 }
 
-if (!function_exists('getProductImageUrl')) {
-    function getProductImageUrl(?string $imagePath): string
-    {
-        $baseUrl = getBaseUrl();
-        if (empty($imagePath)) {
-            return $baseUrl . 'images/default-product.png';
-        }
-        if (str_starts_with($imagePath, 'http')) {
-            return $imagePath;
-        }
-        return $baseUrl . ltrim($imagePath, '/');
-    }
-}
-
 if (!function_exists('renderStarsStatic')) {
     /**
      * Generate star rating HTML (PHP version for server-side rendering)
+     * Uses integer ratings (no half-stars)
+     * 
+     * @param int $rating Rating value (0-5)
+     * @param int $max Maximum number of stars (default 5)
+     * @return string HTML for star rating
      */
     function renderStarsStatic(int $rating, int $max = 5): string
     {
         $html = '<div class="review-stars">';
+
         for ($i = 1; $i <= $max; $i++) {
-            $html .= ($i <= $rating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
+            if ($i <= $rating) {
+                $html .= '<span class="star">★</span>';
+            } else {
+                $html .= '<span class="star empty">★</span>';
+            }
         }
+
         $html .= '</div>';
         return $html;
     }

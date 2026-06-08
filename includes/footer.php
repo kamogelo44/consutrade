@@ -70,22 +70,3 @@
 <?php if (isset($load_products_js) && $load_products_js): ?>
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 <?php endif; ?>
-
-<script>
-    // cart count initialization - only for buyers on main site
-    $(function() {
-        // only update cart if user is a buyer (sellers and guests don't need cart)
-        if (isLoggedIn && currentUserRole === 'buyer') {
-            // get cart count from server
-            $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
-                if (data.success) {
-                    var count = data.item_count || 0;
-                    $('.cart-badge, .cart-count, .mobile-cart-count').text(count);
-                }
-            });
-        } else {
-            // non-buyers see zero
-            $('.cart-badge, .cart-count, .mobile-cart-count').text('0');
-        }
-    });
-</script>
