@@ -27,7 +27,6 @@ if (!$auth->isAdmin()) {
     <!-- CSS Imports - Using component-based architecture -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
-
     <style>
         /* Page-specific styles that don't belong in components */
         .admin-main-content {
@@ -692,8 +691,8 @@ if (!$auth->isAdmin()) {
                     </thead>
                     <tbody id="ordersTable">
                         <tr>
-                            <td colspan="8" class="loading-cell">Loading orders...<\ /td>
-                                    <\ /tr>
+                            <td colspan="8" class="loading-cell">Loading orders...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -743,7 +742,7 @@ if (!$auth->isAdmin()) {
 
         // ========== LOAD ORDERS ==========
         function loadOrders() {
-            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...<\/td><\/tr>');
+            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...</td></tr>');
             $.ajax({
                 url: baseUrl + 'php/endpoints/get-all-orders.php',
                 type: 'GET',
@@ -765,12 +764,12 @@ if (!$auth->isAdmin()) {
                             }, 'smooth');
                         });
                     } else {
-                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found<\/td><\/tr>');
+                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
                         $pagination.empty();
                     }
                 },
                 error: function() {
-                    $ordersTable.html('</td><td colspan="8" class="error-cell">Error loading orders<\/td><\/tr>');
+                    $ordersTable.html('</td><td colspan="8" class="error-cell">Error loading orders</td></tr>');
                 }
             });
         }

@@ -114,6 +114,30 @@ window.viewOrder = function(orderId) {
     }
 };
 
+// ========== HELPER FUNCTIONS ==========
+
+// Get status class for order-status-badge (matches components.css)
+function getOrderStatusClass(status) {
+    switch(status) {
+        case 'pending': return 'status-pending';
+        case 'processing': return 'status-processing';
+        case 'shipped': return 'status-shipped';
+        case 'completed': return 'status-completed';
+        case 'cancelled': return 'status-cancelled';
+        default: return 'status-pending';
+    }
+}
+
+// Get user role class
+function getUserRoleClass(role) {
+    switch(role) {
+        case 'admin': return 'role-admin';
+        case 'seller': return 'role-seller';
+        case 'buyer': return 'role-buyer';
+        default: return 'role-buyer';
+    }
+}
+
 // ========== SELLER PRODUCTS ==========
 
 // load seller's products
@@ -253,7 +277,7 @@ function loadRecentUsers() {
                 $table.empty();
                 for (var i = 0; i < data.users.length; i++) {
                     var user = data.users[i];
-                    var roleClass = user.role == 'admin' ? 'role-admin' : (user.role == 'seller' ? 'role-seller' : 'role-buyer');
+                    var roleClass = getUserRoleClass(user.role);
                     $table.append(
                         '<tr>' +
                             '<td>' + escapeHtml(user.full_name) + '</td>' +
@@ -287,13 +311,13 @@ function loadRecentOrders(limit) {
                 $table.empty();
                 for (var i = 0; i < data.orders.length; i++) {
                     var order = data.orders[i];
-                    var statusClass = getStatusClass(order.status);
+                    var statusClass = getOrderStatusClass(order.status);
                     $table.append(
                         '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
                             '<td>#' + order.id + '</td>' +
                             '<td>' + escapeHtml(order.buyer_name) + '</td>' +
                             '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
-                            '<td><span class="status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
+                            '<td><span class="order-status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
                             '<td>' + escapeHtml(order.created_at) + '</td>' +
                         '</tr>'
                     );
@@ -347,7 +371,7 @@ function loadSellerRecentOrders(limit) {
                 $list.empty();
                 for (var i = 0; i < data.orders.length; i++) {
                     var order = data.orders[i];
-                    var statusClass = getStatusClass(order.status);
+                    var statusClass = getOrderStatusClass(order.status);
                     var productNames = order.product_names || '';
                     if (productNames.length > 40) {
                         productNames = productNames.substring(0, 37) + '...';
@@ -356,7 +380,7 @@ function loadSellerRecentOrders(limit) {
                         '<div class="order-item" onclick="viewOrder(' + order.id + ')">' +
                             '<div class="order-info">' +
                                 '<span class="order-number">#' + order.id + '</span>' +
-                                '<span class="order-status ' + statusClass + '">' + capitalizeFirst(order.status) + '</span>' +
+                                '<span class="order-status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span>' +
                             '</div>' +
                             '<div class="order-products">' +
                                 '<span class="product-names" title="' + escapeHtml(order.product_names) + '">' + escapeHtml(productNames) + '</span>' +

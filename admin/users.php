@@ -22,35 +22,11 @@ if (!$auth->isAdmin()) {
     <title>Manage Users - ConsuTrade Admin</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <style>
-        .admin-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
+        /* Users Page Specific Styles */
 
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
+        /* Filters Bar */
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -91,6 +67,104 @@ if (!$auth->isAdmin()) {
             border-color: var(--primary-color);
         }
 
+        /* Role Badges (using components.css pattern) */
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+        }
+
+        .role-admin {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
+        .role-seller {
+            background: var(--primary-fade);
+            color: var(--primary-color);
+        }
+
+        .role-buyer {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        /* Verification Badges (using components.css pattern) */
+        .verified-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .unverified-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-xs);
+            cursor: pointer;
+            border: none;
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+        }
+
+        .verify-btn {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .verify-btn:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .unverify-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .unverify-btn:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .delete-btn {
+            background: var(--error-light);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .delete-btn:hover {
+            background: var(--error);
+            color: white;
+            transform: translateY(-1px);
+        }
+
         .filter-btn-small {
             padding: 8px 16px;
             background: var(--primary-color);
@@ -117,191 +191,7 @@ if (!$auth->isAdmin()) {
             background: var(--gray-lighter);
         }
 
-        .table-wrapper {
-            overflow-x: auto;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: var(--font-sm);
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: var(--spacing-md);
-            text-align: left;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .data-table th {
-            background: var(--gray-bg-light);
-            font-weight: var(--font-semibold);
-            color: var(--gray-dark);
-        }
-
-        .data-table tr:hover td {
-            background: var(--gray-bg-light);
-        }
-
-        .role-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .role-admin {
-            background: var(--error-light);
-            color: var(--error);
-        }
-
-        .role-seller {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-        }
-
-        .role-buyer {
-            background: var(--info-light);
-            color: var(--info);
-        }
-
-        .verified-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .unverified-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            font-size: var(--font-xs);
-            cursor: pointer;
-            border: none;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-        }
-
-        .verify-btn {
-            background: var(--success-light);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .verify-btn:hover {
-            background: var(--success);
-            color: white;
-        }
-
-        .unverify-btn {
-            background: var(--warning-light);
-            color: var(--warning);
-            border: 1px solid var(--warning);
-        }
-
-        .unverify-btn:hover {
-            background: var(--warning);
-            color: white;
-        }
-
-        .delete-btn {
-            background: var(--error-light);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        .delete-btn:hover {
-            background: var(--error);
-            color: white;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            padding: 8px 14px;
-            border: 1px solid var(--border-light);
-            background: var(--white);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .page-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .page-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-            cursor: default;
-        }
-
-        .page-dots {
-            padding: 8px 4px;
-            color: var(--gray-light);
-        }
-
-        .loading-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--gray-medium);
-        }
-
-        .error-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--error);
-            background: var(--error-light);
-        }
-
-        .empty-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--gray-medium);
-        }
-
-        @media (max-width: 1024px) {
-            .admin-main-content {
-                margin-left: 0;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
             .filters-bar {
                 flex-direction: column;
@@ -325,6 +215,7 @@ if (!$auth->isAdmin()) {
                 text-align: center;
             }
 
+            /* Mobile table view */
             .data-table,
             .data-table tbody,
             .data-table tr,
@@ -363,25 +254,12 @@ if (!$auth->isAdmin()) {
         }
 
         @media (max-width: 480px) {
-            .admin-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
             .page-header h1 {
                 font-size: var(--font-xl);
             }
-
-            .pagination {
-                gap: var(--spacing-xs);
-            }
-
-            .page-btn {
-                padding: 6px 10px;
-                font-size: var(--font-xs);
-            }
         }
     </style>
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
@@ -441,7 +319,7 @@ if (!$auth->isAdmin()) {
     </main>
 
     <script>
-        // Cached DOM elements
+        // Page state variables - tracking filters and pagination
         var $usersTable = null,
             $pagination = null,
             $roleFilter = null,
@@ -452,6 +330,7 @@ if (!$auth->isAdmin()) {
             currentRole = 'all',
             currentSearch = '';
 
+        // Cache DOM elements on load - saves repeatedly querying the DOM
         function cacheElements() {
             $usersTable = $('#usersTable');
             $pagination = $('#pagination');
@@ -465,18 +344,21 @@ if (!$auth->isAdmin()) {
             cacheElements();
             loadUsers();
 
+            // Role filter changed - reset to page 1 and reload
             $roleFilter.on('change', function() {
                 currentRole = $(this).val();
                 currentPage = 1;
                 loadUsers();
             });
 
+            // Search button clicked
             $searchBtn.on('click', function() {
                 currentSearch = $searchInput.val().trim();
                 currentPage = 1;
                 loadUsers();
             });
 
+            // Reset all filters
             $resetBtn.on('click', function() {
                 $roleFilter.val('all');
                 $searchInput.val('');
@@ -486,6 +368,7 @@ if (!$auth->isAdmin()) {
                 loadUsers();
             });
 
+            // Enter key in search field triggers search
             $searchInput.on('keypress', function(e) {
                 if (e.which === 13) {
                     currentSearch = $searchInput.val().trim();
@@ -495,6 +378,7 @@ if (!$auth->isAdmin()) {
             });
         });
 
+        // Fetch users from server with current filters
         function loadUsers() {
             $usersTable.html('<tr><td colspan="8" class="loading-cell">Loading users...</td></tr>');
 
@@ -510,18 +394,65 @@ if (!$auth->isAdmin()) {
                 success: function(data) {
                     if (data.success && data.users && data.users.length) {
                         displayUsers(data.users);
-                        displayPagination(data.total_pages, data.current_page);
+                        // Use the global pagination function from main.js
+                        if (typeof renderPagination === 'function') {
+                            renderPagination($pagination, currentPage, data.total_pages, function(page) {
+                                currentPage = page;
+                                loadUsers();
+                                $('html, body').animate({
+                                    scrollTop: 0
+                                }, 'smooth');
+                            });
+                        } else {
+                            $pagination.empty();
+                        }
                     } else {
-                        $usersTable.html('<tr><td colspan="8" class="empty-cell">No users found</td></tr>');
+                        // Show empty state with helpful message based on active filters
+                        var emptyTitle = '';
+                        var emptyMessage = '';
+
+                        if (currentRole === 'pending') {
+                            emptyTitle = 'No Pending Verifications';
+                            emptyMessage = 'All sellers have been verified. No pending verifications at this time.';
+                        } else if (currentRole === 'seller') {
+                            emptyTitle = 'No Sellers Found';
+                            emptyMessage = 'There are no registered sellers' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
+                        } else if (currentRole === 'buyer') {
+                            emptyTitle = 'No Buyers Found';
+                            emptyMessage = 'There are no registered buyers' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
+                        } else if (currentRole === 'admin') {
+                            emptyTitle = 'No Admins Found';
+                            emptyMessage = 'There are no admin accounts' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
+                        } else {
+                            emptyTitle = 'No Users Found';
+                            emptyMessage = currentSearch ? 'No users found matching "' + escapeHtml(currentSearch) + '".' : 'No users are registered on the platform yet.';
+                        }
+
+                        var resetButtonHtml = '';
+                        if (currentSearch !== '' || currentRole !== 'all') {
+                            resetButtonHtml = '<button onclick="$resetBtn.click()" class="view-all-btn" style="background: var(--primary-color); color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-top: 16px;">Clear Filters</button>';
+                        }
+
+                        $usersTable.html(
+                            '<tr><td colspan="8" style="text-align: center; padding: 60px;">' +
+                            '<div class="empty-state">' +
+                            '<img src="' + baseUrl + 'images/icons/users-svgrepo-com.svg" width="64" height="64" alt="No users" style="opacity: 0.4;">' +
+                            '<h3 style="font-size: 20px; font-weight: bold; margin-top: 16px; margin-bottom: 8px;">' + escapeHtml(emptyTitle) + '</h3>' +
+                            '<p style="color: var(--gray-medium);">' + escapeHtml(emptyMessage) + '</p>' +
+                            resetButtonHtml +
+                            '</div>' +
+                            '</td></tr>'
+                        );
                         $pagination.empty();
                     }
                 },
                 error: function() {
-                    $usersTable.html('<tr><td colspan="8" class="error-cell">Error loading users</td></tr>');
+                    $usersTable.html('<tr><td colspan="8" class="error-cell">Error loading users. Please refresh the page.</td></tr>');
                 }
             });
         }
 
+        // Render user rows in the table
         function displayUsers(users) {
             $usersTable.empty();
 
@@ -530,6 +461,7 @@ if (!$auth->isAdmin()) {
                 var verifiedBadge = user.id_verified ? '<span class="verified-badge">Verified</span>' : '<span class="unverified-badge">Not Verified</span>';
                 var actionButtons = '<div class="action-buttons">';
 
+                // Sellers have verification actions
                 if (user.role === 'seller') {
                     if (user.has_document && !user.id_verified) {
                         actionButtons += '<button class="action-btn verify-btn" onclick="reviewDocuments(' + user.user_id + ')">Review Docs</button>';
@@ -540,6 +472,7 @@ if (!$auth->isAdmin()) {
                     }
                 }
 
+                // Don't allow deleting yourself or other admins
                 if (user.role !== 'admin' || user.user_id !== currentUserId) {
                     actionButtons += '<button class="action-btn delete-btn" onclick="deleteUser(' + user.user_id + ')">Delete</button>';
                 }
@@ -553,9 +486,9 @@ if (!$auth->isAdmin()) {
                 $usersTable.append(
                     '<tr>' +
                     '<td data-label="ID">' + user.user_id + '</td>' +
-                    '<td data-label="Full Name">' + escapeHtml(user.full_name) + '</td>' +
-                    '<td data-label="Email">' + escapeHtml(user.email) + '</td>' +
-                    '<td data-label="Phone">' + escapeHtml(user.phone || '-') + '</td>' +
+                    '<td data-label="Full Name">' + (typeof escapeHtml === 'function' ? escapeHtml(user.full_name) : user.full_name) + '</td>' +
+                    '<td data-label="Email">' + (typeof escapeHtml === 'function' ? escapeHtml(user.email) : user.email) + '</td>' +
+                    '<td data-label="Phone">' + (typeof escapeHtml === 'function' ? escapeHtml(user.phone || '-') : (user.phone || '-')) + '</td>' +
                     '<td data-label="Role"><span class="role-badge ' + roleClass + '">' + user.role + '</span></td>' +
                     '<td data-label="Verified">' + verifiedBadge + '</td>' +
                     '<td data-label="Joined Date">' + user.created_at + '</td>' +
@@ -565,41 +498,12 @@ if (!$auth->isAdmin()) {
             });
         }
 
-        function displayPagination(totalPages, currentPageNum) {
-            if (totalPages <= 1) {
-                $pagination.empty();
-                return;
-            }
-
-            var html = '';
-            if (currentPageNum > 1) html += '<button class="page-btn" onclick="goToPage(' + (currentPageNum - 1) + ')">← Previous</button>';
-
-            for (var i = 1; i <= totalPages; i++) {
-                if (i === currentPageNum) {
-                    html += '<button class="page-btn active" disabled>' + i + '</button>';
-                } else if (Math.abs(i - currentPageNum) <= 2 || i === 1 || i === totalPages) {
-                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
-                } else if (Math.abs(i - currentPageNum) === 3) {
-                    html += '<span class="page-dots">...</span>';
-                }
-            }
-
-            if (currentPageNum < totalPages) html += '<button class="page-btn" onclick="goToPage(' + (currentPageNum + 1) + ')">Next →</button>';
-            $pagination.html(html);
-        }
-
-        function goToPage(page) {
-            currentPage = page;
-            loadUsers();
-            $('html, body').animate({
-                scrollTop: 0
-            }, 'smooth');
-        }
-
+        // Redirect to document review page for pending sellers
         function reviewDocuments(userId) {
             window.location.href = baseUrl + 'admin/verify-seller.php?seller_id=' + userId;
         }
 
+        // Toggle seller verification status
         function toggleUserVerification(userId, verify) {
             var confirmMsg = verify ? 'Verify this seller?' : 'Remove verification from this seller?';
             if (confirm(confirmMsg)) {
@@ -614,19 +518,32 @@ if (!$auth->isAdmin()) {
                     dataType: 'json',
                     success: function(data) {
                         if (data.success) {
-                            showSuccessToast(data.message);
+                            if (typeof showSuccessToast === 'function') {
+                                showSuccessToast(data.message);
+                            } else {
+                                alert(data.message);
+                            }
                             loadUsers();
                         } else {
-                            showErrorToast('Error: ' + data.message);
+                            if (typeof showErrorToast === 'function') {
+                                showErrorToast('Error: ' + data.message);
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
                         }
                     },
                     error: function() {
-                        showErrorToast('Something went wrong');
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast('Something went wrong');
+                        } else {
+                            alert('Something went wrong');
+                        }
                     }
                 });
             }
         }
 
+        // Delete user account - permanent action
         function deleteUser(userId) {
             if (confirm('Delete this user? This cannot be undone.')) {
                 $.ajax({
@@ -639,14 +556,26 @@ if (!$auth->isAdmin()) {
                     dataType: 'json',
                     success: function(data) {
                         if (data.success) {
-                            showSuccessToast('User deleted successfully');
+                            if (typeof showSuccessToast === 'function') {
+                                showSuccessToast('User deleted successfully');
+                            } else {
+                                alert('User deleted successfully');
+                            }
                             loadUsers();
                         } else {
-                            showErrorToast('Error: ' + data.message);
+                            if (typeof showErrorToast === 'function') {
+                                showErrorToast('Error: ' + data.message);
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
                         }
                     },
                     error: function() {
-                        showErrorToast('Something went wrong');
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast('Something went wrong');
+                        } else {
+                            alert('Something went wrong');
+                        }
                     }
                 });
             }

@@ -1,18 +1,10 @@
 /*
- * ConsuTrade - Sidebar Styles
+ * ConsuTrade - Sidebar Navigation Styles
  * Author: Kamogelo Phale
  * 
  * Shared sidebar navigation for admin and seller dashboards.
+ * Contains only sidebar-specific styles (not main content layout).
  */
-
-/*Don't want to create seperate styles for the breadcrumb*/
-/* ========== Breadcrumb ========== */
-
-/* Override breadcrumb margin for admin pages */
-.admin-main-content .breadcrumb,
-.seller-main-content .breadcrumb {
-  margin-left: 0;
-}
 
 /* ========== ADMIN SIDEBAR (NAVY THEME) ========== */
 
@@ -171,7 +163,7 @@
   align-items: center;
   gap: var(--spacing-md);
   padding: 12px var(--spacing-lg);
-  color: #c0d0f0; /* Light blue-gray for better contrast on navy */
+  color: #c0d0f0;
   text-decoration: none;
   font-size: var(--font-md);
   font-weight: var(--font-medium);
@@ -202,7 +194,6 @@
 .admin-sidebar-nav li a:hover img,
 .admin-sidebar-nav li a.active img {
   opacity: 1;
-  filter: brightness(0) invert(1);
 }
 
 /* Admin Sidebar Footer */
@@ -265,7 +256,7 @@
   color: #ff8888;
 }
 
-/* ========== SELLER SIDEBAR (LIGHT THEME - UNCHANGED) ========== */
+/* ========== SELLER SIDEBAR (DARK THEME) ========== */
 
 .seller-sidebar {
   width: 280px;
@@ -577,7 +568,7 @@
   opacity: 1;
 }
 
-/* ========== RESPONSIVE STYLES ========== */
+/* ========== RESPONSIVE SIDEBAR ========== */
 
 @media (max-width: 1024px) {
   .admin-mobile-toggle,
@@ -600,12 +591,5 @@
   .seller-sidebar.active {
     transform: translateX(0);
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-  }
-
-  .admin-sidebar-footer,
-  .seller-sidebar-footer {
-    margin-top: 20px;
-    position: relative;
-    bottom: auto;
   }
 }

@@ -23,6 +23,7 @@ if (!$auth->isAdmin()) {
     <title>Flagged Listings - ConsuTrade Admin</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
         .admin-main-content {
@@ -507,9 +508,6 @@ if (!$auth->isAdmin()) {
     </div>
 
     <script>
-        // Use existing baseUrl from main.js
-        var baseUrl = window.baseUrl || '<?php echo $baseUrl; ?>';
-
         var currentPage = 1;
         var totalPages = 1;
         var $reportsContainer = null;
@@ -534,17 +532,6 @@ if (!$auth->isAdmin()) {
             $modalTitle = $('#modalTitle');
             $modalMessage = $('#modalMessage');
             $modalConfirmBtn = $('#modalConfirmBtn');
-        }
-
-        function getReasonLabel(reason) {
-            var labels = {
-                'fake_product': 'Fake Product',
-                'wrong_description': 'Wrong Description',
-                'counterfeit': 'Counterfeit Item',
-                'scam': 'Potential Scam',
-                'other': 'Other Issue'
-            };
-            return labels[reason] || reason;
         }
 
         function loadFlaggedListings() {
@@ -593,9 +580,23 @@ if (!$auth->isAdmin()) {
             for (var i = 0; i < reports.length; i++) {
                 var report = reports[i];
                 var productUrl = baseUrl + 'product-details.php?id=' + report.product_id;
-                var imagePath = report.product_image || baseUrl + 'images/default-product.png';
+                // Using fixImageUrl from main.js
+                var imagePath = fixImageUrl(report.product_image);
+
+                // product status warning if product is not available
+                var productStatusHtml = '';
+                if (!report.product_available) {
+                    productStatusHtml = '<div class="product-unavailable-warning">' +
+                        '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="14" height="14" alt="Warning"> ' +
+                        escapeHtml(report.product_availability_message) +
+                        '</div>';
+                }
 
                 var card = $('<div>').addClass('report-card');
+                if (!report.product_available) {
+                    card.addClass('product-unavailable');
+                }
+
                 card.html(
                     '<div class="report-card-header">' +
                     '<div class="report-product-info">' +
@@ -607,6 +608,7 @@ if (!$auth->isAdmin()) {
                     '<a href="' + productUrl + '" target="_blank">' + escapeHtml(report.product_title) + '</a>' +
                     '</div>' +
                     '<div class="report-product-price">R ' + parseFloat(report.product_price).toFixed(2) + '</div>' +
+                    productStatusHtml +
                     '</div>' +
                     '</div>' +
                     '<div class="report-badge pending">Pending Review</div>' +
@@ -640,53 +642,74 @@ if (!$auth->isAdmin()) {
                     );
                 }
 
-                card.append(
-                    '<div class="report-actions">' +
-                    '<a href="' + productUrl + '" class="btn-view-product" target="_blank">' +
-                    '<img src="' + baseUrl + 'images/icons/eye-open-svgrepo-com.svg" width="14" height="14" alt="View"> View Product' +
-                    '</a>' +
-                    '<button class="btn-dismiss" onclick="openAdminNotesModal(' + report.report_id + ', \'dismiss\')">' +
-                    '<img src="' + baseUrl + 'images/icons/dismiss-svgrepo-com.svg" width="14" height="14" alt="Dismiss"> Dismiss Report' +
-                    '</button>' +
-                    '<button class="btn-suspend" onclick="openAdminNotesModal(' + report.report_id + ', \'suspend\')">' +
-                    '<img src="' + baseUrl + 'images/icons/ban-svgrepo-com.svg" width="14" height="14" alt="Suspend"> Suspend Product' +
-                    '</button>' +
-                    '</div>' +
-                    '</div>'
-                );
+                // Only show action buttons if product is still available
+                var actionButtons = '';
+                if (report.product_available) {
+                    actionButtons = '<div class="report-actions">' +
+                        '<a href="' + productUrl + '" class="btn-view-product" target="_blank">' +
+                        '<img src="' + baseUrl + 'images/icons/eye-open-svgrepo-com.svg" width="14" height="14" alt="View"> View Product' +
+                        '</a>' +
+                        '<button class="btn-dismiss" onclick="openAdminNotesModal(' + report.report_id + ', \'dismiss\')">' +
+                        '<img src="' + baseUrl + 'images/icons/dismiss-svgrepo-com.svg" width="14" height="14" alt="Dismiss"> Dismiss Report' +
+                        '</button>' +
+                        '<button class="btn-suspend" onclick="openAdminNotesModal(' + report.report_id + ', \'suspend\')">' +
+                        '<img src="' + baseUrl + 'images/icons/ban-svgrepo-com.svg" width="14" height="14" alt="Suspend"> Suspend Product' +
+                        '</button>' +
+                        '</div>';
+                } else {
+                    actionButtons = '<div class="report-actions product-unavailable-actions">' +
+                        '<button class="btn-dismiss" onclick="openAdminNotesModal(' + report.report_id + ', \'dismiss\')">' +
+                        '<img src="' + baseUrl + 'images/icons/dismiss-svgrepo-com.svg" width="14" height="14" alt="Dismiss"> Dismiss Report' +
+                        '</button>' +
+                        '</div>';
+                }
 
+                card.append(actionButtons + '</div>');
                 $reportsContainer.append(card);
             }
         }
 
+        // Using main.js renderPagination function instead of custom one
         function displayPagination() {
-            if (totalPages <= 1) {
-                $paginationContainer.empty();
-                return;
-            }
-
-            var html = '';
-            if (currentPage > 1) {
-                html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous</button>';
-            }
-
-            for (var i = 1; i <= totalPages; i++) {
-                if (i === currentPage) {
-                    html += '<button class="page-btn active" disabled>' + i + '</button>';
-                } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
-                } else if (Math.abs(i - currentPage) === 3) {
-                    html += '<span class="page-dots">...</span>';
+            if (typeof renderPagination === 'function') {
+                renderPagination($paginationContainer, currentPage, totalPages, function(page) {
+                    currentPage = page;
+                    loadFlaggedListings();
+                    $('html, body').animate({
+                        scrollTop: 0
+                    }, 'smooth');
+                });
+            } else {
+                // Fallback if renderPagination doesn't exist
+                if (totalPages <= 1) {
+                    $paginationContainer.empty();
+                    return;
                 }
-            }
 
-            if (currentPage < totalPages) {
-                html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →</button>';
-            }
+                var html = '';
+                if (currentPage > 1) {
+                    html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous</button>';
+                }
 
-            $paginationContainer.html(html);
+                for (var i = 1; i <= totalPages; i++) {
+                    if (i === currentPage) {
+                        html += '<button class="page-btn active" disabled>' + i + '</button>';
+                    } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
+                        html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
+                    } else if (Math.abs(i - currentPage) === 3) {
+                        html += '<span class="page-dots">...</span>';
+                    }
+                }
+
+                if (currentPage < totalPages) {
+                    html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →</button>';
+                }
+
+                $paginationContainer.html(html);
+            }
         }
 
+        // Keep goToPage as fallback for inline onclick handlers
         function goToPage(page) {
             currentPage = page;
             loadFlaggedListings();
@@ -746,10 +769,8 @@ if (!$auth->isAdmin()) {
                 dataType: 'json',
                 success: function(data) {
                     if (data.success) {
-                        // Use existing toast function from main.js
-                        if (typeof window.showSuccessToast === 'function') {
-                            window.showSuccessToast(data.message);
-                        } else if (typeof showSuccessToast === 'function') {
+                        // Using global toast functions from main.js
+                        if (typeof showSuccessToast === 'function') {
                             showSuccessToast(data.message);
                         } else {
                             alert(data.message);
@@ -757,9 +778,7 @@ if (!$auth->isAdmin()) {
                         currentPage = 1;
                         loadFlaggedListings();
                     } else {
-                        if (typeof window.showErrorToast === 'function') {
-                            window.showErrorToast(data.message || 'Failed to process report.');
-                        } else if (typeof showErrorToast === 'function') {
+                        if (typeof showErrorToast === 'function') {
                             showErrorToast(data.message || 'Failed to process report.');
                         } else {
                             alert('Error: ' + (data.message || 'Failed to process report.'));
@@ -768,9 +787,7 @@ if (!$auth->isAdmin()) {
                     closeAdminNotesModal();
                 },
                 error: function() {
-                    if (typeof window.showErrorToast === 'function') {
-                        window.showErrorToast('Something went wrong. Please try again.');
-                    } else if (typeof showErrorToast === 'function') {
+                    if (typeof showErrorToast === 'function') {
                         showErrorToast('Something went wrong. Please try again.');
                     } else {
                         alert('Something went wrong. Please try again.');
@@ -792,7 +809,6 @@ if (!$auth->isAdmin()) {
             cacheElements();
             loadFlaggedListings();
 
-            // Modal close handlers
             $('#closeModalBtn').on('click', closeAdminNotesModal);
             $('#modalCancelBtn').on('click', closeAdminNotesModal);
             $adminNotesModal.on('click', function(e) {
@@ -802,7 +818,6 @@ if (!$auth->isAdmin()) {
             });
             $('#modalConfirmBtn').on('click', submitReportAction);
 
-            // Escape key to close modal
             $(document).on('keydown', function(e) {
                 if (e.key === 'Escape' && $adminNotesModal.hasClass('active')) {
                     closeAdminNotesModal();

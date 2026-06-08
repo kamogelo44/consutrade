@@ -247,21 +247,21 @@ class ReportRepository
     public function getPendingReportsWithDetails($limit = 20, $offset = 0)
     {
         $sql = "SELECT 
-                    pr.*,
-                    p.title as product_title, p.price as product_price, p.status as product_status,
-                    p.image_url as product_image_url,
-                    p.seller_id,
-                    u_seller.full_name as seller_name,
-                    u_reporter.full_name as reporter_name, u_reporter.email as reporter_email,
-                    COALESCE(pi.image_url, p.image_url) AS product_image
-                FROM product_reports pr
-                JOIN products p ON pr.product_id = p.product_id
-                JOIN users u_seller ON p.seller_id = u_seller.user_id
-                JOIN users u_reporter ON pr.reporter_id = u_reporter.user_id
-                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                WHERE pr.status = 'pending'
-                ORDER BY pr.created_at DESC
-                LIMIT ? OFFSET ?";
+                pr.*,
+                p.title as product_title, p.price as product_price, p.status as product_status,
+                p.image_url as product_image_url,
+                p.seller_id,
+                u_seller.full_name as seller_name,
+                u_reporter.full_name as reporter_name, u_reporter.email as reporter_email,
+                COALESCE(pi.image_url, p.image_url) AS product_image
+            FROM product_reports pr
+            JOIN products p ON pr.product_id = p.product_id
+            JOIN users u_seller ON p.seller_id = u_seller.user_id
+            JOIN users u_reporter ON pr.reporter_id = u_reporter.user_id
+            LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+            WHERE pr.status = 'pending'
+            ORDER BY pr.created_at DESC
+            LIMIT ? OFFSET ?";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('ii', $limit, $offset);
@@ -270,7 +270,25 @@ class ReportRepository
 
         $reports = [];
         while ($row = $result->fetch_assoc()) {
-            $productImage = $this->productRepo->getImageUrl($row['product_image'] ?? $row['product_image_url']);
+            // Get the raw image value - even for deleted products
+            $rawImage = $row['product_image'] ?? $row['product_image_url'];
+
+            // Pass to getImageUrl - it handles empty values and returns default
+            $productImage = $this->productRepo->getImageUrl($rawImage);
+
+            // product availability status message for admin
+            $productAvailabilityMessage = '';
+            $productAvailable = false;
+
+            if ($row['product_status'] === 'deleted') {
+                $productAvailabilityMessage = 'This product has been deleted by the seller and is no longer available.';
+                $productAvailable = false;
+            } elseif ($row['product_status'] === 'suspended') {
+                $productAvailabilityMessage = 'This product has been suspended.';
+                $productAvailable = false;
+            } elseif ($row['product_status'] === 'active') {
+                $productAvailable = true;
+            }
 
             $reports[] = [
                 'report_id' => (int)$row['report_id'],
@@ -279,6 +297,8 @@ class ReportRepository
                 'product_price' => (float)$row['product_price'],
                 'product_status' => $row['product_status'],
                 'product_image' => $productImage,
+                'product_available' => $productAvailable,
+                'product_availability_message' => $productAvailabilityMessage,
                 'seller_id' => (int)$row['seller_id'],
                 'seller_name' => $row['seller_name'],
                 'reporter_id' => (int)$row['reporter_id'],

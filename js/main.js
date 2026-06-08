@@ -1,11 +1,9 @@
-// main.js - main scripts for the site
-// handles mobile menu, search, modals, cart stuff, etc.
-// Author: Kamogelo Phale
+// main.js - core functionality for the whole site
+// handles mobile menus, search, auth modals, cart operations, etc.
 
-// setting base url - this gets set by footer.php hopefully
 var baseUrl = baseUrl || '';
 
-// global vars - yeah i know global is bad but it works
+// Global references - caching these for performance
 var $toastContainer = null;
 var $registerModal = null;
 var $loginModal = null;
@@ -13,19 +11,20 @@ var $deleteModal = null;
 var $bodyElement = null;
 var $cartCountElements = null;
 
-// helper to escape html - copied this from stack overflow tbh
+// Had issues with XSS early on, so now I always escape user input
 function escapeHtml(text) {
     if (!text) return '';
     return $('<div>').text(text).html();
 }
 
-// capitalizes first letter - simple enough
+// Simple helper - wish JS had this built in
 function capitalizeFirst(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// returns css class for order status badges
+// Maps database status values to CSS classes
+// Had to align these with what's in components.css
 function getStatusClass(status) {
     if (status == 'pending') return 'status-pending';
     if (status == 'processing') return 'status-processing';
@@ -35,7 +34,7 @@ function getStatusClass(status) {
     return '';
 }
 
-// returns readable status label
+// Human-readable status labels for UI display
 function getStatusLabel(status) {
     if (status == 'pending') return 'Pending';
     if (status == 'processing') return 'Processing';
@@ -45,23 +44,24 @@ function getStatusLabel(status) {
     return capitalizeFirst(status);
 }
 
-// fixes image urls - had issues with paths so made this function
+// Image paths were a nightmare with mixed absolute/relative paths
+// This function fixes all the edge cases I've encountered
 function fixImageUrl(url, defaultPath) {
     defaultPath = defaultPath || 'images/default-product.png';
     if (!url || url == '') return baseUrl + defaultPath;
     
-    // Already absolute URL - return as is
+    // Already a full URL - nothing to fix
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     
-    // Remove leading slash if present
+    // Remove leading slash that breaks relative paths
     var cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     
-    // If it already has uploads/ or images/ in the path, just prepend baseUrl
+    // Path already has the right structure
     if (cleanUrl.startsWith('uploads/') || cleanUrl.startsWith('images/')) {
         return baseUrl + cleanUrl;
     }
     
-    // Check for paths that contain uploads/ or images/ anywhere
+    // Sometimes the path contains uploads/ deeper in the string
     var uploadsIndex = cleanUrl.indexOf('uploads/');
     if (uploadsIndex !== -1) {
         return baseUrl + cleanUrl.substring(uploadsIndex);
@@ -72,16 +72,16 @@ function fixImageUrl(url, defaultPath) {
         return baseUrl + cleanUrl.substring(imagesIndex);
     }
     
-    // If it's just a filename, I just assume it belongs in uploads/products/
+    // Just a filename - assume it's in the products upload folder
     if (!cleanUrl.includes('/')) {
         return baseUrl + 'uploads/products/' + cleanUrl;
     }
     
-    // Fallback to default
+    // No idea what this is, use default
     return baseUrl + defaultPath;
 }
 
-// shows empty state message when no data
+// Generates the empty state HTML that shows when no data exists
 function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
     var html = '<div class="empty-state">' +
         '<img src="' + baseUrl + 'images/icons/' + icon + '" width="64" height="64" alt="' + escapeHtml(title) + '">' +
@@ -96,7 +96,8 @@ function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
     return html;
 }
 
-// pagination renderer - took me a while to get this right
+// Pagination was surprisingly tricky to get right
+// The logic for when to show ellipsis took several iterations
 function renderPagination($container, currentPage, totalPages, onPageChange) {
     if (!$container.length || totalPages <= 1) {
         $container.empty();
@@ -109,6 +110,8 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
         html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">← Previous</button>';
     }
 
+    // Show first page, current page neighborhood, and last page
+    // Hide middle pages with ellipsis to save space
     for (var i = 1; i <= totalPages; i++) {
         if (i == currentPage) {
             html += '<button class="page-btn active" disabled>' + i + '</button>';
@@ -133,7 +136,8 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     });
 }
 
-// renders admin orders table - shows all orders with action buttons
+// Admin orders table rendering - reused across multiple admin pages
+// Includes status-specific action buttons
 function renderAdminOrdersTable(orders, $container) {
     if (!$container || !$container.length) return;
     
@@ -172,11 +176,11 @@ function renderAdminOrdersTable(orders, $container) {
     }
 }
 
-// toast notifications - shows temporary messages
+// Toast notifications - user feedback without annoying popups
 function showToast(message, type) {
     type = type || 'success';
     
-    // remove any existing toasts first
+    // Remove existing toasts to prevent stacking
     $('.toast-notification').remove();
     
     if (!$toastContainer) {
@@ -192,19 +196,20 @@ function showToast(message, type) {
     
     $toastContainer.append(toast);
     
-    // auto remove after 4 seconds
+    // Auto-dismiss after 4 seconds so it doesn't linger
     setTimeout(function() {
         toast.addClass('hiding');
         setTimeout(function() { toast.remove(); }, 300);
     }, 4000);
 }
 
+// Wrappers for different toast types - cleaner than passing type every time
 function showSuccessToast(message) { showToast(message, 'success'); }
 function showErrorToast(message) { showToast(message, 'error'); }
 function showInfoToast(message) { showToast(message, 'info'); }
 function showWarningToast(message) { showToast(message, 'warning'); }
 
-// toggle password visibility - shows/hides password field
+// Password visibility toggle - saves users from typos
 function togglePassword(fieldId, button) {
     var $input = $('#' + fieldId);
     var $img = $(button).find('img');
@@ -220,7 +225,8 @@ function togglePassword(fieldId, button) {
     }
 }
 
-// open order details modal and load data
+// Opens order details modal and fetches data via AJAX
+// Used across both admin and seller dashboards
 function openOrderModal(orderId) {
     if (!$orderModal) {
         $orderModal = $('#orderModal');
@@ -240,7 +246,6 @@ function openOrderModal(orderId) {
         dataType: 'json',
         success: function(data) {
             if (data.success && data.order) {
-                // display order details in modal
                 var order = data.order;
                 var isAdmin = window.location.pathname.includes('all-orders.php');
                 
@@ -310,7 +315,7 @@ function closeOrderModal() {
     if ($orderModal) $orderModal.removeClass('active');
 }
 
-// update order status - sends ajax request
+// Status update function - used by admin and seller dashboards
 function updateOrderStatus(orderId, newStatus) {
     var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
     if (newStatus == 'cancelled') {
@@ -339,7 +344,7 @@ function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-// clear errors in a modal - just removes the error messages
+// Clears validation errors from auth modals
 function clearModalErrors(modalId) {
     var $modal = $(modalId);
     $modal.find('.error-container').hide().empty();
@@ -347,7 +352,7 @@ function clearModalErrors(modalId) {
     $modal.find('.error-text').remove();
 }
 
-// shows validation errors in modals
+// Displays validation errors from server response
 function displayModalErrors(modalId, errors, formData) {
     var $modal = $(modalId);
     if (!formData) formData = {};
@@ -421,21 +426,19 @@ function displayModalErrors(modalId, errors, formData) {
     }
 }
 
-// clear login form errors
 function clearLoginErrors() {
     $('#login-error-container').hide().empty();
     $('#login-form .input-group').removeClass('error');
     $('#login-form .error-text').remove();
 }
 
-// clear register form errors
 function clearRegisterErrors() {
     $('#register-error-container').hide().empty();
     $('#register-form .input-group').removeClass('error');
     $('#register-form .error-text').remove();
 }
 
-// get cart count elements - cached but whatever
+// Cached cart elements to avoid repeated DOM queries
 function getCartCountElements() {
     if (!$cartCountElements) {
         $cartCountElements = $('.cart-count, .item-num, .cart-badge, .mobile-cart-count');
@@ -443,13 +446,13 @@ function getCartCountElements() {
     return $cartCountElements;
 }
 
-// update the cart count badge on the page
+// Updates the cart badge across all locations on the page
 function updateCartCountDisplay(count) {
     getCartCountElements().text(count);
     if (window.sessionStorage) sessionStorage.setItem('cart_count', count);
 }
 
-// add product to shopping cart
+// Adds product to cart - used by product cards and detail pages
 function addToCart(productId, productName, productPrice) {
     $.ajax({
         url: baseUrl + 'php/endpoints/add-to-cart.php',
@@ -468,7 +471,7 @@ function addToCart(productId, productName, productPrice) {
     });
 }
 
-// remove product from cart
+// Removes item from cart - with confirmation to prevent accidents
 function removeFromCart(productId) {
     if (!confirm('Are you sure you want to remove this item from your cart?')) return;
     
@@ -494,14 +497,13 @@ function removeFromCart(productId) {
 }
 
 // ============================================
-// CART FUNCTIONS
+// CART PAGE SPECIFIC FUNCTIONS
 // ============================================
 
-// loads cart on cart.php using pre-loaded php data - no extra ajax call needed
+// Initial cart load - uses pre-loaded PHP data to avoid extra AJAX call
 function loadCartPage() {
     if (!window.location.pathname.includes('cart.php')) return;
     
-    // Check if initialCartData exists
     if (typeof initialCartData === 'undefined') {
         console.warn('initialCartData not defined - cart may not load properly');
         $('#cart-layout').hide();
@@ -509,7 +511,6 @@ function loadCartPage() {
         return;
     }
     
-    // Check if items array exists
     if (!initialCartData.items) {
         console.warn('initialCartData.items is missing');
         $('#cart-layout').hide();
@@ -527,14 +528,14 @@ function loadCartPage() {
     }
 }
 
-// updates the totals in the order summary section
+// Updates the order summary section with current totals
 function updateCartTotalsDisplay(cartData) {
     $('.sub-total-val').text('R ' + parseFloat(cartData.subtotal).toFixed(2));
     $('.deliv-fee-val').text('R ' + parseFloat(cartData.delivery_fee).toFixed(2));
     $('.total-val').text('R ' + parseFloat(cartData.total).toFixed(2));
 }
 
-// refreshes cart via ajax - used after quantity updates or removals on cart page
+// Refreshes cart via AJAX - used after quantity updates or removals
 function refreshCart() {
     if (!window.location.pathname.includes('cart.php')) return;
     
@@ -547,10 +548,8 @@ function refreshCart() {
                 displayCartItems(data);
                 updateCartTotalsDisplay(data);
                 updateCartCountDisplay(data.item_count);
-                // Update session storage
                 sessionStorage.setItem('cart_count', data.item_count);
             } else if (data.success && (!data.items || data.items.length === 0)) {
-                // Empty cart
                 $('#cart-layout').hide();
                 $('#empty-cart').show();
                 updateCartCountDisplay(0);
@@ -564,9 +563,9 @@ function refreshCart() {
     });
 }
 
-// updates cart count from server - only called on non-cart pages
+// Updates cart badge from server - for non-cart pages only
 function updateCartCount() {
-    // only run if user is a buyer (sellers and guests don't need cart)
+    // Only buyers need cart count - sellers and guests see zero
     if (!isLoggedIn || currentUserRole !== 'buyer') {
         updateCartCountDisplay(0);
         return;
@@ -575,7 +574,7 @@ function updateCartCount() {
     var cachedCount = sessionStorage.getItem('cart_count');
     if (cachedCount && !isNaN(parseInt(cachedCount))) {
         updateCartCountDisplay(parseInt(cachedCount));
-        // Still refresh in background to ensure accuracy
+        // Background refresh to ensure accuracy
         $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
             if (data.success && data.item_count !== parseInt(cachedCount)) {
                 updateCartCountDisplay(data.item_count);
@@ -592,7 +591,7 @@ function updateCartCount() {
     }
 }
 
-// display cart items in table and mobile view
+// Renders cart items in both desktop table and mobile card views
 function displayCartItems(cartData) {
     var $desktopTableBody = $('#cart-table-body');
     var $mobileContainer = $('#mobile-cart-items');
@@ -600,7 +599,6 @@ function displayCartItems(cartData) {
     var $cartLayout = $('#cart-layout');
     var $cartItemCount = $('#cart-item-count');
     
-    // Safety check - make sure cartData is valid
     if (!cartData) {
         console.error('displayCartItems: cartData is null or undefined');
         if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'flex');
@@ -608,7 +606,6 @@ function displayCartItems(cartData) {
         return;
     }
     
-    // Get items array - handles both formats (direct array or items property)
     var items = cartData.items || cartData;
     
     if (!items || !Array.isArray(items)) {
@@ -635,7 +632,6 @@ function displayCartItems(cartData) {
     for (var i = 0; i < items.length; i++) {
         var item = items[i];
         
-        // Skip invalid items
         if (!item || !item.product_id) {
             console.warn('Skipping invalid cart item:', item);
             continue;
@@ -712,7 +708,7 @@ function displayCartItems(cartData) {
         }
     }
     
-    // attach event handlers for cart controls
+    // Event handlers for quantity controls
     $('.qty-increase').off('click').on('click', function() {
         var $btn = $(this);
         var cartId = $btn.data('cart-id');
@@ -759,7 +755,7 @@ function displayCartItems(cartData) {
     });
 }
 
-// update cart quantity via ajax - now refreshes the cart display after update
+// Updates cart quantity via AJAX and refreshes the display
 function updateCartQuantity(cartId, quantity) {
     $.ajax({
         url: baseUrl + 'php/endpoints/update-cart.php',
@@ -789,7 +785,7 @@ function updateCartQuantity(cartId, quantity) {
     });
 }
 
-// open modal with animation
+// Modal animation functions - smooth open/close with CSS transitions
 function openModal($modal) {
     if (!$modal.length) return;
     
@@ -804,6 +800,7 @@ function openModal($modal) {
     $modal.css('visibility', 'visible');
     $modal.addClass('active');
     
+    // Force reflow before adding animation class
     $modal[0].offsetHeight;
     $content.addClass('animate-in');
     $('body').css('overflow', 'hidden');
@@ -811,7 +808,6 @@ function openModal($modal) {
     setTimeout(function() { $content.removeClass('animate-in'); }, 350);
 }
 
-// close modal with animation
 function closeModal($modal) {
     if (!$modal.length) return;
     
@@ -831,7 +827,7 @@ function closeModal($modal) {
     }, 280);
 }
 
-// setup input handlers to clear errors when typing
+// Clears field errors as soon as user starts typing
 function initErrorClearingOnInput() {
     $('#login-email, #login-password').on('input', function() { 
         clearLoginErrors(); 
@@ -851,7 +847,7 @@ function initErrorClearingOnInput() {
     });
 }
 
-// ajax login form handler
+// AJAX login handler - prevents page reload and shows errors inline
 function initAjaxLogin() {
     var $loginForm = $('#login-form');
     if (!$loginForm.length) return;
@@ -887,7 +883,7 @@ function initAjaxLogin() {
     });
 }
 
-// ajax register form handler
+// AJAX registration handler - validates and creates account without page reload
 function initAjaxRegister() {
     var $registerForm = $('#register-form');
     if (!$registerForm.length) return;
@@ -926,7 +922,7 @@ function initAjaxRegister() {
     });
 }
 
-// mobile menu functions
+// Mobile menu toggle - handles open/close with overlay
 function initMobileMenu() {
     var $menuToggle = $('#menuToggle');
     var $closeMenu = $('#closeMenu');
@@ -966,7 +962,7 @@ function initMobileMenu() {
     });
 }
 
-// mobile search toggle
+// Mobile search bar toggle - shows/hides search on small screens
 function initMobileSearch() {
     var $mobileSearchIcon = $('#mobileSearchIcon');
     var $mobileSearchContainer = $('#mobileSearch');
@@ -987,7 +983,7 @@ function initMobileSearch() {
     }
 }
 
-// user dropdown for account menu
+// User dropdown menu for account settings
 function initUserDropdown() {
     var $accountBtn = $('#accountBtn');
     var $accountDropdown = $('#accountDropdown');
@@ -1007,7 +1003,7 @@ function initUserDropdown() {
     }
 }
 
-// modal controls - open close switch etc
+// Modal open/close and switch between login/register
 function initModalControls() {
     var $registerModal = $('#register-modal');
     var $loginModal = $('#login-modal');
@@ -1073,7 +1069,7 @@ function initModalControls() {
     }
 }
 
-// set active nav link based on current page
+// Highlights current page in navigation menu
 function setActiveLink() {
     var path = window.location.pathname;
     var currentPage = path.substring(path.lastIndexOf('/') + 1) || 'index.php';
@@ -1091,7 +1087,7 @@ function setActiveLink() {
     });
 }
 
-// flash messages auto hide
+// Auto-dismiss flash messages after a few seconds
 function initFlashMessages() {
     var $flashMsg = $('.flash-message');
     if ($flashMsg.length) {
@@ -1099,7 +1095,7 @@ function initFlashMessages() {
     }
 }
 
-// document ready - initialize everything
+// Document ready - initialize everything
 $(function() {
     initMobileMenu();
     initMobileSearch();
@@ -1111,17 +1107,14 @@ $(function() {
     initAjaxLogin();
     initAjaxRegister();
     
-    // cart initialization - only for buyers
+    // Cart initialization - only for buyers
     if (isLoggedIn && currentUserRole === 'buyer') {
         if (window.location.pathname.includes('cart.php')) {
-            // on cart page use the pre-loaded php data so we dont make an extra request
             loadCartPage();
         } else {
-            // on other pages we just need the cart count in the header
             updateCartCount();
         }
     } else {
-        // non-buyers see zero in cart badge
         updateCartCountDisplay(0);
     }
 });

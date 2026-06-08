@@ -24,39 +24,11 @@ $profile_image = $currentUser->getProfileImageUrl();
     <title>Seller Dashboard - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <style>
-        /* ========== DASHBOARD LAYOUT ========== */
-        .seller-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
+        /* Seller Dashboard Specific Styles */
 
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* ========== PAGE HEADER ========== */
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-            color: var(--dark-bg);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
-        /* ========== STATS CARDS ========== */
+        /* Stats Grid - Seller (3 columns) */
         .stats-grid-seller {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -64,91 +36,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             margin-bottom: var(--spacing-xl);
         }
 
-        .stat-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-light);
-            transition: all var(--transition-fast);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .stat-info h3 {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .stat-number {
-            font-size: var(--font-3xl);
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-        }
-
-        .stat-number.pending {
-            color: var(--warning);
-        }
-
-        .stat-icon {
-            width: 52px;
-            height: 52px;
-            background: var(--primary-fade);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .stat-icon img {
-            width: 28px;
-            height: 28px;
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
-        }
-
-        /* ========== DASHBOARD GRID ========== */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        /* ========== SECTION CARDS ========== */
-        .section-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border-light);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--spacing-lg);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--primary-color);
-        }
-
-        .section-header h2 {
-            font-size: var(--font-lg);
-            font-weight: var(--font-semibold);
-            color: var(--dark-bg);
-        }
-
-        /* ========== PRODUCTS GRID ========== */
+        /* Products Grid for My Listings */
         .listings-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -260,7 +148,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             color: var(--white);
         }
 
-        /* ========== ADD PRODUCT BUTTON ========== */
+        /* Add Product Button */
         .add-product-btn-container {
             margin-top: var(--spacing-lg);
             padding-top: var(--spacing-md);
@@ -294,7 +182,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             filter: brightness(0) invert(1);
         }
 
-        /* ========== ORDERS LIST ========== */
+        /* Orders List */
         .orders-list {
             display: flex;
             flex-direction: column;
@@ -407,7 +295,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             margin-top: var(--spacing-xs);
         }
 
-        /* ========== STORE SUMMARY CARD ========== */
+        /* Store Summary Card */
         .store-summary-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -497,57 +385,17 @@ $profile_image = $currentUser->getProfileImageUrl();
             height: 18px;
         }
 
-        /* ========== RESPONSIVE TABLET ========== */
+        /* Responsive */
         @media (max-width: 1024px) {
-            .seller-main-content {
-                margin-left: 0;
-                width: 100%;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-                gap: var(--spacing-md);
-            }
-
             .stats-grid-seller {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
-        /* ========== RESPONSIVE MOBILE ========== */
         @media (max-width: 768px) {
-            .seller-main-content {
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
             .stats-grid-seller {
                 grid-template-columns: 1fr;
                 gap: var(--spacing-sm);
-            }
-
-            .stat-card {
-                padding: var(--spacing-md);
-            }
-
-            .stat-icon {
-                width: 44px;
-                height: 44px;
-            }
-
-            .stat-icon img {
-                width: 22px;
-                height: 22px;
-            }
-
-            .stat-number {
-                font-size: var(--font-xl);
-            }
-
-            .section-card {
-                padding: var(--spacing-md);
             }
 
             .order-item {
@@ -578,19 +426,9 @@ $profile_image = $currentUser->getProfileImageUrl();
             }
         }
 
-        /* ========== RESPONSIVE SMALL MOBILE ========== */
         @media (max-width: 480px) {
-            .seller-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
             .page-header h1 {
                 font-size: var(--font-xl);
-            }
-
-            .stat-number {
-                font-size: var(--font-lg);
             }
 
             .product-title {
@@ -602,6 +440,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             }
         }
     </style>
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 
 <body class="seller-dashboard-page">
