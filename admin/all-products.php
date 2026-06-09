@@ -22,35 +22,11 @@ if (!$auth->isAdmin()) {
     <title>All Products - ConsuTrade Admin</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <style>
-        .admin-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
+        /* Products page specific styles only */
 
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
+        /* Filters Bar */
         .filters-bar {
             display: flex;
             justify-content: space-between;
@@ -66,32 +42,11 @@ if (!$auth->isAdmin()) {
             flex-wrap: wrap;
         }
 
-        .filter-btn {
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            background: var(--white);
-            border: 1px solid var(--border-light);
-            color: var(--gray-dark);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .filter-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .filter-btn.active {
-            background: var(--primary-color);
-            color: var(--white);
-            border-color: var(--primary-color);
-        }
-
+        /* Search Bar with icon button */
         .search-bar {
             display: flex;
             gap: var(--spacing-sm);
+            align-items: center;
         }
 
         .search-bar input {
@@ -109,14 +64,21 @@ if (!$auth->isAdmin()) {
         }
 
         .search-bar button {
-            padding: 8px 16px;
+            padding: 8px 12px;
             background: var(--primary-color);
-            color: white;
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
-            font-weight: var(--font-medium);
             transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-bar button img {
+            width: 16px;
+            height: 16px;
+            filter: brightness(0) invert(1);
         }
 
         .search-bar button:hover {
@@ -124,116 +86,67 @@ if (!$auth->isAdmin()) {
             transform: translateY(-1px);
         }
 
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: var(--spacing-lg);
-        }
-
-        .product-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
+        .reset-search-btn {
+            padding: 8px 16px;
+            background: var(--gray-bg);
+            color: var(--gray-dark);
             border: 1px solid var(--border-light);
-            overflow: hidden;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-medium);
             transition: all var(--transition-fast);
         }
 
-        .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
+        .reset-search-btn:hover {
+            background: var(--gray-lighter);
+            transform: translateY(-1px);
         }
 
-        .product-image {
-            position: relative;
-            width: 100%;
-            height: 180px;
-            background: var(--gray-bg);
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--spacing-xl);
         }
 
-        .product-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .product-status-badge {
+        /* Admin status badge - replaces condition badge on admin view */
+        .admin-status-badge {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 12px;
+            right: 12px;
             padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .status-active {
-            background: var(--success);
-            color: white;
-        }
-
-        .status-suspended {
-            background: var(--warning);
-            color: white;
-        }
-
-        .product-details {
-            padding: var(--spacing-md);
-        }
-
-        .product-title {
-            font-size: var(--font-base);
-            font-weight: var(--font-semibold);
-            margin-bottom: 5px;
-        }
-
-        .product-price {
-            font-size: var(--font-xl);
-            font-weight: bold;
-            color: var(--primary-color);
-            margin: 8px 0;
-        }
-
-        .product-seller,
-        .product-stock,
-        .product-date {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-            margin-bottom: 4px;
-        }
-
-        .stock-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
+            border-radius: var(--radius-round);
             font-size: 11px;
-            margin-top: 5px;
+            font-weight: var(--font-bold);
+            color: white;
+            z-index: 2;
         }
 
-        .stock-badge.out-of-stock {
-            background: var(--error-light);
-            color: var(--error);
+        .admin-status-badge.active {
+            background: var(--success);
         }
 
-        .stock-badge.low-stock {
-            background: var(--warning-light);
-            color: var(--warning);
+        .admin-status-badge.suspended {
+            background: var(--warning);
         }
 
-        .product-actions {
+        /* Admin action buttons */
+        .admin-actions {
             display: flex;
             gap: var(--spacing-sm);
-            margin-top: var(--spacing-md);
+            margin-top: 12px;
         }
 
-        .action-btn {
+        .admin-action-btn {
             flex: 1;
-            padding: 6px;
+            padding: 8px;
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
             font-size: var(--font-xs);
             font-weight: var(--font-medium);
             transition: all var(--transition-fast);
+            text-align: center;
         }
 
         .suspend-btn {
@@ -245,6 +158,7 @@ if (!$auth->isAdmin()) {
         .suspend-btn:hover {
             background: var(--warning);
             color: white;
+            transform: translateY(-2px);
         }
 
         .activate-btn {
@@ -256,6 +170,7 @@ if (!$auth->isAdmin()) {
         .activate-btn:hover {
             background: var(--success);
             color: white;
+            transform: translateY(-2px);
         }
 
         .delete-btn {
@@ -267,113 +182,76 @@ if (!$auth->isAdmin()) {
         .delete-btn:hover {
             background: var(--error);
             color: white;
+            transform: translateY(-2px);
         }
 
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            padding: 8px 14px;
-            border: 1px solid var(--border-light);
-            background: var(--white);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .page-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .page-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-            cursor: default;
-        }
-
-        .page-dots {
-            padding: 8px 4px;
-            color: var(--gray-light);
-        }
-
-        .loading-spinner {
-            text-align: center;
-            padding: 40px;
-            color: var(--gray-medium);
-        }
-
-        .empty-products {
-            text-align: center;
-            padding: 60px;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-        }
-
-        @media (max-width: 1024px) {
-            .admin-main-content {
-                margin-left: 0;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
             .filters-bar {
                 flex-direction: column;
                 align-items: stretch;
+                gap: var(--spacing-md);
             }
 
             .status-filters {
+                display: flex;
+                flex-wrap: wrap;
                 justify-content: center;
+                gap: var(--spacing-sm);
+            }
+
+            .status-filters .filter-btn {
+                padding: 6px 12px;
+                font-size: var(--font-xs);
             }
 
             .search-bar {
-                justify-content: center;
+                display: flex;
+                justify-content: stretch;
+                width: 100%;
             }
 
             .search-bar input {
-                width: 100%;
+                flex: 1;
+                width: auto;
             }
 
             .products-grid {
                 grid-template-columns: 1fr;
             }
 
-            .product-actions {
+            .admin-actions {
                 flex-direction: column;
             }
         }
 
         @media (max-width: 480px) {
-            .admin-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
             .page-header h1 {
                 font-size: var(--font-xl);
             }
 
-            .pagination {
-                gap: var(--spacing-xs);
+            .status-filters {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--spacing-sm);
+                width: 100%;
             }
 
-            .page-btn {
-                padding: 6px 10px;
-                font-size: var(--font-xs);
+            .status-filters .filter-btn {
+                text-align: center;
+                width: 100%;
+            }
+
+            .prod-name {
+                font-size: var(--font-sm);
+            }
+
+            .prod-price {
+                font-size: var(--font-lg);
             }
         }
     </style>
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
@@ -395,8 +273,10 @@ if (!$auth->isAdmin()) {
                 </div>
                 <div class="search-bar">
                     <input type="text" id="searchInput" placeholder="Search products by name or seller...">
-                    <button id="searchBtn">Search</button>
-                    <button id="resetBtn" style="display: none;">Reset</button>
+                    <button id="searchBtn">
+                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                    </button>
+                    <button id="resetBtn" class="reset-search-btn" style="display: none;">Reset</button>
                 </div>
             </div>
 
@@ -409,142 +289,179 @@ if (!$auth->isAdmin()) {
     </main>
 
     <script>
-        var $productsGrid = null,
-            $pagination = null,
-            $filterBtns = null,
-            $searchBtn = null,
-            $resetBtn = null,
-            $searchInput = null,
-            currentPage = 1,
-            currentStatus = 'all',
-            currentSearch = '',
-            totalPages = 1;
+        // Admin Products page state
+        var adminProductsGrid = null,
+            adminPagination = null,
+            adminFilterBtns = null,
+            adminSearchBtn = null,
+            adminResetBtn = null,
+            adminSearchInput = null,
+            adminCurrentPage = 1,
+            adminCurrentStatus = 'all',
+            adminCurrentSearch = '',
+            adminTotalPages = 1;
 
-        function cacheElements() {
-            $productsGrid = $('#productsGrid');
-            $pagination = $('#pagination');
-            $filterBtns = $('.status-filters .filter-btn');
-            $searchBtn = $('#searchBtn');
-            $resetBtn = $('#resetBtn');
-            $searchInput = $('#searchInput');
+        function cacheAdminElements() {
+            adminProductsGrid = $('#productsGrid');
+            adminPagination = $('#pagination');
+            adminFilterBtns = $('.status-filters .filter-btn');
+            adminSearchBtn = $('#searchBtn');
+            adminResetBtn = $('#resetBtn');
+            adminSearchInput = $('#searchInput');
         }
 
-        function loadProducts() {
-            $productsGrid.html('<div class="loading-spinner">Loading products...</div>');
+        function resetAdminFilters() {
+            adminSearchInput.val('');
+            adminCurrentSearch = '';
+            adminCurrentPage = 1;
+            adminFilterBtns.removeClass('active');
+            adminFilterBtns.filter('[data-status="all"]').addClass('active');
+            adminCurrentStatus = 'all';
+            loadAdminProducts();
+            adminResetBtn.hide();
+        }
+
+        function loadAdminProducts() {
+            adminProductsGrid.html('<div class="loading-spinner">Loading products...</div>');
+
             $.ajax({
                 url: baseUrl + 'php/endpoints/get-all-products.php',
                 type: 'GET',
                 dataType: 'json',
                 data: {
-                    page: currentPage,
-                    status: currentStatus,
-                    search: currentSearch
+                    page: adminCurrentPage,
+                    status: adminCurrentStatus,
+                    search: adminCurrentSearch
                 },
                 success: function(data) {
                     if (data.success && data.products && data.products.length) {
-                        displayProducts(data.products);
-                        totalPages = data.total_pages;
-                        displayPagination();
+                        renderAdminProducts(data.products);
+                        adminTotalPages = data.total_pages;
+                        if (typeof renderPagination === 'function') {
+                            renderPagination(adminPagination, adminCurrentPage, adminTotalPages, function(page) {
+                                adminCurrentPage = page;
+                                loadAdminProducts();
+                                $('html, body').animate({
+                                    scrollTop: 0
+                                }, 'smooth');
+                            });
+                        } else {
+                            adminPagination.empty();
+                        }
                     } else {
-                        $productsGrid.html('<div class="empty-products"><p>No products found.</p></div>');
-                        $pagination.empty();
+                        showAdminEmptyState();
+                        adminPagination.empty();
                     }
                 },
                 error: function() {
-                    $productsGrid.html('<div class="empty-products" style="color: var(--error);">Error loading products.</div>');
+                    adminProductsGrid.html('<div class="error-cell" style="text-align: center; padding: 60px;">Error loading products. Please refresh the page.</div>');
                 }
             });
         }
 
-        function displayProducts(products) {
-            $productsGrid.empty();
-            $.each(products, function(i, product) {
-                var imagePath = product.display_image || product.image;
-                if (imagePath && !imagePath.startsWith('http')) {
-                    imagePath = baseUrl + imagePath;
+        function renderAdminProducts(products) {
+            adminProductsGrid.empty();
+
+            for (var i = 0; i < products.length; i++) {
+                var p = products[i];
+                var imagePath = fixImageUrl(p.display_image || p.image);
+
+                var stockBadgeHtml = '';
+                if (p.stock_quantity <= 0) {
+                    stockBadgeHtml = '<div class="out-of-stock-badge-card">Out of Stock</div>';
+                } else if (p.stock_quantity <= 5) {
+                    stockBadgeHtml = '<div class="low-stock-badge-card">Only ' + p.stock_quantity + ' left</div>';
                 }
-                var stockBadge = '';
-                if (product.stock_quantity <= 0) {
-                    stockBadge = '<span class="stock-badge out-of-stock">Out of Stock</span>';
-                } else if (product.stock_quantity <= 5) {
-                    stockBadge = '<span class="stock-badge low-stock">Low Stock (' + product.stock_quantity + ')</span>';
-                }
-                var card = $('<div>').addClass('product-card');
-                card.html(
-                    '<div class="product-image">' +
-                    '<img src="' + (imagePath || baseUrl + 'images/default-product.png') + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
-                    '<div class="product-status-badge status-' + product.status + '">' + product.status + '</div>' +
+
+                var adminStatusBadge = '<div class="admin-status-badge ' + p.status + '">' + p.status.toUpperCase() + '</div>';
+
+                var sellerAvatar = p.seller_profile_image ?
+                    fixImageUrl(p.seller_profile_image, 'images/icons/profile-svgrepo-com.svg') :
+                    baseUrl + 'images/icons/profile-svgrepo-com.svg';
+
+                var isSellerVerified = p.seller_is_verified === 1;
+
+                var sellerBadge = isSellerVerified ?
+                    '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' :
+                    '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Not Verified</span></div>';
+
+                var sellerLocation = p.seller_location || 'South Africa';
+
+                var $card = $('<div>').addClass('prod-card');
+                $card.html(
+                    '<div class="img-container">' +
+                    '<img src="' + imagePath + '" alt="' + escapeHtml(p.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                    stockBadgeHtml +
+                    adminStatusBadge +
                     '</div>' +
-                    '<div class="product-details">' +
-                    '<h3 class="product-title">' + escapeHtml(product.name) + '</h3>' +
-                    '<p class="product-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
-                    '<p class="product-seller">Seller: ' + escapeHtml(product.seller_name) + '</p>' +
-                    '<p class="product-stock">Stock: ' + product.stock_quantity + '</p>' +
-                    stockBadge +
-                    '<p class="product-date">Listed: ' + product.created_at + '</p>' +
-                    '<div class="product-actions">' +
-                    '<button class="action-btn ' + (product.status === 'active' ? 'suspend-btn' : 'activate-btn') + '" onclick="toggleProductStatus(' + product.id + ', \'' + product.status + '\', function() { loadProducts(); })">' + (product.status === 'active' ? 'Suspend' : 'Activate') + '</button>' +
-                    '<button class="action-btn delete-btn" onclick="deleteProduct(' + product.id + ', function() { loadProducts(); })">Delete</button>' +
+                    '<div class="prod-info-container">' +
+                    '<h3 class="prod-name">' + escapeHtml(p.name) + '</h3>' +
+                    '<p class="prod-price">R ' + parseFloat(p.price).toFixed(2) + '</p>' +
+                    '<div class="seller-info">' +
+                    '<div class="seller-avatar">' +
+                    '<img src="' + sellerAvatar + '" alt="' + escapeHtml(p.seller_name) + '" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
+                    '</div>' +
+                    '<div class="seller-details">' +
+                    '<p class="seller-name">' + escapeHtml(p.seller_name) + '</p>' +
+                    '<p class="location">' +
+                    '<img src="' + baseUrl + 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location">' +
+                    escapeHtml(sellerLocation) +
+                    '</p>' +
+                    '</div>' +
+                    sellerBadge +
+                    '</div>' +
+                    '<div class="admin-actions">' +
+                    '<button class="admin-action-btn ' + (p.status === 'active' ? 'suspend-btn' : 'activate-btn') + '" onclick="toggleProductStatus(' + p.id + ', \'' + p.status + '\', function() { loadAdminProducts(); })">' + (p.status === 'active' ? 'Suspend' : 'Activate') + '</button>' +
+                    '<button class="admin-action-btn delete-btn" onclick="deleteProduct(' + p.id + ', function() { loadAdminProducts(); })">Delete</button>' +
                     '</div>' +
                     '</div>'
                 );
-                $productsGrid.append(card);
-            });
+                adminProductsGrid.append($card);
+            }
         }
 
-        function displayPagination() {
-            if (totalPages <= 1) {
-                $pagination.empty();
-                return;
+        function showAdminEmptyState() {
+            var resetButtonHtml = '';
+            if (adminCurrentSearch !== '' || adminCurrentStatus !== 'all') {
+                resetButtonHtml = '<button onclick="resetAdminFilters()" class="view-all-btn" style="background: var(--primary-color); color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-top: 16px;">Clear Filters</button>';
             }
-            var html = '';
-            if (currentPage > 1) html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')">← Previous</button>';
-            for (var i = 1; i <= totalPages; i++) {
-                if (i === currentPage) {
-                    html += '<button class="page-btn active" disabled>' + i + '</button>';
-                } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
-                    html += '<button class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
-                } else if (Math.abs(i - currentPage) === 3) {
-                    html += '<span class="page-dots">...</span>';
-                }
-            }
-            if (currentPage < totalPages) html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')">Next →</button>';
-            $pagination.html(html);
-        }
 
-        function goToPage(page) {
-            currentPage = page;
-            loadProducts();
-            $('html, body').animate({
-                scrollTop: 0
-            }, 'smooth');
+            adminProductsGrid.html(
+                '<div class="empty-state" style="text-align: center; padding: 60px;">' +
+                '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" style="opacity: 0.4;">' +
+                '<h3>' + (adminCurrentSearch ? 'No products found' : 'No products available') + '</h3>' +
+                '<p>' + (adminCurrentSearch ? 'No products matching "' + escapeHtml(adminCurrentSearch) + '"' : 'No products available on the platform') + '</p>' +
+                resetButtonHtml +
+                '</div>'
+            );
+            adminPagination.empty();
         }
 
         $(function() {
-            cacheElements();
-            loadProducts();
-            $filterBtns.on('click', function() {
-                $filterBtns.removeClass('active');
+            cacheAdminElements();
+            loadAdminProducts();
+
+            adminFilterBtns.on('click', function() {
+                adminFilterBtns.removeClass('active');
                 $(this).addClass('active');
-                currentStatus = $(this).data('status');
-                currentPage = 1;
-                loadProducts();
+                adminCurrentStatus = $(this).data('status');
+                adminCurrentPage = 1;
+                loadAdminProducts();
             });
-            $searchBtn.on('click', function() {
-                currentSearch = $searchInput.val().trim();
-                currentPage = 1;
-                loadProducts();
-                $resetBtn.toggle(!!currentSearch);
+
+            adminSearchBtn.on('click', function() {
+                adminCurrentSearch = adminSearchInput.val().trim();
+                adminCurrentPage = 1;
+                loadAdminProducts();
+                adminResetBtn.toggle(!!adminCurrentSearch);
             });
-            $resetBtn.on('click', function() {
-                $searchInput.val('');
-                currentSearch = '';
-                currentPage = 1;
-                loadProducts();
-                $(this).hide();
+
+            adminResetBtn.on('click', function() {
+                resetAdminFilters();
             });
-            $searchInput.on('keypress', function(e) {
-                if (e.which === 13) $searchBtn.click();
+
+            adminSearchInput.on('keypress', function(e) {
+                if (e.which === 13) adminSearchBtn.click();
             });
         });
     </script>

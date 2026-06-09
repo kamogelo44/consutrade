@@ -54,10 +54,10 @@ try {
         $totalPages = ceil($totalRows / $limit);
         $users = $userRepo->getUsersByRoleWithPagination($roleFilter, $searchTerm, $limit, $offset);
     } else {
-        $allUsers = $userRepo->getAll('all', $searchTerm, 0, 0);
-        $totalRows = count($allUsers);
-        $totalPages = ceil($totalRows / $limit);
+        // For 'all', we need to use getAll with proper parameters
         $users = $userRepo->getAll('all', $searchTerm, $limit, $offset);
+        $totalRows = $userRepo->countUsersByRole('all', $searchTerm);
+        $totalPages = ceil($totalRows / $limit);
     }
 
     $response['success'] = true;
@@ -65,9 +65,9 @@ try {
     $response['total_pages'] = $totalPages;
     $response['current_page'] = $page;
 } catch (Exception $e) {
+    error_log("GetUsers Error: " . $e->getMessage());
+    error_log("GetUsers Error Trace: " . $e->getTraceAsString());
     $response['error'] = $e->getMessage();
-    $response['file'] = $e->getFile();
-    $response['line'] = $e->getLine();
 }
 
 echo json_encode($response);

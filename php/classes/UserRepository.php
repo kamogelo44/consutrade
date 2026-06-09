@@ -295,14 +295,14 @@ class UserRepository
      */
     public function getAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at, status
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at
                 FROM users 
                 WHERE 1=1";
         $params = [];
         $types = "";
 
         if ($filter !== 'all') {
-            $sql .= " AND status = ?";
+            $sql .= " AND role = ?";
             $params[] = $filter;
             $types .= "s";
         }
@@ -351,7 +351,7 @@ class UserRepository
      */
     public function getUsersByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at, status
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at
                 FROM users 
                 WHERE role = ?";
         $params = [$role];

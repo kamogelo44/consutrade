@@ -11,7 +11,7 @@ var $deleteModal = null;
 var $bodyElement = null;
 var $cartCountElements = null;
 
-// Had issues with XSS early on, so now I always escape user input
+// For XSS I always escape user input
 function escapeHtml(text) {
     if (!text) return '';
     return $('<div>').text(text).html();
@@ -25,7 +25,7 @@ function capitalizeFirst(str) {
 
 // Maps database status values to CSS classes
 // Had to align these with what's in components.css
-function getStatusClass(status) {
+function getOrderStatusClass(status) {
     if (status == 'pending') return 'status-pending';
     if (status == 'processing') return 'status-processing';
     if (status == 'shipped') return 'status-shipped';
@@ -136,46 +136,6 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     });
 }
 
-// Admin orders table rendering - reused across multiple admin pages
-// Includes status-specific action buttons
-function renderAdminOrdersTable(orders, $container) {
-    if (!$container || !$container.length) return;
-    
-    $container.empty();
-    
-    if (!orders || orders.length == 0) {
-        $container.html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
-        return;
-    }
-    
-    for (var i = 0; i < orders.length; i++) {
-        var order = orders[i];
-        var statusClass = order.status;
-        var actionButtons = '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
-        
-        if (order.status == 'pending') {
-            actionButtons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
-        } else if (order.status == 'processing') {
-            actionButtons += '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
-        } else if (order.status == 'shipped') {
-            actionButtons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
-        }
-        
-        $container.append(
-            '<tr>' +
-                '<td data-label="Order Number">#' + order.order_id + '</td>' +
-                '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '</td>' +
-                '<td data-label="Seller">' + escapeHtml(order.seller_name) + '</td>' +
-                '<td data-label="Items">' + (order.item_count || 0) + '</td>' +
-                '<td data-label="Amount">R ' + parseFloat(order.total_price).toFixed(2) + '</td>' +
-                '<td data-label="Status"><span class="status-badge ' + statusClass + '">' + order.status + '</span></td>' +
-                '<td data-label="Date">' + order.created_at + '</td>' +
-                '<td data-label="Actions" class="action-buttons">' + actionButtons + '</td>' +
-            '</tr>'
-        );
-    }
-}
-
 // Toast notifications - user feedback without annoying popups
 function showToast(message, type) {
     type = type || 'success';
@@ -226,19 +186,21 @@ function togglePassword(fieldId, button) {
 }
 
 // Opens order details modal and fetches data via AJAX
-// Used across both admin and seller dashboards
+// Uses local DOM references instead of globals - more reliable
 function openOrderModal(orderId) {
-    if (!$orderModal) {
-        $orderModal = $('#orderModal');
-        $orderModalBody = $('#orderModalBody');
-        $orderModalFooter = $('#orderModalFooter');
+    // Get fresh references each time - no global state needed
+    var $modal = $('#orderModal');
+    var $modalBody = $('#orderModalBody');
+    var $modalFooter = $('#orderModalFooter');
+    
+    if (!$modal.length) {
+        console.warn('Order modal not found in DOM');
+        return;
     }
     
-    if (!$orderModal.length) return;
-    
-    $orderModal.addClass('active');
-    $orderModalBody.html('<div class="loading-spinner">Loading order details...</div>');
-    $orderModalFooter.empty();
+    $modal.addClass('active');
+    $modalBody.html('<div class="loading-spinner">Loading order details...</div>');
+    $modalFooter.empty();
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
@@ -247,7 +209,7 @@ function openOrderModal(orderId) {
         success: function(data) {
             if (data.success && data.order) {
                 var order = data.order;
-                var isAdmin = window.location.pathname.includes('all-orders.php');
+                var isAdmin = window.location.pathname.includes('all-orders.php') || window.location.pathname.includes('admin-dashboard.php');
                 
                 var itemsHtml = '';
                 if (order.items && order.items.length > 0) {
@@ -268,7 +230,7 @@ function openOrderModal(orderId) {
                     }
                 }
                 
-                $orderModalBody.html(
+                $modalBody.html(
                     '<div class="order-info-section">' +
                         '<div class="info-row"><span class="info-label">Order Number:</span><span class="info-value">#' + order.order_id + '</span></div>' +
                         '<div class="info-row"><span class="info-label">Order Date:</span><span class="info-value">' + order.created_at + '</span></div>' +
@@ -300,19 +262,19 @@ function openOrderModal(orderId) {
                     actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
                 }
                 
-                $orderModalFooter.html(actionButtons);
+                $modalFooter.html(actionButtons);
             } else {
-                $orderModalBody.html('<p class="error">Unable to load order details.</p>');
+                $modalBody.html('<p class="error">Unable to load order details.</p>');
             }
         },
         error: function() {
-            $orderModalBody.html('<p class="error">Error loading order details.</p>');
+            $modalBody.html('<p class="error">Error loading order details.</p>');
         }
     });
 }
 
 function closeOrderModal() {
-    if ($orderModal) $orderModal.removeClass('active');
+    $('#orderModal').removeClass('active');
 }
 
 // Status update function - used by admin and seller dashboards

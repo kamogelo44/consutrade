@@ -27,34 +27,9 @@ if (!$auth->isAdmin()) {
     <!-- CSS Imports - Using component-based architecture -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <style>
-        /* Page-specific styles that don't belong in components */
-        .admin-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
-
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
+        /* Orders page specific styles only */
 
         .filters-bar {
             display: flex;
@@ -69,31 +44,6 @@ if (!$auth->isAdmin()) {
             display: flex;
             gap: var(--spacing-sm);
             flex-wrap: wrap;
-        }
-
-        /* Filter button styles - using component pattern */
-        .filter-btn {
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            background: var(--white);
-            border: 1px solid var(--border-light);
-            color: var(--gray-dark);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .filter-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .filter-btn.active {
-            background: var(--primary-color);
-            color: var(--white);
-            border-color: var(--primary-color);
         }
 
         .search-bar {
@@ -131,70 +81,7 @@ if (!$auth->isAdmin()) {
             transform: translateY(-1px);
         }
 
-        .table-wrapper {
-            overflow-x: auto;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: var(--font-sm);
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: var(--spacing-md);
-            text-align: left;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .data-table th {
-            background: var(--gray-bg-light);
-            font-weight: var(--font-semibold);
-            color: var(--gray-dark);
-        }
-
-        .data-table tr:hover td {
-            background: var(--gray-bg-light);
-        }
-
-        /* Status badges - using component styles from main.css */
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .status-badge.pending {
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        .status-badge.processing {
-            background: var(--info-light);
-            color: var(--info);
-        }
-
-        .status-badge.shipped {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-        }
-
-        .status-badge.completed {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .status-badge.cancelled {
-            background: var(--error-light);
-            color: var(--error);
-        }
-
+        /* Order action buttons - page specific */
         .action-buttons {
             display: flex;
             gap: var(--spacing-sm);
@@ -220,6 +107,7 @@ if (!$auth->isAdmin()) {
         .view-btn:hover {
             background: var(--info);
             color: white;
+            transform: translateY(-1px);
         }
 
         .process-btn {
@@ -231,6 +119,7 @@ if (!$auth->isAdmin()) {
         .process-btn:hover {
             background: var(--warning);
             color: white;
+            transform: translateY(-1px);
         }
 
         .ship-btn {
@@ -242,6 +131,7 @@ if (!$auth->isAdmin()) {
         .ship-btn:hover {
             background: var(--primary-color);
             color: white;
+            transform: translateY(-1px);
         }
 
         .complete-btn {
@@ -253,161 +143,22 @@ if (!$auth->isAdmin()) {
         .complete-btn:hover {
             background: var(--success);
             color: white;
+            transform: translateY(-1px);
         }
 
-        /* Modal styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0.3s ease, opacity 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .modal-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-bottom: 1px solid var(--border-light);
-            background: var(--white);
-        }
-
-        .modal-header h3 {
-            font-size: var(--font-lg);
-            font-weight: var(--font-semibold);
-            margin: 0;
-            color: var(--dark-bg);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--gray-medium);
-            transition: all var(--transition-fast);
-            line-height: 1;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--radius-round);
-        }
-
-        .modal-close:hover {
+        .cancel-btn {
             background: var(--error-light);
             color: var(--error);
+            border: 1px solid var(--error);
         }
 
-        .modal-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-lg);
-            background: var(--white);
-        }
-
-        .modal-footer {
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-top: 1px solid var(--border-light);
-            background: var(--gray-bg-light);
-            display: flex;
-            justify-content: flex-end;
-            gap: var(--spacing-sm);
-        }
-
-        /* Pagination - using component styles */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            padding: 8px 14px;
-            border: 1px solid var(--border-light);
-            background: var(--white);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .page-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .page-btn.active {
-            background: var(--primary-color);
+        .cancel-btn:hover {
+            background: var(--error);
             color: white;
-            border-color: var(--primary-color);
-            cursor: default;
+            transform: translateY(-1px);
         }
 
-        .page-dots {
-            padding: 8px 4px;
-            color: var(--gray-light);
-        }
-
-        /* Loading and empty states */
-        .loading-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--gray-medium);
-        }
-
-        .error-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--error);
-            background: var(--error-light);
-        }
-
-        .empty-cell {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--gray-medium);
-        }
-
-        .loading-spinner {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--gray-medium);
-        }
-
-        /* Order details styles */
+        /* Order info rows - modal content styling */
         .order-info-section {
             margin-bottom: var(--spacing-lg);
         }
@@ -437,86 +188,25 @@ if (!$auth->isAdmin()) {
             margin-top: var(--spacing-md);
         }
 
-        .order-item {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--border-light);
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .order-item-img {
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-            background: var(--gray-bg);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-        }
-
-        .order-item-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .order-item-details {
-            flex: 1;
-        }
-
-        .order-item-details h4 {
-            font-size: var(--font-md);
-            font-weight: var(--font-semibold);
-            margin: 0 0 var(--spacing-xs) 0;
-            color: var(--dark-bg);
-        }
-
-        .order-item-details p {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-            margin: 0;
-        }
-
-        .order-item-price {
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-            font-size: var(--font-md);
-        }
-
-        .order-total-section {
-            margin-top: var(--spacing-lg);
-            padding-top: var(--spacing-md);
-            border-top: 2px solid var(--border-light);
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            padding: var(--spacing-xs) 0;
-            font-size: var(--font-md);
-            color: var(--gray-dark);
-        }
-
-        .total-row.grand-total {
-            font-size: var(--font-lg);
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-            margin-top: var(--spacing-sm);
-            padding-top: var(--spacing-sm);
+        /* Modal footer buttons */
+        .modal-footer {
+            padding: var(--spacing-md) var(--spacing-lg);
             border-top: 1px solid var(--border-light);
+            background: var(--gray-bg-light);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--spacing-sm);
         }
 
-        @media (max-width: 1024px) {
-            .admin-main-content {
-                margin-left: 0;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
+        .modal-footer .process-btn,
+        .modal-footer .ship-btn,
+        .modal-footer .complete-btn,
+        .modal-footer .cancel-btn {
+            padding: 8px 20px;
+            font-size: var(--font-sm);
         }
 
+        /* Responsive overrides for orders page */
         @media (max-width: 768px) {
             .filters-bar {
                 flex-direction: column;
@@ -544,47 +234,6 @@ if (!$auth->isAdmin()) {
                 text-align: center;
             }
 
-            .data-table,
-            .data-table tbody,
-            .data-table tr,
-            .data-table td {
-                display: block;
-            }
-
-            .data-table thead {
-                display: none;
-            }
-
-            .data-table tr {
-                border: 1px solid var(--border-light);
-                margin-bottom: var(--spacing-md);
-                border-radius: var(--radius-md);
-            }
-
-            .data-table td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: var(--spacing-sm);
-                border-bottom: 1px solid var(--border-light);
-            }
-
-            .data-table td:last-child {
-                border-bottom: none;
-            }
-
-            .data-table td:before {
-                content: attr(data-label);
-                font-weight: var(--font-bold);
-                color: var(--gray-dark);
-                min-width: 120px;
-            }
-
-            .modal-container {
-                width: 95%;
-                max-height: 95vh;
-            }
-
             .info-row {
                 flex-direction: column;
                 gap: var(--spacing-xs);
@@ -592,17 +241,6 @@ if (!$auth->isAdmin()) {
 
             .info-label {
                 width: 100%;
-            }
-
-            .order-item {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .order-item-img {
-                width: 80px;
-                height: 80px;
-                margin: 0 auto;
             }
 
             .modal-footer {
@@ -613,39 +251,8 @@ if (!$auth->isAdmin()) {
                 width: 100%;
             }
         }
-
-        @media (max-width: 480px) {
-            .admin-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
-            .page-header h1 {
-                font-size: var(--font-xl);
-            }
-
-            .pagination {
-                gap: var(--spacing-xs);
-            }
-
-            .page-btn {
-                padding: 6px 10px;
-                font-size: var(--font-xs);
-            }
-
-            .modal-body {
-                padding: var(--spacing-md);
-            }
-
-            .modal-header {
-                padding: var(--spacing-sm) var(--spacing-md);
-            }
-
-            .modal-header h3 {
-                font-size: var(--font-base);
-            }
-        }
     </style>
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
@@ -670,7 +277,9 @@ if (!$auth->isAdmin()) {
                 </div>
                 <div class="search-bar">
                     <input type="text" id="searchInput" placeholder="Search by order number, customer, or seller...">
-                    <button id="searchBtn">Search</button>
+                    <button id="searchBtn">
+                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                    </button>
                     <button id="resetBtn" style="display: none;">Reset</button>
                 </div>
             </div>
@@ -691,7 +300,7 @@ if (!$auth->isAdmin()) {
                     </thead>
                     <tbody id="ordersTable">
                         <tr>
-                            <td colspan="8" class="loading-cell">Loading orders...</td>
+                            <td colspan="8" class="loading-spinner">Loading orders...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -700,25 +309,22 @@ if (!$auth->isAdmin()) {
             <div class="pagination" id="pagination"></div>
         </div>
     </main>
-
-    <!-- Modal -->
-    <div id="orderModal" class="modal-overlay">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h3>Order Details</h3>
-                <button class="modal-close" onclick="closeOrderModal()">&times;</button>
+    <!-- Order Details Modal - matching orders.css -->
+    <div id="orderModal" class="order-modal">
+        <div class="order-modal-content">
+            <div class="order-modal-header">
+                <h2>Order Details</h2>
+                <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
             </div>
-            <div class="modal-body" id="orderModalBody">
+            <div class="order-details-content" id="orderModalBody">
                 <div class="loading-spinner">Loading order details...</div>
             </div>
             <div class="modal-footer" id="orderModalFooter"></div>
         </div>
     </div>
 
-    <?php include 'includes/footer.php'; ?>
-
     <script>
-        // ========== GLOBAL VARIABLES ==========
+        // Page state
         var $ordersTable = null,
             $pagination = null,
             $filterBtns = null,
@@ -730,7 +336,6 @@ if (!$auth->isAdmin()) {
             currentSearch = '',
             totalPages = 1;
 
-        // ========== CACHE ELEMENTS ==========
         function cacheElements() {
             $ordersTable = $('#ordersTable');
             $pagination = $('#pagination');
@@ -740,9 +345,9 @@ if (!$auth->isAdmin()) {
             $searchInput = $('#searchInput');
         }
 
-        // ========== LOAD ORDERS ==========
         function loadOrders() {
-            $ordersTable.html('<tr><td colspan="8" class="loading-cell">Loading orders...</td></tr>');
+            $ordersTable.html('<tr><td colspan="8"><div class="loading-spinner">Loading orders...</div></td></tr>');
+
             $.ajax({
                 url: baseUrl + 'php/endpoints/get-all-orders.php',
                 type: 'GET',
@@ -754,27 +359,104 @@ if (!$auth->isAdmin()) {
                 },
                 success: function(data) {
                     if (data.success && data.orders && data.orders.length) {
-                        renderAdminOrdersTable(data.orders, $ordersTable);
+                        displayOrders(data.orders);
                         totalPages = data.total_pages || 1;
-                        renderPagination($pagination, currentPage, totalPages, function(page) {
-                            currentPage = page;
-                            loadOrders();
-                            $('html, body').animate({
-                                scrollTop: 0
-                            }, 'smooth');
-                        });
+                        if (typeof renderPagination === 'function') {
+                            renderPagination($pagination, currentPage, totalPages, function(page) {
+                                currentPage = page;
+                                loadOrders();
+                                $('html, body').animate({
+                                    scrollTop: 0
+                                }, 'smooth');
+                            });
+                        } else {
+                            $pagination.empty();
+                        }
                     } else {
-                        $ordersTable.html('<tr><td colspan="8" class="empty-cell">No orders found</td></tr>');
+                        showEmptyState();
                         $pagination.empty();
                     }
                 },
                 error: function() {
-                    $ordersTable.html('</td><td colspan="8" class="error-cell">Error loading orders</td></tr>');
+                    $ordersTable.html('<tr><td colspan="8" class="error-cell">Error loading orders. Please refresh the page.</td></tr>');
                 }
             });
         }
 
-        // ========== EVENT HANDLERS ==========
+        function displayOrders(orders) {
+            $ordersTable.empty();
+
+            for (var i = 0; i < orders.length; i++) {
+                var order = orders[i];
+                var statusClass = getOrderStatusClass(order.status);
+                var statusLabel = getStatusLabel(order.status);
+
+                var actionButtons = '<div class="action-buttons">';
+                actionButtons += '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
+
+                if (order.status === 'pending') {
+                    actionButtons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
+                } else if (order.status === 'processing') {
+                    actionButtons += '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
+                } else if (order.status === 'shipped') {
+                    actionButtons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
+                }
+
+                if (order.status === 'pending' || order.status === 'processing') {
+                    actionButtons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel</button>';
+                }
+
+                actionButtons += '</div>';
+
+                $ordersTable.append(
+                    '<tr>' +
+                    '<td data-label="Order Number">#' + order.order_id + '</td>' +
+                    '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '</td>' +
+                    '<td data-label="Seller">' + escapeHtml(order.seller_name) + '</td>' +
+                    '<td data-label="Items">' + (order.item_count || 0) + '</td>' +
+                    '<td data-label="Amount">R ' + parseFloat(order.total_price).toFixed(2) + '</td>' +
+                    '<td data-label="Status"><span class="order-status-badge ' + statusClass + '">' + statusLabel + '</span></td>' +
+                    '<td data-label="Date">' + escapeHtml(order.created_at) + '</td>' +
+                    '<td data-label="Actions">' + actionButtons + '</td>' +
+                    '</tr>'
+                );
+            }
+        }
+
+        function showEmptyState() {
+            var emptyTitle = '';
+            var emptyMessage = '';
+            var emptyIcon = 'shopping-cart-01-svgrepo-com.svg';
+
+            if (currentStatus !== 'all') {
+                var statusName = capitalizeFirst(currentStatus);
+                emptyTitle = 'No ' + statusName + ' Orders';
+                emptyMessage = 'There are no ' + currentStatus + ' orders' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
+            } else if (currentSearch !== '') {
+                emptyTitle = 'No Orders Found';
+                emptyMessage = 'No orders matching "' + escapeHtml(currentSearch) + '" were found.';
+            } else {
+                emptyTitle = 'No Orders Yet';
+                emptyMessage = 'No orders have been placed on the platform yet.';
+            }
+
+            var resetButtonHtml = '';
+            if (currentSearch !== '' || currentStatus !== 'all') {
+                resetButtonHtml = '<button onclick="document.getElementById(\'resetBtn\').click()" class="view-all-btn" style="background: var(--primary-color); color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-top: 16px;">Clear Filters</button>';
+            }
+
+            $ordersTable.html(
+                '<tr><td colspan="8" style="text-align: center; padding: 60px;">' +
+                '<div class="empty-state">' +
+                '<img src="' + baseUrl + 'images/icons/' + emptyIcon + '" width="64" height="64" alt="No orders" style="opacity: 0.4; margin-bottom: 16px;">' +
+                '<h3 style="font-size: 20px; font-weight: var(--font-bold); margin-bottom: 8px; color: var(--dark-bg);">' + escapeHtml(emptyTitle) + '</h3>' +
+                '<p style="color: var(--gray-medium); margin-bottom: 0;">' + escapeHtml(emptyMessage) + '</p>' +
+                resetButtonHtml +
+                '</div>' +
+                '</td></tr>'
+            );
+        }
+
         $(document).ready(function() {
             cacheElements();
             loadOrders();
@@ -798,6 +480,9 @@ if (!$auth->isAdmin()) {
                 $searchInput.val('');
                 currentSearch = '';
                 currentPage = 1;
+                $filterBtns.removeClass('active');
+                $filterBtns.filter('[data-status="all"]').addClass('active');
+                currentStatus = 'all';
                 loadOrders();
                 $(this).hide();
             });

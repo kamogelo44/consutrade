@@ -1107,13 +1107,16 @@ class ProductRepository
     public function getAllProductsForAdmin(string $status = 'all', string $search = '', int $limit = 12, int $offset = 0): array
     {
         $sql = "SELECT p.product_id as id, p.title as name, p.price, p.status,
-                p.stock_quantity, p.created_at,
-                COALESCE(pi.image_url, p.image_url) AS display_image,
-                u.full_name as seller_name
-                FROM products p
-                LEFT JOIN users u ON p.seller_id = u.user_id
-                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-                WHERE p.status != 'deleted'";
+            p.stock_quantity, p.created_at,
+            COALESCE(pi.image_url, p.image_url) AS display_image,
+            u.full_name as seller_name,
+            u.id_verified as seller_is_verified,
+            u.profile_image as seller_profile_image,
+            u.location as seller_location
+            FROM products p
+            LEFT JOIN users u ON p.seller_id = u.user_id
+            LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+            WHERE p.status != 'deleted'";
 
         $params = [];
         $types = "";
@@ -1147,15 +1150,18 @@ class ProductRepository
         $products = [];
         while ($row = $result->fetch_assoc()) {
             $products[] = [
-                'id'             => (int) $row['id'],
-                'name'           => $row['name'],
-                'price'          => (float) $row['price'],
-                'status'         => $row['status'],
-                'stock_quantity' => (int) $row['stock_quantity'],
-                'created_at'     => date('d M Y', strtotime($row['created_at'])),
-                'display_image'  => $this->getImageUrl($row['display_image']),
-                'image'          => $this->getImageUrl($row['display_image']),
-                'seller_name'    => $row['seller_name'] ?? 'Unknown'
+                'id'                     => (int) $row['id'],
+                'name'                   => $row['name'],
+                'price'                  => (float) $row['price'],
+                'status'                 => $row['status'],
+                'stock_quantity'         => (int) $row['stock_quantity'],
+                'created_at'             => date('d M Y', strtotime($row['created_at'])),
+                'display_image'          => $this->getImageUrl($row['display_image']),
+                'image'                  => $this->getImageUrl($row['display_image']),
+                'seller_name'            => $row['seller_name'] ?? 'Unknown',
+                'seller_is_verified'     => (int) ($row['seller_is_verified'] ?? 0),
+                'seller_profile_image'   => $row['seller_profile_image'] ?? null,
+                'seller_location'        => $row['seller_location'] ?? 'South Africa'
             ];
         }
         $stmt->close();
