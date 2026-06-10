@@ -306,6 +306,155 @@ function updateOrderStatus(orderId, newStatus) {
     }
 }
 
+
+// Shared order functions - works for buyers, sellers, and admins
+// Saves me from writing the same thing three times
+
+/**
+ * Fetches orders and sticks them in the table
+ * endpoint changes depending on who's logged in
+ */
+function loadOrders(endpoint, $container, $pagination, page, status, search, userRole, onPageChange) {
+    $container.html('<tr><td colspan="8"><div class="loading-spinner">Loading orders...</div></td></tr>');
+    
+    $.ajax({
+        url: baseUrl + endpoint,
+        type: 'GET',
+        dataType: 'json',
+        data: { page: page, status: status, search: search },
+        success: function(data) {
+            if (data.success && data.orders && data.orders.length) {
+                renderOrdersTable(data.orders, $container, userRole);
+                if (typeof renderPagination === 'function') {
+                    renderPagination($pagination, page, data.total_pages, function(newPage) {
+                        if (typeof onPageChange === 'function') onPageChange(newPage);
+                    });
+                }
+            } else {
+                showOrdersEmptyState($container, status, search, userRole);
+                $pagination.empty();
+            }
+        },
+        error: function() {
+            $container.html('<tr><td colspan="8"><div class="error-cell">Failed to load orders. Try refreshing.</div></td></tr>');
+        }
+    });
+}
+
+// Renders orders with the right action buttons based on who's looking
+// Buyers just get cancel, sellers get process/ship/complete/cancel
+function renderOrdersTable(orders, $container, userRole) {
+    $container.empty();
+    
+    for (var i = 0; i < orders.length; i++) {
+        var order = orders[i];
+        var statusClass = getOrderStatusClass(order.status);
+        var statusLabel = getStatusLabel(order.status);
+        
+        var buttons = '<div class="action-buttons">';
+        buttons += '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
+        
+        // Sellers get more buttons than buyers
+        if (userRole === 'seller') {
+            if (order.status === 'pending') {
+                buttons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
+            } else if (order.status === 'processing') {
+                buttons += '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
+            } else if (order.status === 'shipped') {
+                buttons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
+            }
+            if (order.status === 'pending' || order.status === 'processing') {
+                buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel</button>';
+            }
+        }
+        
+        // Buyers can only cancel if the order isn't shipped yet
+        if (userRole === 'buyer') {
+            if (order.status === 'pending' || order.status === 'processing') {
+                buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>';
+            }
+        }
+        
+        // Admins get all the buttons
+        if (userRole === 'admin') {
+            if (order.status === 'pending') {
+                buttons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
+            } else if (order.status === 'processing') {
+                buttons += '<button class="action-btn ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\')">Ship</button>';
+            } else if (order.status === 'shipped') {
+                buttons += '<button class="action-btn complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\')">Complete</button>';
+            }
+            if (order.status === 'pending' || order.status === 'processing') {
+                buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel</button>';
+            }
+        }
+        
+        buttons += '</div>';
+        
+        var row = '<tr>';
+        row += '<td data-label="Order #">#' + order.order_id + '</td>';
+        row += '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '</td>';
+        
+        if (userRole === 'admin') {
+            row += '<td data-label="Seller">' + escapeHtml(order.seller_name) + '</td>';
+        }
+        
+        row += '<td data-label="Items">' + (order.item_count || 0) + '</td>';
+        row += '<td data-label="Amount">R ' + parseFloat(order.total_price).toFixed(2) + '</td>';
+        row += '<td data-label="Status"><span class="order-status-badge ' + statusClass + '">' + statusLabel + '</span></td>';
+        row += '<td data-label="Date">' + escapeHtml(order.created_at) + '</td>';
+        row += '<td data-label="Actions">' + buttons + '</td>';
+        row += '</tr>';
+        
+        $container.append(row);
+    }
+}
+
+// Empty state for orders - changes message based on who's looking and what filters are active
+function showOrdersEmptyState($container, status, search, userRole) {
+    var title = '';
+    var message = '';
+    
+    if (status !== 'all') {
+        title = 'No ' + capitalizeFirst(status) + ' Orders';
+        if (userRole === 'buyer') {
+            message = 'You don\'t have any ' + status + ' orders' + (search ? ' matching "' + escapeHtml(search) + '"' : '') + '.';
+        } else if (userRole === 'seller') {
+            message = 'No ' + status + ' orders from customers' + (search ? ' matching "' + escapeHtml(search) + '"' : '') + '.';
+        } else {
+            message = 'No ' + status + ' orders found' + (search ? ' matching "' + escapeHtml(search) + '"' : '') + '.';
+        }
+    } else if (search !== '') {
+        title = 'No Orders Found';
+        message = 'No orders matching "' + escapeHtml(search) + '" were found.';
+    } else {
+        title = 'No Orders Yet';
+        if (userRole === 'buyer') {
+            message = 'You haven\'t placed any orders yet.';
+        } else if (userRole === 'seller') {
+            message = 'You haven\'t received any orders yet.';
+        } else {
+            message = 'No orders have been placed on the platform yet.';
+        }
+    }
+    
+    var resetHtml = '';
+    if (search !== '' || status !== 'all') {
+        resetHtml = '<button class="reset-filters-btn view-all-btn" style="background: var(--primary-color); color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-top: 16px;">Clear Filters</button>';
+    }
+    
+    $container.html(
+        '<tr><td colspan="8" style="text-align: center; padding: 60px;">' +
+        '<div class="empty-state">' +
+        '<img src="' + baseUrl + 'images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="No orders" style="opacity: 0.4;">' +
+        '<h3>' + escapeHtml(title) + '</h3>' +
+        '<p>' + escapeHtml(message) + '</p>' +
+        resetHtml +
+        '</div>' +
+        '</td></tr>'
+    );
+}
+
 // Clears validation errors from auth modals
 function clearModalErrors(modalId) {
     var $modal = $(modalId);

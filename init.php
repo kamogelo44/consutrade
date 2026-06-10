@@ -79,6 +79,7 @@ $payfastService = new PayFastService(
 // Start session and get user
 $currentUser = $auth->getCurrentUser();
 $isLoggedIn = $auth->isLoggedIn();
+$currentUserRole = $auth->getCurrentUserRole();
 
 $baseUrl = getBaseUrl();
 
@@ -97,6 +98,7 @@ $GLOBALS['transactionRepo'] = $transactionRepo;
 $GLOBALS['reportRepo'] = $reportRepo;
 $GLOBALS['payfastService'] = $payfastService;
 $GLOBALS['currentUser'] = $currentUser;
+$GLOBALS['currentUserRole'] = $currentUserRole;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;
 $GLOBALS['baseUrl'] = $baseUrl;
 

@@ -18,21 +18,19 @@ class OrderRepository
     }
 
     /**
-     * Get buyer orders with optional filters
+     * Get buyer orders with optional filters and pagination
      *
      * @param int $id Buyer user ID
      * @param string $filter Status filter
      * @param string $search Search term
+     * @param int $limit Limit (0 for no limit)
+     * @param int $offset Offset
      * @return array
      */
-    public function getBuyerOrders($id, $filter = 'all', $search = '')
+    public function getBuyerOrders($id, $filter = 'all', $search = '', $limit = 0, $offset = 0)
     {
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
                        u.full_name as seller_name, u.user_id as seller_id,
-                       (SELECT GROUP_CONCAT(DISTINCT p.title SEPARATOR ', ')
-                        FROM order_items oi
-                        JOIN products p ON oi.product_id = p.product_id
-                        WHERE oi.order_id = o.order_id) as product_names,
                        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
                 FROM orders o
                 JOIN users u ON o.seller_id = u.user_id
@@ -48,23 +46,20 @@ class OrderRepository
         }
 
         if (!empty($search)) {
-            $sql .= " AND (u.full_name LIKE ? OR o.order_id LIKE ?)";
+            $sql .= " AND (o.order_id LIKE ?)";
             $searchParam = "%$search%";
             $params[] = $searchParam;
-            $params[] = $searchParam;
-            $types .= "ss";
+            $types .= "s";
         }
 
-        $sql .= " ORDER BY
-                    CASE o.status
-                        WHEN 'pending' THEN 1
-                        WHEN 'processing' THEN 2
-                        WHEN 'shipped' THEN 3
-                        WHEN 'completed' THEN 4
-                        WHEN 'cancelled' THEN 5
-                        ELSE 6
-                    END,
-                    o.created_at DESC";
+        $sql .= " ORDER BY o.created_at DESC";
+
+        if ($limit > 0) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = $limit;
+            $params[] = $offset;
+            $types .= "ii";
+        }
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param($types, ...$params);
@@ -81,17 +76,19 @@ class OrderRepository
     }
 
     /**
-     * Get seller orders with optional filters
+     * Get seller orders with optional filters and pagination
      *
      * @param int $id Seller user ID
      * @param string $filter Status filter
      * @param string $search Search term
+     * @param int $limit Limit (0 for no limit)
+     * @param int $offset Offset
      * @return array
      */
-    public function getSellerOrders($id, $filter = 'all', $search = '')
+    public function getSellerOrders($id, $filter = 'all', $search = '', $limit = 0, $offset = 0)
     {
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
-                       u.full_name as buyer_name, u.email as buyer_email, u.user_id as buyer_id,
+                       u.full_name as buyer_name, u.user_id as buyer_id,
                        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
                 FROM orders o
                 JOIN users u ON o.buyer_id = u.user_id
@@ -107,23 +104,21 @@ class OrderRepository
         }
 
         if (!empty($search)) {
-            $sql .= " AND (u.full_name LIKE ? OR o.order_id LIKE ?)";
+            $sql .= " AND (o.order_id LIKE ? OR u.full_name LIKE ?)";
             $searchParam = "%$search%";
             $params[] = $searchParam;
             $params[] = $searchParam;
             $types .= "ss";
         }
 
-        $sql .= " ORDER BY
-                    CASE o.status
-                        WHEN 'pending' THEN 1
-                        WHEN 'processing' THEN 2
-                        WHEN 'shipped' THEN 3
-                        WHEN 'completed' THEN 4
-                        WHEN 'cancelled' THEN 5
-                        ELSE 6
-                    END,
-                    o.created_at DESC";
+        $sql .= " ORDER BY o.created_at DESC";
+
+        if ($limit > 0) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = $limit;
+            $params[] = $offset;
+            $types .= "ii";
+        }
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param($types, ...$params);
@@ -554,5 +549,78 @@ class OrderRepository
         $result = $stmt->execute();
         $stmt->close();
         return $result;
+    }
+    /**
+     * Count buyer orders with filters (for pagination)
+     *
+     * @param int $id Buyer user ID
+     * @param string $filter Status filter
+     * @param string $search Search term
+     * @return int
+     */
+    public function countBuyerOrders($id, $filter = 'all', $search = '')
+    {
+        $sql = "SELECT COUNT(*) as total FROM orders o WHERE o.buyer_id = ?";
+        $params = [$id];
+        $types = "i";
+
+        if ($filter !== 'all') {
+            $sql .= " AND o.status = ?";
+            $params[] = $filter;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (o.order_id LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $types .= "s";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return (int)($row['total'] ?? 0);
+    }
+
+    /**
+     * Count seller orders with filters (for pagination)
+     *
+     * @param int $id Seller user ID
+     * @param string $filter Status filter
+     * @param string $search Search term
+     * @return int
+     */
+    public function countSellerOrders($id, $filter = 'all', $search = '')
+    {
+        $sql = "SELECT COUNT(*) as total FROM orders o WHERE o.seller_id = ?";
+        $params = [$id];
+        $types = "i";
+
+        if ($filter !== 'all') {
+            $sql .= " AND o.status = ?";
+            $params[] = $filter;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (o.order_id LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $types .= "s";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return (int)($row['total'] ?? 0);
     }
 }

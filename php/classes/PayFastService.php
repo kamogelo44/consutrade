@@ -3,10 +3,10 @@
 /**
  * ConsuTrade - PayFastService
  *
- * Handles PayFast payment verification and processing.
- * This is a SERVICE class that coordinates multiple repositories.
- * 
- * NOTE: This class does NOT generate HTML forms - that belongs in frontend views.
+ * Coordinates payment flow between our system and PayFast.
+ * I chose to make this a service class rather than putting payment logic
+ * in the repository because it needs to coordinate multiple repositories
+ * (orders, transactions, products, cart) which repositories shouldn't do.
  *
  * @author Kamogelo Phale
  * @version 2.1.0
@@ -21,7 +21,8 @@ class PayFastService
     private TransactionRepository $transactionRepo;
 
     /**
-     * Constructor with dependency injection.
+     * Constructor - injecting dependencies instead of creating them inside.
+     * This makes testing easier and follows dependency inversion.
      *
      * @param mysqli $db Database connection
      * @param OrderRepository $orderRepo Order repository
@@ -44,18 +45,24 @@ class PayFastService
     }
 
     /**
-     * Handle PayFast ITN (Instant Transaction Notification) request.
+     * Main entry point for PayFast's server-to-server notification.
+     * PayFast calls this after user pays, regardless of whether they close the browser.
      *
      * @param array $postData $_POST data from PayFast
      * @return array Response with success flag and message
      */
     public function handleItn(array $postData): array
     {
+        // Without signature verification, anyone could fake a payment notification
         if (!$this->verifySignature($postData)) {
+            error_log("PayFast ITN: Invalid signature");
             return ['success' => false, 'message' => 'Invalid signature'];
         }
 
+        // Even with valid signature, we double-check with PayFast's server
+        // This prevents a attacker who somehow got our merchant key
         if (!$this->validateWithPayFast($postData)) {
+            error_log("PayFast ITN: Server validation failed");
             return ['success' => false, 'message' => 'PayFast validation failed'];
         }
 
@@ -63,8 +70,10 @@ class PayFastService
     }
 
     /**
-     * Verify PayFast signature.
-     * 
+     * Verifies the signature PayFast sent.
+     * PayFast generates this using our merchant key and the posted data.
+     * If it doesn't match, the request is fake.
+     *
      * @param array $data POST data from PayFast
      * @return bool True if signature is valid
      */
@@ -87,7 +96,9 @@ class PayFastService
     }
 
     /**
-     * Validate payment with PayFast server (server-to-server confirmation).
+     * Confirms with PayFast that the payment actually happened.
+     * The initial ITN could be spoofed, so we ask PayFast directly.
+     * This is server-to-server so the attacker can't intercept it.
      *
      * @param array $data POST data from PayFast
      * @return bool True if PayFast confirms payment
@@ -126,7 +137,8 @@ class PayFastService
     }
 
     /**
-     * Process successful payment.
+     * Actually updates our database after PayFast confirms payment.
+     * Everything runs in a transaction so if one part fails, nothing changes.
      *
      * @param array $data Validated POST data from PayFast
      * @return array Result with success flag and details
@@ -138,23 +150,36 @@ class PayFastService
         $payfastRef = $data['pf_payment_id'] ?? '';
         $amountReceived = (float)($data['amount'] ?? 0);
 
-        // Parse payment ID format: "orderId_userId_timestamp"
         $parts = explode('_', $paymentId);
         $orderId = (int)($parts[0] ?? 0);
         $userId = (int)($parts[1] ?? 0);
 
-        if ($paymentStatus !== 'COMPLETE' || $orderId <= 0 || $userId <= 0) {
+        // PayFast sends 'COMPLETE' only for successful payments
+        if ($paymentStatus !== 'COMPLETE') {
+            error_log("PayFast: Payment status not COMPLETE - {$paymentStatus}");
+            return ['success' => false, 'message' => 'Payment not complete'];
+        }
+
+        if ($orderId <= 0 || $userId <= 0) {
+            error_log("PayFast: Invalid orderId or userId - orderId: {$orderId}, userId: {$userId}");
             return ['success' => false, 'message' => 'Invalid payment data'];
         }
 
         $this->db->begin_transaction();
 
         try {
-            // Try to find orders by payment_id first (supports multiple orders)
+            // PayFast might send the same ITN twice (network issues).
+            // If we already recorded this transaction, just acknowledge it.
+            $existingTransaction = $this->transactionRepo->getByOrderId($orderId);
+            if ($existingTransaction !== null) {
+                error_log("PayFast: Order {$orderId} already has a transaction. Skipping.");
+                $this->db->commit();
+                return ['success' => true, 'message' => 'Payment already processed'];
+            }
+
             $orders = $this->getOrdersByPaymentId($paymentId, $userId);
 
             if (empty($orders)) {
-                // Fallback to single order lookup
                 $order = $this->getSingleOrder($orderId, $userId);
                 if ($order) {
                     $orders = [$order];
@@ -162,7 +187,7 @@ class PayFastService
             }
 
             if (empty($orders)) {
-                throw new Exception('No orders found for payment');
+                throw new Exception('No pending orders found for this payment');
             }
 
             $totalAmount = 0;
@@ -171,30 +196,42 @@ class PayFastService
             foreach ($orders as $order) {
                 $totalAmount += $order['total_price'];
 
-                // Update order status
-                $this->orderRepo->updateOrderStatusDirect($order['order_id'], 'processing');
+                $orderUpdated = $this->orderRepo->updateOrderStatusDirect($order['order_id'], 'processing');
 
-                // Create transaction record
+                if (!$orderUpdated) {
+                    throw new Exception("Failed to update order status for order_id: {$order['order_id']}");
+                }
+
                 $transaction = $this->transactionRepo->createFromPayment(
                     $order['order_id'],
                     $payfastRef,
                     $order['total_price']
                 );
+
+                // If we can't record the transaction, we can't prove payment happened
+                if ($transaction === false) {
+                    throw new Exception("Failed to create transaction record for order_id: {$order['order_id']}");
+                }
+
                 $transactions[] = $transaction;
 
-                // Decrease stock for items in this order
-                $this->decreaseOrderStock($order['order_id']);
+                $stockDecreased = $this->decreaseOrderStock($order['order_id']);
+
+                if (!$stockDecreased) {
+                    throw new Exception("Failed to decrease stock for order_id: {$order['order_id']}");
+                }
             }
 
-            // Log amount mismatch but don't fail the transaction
+            // Small rounding differences are normal due to PayFast's fees or formatting
             if (abs($totalAmount - $amountReceived) >= 0.01) {
-                error_log("PayFast amount mismatch for payment_id: $paymentId. Expected: $totalAmount, Received: $amountReceived");
+                error_log("PayFast amount mismatch for payment_id: {$paymentId}. Expected: {$totalAmount}, Received: {$amountReceived}");
             }
 
-            // Clear user's cart after successful payment
+            // Only clear cart after we're sure everything succeeded
             $this->cartRepo->clearUserCart($userId);
 
             $this->db->commit();
+            error_log("PayFast: Payment processed successfully for payment_id: {$paymentId}");
 
             return [
                 'success' => true,
@@ -204,12 +241,25 @@ class PayFastService
         } catch (Exception $e) {
             $this->db->rollback();
             error_log("PayFast processing error: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
+
+            // Set orders to 'payment_failed' so admin knows something went wrong
+            // User can still retry since cart wasn't cleared
+            if (!empty($orders)) {
+                foreach ($orders as $order) {
+                    $this->orderRepo->updateOrderStatusDirect($order['order_id'], 'payment_failed');
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * Get orders by payment ID (supports multiple orders in one payment).
+     * Fetches all orders tied to one payment ID.
+     * One cart with multiple sellers creates multiple orders but one payment.
      *
      * @param string $paymentId Payment ID from frontend
      * @param int $userId Buyer user ID
@@ -234,7 +284,8 @@ class PayFastService
     }
 
     /**
-     * Get a single order by order ID (fallback method).
+     * Fallback when payment_id doesn't match multiple orders.
+     * Older version of the code used single-order payment IDs.
      *
      * @param int $orderId Order ID
      * @param int $userId Buyer user ID
@@ -256,12 +307,14 @@ class PayFastService
     }
 
     /**
-     * Decrease stock for all items in an order.
+     * Removes sold items from inventory.
+     * If any product lacks sufficient stock (shouldn't happen since we checked earlier),
+     * we catch it here and roll back the entire transaction.
      *
      * @param int $orderId Order ID
-     * @return void
+     * @return bool True if all stock updates succeeded
      */
-    private function decreaseOrderStock(int $orderId): void
+    private function decreaseOrderStock(int $orderId): bool
     {
         $sql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -269,15 +322,23 @@ class PayFastService
         $stmt->execute();
         $result = $stmt->get_result();
 
+        $allSuccess = true;
         while ($item = $result->fetch_assoc()) {
-            $this->productRepo->decreaseProductStock($item['product_id'], $item['quantity']);
+            $success = $this->productRepo->decreaseProductStock($item['product_id'], $item['quantity']);
+            if (!$success) {
+                error_log("Failed to decrease stock for product_id: {$item['product_id']}, quantity: {$item['quantity']}");
+                $allSuccess = false;
+            }
         }
         $stmt->close();
+
+        return $allSuccess;
     }
 
     /**
-     * Prepare PayFast data array (NOT HTML form).
-     * Returns data that the frontend view will use to build the form.
+     * Builds the data array for the PayFast form.
+     * The actual HTML form is in checkout.php - this just provides the values.
+     * Keeps payment gateway details out of the view layer.
      *
      * @param array $orderData Order information
      * @param string $baseUrl Site base URL
@@ -285,6 +346,11 @@ class PayFastService
      */
     public function preparePayFastData(array $orderData, string $baseUrl): array
     {
+        $buyerName = $orderData['buyer_name'] ?? 'Customer';
+        $nameParts = explode(' ', $buyerName, 2);
+        $firstName = $nameParts[0];
+        $lastName = $nameParts[1] ?? '';
+
         return [
             'merchant_id' => PAYFAST_MERCHANT_ID,
             'merchant_key' => PAYFAST_MERCHANT_KEY,
@@ -295,10 +361,8 @@ class PayFastService
             'amount' => number_format($orderData['total'], 2, '.', ''),
             'item_name' => 'ConsuTrade Order #' . ($orderData['primary_order_id'] ?? ''),
             'item_description' => 'Purchase from ConsuTrade',
-            'name_first' => explode(' ', $orderData['buyer_name'] ?? 'Customer')[0],
-            'name_last' => count(explode(' ', $orderData['buyer_name'] ?? 'Customer')) > 1
-                ? substr($orderData['buyer_name'], strpos($orderData['buyer_name'], ' ') + 1)
-                : 'Customer',
+            'name_first' => $firstName,
+            'name_last' => $lastName,
             'email_address' => $orderData['buyer_email'] ?? ''
         ];
     }

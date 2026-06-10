@@ -347,6 +347,63 @@ class ProductRepository
         return $products;
     }
 
+        // ============================================================
+    //  SELLER PRODUCT DISPLAY (for seller dashboard)
+    // ============================================================
+
+    /**
+     * Get seller products for display on seller dashboard.
+     * Shows products with appropriate actions based on whether viewer is owner.
+     *
+     * @param int $sellerId Seller ID
+     * @param bool $isOwner Whether the viewer is the product owner
+     * @param int $limit Maximum products to return (0 for all)
+     * @return array
+     */
+    public function getSellerProductsForDisplay(int $sellerId, bool $isOwner = false, int $limit = 0): array
+    {
+        $sql = "SELECT p.product_id as id, p.title as name, p.price, p.status,
+                       p.stock_quantity, p.created_at,
+                       COALESCE(pi.image_url, p.image_url) AS display_image,
+                       c.category_name
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.category_id
+                LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+                WHERE p.seller_id = ? AND p.status != 'deleted'
+                ORDER BY p.created_at DESC";
+
+        $params = [$sellerId];
+        $types = "i";
+
+        if ($limit > 0) {
+            $sql .= " LIMIT ?";
+            $params[] = $limit;
+            $types .= "i";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $products = [];
+        while ($row = $result->fetch_assoc()) {
+            $products[] = [
+                'id'             => (int) $row['id'],
+                'name'           => $row['name'],
+                'price'          => (float) $row['price'],
+                'status'         => $row['status'],
+                'stock_quantity' => (int) $row['stock_quantity'],
+                'created_at'     => date('d M Y', strtotime($row['created_at'])),
+                'display_image'  => $this->getImageUrl($row['display_image']),
+                'category_name'  => $row['category_name'] ?? 'General'
+            ];
+        }
+        $stmt->close();
+
+        return $products;
+    }
+
     /**
      * Get single product as Product object.
      *

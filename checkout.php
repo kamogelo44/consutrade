@@ -327,9 +327,8 @@ $payfastProcessUrl = PAYFAST_SANDBOX
 <body>
 
     <?php include 'includes/header.php'; ?>
-
+    <?php include 'includes/breadcrumb.php'; ?>
     <main class="checkout-container">
-        <?php include 'includes/breadcrumb.php'; ?>
         <h1>Checkout</h1>
 
         <div class="checkout-layout">

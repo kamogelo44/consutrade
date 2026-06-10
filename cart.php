@@ -596,7 +596,30 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             loadCart();
 
             $('#checkoutBtn').on('click', function() {
-                window.location.href = baseUrl + 'checkout.php';
+                var $btn = $(this);
+                $btn.prop('disabled', true).text('Processing...');
+
+                $.ajax({
+                    url: baseUrl + 'php/endpoints/place-order.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            window.location.href = baseUrl + 'checkout.php';
+                        } else {
+                            alert(response.message || 'Unable to proceed to checkout');
+                            $btn.prop('disabled', false).text('Proceed to Checkout');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('AJAX Error:', xhr);
+                        alert('An error occurred. Please try again.');
+                        $btn.prop('disabled', false).text('Proceed to Checkout');
+                    }
+                });
             });
 
             $('#continueBtn, #browseBtn').on('click', function() {

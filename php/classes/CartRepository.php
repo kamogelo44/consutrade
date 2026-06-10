@@ -276,7 +276,7 @@ class CartRepository
                 throw new Exception('Failed to create orders');
             }
 
-            $this->clearUserCart($userId);
+            //$this->clearUserCart($userId);
 
             $this->db->commit();
 

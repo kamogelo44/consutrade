@@ -30,21 +30,31 @@ class TransactionRepository
     {
         $stmt = $this->db->prepare(
             "INSERT INTO transactions (order_id, payfast_ref, amount, status, paid_at) 
-             VALUES (?, ?, ?, 'completed', NOW())"
+         VALUES (?, ?, ?, 'completed', NOW())"
         );
         $stmt->bind_param('isd', $orderId, $payfastRef, $amount);
-        $stmt->execute();
+
+        if (!$stmt->execute()) {
+            error_log("Transaction creation failed for order_id: $orderId - " . $stmt->error);
+            $stmt->close();
+            return false;
+        }
+
         $transactionId = $stmt->insert_id;
         $stmt->close();
 
-        return new Transaction([
-            'transaction_id' => $transactionId,
-            'order_id' => $orderId,
-            'payfast_ref' => $payfastRef,
-            'amount' => $amount,
-            'status' => 'completed',
-            'paid_at' => date('Y-m-d H:i:s')
-        ]);
+        if ($transactionId > 0) {
+            return new Transaction([
+                'transaction_id' => $transactionId,
+                'order_id' => $orderId,
+                'payfast_ref' => $payfastRef,
+                'amount' => $amount,
+                'status' => 'completed',
+                'paid_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+
+        return false;
     }
 
     /**
