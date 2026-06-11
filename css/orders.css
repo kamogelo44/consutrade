@@ -1,5 +1,9 @@
-/* Orders Page Styles */
+/* Orders Page Styles
+ * Author: Kamogelo Phale
+ * Handles order listing, order details modal, and review modal
+ */
 
+/* ========== ORDERS CONTAINER ========== */
 .orders-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -23,6 +27,7 @@
   margin: 0;
 }
 
+/* ========== ORDER CARD ========== */
 .order-card {
   background: var(--white);
   border: 1px solid var(--border-light);
@@ -171,16 +176,19 @@
 }
 
 .review-btn {
-  background: var(--success);
-  color: var(--white);
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
 }
 
 .review-btn:hover {
-  background: var(--success-dark);
+  background: var(--success);
+  color: white;
   transform: translateY(-2px);
 }
 
-.order-modal {
+/* ========== ORDER DETAILS MODAL (ID based to match JS) ========== */
+#orderModal {
   display: none;
   position: fixed;
   top: 0;
@@ -193,11 +201,11 @@
   align-items: center;
 }
 
-.order-modal.active {
+#orderModal.active {
   display: flex;
 }
 
-.order-modal-content {
+#orderModal .order-modal-content {
   background: var(--white);
   border-radius: var(--radius-lg);
   max-width: 600px;
@@ -206,7 +214,7 @@
   overflow-y: auto;
 }
 
-.order-modal-header {
+#orderModal .order-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -218,13 +226,13 @@
   z-index: 1;
 }
 
-.order-modal-header h2 {
+#orderModal .order-modal-header h2 {
   font-size: var(--font-xl);
   font-weight: var(--font-bold);
   margin: 0;
 }
 
-.order-modal-close {
+#orderModal .order-modal-close {
   background: none;
   border: none;
   font-size: 28px;
@@ -237,20 +245,20 @@
   transition: all var(--transition-fast);
 }
 
-.order-modal-close:hover {
+#orderModal .order-modal-close:hover {
   color: var(--error);
   transform: rotate(90deg);
 }
 
-.order-details-content {
+#orderModal .order-details-content {
   padding: var(--spacing-lg);
 }
 
-.order-items-list {
+#orderModal .order-items-list {
   margin: var(--spacing-lg) 0;
 }
 
-.order-item {
+#orderModal .order-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
@@ -258,7 +266,7 @@
   border-bottom: 1px solid var(--border-light);
 }
 
-.order-item-img {
+#orderModal .order-item-img {
   width: 60px;
   height: 60px;
   background: var(--gray-bg);
@@ -267,45 +275,54 @@
   flex-shrink: 0;
 }
 
-.order-item-img img {
+#orderModal .order-item-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.order-item-details {
+#orderModal .order-item-details {
   flex: 1;
 }
 
-.order-item-details h4 {
+#orderModal .order-item-details h4 {
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
   margin-bottom: var(--spacing-xs);
 }
 
-.order-item-price {
+#orderModal .order-item-price {
   font-weight: var(--font-bold);
   color: var(--primary-color);
 }
 
-.order-total-section {
+#orderModal .order-total-section {
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
   border-top: 2px solid var(--border-light);
 }
 
-.total-row {
+#orderModal .total-row {
   display: flex;
   justify-content: space-between;
   padding: var(--spacing-xs) 0;
 }
 
-.grand-total {
+#orderModal .grand-total {
   font-weight: var(--font-bold);
   font-size: var(--font-lg);
   color: var(--dark-bg);
 }
 
+#orderModal .order-modal-footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+/* ========== REVIEW MODAL ========== */
 .review-modal {
   display: none;
   position: fixed;
@@ -378,6 +395,7 @@
   font-size: var(--font-sm);
 }
 
+/* ========== RATING STARS ========== */
 .rating-stars {
   display: flex;
   gap: var(--spacing-xs);
@@ -445,25 +463,31 @@
   transform: translateY(-2px);
 }
 
+/* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .orders-container {
     padding: var(--spacing-lg);
   }
+
   .order-header {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .order-body {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .order-amount {
     text-align: left;
     width: 100%;
   }
+
   .order-footer {
     flex-direction: column;
   }
+
   .order-footer button {
     width: 100%;
   }
@@ -473,16 +497,20 @@
   .orders-container {
     padding: var(--spacing-md);
   }
+
   .amount-value {
     font-size: var(--font-lg);
   }
-  .order-modal-header h2,
+
+  #orderModal .order-modal-header h2,
   .review-modal-header h2 {
     font-size: var(--font-lg);
   }
+
   .review-form-container {
     padding: var(--spacing-md);
   }
+
   .rating-stars .star {
     font-size: 28px;
   }

@@ -9,7 +9,6 @@
 require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
-header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'message' => ''];
 
@@ -26,7 +25,7 @@ $rating = isset($input['rating']) ? (int)$input['rating'] : 0;
 $comment = isset($input['comment']) ? trim($input['comment']) : '';
 
 if ($order_id <= 0 || $seller_id <= 0) {
-    $response['message'] = 'Invalid request.';
+    $response['message'] = 'Invalid order or seller.';
     echo json_encode($response);
     exit;
 }
@@ -37,10 +36,9 @@ if ($rating < 1 || $rating > 5) {
     exit;
 }
 
+// Limit comment length
 $comment = substr($comment, 0, 500);
-$comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
 
-// reviewRepo is already initialized in init.php
 $result = $reviewRepo->submitReview($order_id, $seller_id, $currentUser->getUserId(), $rating, $comment);
 
 $response['success'] = $result['success'];

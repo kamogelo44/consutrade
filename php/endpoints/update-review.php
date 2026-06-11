@@ -9,7 +9,6 @@
 require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
-header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'message' => ''];
 
@@ -25,7 +24,7 @@ $rating = isset($input['rating']) ? (int)$input['rating'] : 0;
 $comment = isset($input['comment']) ? trim($input['comment']) : '';
 
 if ($order_id <= 0) {
-    $response['message'] = 'Invalid request.';
+    $response['message'] = 'Invalid order ID.';
     echo json_encode($response);
     exit;
 }
@@ -36,8 +35,17 @@ if ($rating < 1 || $rating > 5) {
     exit;
 }
 
+// Limit comment length
 $comment = substr($comment, 0, 500);
-$comment = htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
+
+// Check if review exists first
+$existing = $reviewRepo->getReviewByOrderAndBuyer($order_id, $currentUser->getUserId());
+
+if (!$existing) {
+    $response['message'] = 'Review not found.';
+    echo json_encode($response);
+    exit;
+}
 
 $result = $reviewRepo->updateReview($order_id, $currentUser->getUserId(), $rating, $comment);
 

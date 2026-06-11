@@ -2,6 +2,11 @@
 /*
  * ConsuTrade - Update Order Status (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * Allows:
+ * - Sellers to update orders they received (processing → shipped → completed)
+ * - Admins to update any order
+ * - Buyers to CANCEL their own pending orders (uses OrderRepository)
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -10,8 +15,9 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
+// Check if user is logged in
 if (!$isLoggedIn) {
-    $response['message'] = 'Unauthorized';
+    $response['message'] = 'Unauthorized. Please log in.';
     echo json_encode($response);
     exit;
 }
@@ -21,36 +27,66 @@ $orderId = (int) ($input['order_id'] ?? 0);
 $newStatus = $input['status'] ?? '';
 
 if ($orderId <= 0 || empty($newStatus)) {
-    $response['message'] = 'Invalid request';
+    $response['message'] = 'Invalid request.';
     echo json_encode($response);
     exit;
 }
 
-// Handle seller updates
-if ($currentUser instanceof Seller) {
-    $orderData = $orderRepo->getOrderDetails($orderId, $currentUser->getUserId(), 'seller');
+$userId = $currentUser->getUserId();
+$userRole = $currentUserRole;
+
+// ========== BUYER CANCELLATION ==========
+if ($userRole === 'buyer') {
+    // Buyers can ONLY cancel orders
+    if ($newStatus !== 'cancelled') {
+        $response['message'] = 'Buyers can only cancel orders.';
+        echo json_encode($response);
+        exit;
+    }
+
+    // Use the existing repository method
+    $result = $orderRepo->cancelBuyerOrder($orderId, $userId);
+
+    if ($result) {
+        $response['success'] = true;
+        $response['message'] = 'Order cancelled successfully.';
+    } else {
+        $response['message'] = 'Could not cancel order. Make sure it is still pending.';
+    }
+
+    echo json_encode($response);
+    exit;
+}
+
+// ========== SELLER UPDATE ==========
+if ($userRole === 'seller') {
+    $orderData = $orderRepo->getOrderDetails($orderId, $userId, 'seller');
 
     if (!$orderData) {
-        $response['message'] = 'Order not found';
+        $response['message'] = 'Order not found.';
         echo json_encode($response);
         exit;
     }
 
-    $order = new Order($orderData);
+    $orderObj = new Order($orderData);
 
-    if (!$order->canTransitionTo($newStatus)) {
-        $allowed = implode(', ', $order->getAllowedNextStatuses());
-        $response['message'] = "Cannot change from {$order->getStatus()} to {$newStatus}. Allowed: $allowed";
+    if (!$orderObj->canTransitionTo($newStatus)) {
+        $allowed = implode(', ', $orderObj->getAllowedNextStatuses());
+        $response['message'] = "Cannot change from {$orderObj->getStatus()} to {$newStatus}. Allowed: $allowed";
         echo json_encode($response);
         exit;
     }
 
-    $result = $orderRepo->updateSellerOrderStatus($orderId, $currentUser->getUserId(), $newStatus);
+    $result = $orderRepo->updateSellerOrderStatus($orderId, $userId, $newStatus);
     $response['success'] = $result['success'];
     $response['message'] = $result['message'];
 
-    // Handle admin updates
-} elseif ($currentUser instanceof Admin) {
+    echo json_encode($response);
+    exit;
+}
+
+// ========== ADMIN UPDATE ==========
+if ($userRole === 'admin') {
     $orderData = $orderRepo->getAllOrders();
     $targetOrder = null;
 
@@ -62,16 +98,16 @@ if ($currentUser instanceof Seller) {
     }
 
     if (!$targetOrder) {
-        $response['message'] = 'Order not found';
+        $response['message'] = 'Order not found.';
         echo json_encode($response);
         exit;
     }
 
-    $order = new Order($targetOrder);
+    $orderObj = new Order($targetOrder);
 
-    if (!$order->canTransitionTo($newStatus)) {
-        $allowed = implode(', ', $order->getAllowedNextStatuses());
-        $response['message'] = "Cannot change from {$order->getStatus()} to {$newStatus}. Allowed: $allowed";
+    if (!$orderObj->canTransitionTo($newStatus)) {
+        $allowed = implode(', ', $orderObj->getAllowedNextStatuses());
+        $response['message'] = "Cannot change from {$orderObj->getStatus()} to {$newStatus}. Allowed: $allowed";
         echo json_encode($response);
         exit;
     }
@@ -100,8 +136,11 @@ if ($currentUser instanceof Seller) {
         $conn->rollback();
         $response['message'] = 'Could not update order status.';
     }
-} else {
-    $response['message'] = 'Unauthorized. Only sellers and admins can update orders.';
+
+    echo json_encode($response);
+    exit;
 }
 
+// ========== NO PERMISSION ==========
+$response['message'] = 'Unauthorized. You do not have permission to update this order.';
 echo json_encode($response);

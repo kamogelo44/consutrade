@@ -368,10 +368,20 @@ function renderOrdersTable(orders, $container, userRole) {
             }
         }
         
-        // Buyers can only cancel if the order isn't shipped yet
+        // Buyers can only cancel if the order is pending/processing
         if (userRole === 'buyer') {
             if (order.status === 'pending' || order.status === 'processing') {
                 buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>';
+            }
+            // Review button for completed orders
+            if (order.status === 'completed') {
+                if (order.has_review) {
+                    // Already reviewed - show Edit Review button
+                    buttons += '<button class="action-btn edit-review-btn" onclick="openEditReviewModal(' + order.order_id + ', ' + order.seller_id + ', \'' + escapeHtml(order.seller_name) + '\', ' + order.review_rating + ', \'' + escapeHtml(order.review_comment).replace(/'/g, "\\'") + '\')">Edit Review</button>';
+                } else {
+                    // Not reviewed yet - show Write Review button
+                    buttons += '<button class="action-btn review-btn" onclick="openReviewModal(' + order.order_id + ', ' + order.seller_id + ', \'' + escapeHtml(order.seller_name) + '\')">Write a Review</button>';
+                }
             }
         }
         

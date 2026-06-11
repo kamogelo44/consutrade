@@ -23,9 +23,9 @@ define('DB_NAME', $env['DB_NAME']);
 define('DB_USER', $env['DB_USER']);
 define('DB_PASS', $env['DB_PASS']);
 
-define('PAYFAST_MERCHANT_ID', 'PAYFAST_MERCHANT_ID');
-define('PAYFAST_MERCHANT_KEY', 'PAYFAST_MERCHANT_KEY');
-define('PAYFAST_SANDBOX', 'PAYFAST_SANDBOX');
+define('PAYFAST_MERCHANT_ID', $env['PAYFAST_MERCHANT_ID']);
+define('PAYFAST_MERCHANT_KEY', $env['PAYFAST_MERCHANT_KEY']);
+define('PAYFAST_SANDBOX', $env['PAYFAST_SANDBOX']);
 
 if (PAYFAST_SANDBOX) {
     define('PAYFAST_PROCESS_URL', 'https://sandbox.payfast.co.za/eng/process');

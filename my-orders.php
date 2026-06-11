@@ -304,7 +304,7 @@ $breadcrumbItems = [
             <div class="order-details-content" id="orderModalBody">
                 <div class="loading-spinner">Loading order details...</div>
             </div>
-            <div class="modal-footer" id="orderModalFooter"></div>
+            <div class="order-modal-footer" id="orderModalFooter"></div>
         </div>
     </div>
 

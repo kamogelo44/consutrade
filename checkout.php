@@ -2,9 +2,6 @@
 /*
  * ConsuTrade - Checkout Page
  * Author: Kamogelo Phale
- * 
- * Displays order summary and PayFast payment form.
- * Checkout processing is handled by php/endpoints/place-order.php
  */
 
 require_once __DIR__ . '/init.php';
@@ -15,7 +12,6 @@ $breadcrumbItems = [
     ['label' => 'Checkout']
 ];
 
-// Must have checkout data in session
 if (!isset($_SESSION['checkout_data'])) {
     header('Location: ' . $baseUrl . 'cart.php');
     exit;
@@ -27,7 +23,6 @@ $subtotal    = $data['subtotal'];
 $delivery_fee = $data['delivery_fee'];
 $total       = $data['total'];
 
-// Prepare PayFast form data using the service method
 $payfast_data = $payfastService->preparePayFastData([
     'payment_id' => $data['payment_id'],
     'primary_order_id' => $data['primary_order_id'],
@@ -36,13 +31,7 @@ $payfast_data = $payfastService->preparePayFastData([
     'buyer_email' => $data['buyer_email'],
 ], $baseUrl);
 
-// Clear checkout data after displaying (prevents double submission on refresh)
 unset($_SESSION['checkout_data']);
-
-// PayFast process URL
-$payfastProcessUrl = PAYFAST_SANDBOX
-    ? 'https://sandbox.payfast.co.za/eng/process'
-    : 'https://www.payfast.co.za/eng/process';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -51,97 +40,106 @@ $payfastProcessUrl = PAYFAST_SANDBOX
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - ConsuTrade</title>
-    <meta name="author" content="Kamogelo Phale">
-
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
         /* ========== CHECKOUT PAGE STYLES ========== */
-        .checkout-container {
+
+        /* Main container - breadcrumb sits outside */
+        .checkout-wrapper {
             max-width: 1200px;
             margin: 0 auto;
-            padding: var(--spacing-xl);
+            padding: 0 var(--spacing-xl) var(--spacing-xl) var(--spacing-xl);
         }
 
-        .checkout-container h1 {
+        /* Page title - space after breadcrumb */
+        .checkout-title {
+            margin-top: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .checkout-title h1 {
             font-size: var(--font-3xl);
             font-weight: var(--font-bold);
             color: var(--dark-bg);
-            margin-bottom: var(--spacing-xl);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--primary-color);
-            display: inline-block;
+            margin: 0;
         }
 
-        .checkout-layout {
+        /* Two column layout */
+        .checkout-grid {
             display: grid;
-            grid-template-columns: 1fr 450px;
+            grid-template-columns: 1fr 380px;
             gap: var(--spacing-xl);
-            margin-top: var(--spacing-lg);
         }
 
-        /* Order Summary */
-        .order-summary {
+        /* ===== ORDER SUMMARY SECTION ===== */
+        .checkout-items {
             background: var(--white);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
             padding: var(--spacing-lg);
-            box-shadow: var(--shadow-sm);
         }
 
-        .order-summary h2 {
+        .checkout-items h2 {
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
             margin-bottom: var(--spacing-lg);
             padding-bottom: var(--spacing-sm);
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: 2px solid var(--primary-color);
             color: var(--dark-bg);
         }
 
-        .checkout-item {
+        /* Item row */
+        .cart-item-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: var(--spacing-sm) 0;
+            padding: var(--spacing-md) 0;
             border-bottom: 1px solid var(--border-light);
         }
 
-        .item-info {
-            display: flex;
-            gap: var(--spacing-sm);
-            align-items: baseline;
-            flex-wrap: wrap;
+        .cart-item-row:last-child {
+            border-bottom: none;
         }
 
-        .item-name {
+        .item-details {
+            flex: 2;
+        }
+
+        .item-title {
             font-size: var(--font-md);
-            color: var(--gray-dark);
+            font-weight: var(--font-semibold);
+            color: var(--dark-bg);
+            margin-bottom: var(--spacing-xs);
         }
 
-        .item-quantity {
-            font-size: var(--font-sm);
+        .item-meta {
+            font-size: var(--font-xs);
             color: var(--gray-medium);
         }
 
-        .item-price {
+        .item-total {
+            font-size: var(--font-lg);
             font-weight: var(--font-bold);
             color: var(--primary-color);
+            text-align: right;
         }
 
-        .order-totals {
+        /* Totals */
+        .totals {
             margin-top: var(--spacing-lg);
             padding-top: var(--spacing-md);
             border-top: 1px solid var(--border-light);
         }
 
-        .total-row {
+        .totals-row {
             display: flex;
             justify-content: space-between;
             padding: var(--spacing-xs) 0;
             font-size: var(--font-md);
-            color: var(--gray-medium);
+            color: var(--gray-dark);
         }
 
-        .grand-total {
+        .totals-row.grand-total {
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
             color: var(--primary-color);
@@ -150,54 +148,52 @@ $payfastProcessUrl = PAYFAST_SANDBOX
             border-top: 1px solid var(--border-light);
         }
 
-        /* Payment Section */
-        .payment-section {
+        /* ===== PAYMENT SECTION ===== */
+        .payment-methods {
             background: var(--white);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
             padding: var(--spacing-lg);
-            box-shadow: var(--shadow-sm);
         }
 
-        .payment-section h2 {
+        .payment-methods h2 {
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
             margin-bottom: var(--spacing-lg);
             padding-bottom: var(--spacing-sm);
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: 2px solid var(--primary-color);
             color: var(--dark-bg);
         }
 
-        .payment-method {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .payment-option {
+        /* Payment option card */
+        .payment-card {
             display: flex;
             align-items: center;
             gap: var(--spacing-md);
             padding: var(--spacing-md);
+            background: var(--gray-bg-light);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
-            background: var(--gray-bg-light);
+            margin-bottom: var(--spacing-lg);
         }
 
-        .payment-option.active {
+        .payment-card.active {
             border-color: var(--primary-color);
             background: var(--primary-fade);
         }
 
-        .payment-option img {
-            height: 30px;
-            width: auto;
+        .payment-icon {
+            width: 50px;
+            height: auto;
         }
 
-        .payment-option p {
+        .payment-card p {
             margin: 0;
-            color: var(--gray-dark);
             font-size: var(--font-sm);
+            color: var(--gray-dark);
         }
 
+        /* Pay button */
         .pay-now-btn {
             width: 100%;
             padding: 14px;
@@ -209,7 +205,7 @@ $payfastProcessUrl = PAYFAST_SANDBOX
             font-weight: var(--font-bold);
             cursor: pointer;
             transition: all var(--transition-normal);
-            margin-top: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
         }
 
         .pay-now-btn:hover:not(:disabled) {
@@ -224,32 +220,32 @@ $payfastProcessUrl = PAYFAST_SANDBOX
             transform: none;
         }
 
-        .security-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-lg);
+        /* Security note */
+        .security-note {
+            text-align: center;
+            font-size: var(--font-xs);
+            color: var(--gray-medium);
+            margin-top: var(--spacing-md);
             padding-top: var(--spacing-md);
             border-top: 1px solid var(--border-light);
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
         }
 
-        .security-badge img {
-            width: 20px;
-            height: 20px;
+        .security-note img {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            margin-right: var(--spacing-xs);
             opacity: 0.6;
         }
 
-        /* Loading overlay */
+        /* ===== LOADING OVERLAY ===== */
         .checkout-loading {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -264,61 +260,54 @@ $payfastProcessUrl = PAYFAST_SANDBOX
             opacity: 1;
         }
 
-        .loading-content {
+        .loading-box {
             background: var(--white);
             padding: var(--spacing-xl);
             border-radius: var(--radius-lg);
             text-align: center;
+            min-width: 200px;
         }
 
-        .loading-spinner-small {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border-light);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto var(--spacing-md);
+        .loading-box p {
+            margin-top: var(--spacing-md);
+            color: var(--gray-dark);
+            font-size: var(--font-sm);
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .checkout-container {
-                padding: var(--spacing-lg);
-            }
-
-            .checkout-layout {
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 900px) {
+            .checkout-grid {
                 grid-template-columns: 1fr;
                 gap: var(--spacing-lg);
             }
 
-            .checkout-container h1 {
-                font-size: var(--font-2xl);
+            .checkout-wrapper {
+                padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
             }
         }
 
-        @media (max-width: 480px) {
-            .checkout-container {
+        @media (max-width: 600px) {
+            .checkout-wrapper {
+                padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);
+            }
+
+            .checkout-title h1 {
+                font-size: var(--font-2xl);
+            }
+
+            .checkout-items,
+            .payment-methods {
                 padding: var(--spacing-md);
             }
 
-            .checkout-container h1 {
-                font-size: var(--font-xl);
+            .cart-item-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-xs);
             }
 
-            .order-summary,
-            .payment-section {
-                padding: var(--spacing-md);
-            }
-
-            .item-name {
-                font-size: var(--font-sm);
+            .item-total {
+                text-align: left;
             }
         }
     </style>
@@ -327,65 +316,65 @@ $payfastProcessUrl = PAYFAST_SANDBOX
 <body>
 
     <?php include 'includes/header.php'; ?>
-    <?php include 'includes/breadcrumb.php'; ?>
-    <main class="checkout-container">
-        <h1>Checkout</h1>
 
-        <div class="checkout-layout">
-            <!-- Order Summary -->
-            <div class="order-summary">
+    <!-- Breadcrumb-->
+    <?php include 'includes/breadcrumb.php'; ?>
+
+    <main class="checkout-wrapper">
+        <div class="checkout-title">
+            <h1>Checkout</h1>
+        </div>
+
+        <div class="checkout-grid">
+            <!-- LEFT COLUMN: Order Items -->
+            <div class="checkout-items">
                 <h2>Order Summary</h2>
 
                 <?php foreach ($cart_items as $item): ?>
-                    <div class="checkout-item">
-                        <div class="item-info">
-                            <span class="item-name"><?php echo htmlspecialchars($item['title']); ?></span>
-                            <span class="item-quantity">x<?php echo $item['quantity']; ?></span>
+                    <div class="cart-item-row">
+                        <div class="item-details">
+                            <div class="item-title"><?php echo htmlspecialchars($item['title']); ?></div>
+                            <div class="item-meta">Quantity: <?php echo $item['quantity']; ?></div>
                         </div>
-                        <div class="item-price">R <?php echo number_format($item['price'] * $item['quantity'], 2); ?></div>
+                        <div class="item-total">R <?php echo number_format($item['price'] * $item['quantity'], 2); ?></div>
                     </div>
                 <?php endforeach; ?>
 
-                <div class="order-totals">
-                    <div class="total-row">
-                        <span>Subtotal:</span>
+                <div class="totals">
+                    <div class="totals-row">
+                        <span>Subtotal</span>
                         <span>R <?php echo number_format($subtotal, 2); ?></span>
                     </div>
-                    <div class="total-row">
-                        <span>Delivery Fee:</span>
+                    <div class="totals-row">
+                        <span>Delivery Fee</span>
                         <span>R <?php echo number_format($delivery_fee, 2); ?></span>
                     </div>
-                    <div class="total-row grand-total">
-                        <span>Total:</span>
+                    <div class="totals-row grand-total">
+                        <span>Total</span>
                         <span>R <?php echo number_format($total, 2); ?></span>
                     </div>
                 </div>
             </div>
 
-            <!-- Payment Section -->
-            <div class="payment-section">
+            <!-- RIGHT COLUMN: Payment -->
+            <div class="payment-methods">
                 <h2>Payment Method</h2>
 
-                <div class="payment-method">
-                    <div class="payment-option active">
-                        <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast">
-                        <p>Secure payment via PayFast</p>
-                    </div>
+                <div class="payment-card active">
+                    <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast" class="payment-icon">
+                    <p>Secure payment via PayFast<br>Credit cards, debit cards, or instant EFT</p>
                 </div>
 
-                <!-- PayFast Payment Form - HTML belongs in view, not in service -->
-                <form action="<?php echo htmlspecialchars($payfastProcessUrl); ?>" method="post" id="payfast-form">
+                <form action="<?php echo PAYFAST_PROCESS_URL; ?>" method="post" id="payfast-form">
                     <input type="hidden" name="merchant_id" value="<?php echo htmlspecialchars($payfast_data['merchant_id']); ?>">
                     <input type="hidden" name="merchant_key" value="<?php echo htmlspecialchars($payfast_data['merchant_key']); ?>">
                     <input type="hidden" name="return_url" value="<?php echo htmlspecialchars($payfast_data['return_url']); ?>">
                     <input type="hidden" name="cancel_url" value="<?php echo htmlspecialchars($payfast_data['cancel_url']); ?>">
                     <input type="hidden" name="notify_url" value="<?php echo htmlspecialchars($payfast_data['notify_url']); ?>">
-
                     <input type="hidden" name="m_payment_id" value="<?php echo htmlspecialchars($payfast_data['m_payment_id']); ?>">
                     <input type="hidden" name="amount" value="<?php echo htmlspecialchars($payfast_data['amount']); ?>">
                     <input type="hidden" name="item_name" value="<?php echo htmlspecialchars($payfast_data['item_name']); ?>">
                     <input type="hidden" name="item_description" value="<?php echo htmlspecialchars($payfast_data['item_description']); ?>">
-
                     <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($payfast_data['name_first']); ?>">
                     <input type="hidden" name="name_last" value="<?php echo htmlspecialchars($payfast_data['name_last']); ?>">
                     <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($payfast_data['email_address']); ?>">
@@ -396,9 +385,9 @@ $payfastProcessUrl = PAYFAST_SANDBOX
                     <button type="submit" class="pay-now-btn" id="payNowBtn">Pay Now with PayFast</button>
                 </form>
 
-                <div class="security-badge">
+                <div class="security-note">
                     <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" alt="Secure">
-                    <span>Your payment is secure. All transactions are encrypted.</span>
+                    Your payment is encrypted and secure. All transactions are processed by PayFast.
                 </div>
             </div>
         </div>
@@ -406,8 +395,8 @@ $payfastProcessUrl = PAYFAST_SANDBOX
 
     <!-- Loading Overlay -->
     <div class="checkout-loading" id="checkoutLoading">
-        <div class="loading-content">
-            <div class="loading-spinner-small"></div>
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
             <p>Redirecting to PayFast...</p>
         </div>
     </div>
@@ -418,56 +407,17 @@ $payfastProcessUrl = PAYFAST_SANDBOX
     <script>
         var baseUrl = '<?php echo $baseUrl; ?>';
 
-        // ========== CACHED DOM ELEMENTS ==========
-        let $payfastForm = null;
-        let $payNowBtn = null;
-        let $loadingOverlay = null;
+        $(document).ready(function() {
+            $('#payfast-form').on('submit', function() {
+                $('#payNowBtn').prop('disabled', true);
+                $('#checkoutLoading').addClass('active');
+                return true;
+            });
 
-        // ========== CACHE FUNCTION ==========
-        function cacheCheckoutElements() {
-            $payfastForm = $('#payfast-form');
-            $payNowBtn = $('#payNowBtn');
-            $loadingOverlay = $('#checkoutLoading');
-        }
-
-        // ========== SHOW LOADING STATE ==========
-        function showLoading() {
-            if ($loadingOverlay) {
-                $loadingOverlay.addClass('active');
-            }
-        }
-
-        // ========== HANDLE FORM SUBMIT ==========
-        function handleFormSubmit() {
-            if ($payfastForm) {
-                $payfastForm.off('submit').on('submit', function(e) {
-                    // Disable button to prevent double submission
-                    if ($payNowBtn) {
-                        $payNowBtn.prop('disabled', true);
-                    }
-
-                    // Show loading overlay
-                    showLoading();
-
-                    // Allow form to submit naturally
-                    return true;
-                });
-            }
-        }
-
-        // ========== PREVENT BACK BUTTON AFTER CHECKOUT ==========
-        function preventBackAfterCheckout() {
             window.history.pushState(null, null, window.location.href);
             $(window).on('popstate', function() {
                 window.history.pushState(null, null, window.location.href);
             });
-        }
-
-        // ========== INITIALIZE ==========
-        $(document).ready(function() {
-            cacheCheckoutElements();
-            handleFormSubmit();
-            preventBackAfterCheckout();
         });
     </script>
 </body>

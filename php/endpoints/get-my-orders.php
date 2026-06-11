@@ -28,9 +28,23 @@ if ($currentUserRole === 'seller') {
     $orders = $orderRepo->getSellerOrders($userId, $status, $search, $limit, $offset);
     $totalOrders = $orderRepo->countSellerOrders($userId, $status, $search);
 } else {
-    // buyer
+    // buyer - get orders with review data
     $orders = $orderRepo->getBuyerOrders($userId, $status, $search, $limit, $offset);
     $totalOrders = $orderRepo->countBuyerOrders($userId, $status, $search);
+
+    // Add review data to each order for buyers
+    foreach ($orders as &$order) {
+        $review = $reviewRepo->getReviewByOrderAndBuyer($order['order_id'], $userId);
+        if ($review) {
+            $order['has_review'] = true;
+            $order['review_rating'] = $review['rating'];
+            $order['review_comment'] = $review['comment'];
+        } else {
+            $order['has_review'] = false;
+            $order['review_rating'] = null;
+            $order['review_comment'] = null;
+        }
+    }
 }
 
 $response['success'] = true;
