@@ -1,6 +1,6 @@
 /* Dashboard Layout Styles
- * Shared layout for Admin and Seller dashboards
- * Handles main content area, page headers, cards, and tables
+ * ONLY styles that are NOT in components.css
+ * Includes: dashboard layout, stats cards, admin forms, image gallery
  */
 
 /* ========== MAIN CONTENT LAYOUT ========== */
@@ -28,15 +28,6 @@
   font-weight: var(--font-bold);
   margin-bottom: var(--spacing-xs);
   color: var(--dark-bg);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
-.page-header h1 img {
-  width: 28px;
-  height: 28px;
 }
 
 .page-header p {
@@ -50,20 +41,18 @@
   margin-top: 0;
 }
 
-/* ========== STATS CARDS GRID ========== */
+/* ========== STATS CARDS ========== */
 .stats-grid {
   display: grid;
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
 }
 
-/* Admin: 6 cards - 3 columns x 2 rows on desktop */
 .admin-stats-grid {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-xl);
 }
 
-/* Seller: 3 cards - 3 columns x 1 row */
 .seller-stats-grid {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-xl);
@@ -79,7 +68,6 @@
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-light);
   transition: all var(--transition-fast);
-  min-width: 0;
 }
 
 .stat-card:hover {
@@ -156,11 +144,10 @@
   text-decoration: none;
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
-  transition: all var(--transition-fast);
 }
 
 .notice-banner .view-all-link:hover {
-  transform: translateX(4px);
+  text-decoration: underline;
 }
 
 /* ========== DASHBOARD GRID ========== */
@@ -200,11 +187,10 @@
   text-decoration: none;
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
-  transition: all var(--transition-fast);
 }
 
 .view-all-link:hover {
-  transform: translateX(4px);
+  text-decoration: underline;
 }
 
 /* ========== DATA TABLES ========== */
@@ -235,64 +221,291 @@
   background: var(--gray-bg-light);
 }
 
-.loading-cell,
-.empty-cell {
-  text-align: center;
+/* ========== ADMIN FORM STYLES (for add-product and edit-product) ========== */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--white);
+  border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
-  color: var(--gray-medium);
+  border: 1px solid var(--border-light);
 }
 
-/* ========== LOADING SPINNER ========== */
-.loading-spinner {
-  text-align: center;
-  padding: var(--spacing-xl);
-  color: var(--gray-medium);
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: block;
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-sm);
+  color: var(--dark-bg);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
   font-size: var(--font-md);
+  transition: all var(--transition-fast);
+  background: var(--white);
 }
 
-.loading-spinner::before {
-  content: "";
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  max-height: 300px;
+}
+
+.form-group input[type="file"] {
+  padding: 8px 0;
+  border: none;
+}
+
+.form-group small {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-xs);
+  color: var(--gray-medium);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.btn-submit {
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-bold);
+  transition: all var(--transition-fast);
+}
+
+.btn-submit:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.btn-submit:disabled {
+  background: var(--gray-light);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-cancel {
+  background: var(--gray-bg-light);
+  color: var(--gray-dark);
+  padding: 12px 24px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  margin-left: var(--spacing-sm);
+  transition: all var(--transition-fast);
   display: inline-block;
+  text-align: center;
+}
+
+.btn-cancel:hover {
+  background: var(--border-light);
+  transform: translateY(-2px);
+}
+
+.form-actions {
+  margin-top: var(--spacing-xl);
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.error-msg {
+  background: var(--error-light);
+  color: var(--error);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  border-left: 4px solid var(--error);
+}
+
+.success-msg {
+  background: var(--success-light);
+  color: var(--success);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  border-left: 4px solid var(--success);
+}
+
+/* ========== GALLERY STYLES (for add-product and edit-product) ========== */
+.gallery-grid {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+.gallery-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--gray-bg);
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-item .remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--error);
+  color: white;
+  border-radius: 50%;
   width: 20px;
   height: 20px;
-  margin-right: var(--spacing-sm);
-  border: 2px solid var(--border-light);
-  border-top-color: var(--primary-color);
+  text-align: center;
+  line-height: 18px;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gallery-item .remove-btn:hover {
+  background: var(--error-dark);
+  transform: scale(1.1);
+}
+
+.primary-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--primary-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--font-medium);
+}
+
+.set-primary-btn {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--primary-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--font-medium);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.set-primary-btn:hover {
+  background: var(--primary-dark);
+}
+
+.current-image {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--gray-bg-light);
+  border-radius: var(--radius-md);
+}
+
+.current-image img {
+  max-width: 150px;
+  border-radius: var(--radius-md);
+}
+
+.current-image p {
+  font-size: var(--font-sm);
+  color: var(--gray-medium);
+  margin-top: var(--spacing-sm);
+}
+
+.gallery-section {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
+}
+
+.gallery-section > label {
+  display: block;
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-sm);
+  color: var(--dark-bg);
+}
+
+.gallery-thumb {
+  transition: all var(--transition-fast);
+}
+
+.gallery-thumb:hover {
+  transform: translateY(-2px);
+}
+
+.gallery-thumb.active img {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2);
+}
+
+.main-image-container {
+  background: var(--gray-bg-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.main-image-container img {
+  width: 100%;
+  max-width: 400px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--error);
+  color: white;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  vertical-align: middle;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  text-align: center;
+  line-height: 20px;
+  cursor: pointer;
+  z-index: 10;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ========== FLASH MESSAGES ========== */
-.flash-message {
-  background: var(--success-light);
-  border-left: 4px solid var(--success);
-  padding: var(--spacing-md) var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
-  border-radius: var(--radius-md);
-  color: var(--success-dark);
-  font-weight: var(--font-medium);
-}
-
-.error-message {
-  background: var(--error-light);
-  border-left: 4px solid var(--error);
-  padding: var(--spacing-md) var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
-  border-radius: var(--radius-md);
-  color: var(--error);
-  font-weight: var(--font-medium);
+.remove-image-btn:hover {
+  background: var(--error-dark);
+  transform: scale(1.1);
 }
 
 /* ========== RESPONSIVE STYLES ========== */
-
-/* Tablet: 1024px and below */
 @media (max-width: 1024px) {
   .admin-main-content,
   .seller-main-content {
@@ -304,16 +517,13 @@
   .dashboard-grid,
   .seller-stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-lg);
   }
 
-  /* Admin stats: 3 columns on tablet */
   .admin-stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-/* Mobile: 768px and below */
 @media (max-width: 768px) {
   .admin-main-content,
   .seller-main-content {
@@ -321,7 +531,6 @@
     padding-top: 70px;
   }
 
-  /* Stats: 1 column on mobile */
   .admin-stats-grid,
   .seller-stats-grid {
     grid-template-columns: 1fr;
@@ -350,18 +559,26 @@
     padding: var(--spacing-md);
   }
 
-  .section-header h2 {
-    font-size: var(--font-base);
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
-  .data-table th,
-  .data-table td {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: var(--font-xs);
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .form-container {
+    padding: var(--spacing-lg);
+  }
+
+  .btn-cancel {
+    margin-left: 0;
+    margin-top: var(--spacing-sm);
   }
 }
 
-/* Small Mobile: 480px and below */
 @media (max-width: 480px) {
   .admin-main-content,
   .seller-main-content {
@@ -372,6 +589,7 @@
   .page-header h1 {
     font-size: var(--font-xl);
   }
+
   .stat-card {
     padding: var(--spacing-md);
   }
@@ -383,5 +601,24 @@
   .notice-banner {
     flex-direction: column;
     text-align: center;
+  }
+
+  .form-container {
+    padding: var(--spacing-md);
+  }
+
+  .gallery-item {
+    width: 80px;
+    height: 80px;
+  }
+
+  .primary-badge,
+  .set-primary-btn {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+
+  .gallery-thumb {
+    width: 70px;
   }
 }

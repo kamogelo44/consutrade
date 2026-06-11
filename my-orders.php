@@ -26,6 +26,7 @@ $breadcrumbItems = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Orders - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
         .orders-container {
@@ -284,8 +285,8 @@ $breadcrumbItems = [
                     <tr>
                         <td colspan="7">
                             <div class="loading-spinner">Loading orders...</div>
-                            <\ /td>
-                                <\ /tr>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -397,7 +398,7 @@ $breadcrumbItems = [
                 $pagination,
                 currentPage,
                 currentStatus,
-                currentSearch, s 'buyer',
+                currentSearch, 'buyer',
                 function(newPage) {
                     currentPage = newPage;
                     loadBuyerOrders();

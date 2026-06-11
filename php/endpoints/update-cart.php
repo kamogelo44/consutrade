@@ -62,9 +62,7 @@ if (!$product->canDecreaseStock($quantity)) {
 // Use cartRepo from init.php
 $result = $cartRepo->updateCartQuantity($cartId, $userId, $quantity);
 
-if ($result) {
-    // Refresh cart count in auth session
-    $auth->refreshCartCount();
+if ($result) {a
 
     // Get fresh cart data using cartRepo
     $freshCartItems = $cartRepo->getCartItems($userId);

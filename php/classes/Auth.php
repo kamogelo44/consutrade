@@ -232,16 +232,4 @@ class Auth
             setcookie('CONSUTRADE_SESSION', '', time() - 3600, '/');
         }
     }
-
-    /**
-     * Refresh cart count in session for the current user.
-     * 
-     * @return void
-     */
-    public function refreshCartCount(): void
-    {
-        if ($this->isLoggedIn() && isset($_SESSION['user_id'])) {
-            $this->updateCartCount($_SESSION['user_id']);
-        }
-    }
 }

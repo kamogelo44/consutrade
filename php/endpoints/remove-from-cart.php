@@ -32,7 +32,6 @@ $result = $cartRepo->removeCartItemByProductId($productId, $userId);
 
 if ($result) {
     $cartCount = $cartRepo->getCartCount($userId);
-    $auth->refreshCartCount();
 
     $response['success'] = true;
     $response['message'] = 'Item removed from cart';

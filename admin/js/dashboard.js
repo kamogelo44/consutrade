@@ -1,11 +1,14 @@
-// dashboard.js - admin and seller dashboard functions
+// dashboard.js - admin and seller dashboard specific functions
 // Author: Kamogelo Phale
+// Note: main.js is already loaded on all pages, so utility functions like 
+// escapeHtml, fixImageUrl, showSuccessToast, renderPagination, etc. are already available.
+// This file only contains dashboard-specific functionality.
 
 var baseUrl = baseUrl || '';
 
 // ========== PRODUCT MANAGEMENT ==========
 
-// toggle product status (suspend/activate)
+// Toggle product status (suspend/activate)
 window.toggleProductStatus = function(productId, currentStatus, callback) {
     var newStatus = currentStatus == 'active' ? 'suspended' : 'active';
     var action = newStatus == 'active' ? 'activate' : 'suspend';
@@ -43,12 +46,12 @@ window.toggleProductStatus = function(productId, currentStatus, callback) {
             }
         },
         error: function() {
-            alert('Something went wrong');
+            showErrorToast('Something went wrong');
         }
     });
 };
 
-// delete a product
+// Delete a product
 window.deleteProduct = function(productId, productName, callback) {
     var confirmMsg = productName 
         ? 'Delete "' + productName + '"? This action cannot be undone.'
@@ -74,13 +77,13 @@ window.deleteProduct = function(productId, productName, callback) {
                 }
             },
             error: function() {
-                alert('Something went wrong');
+                showErrorToast('Something went wrong');
             }
         });
     }
 };
 
-// order action wrappers
+// Order action wrappers - these call updateOrderStatus from main.js
 window.processOrder = function(orderId) { 
     updateOrderStatus(orderId, 'processing');
 };
@@ -114,33 +117,9 @@ window.viewOrder = function(orderId) {
     }
 };
 
-// ========== HELPER FUNCTIONS ==========
-
-// Get status class for order-status-badge (matches components.css)
-function getOrderStatusClass(status) {
-    switch(status) {
-        case 'pending': return 'status-pending';
-        case 'processing': return 'status-processing';
-        case 'shipped': return 'status-shipped';
-        case 'completed': return 'status-completed';
-        case 'cancelled': return 'status-cancelled';
-        default: return 'status-pending';
-    }
-}
-
-// Get user role class
-function getUserRoleClass(role) {
-    switch(role) {
-        case 'admin': return 'role-admin';
-        case 'seller': return 'role-seller';
-        case 'buyer': return 'role-buyer';
-        default: return 'role-buyer';
-    }
-}
-
 // ========== SELLER PRODUCTS ==========
 
-// load seller's products
+// Load seller's products (for seller dashboard)
 window.loadSellerProducts = function(limit) {
     var $grid = $('#listings-grid');
     if (!$grid.length) return;
@@ -448,46 +427,346 @@ function initMobileSidebar(prefix) {
     });
 }
 
-// ========== GALLERY FUNCTIONS ==========
+// ========== GALLERY FUNCTIONS (for add-product and edit-product pages) ==========
 
-function removeGalleryImage(imageId, productId) {
-    if (!confirm('Remove this image from the gallery? This action cannot be undone.')) {
+// Variables for image gallery
+var selectedFiles = [];
+var existingImages = [];
+var newImageFiles = [];
+var newImagePreviews = [];
+var allDisplayImages = [];
+
+/**
+ * Initialize gallery from file input (for add product form)
+ */
+function initImageGalleryFromInput(input) {
+    var files = Array.from(input.files);
+    
+    if (files.length > 4) {
+        alert('You can only upload up to 4 images. Only the first 4 will be used.');
+        files = files.slice(0, 4);
+        input.files = files;
+    }
+    
+    selectedFiles = files;
+    allDisplayImages = [];
+    newImageFiles = [];
+    newImagePreviews = [];
+    
+    if (files.length === 0) {
+        $('#image-gallery-container').hide();
         return;
     }
-    var $galleryItem = $('.gallery-item[data-image-id="' + imageId + '"]');
-    $.ajax({
-        url: baseUrl + 'php/endpoints/remove-gallery-image.php',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ image_id: imageId, product_id: productId }),
-        dataType: 'json',
-        success: function(data) {
-            if (data.success) {
-                $galleryItem.fadeOut(300, function() {
-                    $(this).remove();
-                    showSuccessToast('Image removed successfully');
-                });
-            } else {
-                showErrorToast(data.message || 'Could not remove image');
-            }
-        },
-        error: function() {
-            showErrorToast('Something went wrong. Please try again.');
+    
+    // Build allDisplayImages from selected files
+    for (var i = 0; i < files.length; i++) {
+        var previewUrl = URL.createObjectURL(files[i]);
+        newImagePreviews.push(previewUrl);
+        newImageFiles.push(files[i]);
+        
+        allDisplayImages.push({
+            file: files[i],
+            previewUrl: previewUrl,
+            is_primary: (i === 0),  // First image is primary by default
+            is_existing: false,
+            source: 'new'
+        });
+    }
+    
+    buildGalleryThumbnails();
+    displayMainImage(0);
+    $('#image-gallery-container').show();
+}
+
+/**
+ * Initialize gallery from existing images (for edit product form)
+ */
+function initImageGalleryFromExisting(images) {
+    existingImages = images;
+    allDisplayImages = [];
+    
+    for (var i = 0; i < existingImages.length; i++) {
+        allDisplayImages.push({
+            url: existingImages[i].url,
+            is_primary: existingImages[i].is_primary,
+            image_id: existingImages[i].image_id,
+            is_existing: true,
+            source: 'existing'
+        });
+    }
+    
+    // Ensure at least one image is primary
+    var hasPrimary = false;
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        if (allDisplayImages[i].is_primary) {
+            hasPrimary = true;
+            break;
         }
+    }
+    if (!hasPrimary && allDisplayImages.length > 0) {
+        allDisplayImages[0].is_primary = true;
+    }
+    
+    buildGalleryThumbnails();
+    
+    // Find and display primary image
+    var primaryIndex = 0;
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        if (allDisplayImages[i].is_primary) {
+            primaryIndex = i;
+            break;
+        }
+    }
+    displayMainImage(primaryIndex);
+    $('#image-gallery-container').show();
+}
+
+/**
+ * Build thumbnails for the gallery
+ */
+function buildGalleryThumbnails() {
+    var $container = $('#gallery-thumbnails');
+    if (!$container.length) return;
+    
+    $container.empty();
+    
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        (function(index) {
+            var img = allDisplayImages[index];
+            var isPrimary = img.is_primary;
+            var borderColor = isPrimary ? 'var(--primary-color)' : 'var(--border-light)';
+            var textColor = isPrimary ? 'var(--primary-color)' : 'var(--gray-medium)';
+            var label = isPrimary ? 'Main' : 'Gallery';
+            
+            // Get image source (existing URL or preview URL)
+            var imgSrc = img.source === 'existing' ? img.url : (img.previewUrl || '');
+            
+            var $thumbnail = $(
+                '<div class="gallery-thumb" data-image-index="' + index + '" style="cursor: pointer; width: 80px; text-align: center; position: relative;">' +
+                    '<img src="' + imgSrc + '" style="width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-md); border: 2px solid ' + borderColor + ';">' +
+                    '<div style="font-size: 10px; margin-top: 4px; color: ' + textColor + ';">' + label + '</div>' +
+                    '<div class="remove-image-btn" onclick="event.stopPropagation(); removeImageFromGallery(' + index + ')">×</div>' +
+                '</div>'
+            );
+            $container.append($thumbnail);
+        })(i);
+    }
+    
+    attachThumbnailClickHandlers();
+}
+
+/**
+ * Attach click handlers to thumbnails
+ */
+function attachThumbnailClickHandlers() {
+    $('#gallery-thumbnails').off('click', '.gallery-thumb').on('click', '.gallery-thumb', function(e) {
+        // Don't trigger if clicking remove button
+        if ($(e.target).hasClass('remove-image-btn') || $(e.target).parent().hasClass('remove-image-btn')) {
+            return;
+        }
+        
+        var index = $(this).data('image-index');
+        
+        // Update primary status for all images
+        for (var i = 0; i < allDisplayImages.length; i++) {
+            allDisplayImages[i].is_primary = (i === index);
+        }
+        
+        // Rebuild thumbnails to update labels
+        buildGalleryThumbnails();
+        
+        // Update main preview
+        displayMainImage(index);
     });
+}
+
+/**
+ * Display main image in the large preview area
+ */
+function displayMainImage(index) {
+    var img = allDisplayImages[index];
+    if (!img) return;
+    
+    if (img.source === 'existing') {
+        $('#gallery-main-preview').attr('src', img.url);
+    } else if (img.previewUrl) {
+        $('#gallery-main-preview').attr('src', img.previewUrl);
+    }
+}
+
+/**
+ * Remove image from gallery
+ */
+function removeImageFromGallery(index) {
+    var img = allDisplayImages[index];
+    
+    if (img.source === 'existing') {
+        // Mark for deletion (for edit product form)
+        if (!window.imagesToDelete) window.imagesToDelete = [];
+        if (img.image_id > 0 && window.imagesToDelete.indexOf(img.image_id) === -1) {
+            window.imagesToDelete.push(img.image_id);
+        }
+    } else {
+        // Remove from newImageFiles if it was a new image
+        var fileIndex = newImageFiles.indexOf(img.file);
+        if (fileIndex !== -1) {
+            newImageFiles.splice(fileIndex, 1);
+            newImagePreviews.splice(fileIndex, 1);
+        }
+    }
+    
+    // Remove from array
+    allDisplayImages.splice(index, 1);
+    
+    // If no images left
+    if (allDisplayImages.length === 0) {
+        $('#gallery-thumbnails').empty();
+        $('#gallery-main-preview').attr('src', '');
+        $('#image-gallery-container').hide();
+        return;
+    }
+    
+    // Ensure at least one primary exists
+    var hasPrimary = false;
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        if (allDisplayImages[i].is_primary) {
+            hasPrimary = true;
+            break;
+        }
+    }
+    if (!hasPrimary) {
+        allDisplayImages[0].is_primary = true;
+    }
+    
+    // Rebuild gallery
+    buildGalleryThumbnails();
+    
+    // Find and display primary image
+    var primaryIndex = 0;
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        if (allDisplayImages[i].is_primary) {
+            primaryIndex = i;
+            break;
+        }
+    }
+    displayMainImage(primaryIndex);
+}
+
+/**
+ * Add new images to gallery (for edit product form)
+ */
+function addNewImagesToGallery(input) {
+    var files = Array.from(input.files);
+    var currentCount = allDisplayImages.length;
+    var availableSlots = 4 - currentCount;
+    
+    if (files.length > availableSlots) {
+        alert('You can only add up to ' + availableSlots + ' more images (max 4 total).');
+        files = files.slice(0, availableSlots);
+    }
+    
+    for (var i = 0; i < files.length; i++) {
+        var previewUrl = URL.createObjectURL(files[i]);
+        
+        newImageFiles.push(files[i]);
+        newImagePreviews.push(previewUrl);
+        
+        allDisplayImages.push({
+            file: files[i],
+            previewUrl: previewUrl,
+            is_primary: false,
+            is_existing: false,
+            source: 'new'
+        });
+    }
+    
+    // If no primary exists, set first as primary
+    var hasPrimary = false;
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        if (allDisplayImages[i].is_primary) {
+            hasPrimary = true;
+            break;
+        }
+    }
+    if (!hasPrimary && allDisplayImages.length > 0) {
+        allDisplayImages[0].is_primary = true;
+    }
+    
+    buildGalleryThumbnails();
+    
+    // Find and display primary image
+    var primaryIndex = 0;
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        if (allDisplayImages[i].is_primary) {
+            primaryIndex = i;
+            break;
+        }
+    }
+    displayMainImage(primaryIndex);
+    
+    // Clear the file input
+    input.value = '';
+}
+
+/**
+ * Prepare form data before submit (for edit product form)
+ */
+function prepareEditFormData() {
+    var imageOrderData = [];
+    
+    for (var i = 0; i < allDisplayImages.length; i++) {
+        var img = allDisplayImages[i];
+        var item = {
+            is_primary: img.is_primary
+        };
+        
+        if (img.source === 'existing') {
+            item.image_id = img.image_id;
+            item.is_existing = true;
+        } else {
+            item.is_new = true;
+            // Find the index of this file in newImageFiles
+            var fileIndex = newImageFiles.indexOf(img.file);
+            item.file_index = fileIndex;
+        }
+        
+        imageOrderData.push(item);
+    }
+    
+    // Add image_order as JSON
+    var orderInput = $('<input type="hidden" name="image_order" value="' + JSON.stringify(imageOrderData).replace(/"/g, '&quot;') + '">');
+    $('#edit-product-form').append(orderInput);
+    
+    // Add delete_images as JSON
+    if (window.imagesToDelete && window.imagesToDelete.length) {
+        var deleteInput = $('<input type="hidden" name="delete_images" value="' + JSON.stringify(window.imagesToDelete).replace(/"/g, '&quot;') + '">');
+        $('#edit-product-form').append(deleteInput);
+    }
+    
+    return true;
 }
 
 // ========== DOCUMENT READY ==========
 
 $(function() {
+    // Initialize mobile sidebars
     initMobileSidebar('admin');
     initMobileSidebar('seller');
     
+    // Load admin dashboard if on admin page
     if ($('#totalUsers').length || $('#recent-users-table').length) {
         loadAdminDashboard();
     }
     
+    // Load seller dashboard if on seller page
     if ($('#stat-products').length || $('#listings-grid').length) {
         loadSellerDashboard();
+    }
+    
+    // Handle edit product form submission
+    if ($('#edit-product-form').length) {
+        $('#edit-product-form').on('submit', function() {
+            return prepareEditFormData();
+        });
     }
 });

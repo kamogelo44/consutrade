@@ -19,7 +19,7 @@ $user_location = $currentUser->getLocation();
 $user_created_at = $currentUser->getCreatedAt();
 $profile_image = $currentUser->getProfileImageUrl();
 $is_verified = $currentUser->isVerified();
-$verification = $currentUser->viewVerificationStatus();
+$verification = $currentUser->getVerificationStatus();
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -2,6 +2,9 @@
 /*
  * ConsuTrade - Edit Product Page
  * Author: Kamogelo Phale
+ * 
+ * Allows sellers to edit existing products
+ * Uses same gallery interface as add-product.php
  */
 
 require_once dirname(__DIR__) . '/init.php';
@@ -29,323 +32,50 @@ if (!$product || $product->getSellerId() != $seller_id) {
 $gallery_images = $productImageRepo->getByProductId($product_id);
 $categories = $categoryRepo->getAll();
 
-// Breadcrumb for subpage navigation
+// Prepare existing images for JavaScript gallery (same format as add-product expects)
+$existingImagesForJs = [];
+
+// First, add the main image from product table
+$mainImageUrl = $productRepo->getImageUrl($product->getImageUrl());
+$existingImagesForJs[] = [
+    'url' => $mainImageUrl,
+    'is_primary' => true,
+    'image_id' => 0
+];
+
+// Then add gallery images (I want to avoid duplicate if main image is also in gallery)
+foreach ($gallery_images as $img) {
+    $imgUrl = $productRepo->getImageUrl($img['image_url']);
+    if ($imgUrl !== $mainImageUrl) {
+        $existingImagesForJs[] = [
+            'url' => $imgUrl,
+            'is_primary' => (bool)$img['is_primary'],
+            'image_id' => $img['image_id']
+        ];
+    }
+}
+
+// Breadcrumb
 $breadcrumbItems = [
-    ['url' => 'admin/my-products.php', 'label' => 'My Products'],
+    ['url' => 'my-products.php', 'label' => 'My Products'],
     ['label' => 'Edit Product']
 ];
+
+$error = $_SESSION['error'] ?? null;
+$success = $_SESSION['success'] ?? null;
+unset($_SESSION['error'], $_SESSION['success']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-    <style>
-        .admin-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
-
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-            color: var(--dark-bg);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-xl);
-            border: 1px solid var(--border-light);
-        }
-
-        .form-group {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: var(--spacing-xs);
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-        }
-
-        .gallery-grid {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-            margin-top: var(--spacing-md);
-        }
-
-        .gallery-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            background: var(--gray-bg);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .gallery-item .remove-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: var(--error);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            text-align: center;
-            line-height: 18px;
-            font-size: 12px;
-            text-decoration: none;
-            cursor: pointer;
-            z-index: 1;
-        }
-
-        .gallery-item .remove-btn:hover {
-            background: var(--error-dark);
-            transform: scale(1.1);
-        }
-
-        .primary-badge {
-            position: absolute;
-            bottom: 4px;
-            left: 4px;
-            background: var(--primary-color);
-            color: white;
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            font-size: 10px;
-            font-weight: var(--font-medium);
-            z-index: 1;
-        }
-
-        .set-primary-btn {
-            position: absolute;
-            bottom: 4px;
-            left: 4px;
-            background: var(--primary-color);
-            color: white;
-            padding: 2px 6px;
-            border-radius: var(--radius-sm);
-            font-size: 10px;
-            text-decoration: none;
-            cursor: pointer;
-            z-index: 1;
-        }
-
-        .set-primary-btn:hover {
-            background: var(--primary-dark);
-            transform: scale(1.02);
-        }
-
-        .current-image {
-            margin-bottom: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-        }
-
-        .current-image img {
-            max-width: 150px;
-            border-radius: var(--radius-md);
-        }
-
-        .current-image p {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-            margin-top: var(--spacing-sm);
-        }
-
-        .gallery-section {
-            margin-top: var(--spacing-lg);
-            padding-top: var(--spacing-lg);
-            border-top: 1px solid var(--border-light);
-        }
-
-        .gallery-section>label {
-            display: block;
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .btn-submit {
-            background: var(--primary-color);
-            color: var(--white);
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-bold);
-            transition: all var(--transition-fast);
-        }
-
-        .btn-submit:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .btn-cancel {
-            background: var(--gray-bg-light);
-            color: var(--gray-dark);
-            padding: 12px 24px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            margin-left: var(--spacing-sm);
-            transition: all var(--transition-fast);
-            display: inline-block;
-            text-align: center;
-        }
-
-        .btn-cancel:hover {
-            background: var(--border-light);
-        }
-
-        .error-msg {
-            background: var(--error-light);
-            color: var(--error);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--error);
-        }
-
-        .success-msg {
-            background: var(--success-light);
-            color: var(--success);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--success);
-        }
-
-        @media (max-width: 1024px) {
-            .admin-main-content {
-                margin-left: 0;
-                width: 100%;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .admin-main-content {
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: var(--spacing-md);
-            }
-
-            .form-container {
-                padding: var(--spacing-lg);
-            }
-
-            .gallery-grid {
-                justify-content: center;
-            }
-
-            .btn-cancel {
-                margin-left: 0;
-                margin-top: var(--spacing-sm);
-            }
-
-            .form-actions {
-                display: flex;
-                flex-direction: column;
-                gap: var(--spacing-sm);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .admin-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
-            .form-container {
-                padding: var(--spacing-md);
-            }
-
-            .gallery-item {
-                width: 80px;
-                height: 80px;
-            }
-
-            .primary-badge,
-            .set-primary-btn {
-                font-size: 8px;
-                padding: 1px 4px;
-            }
-        }
-    </style>
 </head>
 
 <body>
@@ -360,17 +90,10 @@ $breadcrumbItems = [
                 <p>Update your product information</p>
             </div>
 
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="error-msg"><?php echo htmlspecialchars($_SESSION['error']);
-                                        unset($_SESSION['error']); ?></div>
-            <?php endif; ?>
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="success-msg"><?php echo htmlspecialchars($_SESSION['success']);
-                                            unset($_SESSION['success']); ?></div>
-            <?php endif; ?>
+            <?php include dirname(__DIR__) . '/includes/flash-message.php'; ?>
 
             <div class="form-container">
-                <form action="<?php echo $baseUrl; ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
+                <form id="edit-product-form" action="<?php echo $baseUrl; ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="product_id" value="<?php echo $product->getProductId(); ?>">
 
                     <div class="form-group">
@@ -423,32 +146,23 @@ $breadcrumbItems = [
                         <textarea name="description" rows="5" required><?php echo htmlspecialchars($product->getDescription()); ?></textarea>
                     </div>
 
+                    <!-- Unified Image Gallery (same as add-product.php) -->
                     <div class="form-group">
-                        <label>Change Main Image (Optional)</label>
-                        <input type="file" name="main_image" accept="image/*">
-                        <?php if (!empty($product->getImageUrl())): ?>
-                            <div class="current-image">
-                                <img src="<?php echo $productRepo->getProductImageUrl($product->getImageUrl()); ?>" alt="Current main image">
-                                <p>Leave empty to keep current image</p>
+                        <label>Product Images (Max 4 total)</label>
+                        <input type="file" name="new_product_images[]" accept="image/*" multiple onchange="addNewImagesToGallery(this)">
+                        <small>Click on any image to set it as the main product photo. Click × to delete. You can add up to <?php echo 4 - count($existingImagesForJs); ?> new images.</small>
+
+                        <!-- Gallery Container -->
+                        <div id="image-gallery-container" style="margin-top: var(--spacing-lg);">
+                            <div class="main-image-container">
+                                <img id="gallery-main-preview" src="" alt="Main preview">
                             </div>
-                        <?php endif; ?>
+                            <div id="gallery-thumbnails" style="display: flex; gap: var(--spacing-md); flex-wrap: wrap; margin-top: var(--spacing-md); justify-content: center;">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="gallery-grid" id="existing-gallery">
-                        <?php foreach ($gallery_images as $img): ?>
-                            <div class="gallery-item" data-image-id="<?php echo $img['image_id']; ?>">
-                                <img src="<?php echo $productRepo->getProductImageUrl($img['image_url']); ?>" alt="Gallery image">
-                                <a href="javascript:void(0)" class="remove-btn" onclick="removeGalleryImage(<?php echo $img['image_id']; ?>, <?php echo $product->getProductId(); ?>)">×</a>
-                                <?php if ($img['is_primary']): ?>
-                                    <span class="primary-badge">Primary</span>
-                                <?php else: ?>
-                                    <a href="javascript:void(0)" class="set-primary-btn" onclick="setPrimaryImage(<?php echo $img['image_id']; ?>, <?php echo $product->getProductId(); ?>)">Set as Primary</a>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div style="margin-top: var(--spacing-xl); display: flex; gap: var(--spacing-sm)">
+                    <div class="form-actions">
                         <button type="submit" class="btn-submit">Save Changes</button>
                         <a href="my-products.php" class="btn-cancel">Cancel</a>
                     </div>
@@ -458,55 +172,153 @@ $breadcrumbItems = [
     </main>
 
     <script>
-        function removeGalleryImage(imageId, productId) {
-            if (confirm('Remove this image from the gallery?')) {
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/remove-gallery-image.php',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        image_id: imageId,
-                        product_id: productId
-                    }),
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success) {
-                            $('.gallery-item[data-image-id="' + imageId + '"]').remove();
-                            showSuccessToast('Image removed');
-                        } else {
-                            showErrorToast(data.message || 'Could not remove image');
-                        }
-                    },
-                    error: function() {
-                        showErrorToast('Something went wrong');
-                    }
+        // Existing images passed from PHP
+        var existingImages = <?php echo json_encode($existingImagesForJs); ?>;
+        var newImageFiles = [];
+        var imagesToDelete = [];
+        var allDisplayImages = [];
+
+        // Initialize gallery with existing images
+        function initGallery() {
+            allDisplayImages = [];
+            for (var i = 0; i < existingImages.length; i++) {
+                allDisplayImages.push({
+                    url: existingImages[i].url,
+                    is_primary: existingImages[i].is_primary,
+                    image_id: existingImages[i].image_id,
+                    source: 'existing'
                 });
             }
+
+            // Ensure at least one primary
+            var hasPrimary = false;
+            for (var i = 0; i < allDisplayImages.length; i++) {
+                if (allDisplayImages[i].is_primary) hasPrimary = true;
+            }
+            if (!hasPrimary && allDisplayImages.length > 0) {
+                allDisplayImages[0].is_primary = true;
+            }
+
+            renderGallery();
         }
 
-        function setPrimaryImage(imageId, productId) {
-            $.ajax({
-                url: baseUrl + 'php/endpoints/set-primary-image.php',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    image_id: imageId,
-                    product_id: productId
-                }),
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success) {
-                        showSuccessToast('Primary image updated');
-                        location.reload();
-                    } else {
-                        showErrorToast(data.message || 'Could not set primary image');
-                    }
-                },
-                error: function() {
-                    showErrorToast('Something went wrong');
+        // Render thumbnails and main preview
+        function renderGallery() {
+            var $container = $('#gallery-thumbnails');
+            $container.empty();
+
+            for (var i = 0; i < allDisplayImages.length; i++) {
+                var img = allDisplayImages[i];
+                var isPrimary = img.is_primary;
+                var borderColor = isPrimary ? 'var(--primary-color)' : 'var(--border-light)';
+                var label = isPrimary ? 'Main' : 'Gallery';
+                var imgSrc = img.source === 'existing' ? img.url : (img.previewUrl || '');
+
+                var $thumb = $(
+                    '<div class="gallery-thumb" data-index="' + i + '" style="cursor: pointer; width: 80px; text-align: center; position: relative;">' +
+                    '<img src="' + imgSrc + '" style="width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-md); border: 2px solid ' + borderColor + ';">' +
+                    '<div style="font-size: 10px; margin-top: 4px;">' + label + '</div>' +
+                    '<div class="remove-image-btn" onclick="event.stopPropagation(); removeImage(' + i + ')">×</div>' +
+                    '</div>'
+                );
+                $container.append($thumb);
+            }
+
+            // Find and display primary image
+            for (var i = 0; i < allDisplayImages.length; i++) {
+                if (allDisplayImages[i].is_primary) {
+                    var primaryImg = allDisplayImages[i];
+                    var src = primaryImg.source === 'existing' ? primaryImg.url : (primaryImg.previewUrl || '');
+                    $('#gallery-main-preview').attr('src', src);
+                    break;
                 }
+            }
+
+            // Attach click handlers
+            $('.gallery-thumb').off('click').on('click', function() {
+                var index = $(this).data('index');
+                for (var i = 0; i < allDisplayImages.length; i++) {
+                    allDisplayImages[i].is_primary = (i === index);
+                }
+                renderGallery();
             });
         }
+
+        // Remove image from gallery
+        function removeImage(index) {
+            var img = allDisplayImages[index];
+            if (img.source === 'existing' && img.image_id > 0) {
+                imagesToDelete.push(img.image_id);
+            }
+            allDisplayImages.splice(index, 1);
+            if (allDisplayImages.length === 0) {
+                $('#gallery-thumbnails').empty();
+                $('#gallery-main-preview').attr('src', '');
+                return;
+            }
+            // Ensure at least one primary
+            var hasPrimary = false;
+            for (var i = 0; i < allDisplayImages.length; i++) {
+                if (allDisplayImages[i].is_primary) hasPrimary = true;
+            }
+            if (!hasPrimary) allDisplayImages[0].is_primary = true;
+            renderGallery();
+        }
+
+        // Add new images from file input
+        function addNewImagesToGallery(input) {
+            var files = Array.from(input.files);
+            var available = 4 - allDisplayImages.length;
+            if (files.length > available) {
+                alert('You can only add ' + available + ' more images (max 4 total).');
+                files = files.slice(0, available);
+            }
+
+            for (var i = 0; i < files.length; i++) {
+                var previewUrl = URL.createObjectURL(files[i]);
+                allDisplayImages.push({
+                    file: files[i],
+                    previewUrl: previewUrl,
+                    is_primary: false,
+                    source: 'new'
+                });
+            }
+
+            // If no primary, set first as primary
+            var hasPrimary = false;
+            for (var i = 0; i < allDisplayImages.length; i++) {
+                if (allDisplayImages[i].is_primary) hasPrimary = true;
+            }
+            if (!hasPrimary && allDisplayImages.length > 0) {
+                allDisplayImages[0].is_primary = true;
+            }
+
+            renderGallery();
+            input.value = '';
+        }
+
+        // Prepare form data before submit
+        function prepareSubmit() {
+            var orderData = [];
+            for (var i = 0; i < allDisplayImages.length; i++) {
+                var img = allDisplayImages[i];
+                orderData.push({
+                    is_primary: img.is_primary,
+                    image_id: img.image_id || 0,
+                    is_new: img.source === 'new'
+                });
+            }
+            $('<input type="hidden" name="image_order" value=\'' + JSON.stringify(orderData) + '\'>').appendTo('#edit-product-form');
+            if (imagesToDelete.length > 0) {
+                $('<input type="hidden" name="delete_images" value=\'' + JSON.stringify(imagesToDelete) + '\'>').appendTo('#edit-product-form');
+            }
+            return true;
+        }
+
+        $(document).ready(function() {
+            initGallery();
+            $('#edit-product-form').on('submit', prepareSubmit);
+        });
     </script>
 </body>
 

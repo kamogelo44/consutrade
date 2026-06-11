@@ -4,6 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Allows sellers to add new products to the marketplace
+ * Uses unified image gallery (first image = main, rest = gallery)
  */
 
 require_once dirname(__DIR__) . '/init.php';
@@ -22,14 +23,14 @@ $categories = $categoryRepo->getAll();
 
 // Breadcrumb for subpage navigation
 $breadcrumbItems = [
-    ['url' => 'admin/my-products.php', 'label' => 'My Products'],
+    ['url' => 'my-products.php', 'label' => 'My Products'],
     ['label' => 'Add New Product']
 ];
 
-// Get flash messages from session (set by endpoint)
-$error = $_SESSION['product_error'] ?? null;
-$success = $_SESSION['product_success'] ?? null;
-unset($_SESSION['product_error'], $_SESSION['product_success']);
+// Get flash messages from session
+$error = $_SESSION['error'] ?? null;
+$success = $_SESSION['success'] ?? null;
+unset($_SESSION['error'], $_SESSION['success']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -39,182 +40,19 @@ unset($_SESSION['product_error'], $_SESSION['product_success']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Add New Product - ConsuTrade</title>
 
-    <!-- CSS Imports - Using component-based architecture -->
+    <!-- CSS Imports -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-
     <style>
-        /* Page-specific styles */
-        .admin-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
-
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-            color: var(--dark-bg);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-xl);
-            border: 1px solid var(--border-light);
-        }
-
-        .form-group {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
+        /* Tiny page-specific override - only if needed */
+        .gallery-thumb {
             transition: all var(--transition-fast);
         }
 
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: var(--spacing-xs);
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-        }
-
-        .gallery-preview {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-            margin-top: var(--spacing-md);
-        }
-
-        .gallery-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .btn-submit {
-            background: var(--primary-color);
-            color: var(--white);
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-bold);
-            transition: all var(--transition-fast);
-        }
-
-        .btn-submit:hover {
-            background: var(--primary-dark);
+        .gallery-thumb:hover {
             transform: translateY(-2px);
-        }
-
-        .btn-cancel {
-            background: var(--gray-bg-light);
-            color: var(--gray-dark);
-            padding: 12px 24px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            margin-left: var(--spacing-sm);
-            transition: all var(--transition-fast);
-        }
-
-        .btn-cancel:hover {
-            background: var(--border-light);
-        }
-
-        /* Using global error/success message styles from main.css */
-        /* .error-msg and .success-msg classes are now handled by .error-message and .flash-message */
-
-        @media (max-width: 1024px) {
-            .admin-main-content {
-                margin-left: 0;
-                width: 100%;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .admin-main-content {
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .form-container {
-                padding: var(--spacing-lg);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .admin-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
-            .form-container {
-                padding: var(--spacing-md);
-            }
         }
     </style>
 </head>
@@ -231,11 +69,12 @@ unset($_SESSION['product_error'], $_SESSION['product_success']);
                 <p>Fill in the details below to list your product</p>
             </div>
 
-            <!-- Flash messages using global styles -->
+            <!-- Flash messages using global component -->
             <?php include dirname(__DIR__) . '/includes/flash-message.php'; ?>
 
             <div class="form-container">
                 <form id="product-form" action="<?php echo $baseUrl; ?>php/endpoints/add-product.php" method="post" enctype="multipart/form-data">
+
                     <div class="form-group">
                         <label>Product Title *</label>
                         <input type="text" name="title" required>
@@ -284,20 +123,26 @@ unset($_SESSION['product_error'], $_SESSION['product_success']);
                         <textarea name="description" rows="5" required placeholder="Describe your product in detail..."></textarea>
                     </div>
 
+                    <!-- Unified Image Gallery -->
                     <div class="form-group">
-                        <label>Main Product Image *</label>
-                        <input type="file" name="main_image" accept="image/*" required>
-                        <small>Main image will be shown as the primary product photo</small>
+                        <label>Product Images * (Max 4 total)</label>
+                        <input type="file" name="product_images[]" accept="image/*" multiple required onchange="initImageGalleryFromInput(this)">
+                        <small>Select 1-4 images. The first image becomes your main product photo shown in listings and cart. Click thumbnails to preview.</small>
+
+                        <!-- Gallery Container - same layout as product details page -->
+                        <div id="image-gallery-container" style="margin-top: var(--spacing-lg); display: none;">
+                            <!-- Large preview area -->
+                            <div class="main-image-container">
+                                <img id="gallery-main-preview" src="" alt="Main preview">
+                            </div>
+
+                            <!-- Thumbnails area -->
+                            <div id="gallery-thumbnails" style="display: flex; gap: var(--spacing-md); flex-wrap: wrap; margin-top: var(--spacing-md); justify-content: center;">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Additional Images (Up to 4)</label>
-                        <input type="file" name="gallery_images[]" accept="image/*" multiple>
-                        <small>You can select multiple images at once (max 4)</small>
-                        <div id="gallery-preview" class="gallery-preview"></div>
-                    </div>
-
-                    <div style="margin-top: var(--spacing-xl); display: flex; gap: var(--spacing-sm)">
+                    <div class="form-actions">
                         <button type="submit" class="btn-submit">Publish Product</button>
                         <a href="my-products.php" class="btn-cancel">Cancel</a>
                     </div>
@@ -306,27 +151,6 @@ unset($_SESSION['product_error'], $_SESSION['product_success']);
         </div>
     </main>
 
-    <!-- Gallery preview script - uses jQuery from sidebar.php -->
-    <script>
-        $(document).ready(function() {
-            $('input[name="gallery_images[]"]').on('change', function(e) {
-                var preview = $('#gallery-preview');
-                preview.empty();
-                var files = this.files;
-                var maxFiles = Math.min(files.length, 4);
-
-                for (var i = 0; i < maxFiles; i++) {
-                    var reader = new FileReader();
-                    reader.onload = (function(fileIndex) {
-                        return function(event) {
-                            preview.append('<div class="gallery-item"><img src="' + event.target.result + '" alt="Preview ' + (fileIndex + 1) + '"></div>');
-                        };
-                    })(i);
-                    reader.readAsDataURL(files[i]);
-                }
-            });
-        });
-    </script>
 </body>
 
 </html>

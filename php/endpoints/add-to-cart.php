@@ -55,7 +55,6 @@ if ($existingItem) {
 
 if ($result) {
     $cartCount = $cartRepo->getCartCount($userId);
-    $auth->refreshCartCount();
 
     $response['success'] = true;
     $response['message'] = 'Item added to cart';

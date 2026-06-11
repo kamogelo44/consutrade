@@ -12,7 +12,7 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!$auth->isAdminLoggedIn()) {
+if (!$auth->isAdmin()) {
     $response['message'] = 'Unauthorized.';
     echo json_encode($response);
     exit;

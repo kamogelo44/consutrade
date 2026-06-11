@@ -20,7 +20,12 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
 }
 
 $show_sell_link = !$is_logged_in;
-$cart_count = $_SESSION['cart_count'] ?? 0;
+// Only query if user is a logged-in buyer
+if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
+    $cart_count = $cartRepo->getCartCount($currentUser->getUserId());
+} else {
+    $cart_count = 0;
+}
 ?>
 
 <header class="site-header">
