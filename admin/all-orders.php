@@ -4,7 +4,6 @@
  * Author: Kamogelo Phale
  * 
  * Displays all orders on the marketplace for admin management.
- * Uses main.js for modal, toast, pagination, and admin orders table rendering.
  */
 
 require_once dirname(__DIR__) . '/init.php';
@@ -24,64 +23,14 @@ if (!$auth->isAdmin()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Orders - ConsuTrade Admin</title>
 
-    <!-- CSS Imports - Using component-based architecture -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/orders.css">
+
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
-        /* Orders page specific styles only */
-
-        .filters-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: var(--spacing-lg);
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-            align-items: center;
-        }
-
-        .status-filters {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .search-bar {
-            display: flex;
-            gap: var(--spacing-sm);
-        }
-
-        .search-bar input {
-            padding: 8px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            width: 250px;
-            font-size: var(--font-md);
-        }
-
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .search-bar button {
-            padding: 8px 16px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-        }
-
-        .search-bar button:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        /* Order action buttons - page specific */
+        /* Only page-specific styles not in orders.css */
         .action-buttons {
             display: flex;
             gap: var(--spacing-sm);
@@ -107,7 +56,6 @@ if (!$auth->isAdmin()) {
         .view-btn:hover {
             background: var(--info);
             color: white;
-            transform: translateY(-1px);
         }
 
         .process-btn {
@@ -119,7 +67,6 @@ if (!$auth->isAdmin()) {
         .process-btn:hover {
             background: var(--warning);
             color: white;
-            transform: translateY(-1px);
         }
 
         .ship-btn {
@@ -131,7 +78,6 @@ if (!$auth->isAdmin()) {
         .ship-btn:hover {
             background: var(--primary-color);
             color: white;
-            transform: translateY(-1px);
         }
 
         .complete-btn {
@@ -143,7 +89,6 @@ if (!$auth->isAdmin()) {
         .complete-btn:hover {
             background: var(--success);
             color: white;
-            transform: translateY(-1px);
         }
 
         .cancel-btn {
@@ -155,41 +100,10 @@ if (!$auth->isAdmin()) {
         .cancel-btn:hover {
             background: var(--error);
             color: white;
-            transform: translateY(-1px);
         }
 
-        /* Order info rows - modal content styling */
-        .order-info-section {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .info-row {
-            display: flex;
-            padding: var(--spacing-sm) 0;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: var(--font-semibold);
-            width: 140px;
-            color: var(--gray-dark);
-        }
-
-        .info-value {
-            flex: 1;
-            color: var(--dark-bg);
-        }
-
-        .order-items-list {
-            margin-top: var(--spacing-md);
-        }
-
-        /* Modal footer buttons */
-        .modal-footer {
+        /* Modal footer */
+        .order-modal-footer {
             padding: var(--spacing-md) var(--spacing-lg);
             border-top: 1px solid var(--border-light);
             background: var(--gray-bg-light);
@@ -198,33 +112,7 @@ if (!$auth->isAdmin()) {
             gap: var(--spacing-sm);
         }
 
-        .modal-footer .process-btn,
-        .modal-footer .ship-btn,
-        .modal-footer .complete-btn,
-        .modal-footer .cancel-btn {
-            padding: 8px 20px;
-            font-size: var(--font-sm);
-        }
-
-        /* Responsive overrides for orders page */
         @media (max-width: 768px) {
-            .filters-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .status-filters {
-                justify-content: center;
-            }
-
-            .search-bar {
-                justify-content: center;
-            }
-
-            .search-bar input {
-                width: 100%;
-            }
-
             .action-buttons {
                 flex-direction: column;
             }
@@ -234,25 +122,15 @@ if (!$auth->isAdmin()) {
                 text-align: center;
             }
 
-            .info-row {
-                flex-direction: column;
-                gap: var(--spacing-xs);
-            }
-
-            .info-label {
-                width: 100%;
-            }
-
-            .modal-footer {
+            .order-modal-footer {
                 flex-direction: column;
             }
 
-            .modal-footer button {
+            .order-modal-footer button {
                 width: 100%;
             }
         }
     </style>
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
@@ -267,20 +145,24 @@ if (!$auth->isAdmin()) {
             </div>
 
             <div class="filters-bar">
-                <div class="status-filters">
-                    <button data-status="all" class="filter-btn active">All Orders</button>
-                    <button data-status="pending" class="filter-btn">Pending</button>
-                    <button data-status="processing" class="filter-btn">Processing</button>
-                    <button data-status="shipped" class="filter-btn">Shipped</button>
-                    <button data-status="completed" class="filter-btn">Completed</button>
-                    <button data-status="cancelled" class="filter-btn">Cancelled</button>
+                <div class="filter-group">
+                    <label>Filter by Status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All Orders</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                 </div>
-                <div class="search-bar">
+
+                <div class="search-group">
                     <input type="text" id="searchInput" placeholder="Search by order number, customer, or seller...">
                     <button id="searchBtn">
-                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search">
                     </button>
-                    <button id="resetBtn" style="display: none;">Reset</button>
+                    <button id="resetBtn" class="reset-btn" style="display: none;">Reset</button>
                 </div>
             </div>
 
@@ -300,7 +182,9 @@ if (!$auth->isAdmin()) {
                     </thead>
                     <tbody id="ordersTable">
                         <tr>
-                            <td colspan="8" class="loading-spinner">Loading orders...</td>
+                            <td colspan="8">
+                                <div class="loading-spinner">Loading orders...</div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -309,7 +193,8 @@ if (!$auth->isAdmin()) {
             <div class="pagination" id="pagination"></div>
         </div>
     </main>
-    <!-- Order Details Modal - matching orders.css -->
+
+    <!-- Order Details Modal -->
     <div id="orderModal" class="order-modal">
         <div class="order-modal-content">
             <div class="order-modal-header">
@@ -319,27 +204,23 @@ if (!$auth->isAdmin()) {
             <div class="order-details-content" id="orderModalBody">
                 <div class="loading-spinner">Loading order details...</div>
             </div>
-            <div class="modal-footer" id="orderModalFooter"></div>
+            <div class="order-modal-footer" id="orderModalFooter"></div>
         </div>
     </div>
 
     <script>
-        // Page state
         var $ordersTable = null,
             $pagination = null,
-            $filterBtns = null,
             $searchBtn = null,
             $resetBtn = null,
             $searchInput = null,
             currentPage = 1,
             currentStatus = 'all',
-            currentSearch = '',
-            totalPages = 1;
+            currentSearch = '';
 
         function cacheElements() {
             $ordersTable = $('#ordersTable');
             $pagination = $('#pagination');
-            $filterBtns = $('.status-filters .filter-btn');
             $searchBtn = $('#searchBtn');
             $resetBtn = $('#resetBtn');
             $searchInput = $('#searchInput');
@@ -360,7 +241,7 @@ if (!$auth->isAdmin()) {
                 success: function(data) {
                     if (data.success && data.orders && data.orders.length) {
                         displayOrders(data.orders);
-                        totalPages = data.total_pages || 1;
+                        var totalPages = data.total_pages || 1;
                         if (typeof renderPagination === 'function') {
                             renderPagination($pagination, currentPage, totalPages, function(page) {
                                 currentPage = page;
@@ -369,8 +250,6 @@ if (!$auth->isAdmin()) {
                                     scrollTop: 0
                                 }, 'smooth');
                             });
-                        } else {
-                            $pagination.empty();
                         }
                     } else {
                         showEmptyState();
@@ -426,11 +305,9 @@ if (!$auth->isAdmin()) {
         function showEmptyState() {
             var emptyTitle = '';
             var emptyMessage = '';
-            var emptyIcon = 'shopping-cart-01-svgrepo-com.svg';
 
             if (currentStatus !== 'all') {
-                var statusName = capitalizeFirst(currentStatus);
-                emptyTitle = 'No ' + statusName + ' Orders';
+                emptyTitle = 'No ' + capitalizeFirst(currentStatus) + ' Orders';
                 emptyMessage = 'There are no ' + currentStatus + ' orders' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
             } else if (currentSearch !== '') {
                 emptyTitle = 'No Orders Found';
@@ -440,18 +317,18 @@ if (!$auth->isAdmin()) {
                 emptyMessage = 'No orders have been placed on the platform yet.';
             }
 
-            var resetButtonHtml = '';
+            var resetHtml = '';
             if (currentSearch !== '' || currentStatus !== 'all') {
-                resetButtonHtml = '<button onclick="document.getElementById(\'resetBtn\').click()" class="view-all-btn" style="background: var(--primary-color); color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-top: 16px;">Clear Filters</button>';
+                resetHtml = '<button onclick="$resetBtn.click()" class="reset-btn" style="margin-top: 16px;">Clear Filters</button>';
             }
 
             $ordersTable.html(
                 '<tr><td colspan="8" style="text-align: center; padding: 60px;">' +
                 '<div class="empty-state">' +
-                '<img src="' + baseUrl + 'images/icons/' + emptyIcon + '" width="64" height="64" alt="No orders" style="opacity: 0.4; margin-bottom: 16px;">' +
-                '<h3 style="font-size: 20px; font-weight: var(--font-bold); margin-bottom: 8px; color: var(--dark-bg);">' + escapeHtml(emptyTitle) + '</h3>' +
-                '<p style="color: var(--gray-medium); margin-bottom: 0;">' + escapeHtml(emptyMessage) + '</p>' +
-                resetButtonHtml +
+                '<img src="' + baseUrl + 'images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="No orders" style="opacity: 0.4;">' +
+                '<h3>' + escapeHtml(emptyTitle) + '</h3>' +
+                '<p>' + escapeHtml(emptyMessage) + '</p>' +
+                resetHtml +
                 '</div>' +
                 '</td></tr>'
             );
@@ -461,10 +338,8 @@ if (!$auth->isAdmin()) {
             cacheElements();
             loadOrders();
 
-            $filterBtns.on('click', function() {
-                $filterBtns.removeClass('active');
-                $(this).addClass('active');
-                currentStatus = $(this).data('status');
+            $('#statusFilter').on('change', function() {
+                currentStatus = $(this).val();
                 currentPage = 1;
                 loadOrders();
             });
@@ -480,8 +355,7 @@ if (!$auth->isAdmin()) {
                 $searchInput.val('');
                 currentSearch = '';
                 currentPage = 1;
-                $filterBtns.removeClass('active');
-                $filterBtns.filter('[data-status="all"]').addClass('active');
+                $('#statusFilter').val('all');
                 currentStatus = 'all';
                 loadOrders();
                 $(this).hide();
@@ -489,16 +363,6 @@ if (!$auth->isAdmin()) {
 
             $searchInput.on('keypress', function(e) {
                 if (e.which === 13) $searchBtn.click();
-            });
-
-            $('.modal-close').on('click', function() {
-                closeOrderModal();
-            });
-
-            $('#orderModal').on('click', function(e) {
-                if ($(e.target).is('#orderModal')) {
-                    closeOrderModal();
-                }
             });
         });
     </script>

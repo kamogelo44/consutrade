@@ -1,6 +1,6 @@
 /* Orders Page Styles
  * Author: Kamogelo Phale
- * Handles order listing, order details modal, and review modal
+ * Handles order listing, order details modal, review modal, and filters
  */
 
 /* ========== ORDERS CONTAINER ========== */
@@ -27,119 +27,178 @@
   margin: 0;
 }
 
-/* ========== ORDER CARD ========== */
-.order-card {
-  background: var(--white);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: box-shadow var(--transition-fast);
-}
-
-.order-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--gray-bg);
-  border-bottom: 1px solid var(--border-light);
-}
-
-.order-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-lg);
-}
-
-.order-number {
-  font-weight: var(--font-bold);
-  color: var(--dark-bg);
-}
-
-.order-date {
-  color: var(--gray-medium);
-  font-size: var(--font-sm);
-}
-
-.order-body {
+/* ========== FILTERS BAR ========== */
+.filters-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--spacing-md);
-  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-md);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
 }
 
-.customer-info {
-  flex: 2;
-}
-
-.customer-details {
+.filter-group {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-xs);
 }
 
-.customer-details span {
+.filter-group label {
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  color: var(--gray-dark);
+}
+
+.filter-group select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.search-group {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.search-group input {
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  width: 250px;
+  font-size: var(--font-md);
+}
+
+.search-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+}
+
+.search-group button {
+  padding: 8px 12px;
+  background: var(--primary-color);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-group button img {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1);
+}
+
+.search-group button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.reset-btn {
+  padding: 8px 16px;
+  background: var(--gray-bg);
+  color: var(--gray-dark);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+}
+
+.reset-btn:hover {
+  background: var(--gray-lighter);
+  transform: translateY(-1px);
+}
+
+/* ========== DATA TABLE ========== */
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: var(--spacing-xl);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.data-table th {
+  background: var(--gray-bg-light);
+  font-weight: var(--font-semibold);
   color: var(--gray-dark);
   font-size: var(--font-sm);
 }
 
-.seller-info {
-  flex: 2;
+.data-table tr:hover td {
+  background: var(--gray-bg-light);
 }
 
-.seller-details,
-.product-details {
+/* ========== ACTION BUTTONS ========== */
+.action-buttons {
   display: flex;
-  align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-xs);
-}
-
-.order-amount {
-  text-align: right;
-  flex: 1;
-}
-
-.amount-label {
-  display: block;
-  font-size: var(--font-xs);
-  color: var(--gray-medium);
-  margin-bottom: var(--spacing-xs);
-}
-
-.amount-value {
-  display: block;
-  font-size: var(--font-xl);
-  font-weight: var(--font-bold);
-  color: var(--primary-color);
-}
-
-.order-footer {
-  display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--gray-bg);
-  border-top: 1px solid var(--border-light);
 }
 
-.order-footer button {
-  padding: 8px 20px;
-  border-radius: var(--radius-md);
-  font-size: var(--font-sm);
-  font-weight: var(--font-medium);
+.action-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
   cursor: pointer;
   border: none;
+  font-weight: var(--font-medium);
   transition: all var(--transition-fast);
+}
+
+.view-btn {
+  background: var(--info-light);
+  color: var(--info);
+  border: 1px solid var(--info);
+}
+
+.view-btn:hover {
+  background: var(--info);
+  color: white;
+}
+
+.cancel-btn {
+  background: var(--error-light);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.cancel-btn:hover {
+  background: var(--error);
+  color: white;
 }
 
 .process-btn {
@@ -184,10 +243,20 @@
 .review-btn:hover {
   background: var(--success);
   color: white;
-  transform: translateY(-2px);
 }
 
-/* ========== ORDER DETAILS MODAL (ID based to match JS) ========== */
+.edit-review-btn {
+  background: var(--primary-fade);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.edit-review-btn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* ========== ORDER DETAILS MODAL ========== */
 #orderModal {
   display: none;
   position: fixed;
@@ -463,36 +532,88 @@
   transform: translateY(-2px);
 }
 
-/* ========== RESPONSIVE ========== */
+/* ========== RESPONSIVE TABLE (Mobile Card Layout) ========== */
 @media (max-width: 768px) {
   .orders-container {
     padding: var(--spacing-lg);
   }
 
-  .order-header {
-    flex-direction: column;
-    align-items: flex-start;
+  /* Hide table headers on mobile */
+  .data-table thead {
+    display: none;
   }
 
-  .order-body {
-    flex-direction: column;
-    align-items: flex-start;
+  /* Each row becomes a card */
+  .data-table tbody tr {
+    display: block;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    background: var(--white);
+    padding: var(--spacing-md);
   }
 
-  .order-amount {
+  /* Each cell becomes a row in the card */
+  .data-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-light);
+    text-align: right;
+    gap: var(--spacing-md);
+  }
+
+  .data-table tbody td:last-child {
+    border-bottom: none;
+  }
+
+  /* Add labels using data-label attribute */
+  .data-table tbody td:before {
+    content: attr(data-label);
+    font-weight: var(--font-bold);
+    color: var(--gray-dark);
     text-align: left;
-    width: 100%;
+    flex-shrink: 0;
+    min-width: 100px;
   }
 
-  .order-footer {
+  /* Action buttons on mobile */
+  .action-buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    width: auto;
+    padding: 6px 12px;
+  }
+
+  /* Filters on mobile */
+  .filters-bar {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .order-footer button {
+  .filter-group {
+    justify-content: space-between;
+  }
+
+  .filter-group select {
+    flex: 1;
+  }
+
+  .search-group {
+    justify-content: stretch;
+  }
+
+  .search-group input {
     width: 100%;
   }
 }
 
+/* ========== EXTRA SMALL (480px and below) ========== */
 @media (max-width: 480px) {
   .orders-container {
     padding: var(--spacing-md);
@@ -500,6 +621,17 @@
 
   .amount-value {
     font-size: var(--font-lg);
+  }
+
+  /* Smaller labels on very small screens */
+  .data-table tbody td:before {
+    min-width: 80px;
+    font-size: var(--font-xs);
+  }
+
+  .action-btn {
+    padding: 4px 10px;
+    font-size: 10px;
   }
 
   #orderModal .order-modal-header h2,

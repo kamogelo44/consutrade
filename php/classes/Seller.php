@@ -13,7 +13,7 @@
 class Seller extends User
 {
     /** @var SellerVerification|null Verification data (domain object, not repository) */
-    private ?SellerVerification $verification;
+    private ?SellerVerification $verification = null;
 
     /**
      * Constructor.
@@ -25,6 +25,16 @@ class Seller extends User
     {
         parent::__construct($data);
         $this->verification = $verification;
+    }
+
+    /**
+     * Called when unserializing from session
+     */
+    public function __wakeup(): void
+    {
+        if (!isset($this->verification)) {
+            $this->verification = null;
+        }
     }
 
     /**

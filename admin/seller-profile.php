@@ -19,7 +19,18 @@ $user_location = $currentUser->getLocation();
 $user_created_at = $currentUser->getCreatedAt();
 $profile_image = $currentUser->getProfileImageUrl();
 $is_verified = $currentUser->isVerified();
-$verification = $currentUser->getVerificationStatus();
+
+// Get verification data from SellerVerification domain object
+$verificationObj = $currentUser->getVerification();
+$hasDocument = false;
+$documentType = '';
+$documentVerified = false;
+
+if ($verificationObj) {
+    $hasDocument = true;
+    $documentType = $verificationObj->getDocumentType();
+    $documentVerified = $verificationObj->isVerified();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,9 +41,10 @@ $verification = $currentUser->getVerificationStatus();
     <title>Seller Profile - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
-        /* ========== PROFILE PAGE LAYOUT ========== */
+        /* ========== PROFILE PAGE STYLES ========== */
         .seller-main-content {
             margin-left: 280px;
             padding: var(--spacing-xl);
@@ -61,27 +73,7 @@ $verification = $currentUser->getVerificationStatus();
             color: var(--gray-medium);
         }
 
-        .flash-message,
-        .error-message {
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            display: none;
-        }
-
-        .flash-message {
-            background: var(--success-light);
-            color: var(--success);
-            border-left: 4px solid var(--success);
-        }
-
-        .error-message {
-            background: var(--error-light);
-            color: var(--error);
-            border-left: 4px solid var(--error);
-        }
-
-        /* ========== PROFILE HEADER CARD ========== */
+        /* Profile Header Card */
         .profile-header-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -163,28 +155,27 @@ $verification = $currentUser->getVerificationStatus();
             color: var(--primary-color);
         }
 
-        .verification-badge {
+        .verification-badge.verified {
+            background: var(--success-light);
+            color: var(--success);
             padding: 4px 12px;
             border-radius: var(--radius-round);
             font-size: var(--font-xs);
             font-weight: var(--font-medium);
         }
 
-        .verification-badge.verified {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
         .verification-badge.not-verified {
             background: var(--warning-light);
             color: var(--warning);
+            padding: 4px 12px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
         }
 
         .member-since {
             font-size: var(--font-xs);
             color: var(--gray-medium);
-            display: inline-flex;
-            align-items: center;
         }
 
         .profile-email {
@@ -192,7 +183,7 @@ $verification = $currentUser->getVerificationStatus();
             font-size: var(--font-md);
         }
 
-        /* ========== TWO COLUMN LAYOUT ========== */
+        /* Two Column Layout */
         .profile-two-columns {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -252,7 +243,7 @@ $verification = $currentUser->getVerificationStatus();
             margin: var(--spacing-sm) 0;
         }
 
-        /* ========== EDIT FORM ========== */
+        /* Edit Form */
         .profile-edit-form .form-group {
             margin-bottom: var(--spacing-lg);
         }
@@ -298,22 +289,15 @@ $verification = $currentUser->getVerificationStatus();
             flex-wrap: wrap;
         }
 
-        .save-btn,
-        .change-password-btn {
+        .save-btn {
+            background: var(--primary-color);
+            color: var(--white);
             padding: 10px 24px;
+            border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
             font-weight: var(--font-medium);
             transition: all var(--transition-fast);
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-
-        .save-btn {
-            background: var(--primary-color);
-            color: var(--white);
-            border: none;
         }
 
         .save-btn:hover {
@@ -324,14 +308,21 @@ $verification = $currentUser->getVerificationStatus();
         .change-password-btn {
             background: var(--gray-bg-light);
             color: var(--gray-dark);
+            padding: 10px 24px;
             border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            display: inline-block;
         }
 
         .change-password-btn:hover {
             background: var(--gray-lighter);
         }
 
-        /* ========== QUICK ACTIONS ========== */
+        /* Quick Actions */
         .quick-actions-section {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -388,10 +379,6 @@ $verification = $currentUser->getVerificationStatus();
             filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
         }
 
-        .quick-action-info {
-            flex: 1;
-        }
-
         .quick-action-info h4 {
             font-size: var(--font-base);
             font-weight: var(--font-semibold);
@@ -416,60 +403,11 @@ $verification = $currentUser->getVerificationStatus();
             color: var(--primary-color);
         }
 
-        /* ========== VERIFICATION SECTION ========== */
+        /* Verification Section */
         .verification-status-card {
             background: var(--gray-bg-light);
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
-        }
-
-        .verification-checks {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .check-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-sm) var(--spacing-md);
-            background: var(--white);
-            border-radius: var(--radius-sm);
-        }
-
-        .check-label {
-            font-weight: var(--font-medium);
-            color: var(--gray-dark);
-        }
-
-        .check-status {
-            font-weight: var(--font-bold);
-            font-size: var(--font-lg);
-        }
-
-        .check-status.verified {
-            color: var(--success);
-        }
-
-        .check-status.not-verified {
-            color: var(--gray-light);
-        }
-
-        .current-document {
-            margin-bottom: var(--spacing-lg);
-            padding: var(--spacing-md);
-            background: var(--white);
-            border-radius: var(--radius-sm);
-        }
-
-        .text-success {
-            color: var(--success);
-        }
-
-        .text-warning {
-            color: var(--warning);
         }
 
         .upload-document-section h4 {
@@ -493,7 +431,22 @@ $verification = $currentUser->getVerificationStatus();
             margin-bottom: var(--spacing-sm);
         }
 
-        /* ========== RESPONSIVE ========== */
+        .current-document {
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: var(--white);
+            border-radius: var(--radius-sm);
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
+        .text-warning {
+            color: var(--warning);
+        }
+
+        /* Responsive */
         @media (max-width: 1024px) {
             .seller-main-content {
                 margin-left: 0;
@@ -508,10 +461,6 @@ $verification = $currentUser->getVerificationStatus();
             }
 
             .quick-actions-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .verification-checks {
                 grid-template-columns: 1fr;
             }
         }
@@ -538,524 +487,7 @@ $verification = $currentUser->getVerificationStatus();
             .save-btn,
             .change-password-btn {
                 width: 100%;
-            }
-
-            .stat-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .seller-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
-            .page-header h1 {
-                font-size: var(--font-xl);
-            }
-
-            .profile-header-card,
-            .profile-stats-card,
-            .profile-edit-card,
-            .quick-actions-section {
-                padding: var(--spacing-md);
-            }
-
-            .profile-header-info h2 {
-                font-size: var(--font-xl);
-            }
-        }
-
-        <style>
-
-        /* ========== PROFILE PAGE LAYOUT ========== */
-        .seller-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
-
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-            color: var(--dark-bg);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
-        /* ========== PROFILE HEADER CARD ========== */
-        .profile-header-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            padding: var(--spacing-xl);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .profile-avatar-section {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .profile-avatar-container {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .profile-avatar-large {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            background: var(--primary-fade);
-            border: 3px solid var(--primary-color);
-        }
-
-        .avatar-upload-btn {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            background: var(--primary-color);
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-
-        .avatar-upload-btn:hover {
-            background: var(--primary-dark);
-            transform: scale(1.05);
-        }
-
-        .avatar-upload-btn img {
-            width: 16px;
-            height: 16px;
-            filter: brightness(0) invert(1);
-        }
-
-        .profile-header-info h2 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .profile-badges {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .role-badge {
-            padding: 4px 12px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .seller-badge {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-        }
-
-        .verification-badge {
-            padding: 4px 12px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .verification-badge.verified {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .verification-badge.not-verified {
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        .member-since {
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .profile-email {
-            color: var(--gray-medium);
-            font-size: var(--font-md);
-        }
-
-        /* ========== TWO COLUMN LAYOUT ========== */
-        .profile-two-columns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-xl);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .profile-stats-card,
-        .profile-edit-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            padding: var(--spacing-xl);
-        }
-
-        .profile-stats-card h3,
-        .profile-edit-card h3 {
-            font-size: var(--font-lg);
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-lg);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--primary-color);
-        }
-
-        .stats-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-        }
-
-        .stat-label {
-            font-weight: var(--font-semibold);
-            color: var(--gray-dark);
-        }
-
-        .stat-value {
-            color: var(--gray-medium);
-        }
-
-        .stat-value.highlight {
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-            font-size: var(--font-lg);
-        }
-
-        .stat-divider {
-            height: 1px;
-            background: var(--border-light);
-            margin: var(--spacing-sm) 0;
-        }
-
-        /* ========== EDIT FORM ========== */
-        .profile-edit-form .form-group {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .profile-edit-form label {
-            display: block;
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .profile-edit-form input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-            transition: all var(--transition-fast);
-        }
-
-        .profile-edit-form input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .profile-edit-form input:disabled {
-            background: var(--gray-bg-light);
-            cursor: not-allowed;
-        }
-
-        .profile-edit-form small {
-            display: block;
-            margin-top: var(--spacing-xs);
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-        }
-
-        .form-actions {
-            display: flex;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .save-btn,
-        .change-password-btn {
-            padding: 10px 24px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-
-        .save-btn {
-            background: var(--primary-color);
-            color: var(--white);
-            border: none;
-        }
-
-        .save-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .change-password-btn {
-            background: var(--gray-bg-light);
-            color: var(--gray-dark);
-            border: 1px solid var(--border-light);
-        }
-
-        .change-password-btn:hover {
-            background: var(--gray-lighter);
-        }
-
-        /* ========== QUICK ACTIONS ========== */
-        .quick-actions-section {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            padding: var(--spacing-xl);
-            margin-top: var(--spacing-xl);
-        }
-
-        .quick-actions-section h3 {
-            font-size: var(--font-lg);
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-lg);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 2px solid var(--primary-color);
-        }
-
-        .quick-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: var(--spacing-md);
-        }
-
-        .quick-action-card {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            transition: all var(--transition-fast);
-            border: 1px solid transparent;
-        }
-
-        .quick-action-card:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-light);
-            transform: translateX(4px);
-        }
-
-        .quick-action-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .quick-action-icon img {
-            width: 24px;
-            height: 24px;
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
-        }
-
-        .quick-action-info {
-            flex: 1;
-        }
-
-        .quick-action-info h4 {
-            font-size: var(--font-base);
-            font-weight: var(--font-semibold);
-            color: var(--dark-bg);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .quick-action-info p {
-            font-size: var(--font-xs);
-            color: var(--gray-medium);
-            margin: 0;
-        }
-
-        .quick-action-arrow {
-            font-size: var(--font-xl);
-            color: var(--gray-light);
-            transition: all var(--transition-fast);
-        }
-
-        .quick-action-card:hover .quick-action-arrow {
-            transform: translateX(4px);
-            color: var(--primary-color);
-        }
-
-        /* ========== VERIFICATION SECTION ========== */
-        .verification-status-card {
-            background: var(--gray-bg-light);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-lg);
-        }
-
-        .verification-checks {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .check-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-sm) var(--spacing-md);
-            background: var(--white);
-            border-radius: var(--radius-sm);
-        }
-
-        .check-label {
-            font-weight: var(--font-medium);
-            color: var(--gray-dark);
-        }
-
-        .check-status {
-            font-weight: var(--font-bold);
-            font-size: var(--font-lg);
-        }
-
-        .check-status.verified {
-            color: var(--success);
-        }
-
-        .check-status.not-verified {
-            color: var(--gray-light);
-        }
-
-        .current-document {
-            margin-bottom: var(--spacing-lg);
-            padding: var(--spacing-md);
-            background: var(--white);
-            border-radius: var(--radius-sm);
-        }
-
-        .text-success {
-            color: var(--success);
-        }
-
-        .text-warning {
-            color: var(--warning);
-        }
-
-        .upload-document-section h4 {
-            font-size: var(--font-base);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .upload-document-section p {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .upload-document-section select,
-        .upload-document-section input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-md);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 1024px) {
-            .seller-main-content {
-                margin-left: 0;
-                width: 100%;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
-            .profile-two-columns {
-                grid-template-columns: 1fr;
-                gap: var(--spacing-lg);
-            }
-
-            .quick-actions-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .verification-checks {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .seller-main-content {
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
-            .profile-avatar-section {
-                flex-direction: column;
                 text-align: center;
-            }
-
-            .profile-badges {
-                justify-content: center;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .save-btn,
-            .change-password-btn {
-                width: 100%;
             }
 
             .stat-row {
@@ -1099,9 +531,6 @@ $verification = $currentUser->getVerificationStatus();
                 <p>View and manage your seller account information</p>
             </div>
 
-            <div id="flashMessage" class="flash-message" style="display: none;"></div>
-            <div id="errorMessage" class="error-message" style="display: none;"></div>
-
             <div class="profile-header-card">
                 <div class="profile-avatar-section">
                     <div class="profile-avatar-container">
@@ -1114,7 +543,7 @@ $verification = $currentUser->getVerificationStatus();
                         <h2><?php echo htmlspecialchars($user_name); ?></h2>
                         <div class="profile-badges">
                             <span class="role-badge seller-badge">Seller</span>
-                            <?php if ($is_verified == 1): ?>
+                            <?php if ($is_verified): ?>
                                 <span class="verification-badge verified">Verified Seller</span>
                             <?php else: ?>
                                 <span class="verification-badge not-verified">Not Verified</span>
@@ -1148,7 +577,7 @@ $verification = $currentUser->getVerificationStatus();
                             <span class="stat-value highlight" id="statProducts">-</span>
                         </div>
                         <div class="stat-row">
-                            <span class="stat-label">Orders Completed</span>
+                            <span class="stat-label">Completed Orders</span> <!-- Changed from "Orders Completed" -->
                             <span class="stat-value highlight" id="statSales">-</span>
                         </div>
                         <div class="stat-row">
@@ -1163,7 +592,7 @@ $verification = $currentUser->getVerificationStatus();
                         <div class="stat-row">
                             <span class="stat-label">Account Status</span>
                             <span class="stat-value">
-                                <?php if ($is_verified == 1): ?>
+                                <?php if ($is_verified): ?>
                                     <span style="color: var(--success);">Verified</span>
                                 <?php else: ?>
                                     <span style="color: var(--warning);">Pending Verification</span>
@@ -1226,7 +655,7 @@ $verification = $currentUser->getVerificationStatus();
                         </div>
                         <span class="quick-action-arrow">→</span>
                     </a>
-                    <a href="my-orders.php" class="quick-action-card">
+                    <a href="seller-orders.php" class="quick-action-card">
                         <div class="quick-action-icon">
                             <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="My Orders">
                         </div>
@@ -1243,38 +672,11 @@ $verification = $currentUser->getVerificationStatus();
             <div class="quick-actions-section">
                 <h3>Seller Verification</h3>
                 <div class="verification-status-card">
-                    <div class="verification-checks">
-                        <div class="check-item">
-                            <span class="check-label">Email Verified</span>
-                            <span class="check-status <?php echo ($verification && $verification['email_verified']) ? 'verified' : 'not-verified'; ?>">
-                                <?php echo ($verification && $verification['email_verified']) ? '✓' : '✗'; ?>
-                            </span>
-                        </div>
-                        <div class="check-item">
-                            <span class="check-label">Phone Verified</span>
-                            <span class="check-status <?php echo ($verification && $verification['phone_verified']) ? 'verified' : 'not-verified'; ?>">
-                                <?php echo ($verification && $verification['phone_verified']) ? '✓' : '✗'; ?>
-                            </span>
-                        </div>
-                        <div class="check-item">
-                            <span class="check-label">Document Verified</span>
-                            <span class="check-status <?php echo ($verification && $verification['document_verified']) ? 'verified' : 'not-verified'; ?>">
-                                <?php echo ($verification && $verification['document_verified']) ? '✓' : '✗'; ?>
-                            </span>
-                        </div>
-                        <div class="check-item">
-                            <span class="check-label">Location Verified</span>
-                            <span class="check-status <?php echo ($verification && $verification['location_verified']) ? 'verified' : 'not-verified'; ?>">
-                                <?php echo ($verification && $verification['location_verified']) ? '✓' : '✗'; ?>
-                            </span>
-                        </div>
-                    </div>
-
-                    <?php if ($verification && $verification['document_path']): ?>
+                    <?php if ($hasDocument): ?>
                         <div class="current-document">
-                            <p><strong>Document Uploaded:</strong> <?php echo htmlspecialchars($verification['document_type'] ?? 'ID Document'); ?></p>
-                            <p class="document-status <?php echo $verification['document_verified'] ? 'text-success' : 'text-warning'; ?>">
-                                Status: <?php echo $verification['document_verified'] ? 'Verified' : 'Pending Review'; ?>
+                            <p><strong>Document Uploaded:</strong> <?php echo ucfirst(str_replace('_', ' ', $documentType)); ?></p>
+                            <p class="document-status <?php echo $documentVerified ? 'text-success' : 'text-warning'; ?>">
+                                Status: <?php echo $documentVerified ? 'Verified' : 'Pending Review'; ?>
                             </p>
                         </div>
                     <?php endif; ?>
@@ -1286,9 +688,9 @@ $verification = $currentUser->getVerificationStatus();
                             <div class="form-group">
                                 <select name="document_type" id="documentType" required>
                                     <option value="">Select Document Type</option>
-                                    <option value="id">ID Document</option>
-                                    <option value="business_reg">Business Registration</option>
-                                    <option value="proof_address">Proof of Address</option>
+                                    <option value="id">South African ID Document</option>
+                                    <option value="proof_address">Proof of Address (utility bill, bank statement, or letter from traditional leader)</option>
+                                    <option value="other">Other Supporting Document</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1319,7 +721,7 @@ $verification = $currentUser->getVerificationStatus();
                     success: function(data) {
                         if (data.success) {
                             $('#statProducts').text(data.total_products || 0);
-                            $('#statSales').text(data.total_sales || 0);
+                            $('#statSales').text(data.completed_orders || 0);
                             $('#statRevenue').text('R ' + (data.total_revenue || 0).toFixed(2));
                             var ratingText = data.avg_rating ? data.avg_rating.toFixed(1) + '/5' : 'No reviews yet';
                             $('#statRating').text(ratingText);

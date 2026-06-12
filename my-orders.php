@@ -36,44 +36,6 @@ $breadcrumbItems = [
             margin-top: 70px;
         }
 
-        .filters-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: var(--spacing-lg);
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-            align-items: center;
-        }
-
-        .status-filters {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            background: var(--white);
-            border: 1px solid var(--border-light);
-            color: var(--gray-dark);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .filter-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .filter-btn.active {
-            background: var(--primary-color);
-            color: var(--white);
-            border-color: var(--primary-color);
-        }
-
         .search-bar {
             display: flex;
             gap: var(--spacing-sm);
@@ -251,20 +213,24 @@ $breadcrumbItems = [
         </div>
 
         <div class="filters-bar">
-            <div class="status-filters">
-                <button data-status="all" class="filter-btn active">All Orders</button>
-                <button data-status="pending" class="filter-btn">Pending</button>
-                <button data-status="processing" class="filter-btn">Processing</button>
-                <button data-status="shipped" class="filter-btn">Shipped</button>
-                <button data-status="completed" class="filter-btn">Completed</button>
-                <button data-status="cancelled" class="filter-btn">Cancelled</button>
+            <div class="filter-group">
+                <label>Filter by Status:</label>
+                <select id="statusFilter">
+                    <option value="all">All Orders</option>
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
             </div>
-            <div class="search-bar">
+
+            <div class="search-group">
                 <input type="text" id="searchInput" placeholder="Search by order number...">
                 <button id="searchBtn">
-                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search">
                 </button>
-                <button id="resetBtn" class="reset-search-btn" style="display: none;">Reset</button>
+                <button id="resetBtn" class="reset-btn" style="display: none;">Reset</button>
             </div>
         </div>
 
@@ -524,6 +490,12 @@ $breadcrumbItems = [
 
             $searchInput.on('keypress', function(e) {
                 if (e.which === 13) $searchBtn.click();
+            });
+
+            $('#statusFilter').on('change', function() {
+                currentStatus = $(this).val();
+                currentPage = 1;
+                loadBuyerOrders();
             });
 
             // Modals

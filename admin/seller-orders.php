@@ -29,107 +29,11 @@ $sellerName = $currentUser->getFullName();
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/orders.css">
 
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-
     <style>
-        .filters-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: var(--spacing-lg);
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-            align-items: center;
-        }
-
-        .status-filters {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            background: var(--white);
-            border: 1px solid var(--border-light);
-            color: var(--gray-dark);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .filter-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .filter-btn.active {
-            background: var(--primary-color);
-            color: var(--white);
-            border-color: var(--primary-color);
-        }
-
-        .search-bar {
-            display: flex;
-            gap: var(--spacing-sm);
-            align-items: center;
-        }
-
-        .search-bar input {
-            padding: 8px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            width: 250px;
-            font-size: var(--font-md);
-        }
-
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .search-bar button {
-            padding: 8px 12px;
-            background: var(--primary-color);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .search-bar button img {
-            width: 16px;
-            height: 16px;
-            filter: brightness(0) invert(1);
-        }
-
-        .search-bar button:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .reset-search-btn {
-            padding: 8px 16px;
-            background: var(--gray-bg);
-            color: var(--gray-dark);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-        }
-
-        .reset-search-btn:hover {
-            background: var(--gray-lighter);
-            transform: translateY(-1px);
-        }
-
+        /* Only page-specific styles that aren't in orders.css */
         .action-buttons {
             display: flex;
             gap: var(--spacing-sm);
@@ -155,7 +59,6 @@ $sellerName = $currentUser->getFullName();
         .view-btn:hover {
             background: var(--info);
             color: white;
-            transform: translateY(-1px);
         }
 
         .process-btn {
@@ -167,7 +70,6 @@ $sellerName = $currentUser->getFullName();
         .process-btn:hover {
             background: var(--warning);
             color: white;
-            transform: translateY(-1px);
         }
 
         .ship-btn {
@@ -179,7 +81,6 @@ $sellerName = $currentUser->getFullName();
         .ship-btn:hover {
             background: var(--primary-color);
             color: white;
-            transform: translateY(-1px);
         }
 
         .complete-btn {
@@ -191,7 +92,6 @@ $sellerName = $currentUser->getFullName();
         .complete-btn:hover {
             background: var(--success);
             color: white;
-            transform: translateY(-1px);
         }
 
         .cancel-btn {
@@ -203,27 +103,9 @@ $sellerName = $currentUser->getFullName();
         .cancel-btn:hover {
             background: var(--error);
             color: white;
-            transform: translateY(-1px);
         }
 
         @media (max-width: 768px) {
-            .filters-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .status-filters {
-                justify-content: center;
-            }
-
-            .search-bar {
-                justify-content: center;
-            }
-
-            .search-bar input {
-                width: 100%;
-            }
-
             .action-buttons {
                 flex-direction: column;
             }
@@ -231,12 +113,6 @@ $sellerName = $currentUser->getFullName();
             .action-btn {
                 width: 100%;
                 text-align: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .page-header h1 {
-                font-size: var(--font-xl);
             }
         }
     </style>
@@ -254,20 +130,24 @@ $sellerName = $currentUser->getFullName();
             </div>
 
             <div class="filters-bar">
-                <div class="status-filters">
-                    <button data-status="all" class="filter-btn active">All Orders</button>
-                    <button data-status="pending" class="filter-btn">Pending</button>
-                    <button data-status="processing" class="filter-btn">Processing</button>
-                    <button data-status="shipped" class="filter-btn">Shipped</button>
-                    <button data-status="completed" class="filter-btn">Completed</button>
-                    <button data-status="cancelled" class="filter-btn">Cancelled</button>
+                <div class="filter-group">
+                    <label>Filter by Status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All Orders</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                 </div>
-                <div class="search-bar">
+
+                <div class="search-group">
                     <input type="text" id="searchInput" placeholder="Search by order number or customer...">
                     <button id="searchBtn">
-                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search">
                     </button>
-                    <button id="resetBtn" class="reset-search-btn" style="display: none;">Reset</button>
+                    <button id="resetBtn" class="reset-btn" style="display: none;">Reset</button>
                 </div>
             </div>
 
@@ -308,14 +188,13 @@ $sellerName = $currentUser->getFullName();
             <div class="order-details-content" id="orderModalBody">
                 <div class="loading-spinner">Loading order details...</div>
             </div>
-            <div class="modal-footer" id="orderModalFooter"></div>
+            <div class="order-modal-footer" id="orderModalFooter"></div>
         </div>
     </div>
 
     <script>
         var $ordersTable = null,
             $pagination = null,
-            $filterBtns = null,
             $searchBtn = null,
             $resetBtn = null,
             $searchInput = null,
@@ -326,21 +205,9 @@ $sellerName = $currentUser->getFullName();
         function cacheElements() {
             $ordersTable = $('#ordersTable');
             $pagination = $('#pagination');
-            $filterBtns = $('.status-filters .filter-btn');
             $searchBtn = $('#searchBtn');
             $resetBtn = $('#resetBtn');
             $searchInput = $('#searchInput');
-        }
-
-        function resetFilters() {
-            $searchInput.val('');
-            currentSearch = '';
-            currentPage = 1;
-            $filterBtns.removeClass('active');
-            $filterBtns.filter('[data-status="all"]').addClass('active');
-            currentStatus = 'all';
-            loadSellerOrders();
-            $resetBtn.hide();
         }
 
         function loadSellerOrders() {
@@ -366,10 +233,8 @@ $sellerName = $currentUser->getFullName();
             cacheElements();
             loadSellerOrders();
 
-            $filterBtns.on('click', function() {
-                $filterBtns.removeClass('active');
-                $(this).addClass('active');
-                currentStatus = $(this).data('status');
+            $('#statusFilter').on('change', function() {
+                currentStatus = $(this).val();
                 currentPage = 1;
                 loadSellerOrders();
             });
@@ -382,7 +247,13 @@ $sellerName = $currentUser->getFullName();
             });
 
             $resetBtn.on('click', function() {
-                resetFilters();
+                $searchInput.val('');
+                currentSearch = '';
+                currentPage = 1;
+                $('#statusFilter').val('all');
+                currentStatus = 'all';
+                loadSellerOrders();
+                $(this).hide();
             });
 
             $searchInput.on('keypress', function(e) {

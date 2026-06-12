@@ -4,7 +4,6 @@
  * Author: Kamogelo Phale
  * 
  * Displays public seller profile with products and reviews
- * Uses ProductRepository and ReviewRepository for data
  */
 
 require_once __DIR__ . '/init.php';
@@ -60,12 +59,13 @@ if ($from_product_id > 0 && $from_product_name) {
         /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
         .public-seller-profile-container {
             width: 100%;
-            max-width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: var(--spacing-xl);
             min-height: calc(100vh - 200px);
         }
 
-        /* Seller Header - Unique to this page */
+        /* Seller Header */
         .seller-public-header {
             display: flex;
             align-items: center;
@@ -114,7 +114,6 @@ if ($from_product_id > 0 && $from_product_name) {
             margin-bottom: var(--spacing-sm);
         }
 
-        /* Badge variants - slightly different from components (white text) */
         .verified-badge,
         .unverified-badge {
             display: inline-flex;
@@ -165,7 +164,7 @@ if ($from_product_id > 0 && $from_product_name) {
             filter: brightness(0) invert(1);
         }
 
-        /* Stats Cards - Unique to this page */
+        /* Stats Cards */
         .seller-public-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -218,7 +217,7 @@ if ($from_product_id > 0 && $from_product_name) {
             margin-top: var(--spacing-sm);
         }
 
-        /* Products Section Header */
+        /* Products Section */
         .seller-public-products {
             width: 100%;
         }
@@ -321,6 +320,31 @@ if ($from_product_id > 0 && $from_product_name) {
             margin-top: var(--spacing-md);
         }
 
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+        }
+
+        .empty-state img {
+            opacity: 0.4;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .empty-state h3 {
+            font-size: var(--font-xl);
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--spacing-sm);
+            color: var(--dark-bg);
+        }
+
+        .empty-state p {
+            color: var(--gray-medium);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .public-seller-profile-container {
@@ -419,14 +443,13 @@ if ($from_product_id > 0 && $from_product_name) {
                 <?php if (!empty($sellerProducts)): ?>
                     <?php foreach ($sellerProducts as $productData): ?>
                         <?php
-                        // Create Product object from the data for consistent rendering
                         $product = new Product([
                             'product_id' => $productData['id'],
                             'title' => $productData['name'],
                             'price' => $productData['price'],
-                            'image_url' => $productData['image'],
-                            'condition' => $productData['condition'],
-                            'stock_quantity' => $productData['stock_quantity'],
+                            'image_url' => $productData['display_image'],
+                            'condition' => $productData['condition'] ?? 'Good',
+                            'stock_quantity' => $productData['stock_quantity'] ?? 1,
                             'location' => $productData['location'] ?? $seller->getLocation(),
                             'status' => $productData['status'] ?? 'active'
                         ]);

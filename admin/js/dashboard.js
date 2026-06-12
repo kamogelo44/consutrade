@@ -6,6 +6,16 @@
 
 var baseUrl = baseUrl || '';
 
+/* ========== Helpers for dashboard ========== */
+function getUserRoleClass(role) {
+    switch(role) {
+        case 'admin': return 'role-admin';
+        case 'seller': return 'role-seller';
+        case 'buyer': return 'role-buyer';
+        default: return 'role-buyer';
+    }
+}
+
 // ========== PRODUCT MANAGEMENT ==========
 
 // Toggle product status (suspend/activate)
@@ -328,7 +338,7 @@ function loadSellerStats() {
         dataType: 'json',
         success: function(data) {
             if (data.success) {
-                $('#stat-earnings').text('R ' + parseFloat(data.total_sales || 0).toFixed(2));
+                $('#stat-earnings').text('R ' + parseFloat(data.total_revenue || 0).toFixed(2));
                 $('#stat-products').text(data.total_products || 0);
                 $('#stat-pending').text(data.pending_orders || 0);
             }

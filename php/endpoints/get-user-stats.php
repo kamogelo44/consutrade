@@ -54,18 +54,29 @@ if (!$targetUser) {
     exit;
 }
 
+// Seller stats
 if ($targetUser instanceof Seller) {
     $totalProducts = $productRepo->countUserProducts($targetId);
+
     $totalRevenue = $orderRepo->getSellerTotalRevenue($targetId);
-    $orderComplete = $orderRepo->getSellerTotalOrders($targetId);
+    $completedOrders = $orderRepo->getSellerTotalOrders($targetId);
+    $allOrders = $orderRepo->countSellerOrders($targetId, 'all', '');
+
+    $ratingData = $reviewRepo->getSellerRating($targetId);
+    $avgRating = $ratingData['avg_rating'] ?? 0;
+    $reviewCount = $ratingData['review_count'] ?? 0;
 
     $response = [
         'success' => true,
         'total_products' => $totalProducts,
-        'total_sales' => $totalRevenue,
-        'total_orders' => $orderComplete
+        'total_revenue' => $totalRevenue,
+        'completed_orders' => $completedOrders,
+        'all_orders' => $allOrders,
+        'avg_rating' => $avgRating
     ];
-} elseif ($targetUser instanceof Buyer) {
+}
+// Buyer stats
+elseif ($targetUser instanceof Buyer) {
     $isAuthenticated = ($isLoggedIn && $currentUser instanceof Buyer && $currentUser->getUserId() === $targetId);
 
     if ($isAuthenticated) {
@@ -83,6 +94,10 @@ if ($targetUser instanceof Seller) {
     } else {
         $response['message'] = 'Unauthorized to view buyer stats';
     }
+}
+// Fallback for other user types (should not happen)
+else {
+    $response['message'] = 'User stats not available for this account type';
 }
 
 echo json_encode($response);
