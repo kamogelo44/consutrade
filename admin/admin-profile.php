@@ -13,92 +13,70 @@ if (!$auth->isAdmin()) {
     exit;
 }
 
-$success_message = '';
-$error_message = '';
-
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $full_name = trim($_POST['full_name']);
     $phone = trim($_POST['phone']);
 
+    // Validate phone number (South African format)
     $clean_phone = !empty($phone) ? preg_replace('/[^0-9]/', '', $phone) : '';
     if (!empty($clean_phone) && !preg_match('/^0[0-9]{9,10}$/', $clean_phone)) {
-        $error_message = 'Please enter a valid South African phone number (e.g., 0712345678)';
+        $_SESSION['error'] = 'Please enter a valid South African phone number (e.g., 0712345678)';
     } else {
-        $update_sql = "UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?";
-        $update_stmt = $conn->prepare($update_sql);
-        $update_stmt->bind_param('ssi', $full_name, $clean_phone, $currentUser->getUserId());
+        // Use UserRepository instead of raw SQL
+        $updateData = [
+            'full_name' => $full_name,
+            'phone' => $clean_phone
+        ];
 
-        if ($update_stmt->execute()) {
+        $result = $userRepo->updateProfile($currentUser->getUserId(), $updateData);
+
+        if ($result) {
             $_SESSION['full_name'] = $full_name;
-            $success_message = 'Profile updated successfully.';
+            $_SESSION['success'] = 'Profile updated successfully.';
+
+            // Refresh user object in session
             $updatedUser = $userRepo->findById($currentUser->getUserId());
             $_SESSION['user_object'] = serialize($updatedUser);
+
+            // Refresh currentUser for this page
+            $currentUser = $updatedUser;
         } else {
-            $error_message = 'Could not update profile. Please try again.';
+            $_SESSION['error'] = 'Could not update profile. Please try again.';
         }
-        $update_stmt->close();
     }
+
+    // Redirect to avoid form resubmission on refresh
+    header('Location: ' . $baseUrl . 'admin/admin-profile.php');
+    exit;
 }
+
+// Get fresh user data
+$user_name = $currentUser->getFullName();
+$user_email = $currentUser->getEmail();
+$user_phone = $currentUser->getPhone();
+$user_created_at = $currentUser->getCreatedAt();
+$profile_image = $currentUser->getProfileImageUrl();
+$user_role = $currentUser->getRole();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Admin Profile - ConsuTrade</title>
-    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/style.css">
+
+    <!-- CSS Imports -->
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
+    <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
+
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
+
     <style>
-        .admin-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
-
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
-        }
-
-        .success-message,
-        .error-message {
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            text-align: center;
-        }
-
-        .success-message {
-            background: var(--success-light);
-            color: var(--success);
-            border-left: 4px solid var(--success);
-        }
-
-        .error-message {
-            background: var(--error-light);
-            color: var(--error);
-            border-left: 4px solid var(--error);
-        }
-
+        /* Only page-specific styles that don't exist elsewhere */
         .profile-layout {
             display: grid;
             grid-template-columns: 1fr 1.5fr;
@@ -187,19 +165,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-bottom: 2px solid var(--primary-color);
         }
 
-        .form-group {
+        .profile-form .form-group {
             margin-bottom: var(--spacing-lg);
         }
 
-        .form-group label {
+        .profile-form label {
             display: block;
             font-weight: var(--font-semibold);
             margin-bottom: var(--spacing-sm);
             color: var(--dark-bg);
-            font-size: var(--font-sm);
         }
 
-        .form-group input {
+        .profile-form input {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid var(--border-light);
@@ -208,18 +185,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all var(--transition-fast);
         }
 
-        .form-group input:focus {
+        .profile-form input:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
         }
 
-        .form-group input:disabled {
+        .profile-form input:disabled {
             background: var(--gray-bg-light);
             cursor: not-allowed;
         }
 
-        .form-group small {
+        .profile-form small {
             display: block;
             margin-top: var(--spacing-xs);
             font-size: var(--font-xs);
@@ -233,22 +210,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flex-wrap: wrap;
         }
 
-        .save-btn,
-        .change-password-btn {
+        .save-btn {
+            background: var(--primary-color);
+            color: white;
             padding: 10px 24px;
+            border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
             font-weight: var(--font-medium);
             transition: all var(--transition-fast);
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-
-        .save-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
         }
 
         .save-btn:hover {
@@ -259,7 +229,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .change-password-btn {
             background: var(--gray-bg-light);
             color: var(--gray-dark);
+            padding: 10px 24px;
             border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            display: inline-block;
         }
 
         .change-password-btn:hover {
@@ -271,6 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-light);
             padding: var(--spacing-xl);
+            margin-top: var(--spacing-xl);
         }
 
         .quick-links-section h3 {
@@ -321,29 +299,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: var(--primary-color);
         }
 
+        /* Responsive */
         @media (max-width: 1024px) {
-            .admin-main-content {
-                margin-left: 0;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
             .profile-layout {
                 grid-template-columns: 1fr;
                 gap: var(--spacing-lg);
             }
-
-            .quick-links-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
         }
 
         @media (max-width: 768px) {
-            .admin-main-content {
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
-
             .form-actions {
                 flex-direction: column;
             }
@@ -351,6 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             .save-btn,
             .change-password-btn {
                 width: 100%;
+                text-align: center;
             }
 
             .quick-links-grid {
@@ -359,11 +324,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         @media (max-width: 480px) {
-            .admin-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
             .page-header h1 {
                 font-size: var(--font-xl);
             }
@@ -393,39 +353,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p>Manage your account information</p>
             </div>
 
-            <?php if ($success_message): ?>
-                <div class="success-message"><?php echo $success_message; ?></div>
-            <?php endif; ?>
-            <?php if ($error_message): ?>
-                <div class="error-message"><?php echo $error_message; ?></div>
-            <?php endif; ?>
+            <!-- Flash messages using global component -->
+            <?php include dirname(__DIR__) . '/includes/flash-message.php'; ?>
 
             <div class="profile-layout">
                 <div class="profile-left">
                     <div class="profile-avatar">
-                        <img src="<?php echo $currentUser->getProfileImageUrl(); ?>" alt="Profile Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
+                        <img src="<?php echo $profile_image; ?>" alt="Profile Avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                     </div>
-                    <h2><?php echo htmlspecialchars($currentUser->getFullName()); ?></h2>
+                    <h2><?php echo htmlspecialchars($user_name); ?></h2>
                     <span class="role-badge">Administrator</span>
 
                     <div class="stats-list">
                         <div class="stat-item">
                             <span class="stat-label">Member Since</span>
-                            <span class="stat-value"><?php echo date('d M Y', strtotime($currentUser->getCreatedAt())); ?></span>
+                            <span class="stat-value"><?php echo date('d M Y', strtotime($user_created_at)); ?></span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Email</span>
-                            <span class="stat-value"><?php echo htmlspecialchars($currentUser->getEmail()); ?></span>
+                            <span class="stat-value"><?php echo htmlspecialchars($user_email); ?></span>
                         </div>
-                        <?php if ($currentUser->getPhone()): ?>
+                        <?php if ($user_phone): ?>
                             <div class="stat-item">
                                 <span class="stat-label">Phone</span>
-                                <span class="stat-value"><?php echo htmlspecialchars($currentUser->getPhone()); ?></span>
+                                <span class="stat-value"><?php echo htmlspecialchars($user_phone); ?></span>
                             </div>
                         <?php endif; ?>
                         <div class="stat-item">
                             <span class="stat-label">Role</span>
-                            <span class="stat-value"><?php echo ucfirst($currentUser->getRole()); ?></span>
+                            <span class="stat-value"><?php echo ucfirst($user_role); ?></span>
                         </div>
                     </div>
                 </div>
@@ -435,18 +391,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <form method="POST" action="" class="profile-form">
                         <div class="form-group">
                             <label for="full_name">Full Name</label>
-                            <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($currentUser->getFullName()); ?>" required>
+                            <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($user_name); ?>" required>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Email Address</label>
-                            <input type="email" id="email" value="<?php echo htmlspecialchars($currentUser->getEmail()); ?>" disabled>
+                            <input type="email" id="email" value="<?php echo htmlspecialchars($user_email); ?>" disabled>
                             <small>Email cannot be changed</small>
                         </div>
 
                         <div class="form-group">
                             <label for="phone">Phone Number (Optional)</label>
-                            <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($currentUser->getPhone() ?? ''); ?>" placeholder="e.g., 071 234 5678">
+                            <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($user_phone ?? ''); ?>" placeholder="e.g., 071 234 5678">
                             <small>Optional but recommended for contact</small>
                         </div>
 
