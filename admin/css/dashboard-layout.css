@@ -221,6 +221,64 @@
   background: var(--gray-bg-light);
 }
 
+/* ========== STATUS BADGES (for Users page) ========== */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-round);
+  font-size: var(--font-xs);
+  font-weight: var(--font-medium);
+}
+
+.status-badge.active {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.status-badge.suspended {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.status-badge.banned {
+  background: var(--error-light);
+  color: var(--error);
+}
+
+/* ========== USER ACTION BUTTONS ========== */
+.suspend-btn {
+  background: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+.suspend-btn:hover {
+  background: var(--warning);
+  color: white;
+}
+
+.ban-btn {
+  background: var(--error-light);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.ban-btn:hover {
+  background: var(--error);
+  color: white;
+}
+
+.activate-btn {
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.activate-btn:hover {
+  background: var(--success);
+  color: white;
+}
+
 /* ========== ADMIN FORM STYLES ========== */
 .form-container {
   max-width: 800px;

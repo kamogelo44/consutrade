@@ -163,8 +163,8 @@ class UserRepository
     public function createUser(array $userData): int|false
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO users (full_name, email, phone, password, role, created_at) 
-             VALUES (?, ?, ?, ?, ?, NOW())"
+            "INSERT INTO users (full_name, email, phone, password, role, status, created_at) 
+             VALUES (?, ?, ?, ?, ?, 'active', NOW())"
         );
 
         $stmt->bind_param(
@@ -287,7 +287,7 @@ class UserRepository
     /**
      * Get all users as array (for admin listing).
      *
-     * @param string $filter Status filter
+     * @param string $filter Role filter
      * @param string $search Search term
      * @param int $limit Limit
      * @param int $offset Offset
@@ -295,7 +295,7 @@ class UserRepository
      */
     public function getAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
                 FROM users 
                 WHERE 1=1";
         $params = [];
@@ -351,7 +351,7 @@ class UserRepository
      */
     public function getUsersByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, created_at
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
                 FROM users 
                 WHERE role = ?";
         $params = [$role];
@@ -393,20 +393,36 @@ class UserRepository
      */
     public function countUsersByRole(string $role, string $search = ''): int
     {
-        $sql = "SELECT COUNT(*) as total FROM users WHERE role = ?";
-        $params = [$role];
-        $types = "s";
+        if ($role === 'all') {
+            $sql = "SELECT COUNT(*) as total FROM users WHERE 1=1";
+            $params = [];
+            $types = "";
 
-        if (!empty($search)) {
-            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
-            $searchParam = "%$search%";
-            $params[] = $searchParam;
-            $params[] = $searchParam;
-            $types .= "ss";
+            if (!empty($search)) {
+                $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+                $searchParam = "%$search%";
+                $params[] = $searchParam;
+                $params[] = $searchParam;
+                $types .= "ss";
+            }
+        } else {
+            $sql = "SELECT COUNT(*) as total FROM users WHERE role = ?";
+            $params = [$role];
+            $types = "s";
+
+            if (!empty($search)) {
+                $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+                $searchParam = "%$search%";
+                $params[] = $searchParam;
+                $params[] = $searchParam;
+                $types .= "ss";
+            }
         }
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param($types, ...$params);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
         $total = (int) ($result->fetch_assoc()['total'] ?? 0);
@@ -423,7 +439,7 @@ class UserRepository
      */
     public function getRecentUsers(int $limit = 5): array
     {
-        $sql = "SELECT user_id, full_name, email, role, id_verified, created_at 
+        $sql = "SELECT user_id, full_name, email, role, id_verified, status, created_at 
                 FROM users 
                 ORDER BY created_at DESC 
                 LIMIT ?";
@@ -448,6 +464,7 @@ class UserRepository
                 'role' => $row['role'],
                 'role_class' => $roleClass,
                 'is_verified' => (bool) $row['id_verified'],
+                'status' => $row['status'] ?? 'active',
                 'created_at' => date('d M Y', strtotime($row['created_at']))
             ];
         }
@@ -503,7 +520,7 @@ class UserRepository
      */
     public function getPendingVerificationsWithPagination(int $limit = 10, int $offset = 0): array
     {
-        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, 
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, u.status,
                    DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
                    sv.document_path, sv.document_type
             FROM users u
@@ -526,6 +543,7 @@ class UserRepository
                 'phone' => $row['phone'] ?? '-',
                 'role' => $row['role'],
                 'is_verified' => false,
+                'status' => $row['status'] ?? 'active',
                 'created_at' => $row['created_at'],
                 'has_document' => true,
                 'document_type' => $row['document_type']
@@ -564,7 +582,7 @@ class UserRepository
      */
     public function getSellerPublicProfile(int $sellerId): ?array
     {
-        $sql = "SELECT user_id, full_name, profile_image, location, id_verified, created_at 
+        $sql = "SELECT user_id, full_name, profile_image, location, id_verified, status, created_at 
                 FROM users 
                 WHERE user_id = ? AND role = 'seller'";
         $stmt = $this->db->prepare($sql);
@@ -589,7 +607,7 @@ class UserRepository
      */
     public function searchUsers(string $query): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, role, id_verified, created_at 
+        $sql = "SELECT user_id, full_name, email, phone, role, id_verified, status, created_at 
                 FROM users 
                 WHERE full_name LIKE ? OR email LIKE ? 
                 ORDER BY full_name ASC 

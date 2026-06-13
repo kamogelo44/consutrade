@@ -4,6 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Returns product details including gallery images and seller info.
+ * Products are shown even if out of stock - buyer just can't add to cart.
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -22,11 +23,15 @@ if ($productId <= 0) {
 
 $product = $productRepo->getProductObject($productId);
 
-if (!$product || !$product->isAvailable()) {
+// Check if product exists and is not deleted
+if (!$product || $product->getStatus() === 'deleted') {
     $response['error'] = 'Product not found';
     echo json_encode($response);
     exit;
 }
+
+// Product exists - show it even if out of stock or suspended
+// Buyers will see the status via badges
 
 // Get gallery images
 $gallery = $productImageRepo->getByProductId($productId);
@@ -60,6 +65,7 @@ $response['product'] = [
     'seller_profile_image' => $sellerProfileImage,
     'is_verified' => $seller ? $seller->isVerified() : false,
     'stock_quantity' => $product->getStockQuantity(),
+    'status' => $product->getStatus(),
     'avg_rating' => $rating['avg_rating'] ?? 0,
     'review_count' => $rating['review_count'] ?? 0
 ];

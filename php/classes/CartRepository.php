@@ -308,12 +308,12 @@ class CartRepository
         return [
             'merchant_id'      => PAYFAST_MERCHANT_ID,
             'merchant_key'     => PAYFAST_MERCHANT_KEY,
-            'return_url'       => $this->getAbsoluteUrl('order-confirmation.php'),
-            'cancel_url'       => $this->getAbsoluteUrl('cart.php'),
-            'notify_url'       => $this->getAbsoluteUrl('php/endpoints/payfast-notify.php'),
+            'return_url'       => rtrim($baseUrl, '/') . '/order-confirmation.php',
+            'cancel_url'       => rtrim($baseUrl, '/') . '/cart.php',
+            'notify_url'       => rtrim($baseUrl, '/') . '/php/endpoints/payfast-notify.php',
             'm_payment_id'     => $orderInfo['payment_id'],
             'amount'           => number_format($orderInfo['total'], 2, '.', ''),
-            'item_name'        => 'ConsuTrade Order #' . $orderInfo['primary_order_id'],
+            'item_name'        => 'ConsuTrade Order #' . ($orderInfo['primary_order_id'] ?? ''),
             'item_description' => 'Order from ConsuTrade',
             'name_first'       => $orderInfo['buyer_name'],
             'email_address'    => $orderInfo['buyer_email']
@@ -340,22 +340,5 @@ class CartRepository
         $user = $result->fetch_assoc();
         $stmt->close();
         return $user;
-    }
-
-    // ============================================================
-    //  PRIVATE HELPERS
-    // ============================================================
-
-    /**
-     * Get full absolute URL for PayFast callbacks.
-     *
-     * @param string $path Relative path
-     * @return string      Full absolute URL
-     */
-    private function getAbsoluteUrl(string $path): string
-    {
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        $host     = $_SERVER['HTTP_HOST'];
-        return $protocol . '://' . $host . '/www/consutrade/' . ltrim($path, '/');
     }
 }

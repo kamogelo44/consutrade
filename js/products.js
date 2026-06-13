@@ -52,8 +52,8 @@ function displayProducts(products) {
         else if (conditionText == 'Good') conditionClass = 'good';
         else if (conditionText == 'Fair') conditionClass = 'fair';
         
-        // stock badge
-        var stockQty = parseInt(product.stock_quantity) || 1;
+        // stock badge - FIXED: default to 0, not 1
+        var stockQty = parseInt(product.stock_quantity) || 0;
         var stockBadge = '';
         if (stockQty <= 0) {
             stockBadge = '<div class="out-of-stock-badge-card">Out of Stock</div>';
@@ -69,14 +69,13 @@ function displayProducts(products) {
             sellerBadge = '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
         }
         
-        // button logic - simple: out of stock OR add to cart (addToCart handles login check internally)
-        var isOutOfStock = (product.stock_quantity || 1) <= 0;
+        // button logic - out of stock OR add to cart
+        var isOutOfStock = stockQty <= 0;
         var addToCartButton = '';
         
         if (isOutOfStock) {
             addToCartButton = '<button class="out-of-stock-btn" disabled>Out of Stock</button>';
         } else {
-            // Always show Add to Cart button - addToCart function will check login and show modal if needed
             addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', ' + product.price + ')">Add to Cart</button>';
         }
         
@@ -227,22 +226,26 @@ function loadProductDetails(id) {
     
     $.get(baseUrl + 'php/endpoints/get-product.php?id=' + id, function(data) {
         if (data.success && data.product) {
+            // Show product even if out of stock - the display function handles the badge
             displayProductDetails(data.product);
         } else {
+            // Only show "not found" if product truly doesn't exist
             $('.product-details-container').html(
-                '<div class="product-error-container">' +
-                    '<h2 class="product-error-title">Product Not Found</h2>' +
-                    '<p class="product-error-message-text">' + escapeHtml(data.error || 'Product not found.') + '</p>' +
-                    '<button class="product-error-action-btn" onclick="window.location.href=\'' + baseUrl + 'product-listings.php\'">Browse Products</button>' +
+                '<div class="empty-state">' +
+                    '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No product">' +
+                    '<h3>Product Not Found</h3>' +
+                    '<p>The product you\'re looking for does not exist or has been removed.</p>' +
+                    '<a href="' + baseUrl + 'product-listings.php" class="view-all-btn">Browse Products</a>' +
                 '</div>'
             );
         }
     }).fail(function() {
         $('.product-details-container').html(
-            '<div class="product-error-container">' +
-                '<h2 class="product-error-title">Product Not Found</h2>' +
-                '<p class="product-error-message-text">Unable to load product.</p>' +
-                '<button class="product-error-action-btn" onclick="window.location.href=\'' + baseUrl + 'product-listings.php\'">Browse Products</button>' +
+            '<div class="empty-state">' +
+                '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error">' +
+                '<h3>Something went wrong</h3>' +
+                '<p>Unable to load product details. Please try again.</p>' +
+                '<a href="' + baseUrl + 'product-listings.php" class="view-all-btn">Browse Products</a>' +
             '</div>'
         );
     });
@@ -273,16 +276,18 @@ function displayProductDetails(product) {
                         '</div>';
     }
     
-    var isOutOfStock = product.stock_quantity <= 0;
-    var isLowStock = product.stock_quantity > 0 && product.stock_quantity <= 5;
+    // Stock status - show even if out of stock
+    var stockQty = parseInt(product.stock_quantity) || 0;
+    var isOutOfStock = stockQty <= 0;
+    var isLowStock = stockQty > 0 && stockQty <= 5;
     var stockHtml = '';
     
     if (isOutOfStock) {
         stockHtml = '<div class="stock-status out-of-stock"><span class="stock-icon">✕</span> Out of Stock</div>';
     } else if (isLowStock) {
-        stockHtml = '<div class="stock-status low-stock"><span class="stock-icon">⚠</span> Only ' + product.stock_quantity + ' left in stock!</div>';
+        stockHtml = '<div class="stock-status low-stock"><span class="stock-icon">⚠</span> Only ' + stockQty + ' left in stock!</div>';
     } else {
-        stockHtml = '<div class="stock-status in-stock"><span class="stock-icon">✓</span> In Stock (' + product.stock_quantity + ' available)</div>';
+        stockHtml = '<div class="stock-status in-stock"><span class="stock-icon">✓</span> In Stock (' + stockQty + ' available)</div>';
     }
     
     var starsHtml = '';
@@ -293,13 +298,12 @@ function displayProductDetails(product) {
     
     var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
     
-    // button logic for product details - simple: out of stock OR add to cart/buy now (addToCart handles login internally)
+    // Action buttons - disable if out of stock
     var actionButtonsHtml = '';
     
     if (isOutOfStock) {
         actionButtonsHtml = '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
     } else {
-        // Always show Add to Cart and Buy Now - addToCart function handles login check
         actionButtonsHtml = '<button class="cart-btn" onclick="addToCart(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Add to Cart</button>' +
                             '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
     }

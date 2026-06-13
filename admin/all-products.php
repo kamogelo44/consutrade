@@ -25,109 +25,10 @@ if (!$auth->isAdmin()) {
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <style>
         /* Products page specific styles only */
-
-        /* Filters Bar */
-        .filters-bar {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: var(--spacing-lg);
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-            align-items: center;
-        }
-
-        .status-filters {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        /* Search Bar with icon button */
-        .search-bar {
-            display: flex;
-            gap: var(--spacing-sm);
-            align-items: center;
-        }
-
-        .search-bar input {
-            padding: 8px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            width: 250px;
-            font-size: var(--font-md);
-        }
-
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
-        }
-
-        .search-bar button {
-            padding: 8px 12px;
-            background: var(--primary-color);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .search-bar button img {
-            width: 16px;
-            height: 16px;
-            filter: brightness(0) invert(1);
-        }
-
-        .search-bar button:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .reset-search-btn {
-            padding: 8px 16px;
-            background: var(--gray-bg);
-            color: var(--gray-dark);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-        }
-
-        .reset-search-btn:hover {
-            background: var(--gray-lighter);
-            transform: translateY(-1px);
-        }
-
-        /* Products Grid */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: var(--spacing-xl);
-        }
-
-        /* Admin status badge - replaces condition badge on admin view */
-        .admin-status-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: 11px;
-            font-weight: var(--font-bold);
-            color: white;
-            z-index: 2;
-        }
-
-        .admin-status-badge.active {
-            background: var(--success);
-        }
-
-        .admin-status-badge.suspended {
-            background: var(--warning);
         }
 
         /* Admin action buttons */
@@ -158,7 +59,6 @@ if (!$auth->isAdmin()) {
         .suspend-btn:hover {
             background: var(--warning);
             color: white;
-            transform: translateY(-2px);
         }
 
         .activate-btn {
@@ -170,7 +70,6 @@ if (!$auth->isAdmin()) {
         .activate-btn:hover {
             background: var(--success);
             color: white;
-            transform: translateY(-2px);
         }
 
         .delete-btn {
@@ -182,40 +81,9 @@ if (!$auth->isAdmin()) {
         .delete-btn:hover {
             background: var(--error);
             color: white;
-            transform: translateY(-2px);
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
-            .filters-bar {
-                flex-direction: column;
-                align-items: stretch;
-                gap: var(--spacing-md);
-            }
-
-            .status-filters {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: var(--spacing-sm);
-            }
-
-            .status-filters .filter-btn {
-                padding: 6px 12px;
-                font-size: var(--font-xs);
-            }
-
-            .search-bar {
-                display: flex;
-                justify-content: stretch;
-                width: 100%;
-            }
-
-            .search-bar input {
-                flex: 1;
-                width: auto;
-            }
-
             .products-grid {
                 grid-template-columns: 1fr;
             }
@@ -228,26 +96,6 @@ if (!$auth->isAdmin()) {
         @media (max-width: 480px) {
             .page-header h1 {
                 font-size: var(--font-xl);
-            }
-
-            .status-filters {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: var(--spacing-sm);
-                width: 100%;
-            }
-
-            .status-filters .filter-btn {
-                text-align: center;
-                width: 100%;
-            }
-
-            .prod-name {
-                font-size: var(--font-sm);
-            }
-
-            .prod-price {
-                font-size: var(--font-lg);
             }
         }
     </style>
@@ -266,17 +114,21 @@ if (!$auth->isAdmin()) {
             </div>
 
             <div class="filters-bar">
-                <div class="status-filters">
-                    <button data-status="all" class="filter-btn active">All</button>
-                    <button data-status="active" class="filter-btn">Active</button>
-                    <button data-status="suspended" class="filter-btn">Suspended</button>
+                <div class="filter-group">
+                    <label>Filter by Status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All Products</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
                 </div>
-                <div class="search-bar">
+
+                <div class="search-group">
                     <input type="text" id="searchInput" placeholder="Search products by name or seller...">
                     <button id="searchBtn">
-                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                        <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search">
                     </button>
-                    <button id="resetBtn" class="reset-search-btn" style="display: none;">Reset</button>
+                    <button id="resetBtn" class="reset-btn" style="display: none;">Reset</button>
                 </div>
             </div>
 
@@ -292,7 +144,6 @@ if (!$auth->isAdmin()) {
         // Admin Products page state
         var adminProductsGrid = null,
             adminPagination = null,
-            adminFilterBtns = null,
             adminSearchBtn = null,
             adminResetBtn = null,
             adminSearchInput = null,
@@ -304,7 +155,6 @@ if (!$auth->isAdmin()) {
         function cacheAdminElements() {
             adminProductsGrid = $('#productsGrid');
             adminPagination = $('#pagination');
-            adminFilterBtns = $('.status-filters .filter-btn');
             adminSearchBtn = $('#searchBtn');
             adminResetBtn = $('#resetBtn');
             adminSearchInput = $('#searchInput');
@@ -314,8 +164,7 @@ if (!$auth->isAdmin()) {
             adminSearchInput.val('');
             adminCurrentSearch = '';
             adminCurrentPage = 1;
-            adminFilterBtns.removeClass('active');
-            adminFilterBtns.filter('[data-status="all"]').addClass('active');
+            $('#statusFilter').val('all');
             adminCurrentStatus = 'all';
             loadAdminProducts();
             adminResetBtn.hide();
@@ -441,10 +290,8 @@ if (!$auth->isAdmin()) {
             cacheAdminElements();
             loadAdminProducts();
 
-            adminFilterBtns.on('click', function() {
-                adminFilterBtns.removeClass('active');
-                $(this).addClass('active');
-                adminCurrentStatus = $(this).data('status');
+            $('#statusFilter').on('change', function() {
+                adminCurrentStatus = $(this).val();
                 adminCurrentPage = 1;
                 loadAdminProducts();
             });

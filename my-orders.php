@@ -30,7 +30,7 @@ $breadcrumbItems = [
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
         .orders-container {
-            max-width: 1200px;
+            width: 100%;
             margin: 0 auto;
             padding: var(--spacing-xl);
             margin-top: 70px;

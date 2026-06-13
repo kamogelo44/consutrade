@@ -24,7 +24,6 @@ try {
         $product_name = $productData['title'];
     }
 } catch (Exception $e) {
-    // Fallback to default
     $product_name = 'Product Details';
 }
 
@@ -42,13 +41,12 @@ $breadcrumbItems = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($product_name); ?> - ConsuTrade</title>
     <meta name="description" content="View product details and purchase from trusted sellers on ConsuTrade">
-    <meta name="author" content="Kamogelo Phale">
-
-    <!-- CSS Files -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
 
     <style>
         /* ========== PRODUCT DETAILS PAGE SPECIFIC STYLES ONLY ========== */
+        /* Note: Stock status styles are in components.css */
+
         .product-details-main {
             width: 100%;
             max-width: 1400px;
@@ -60,7 +58,7 @@ $breadcrumbItems = [
             width: 100%;
         }
 
-        /* Product Images Gallery - Unique to product details */
+        /* Product Images Gallery */
         .top-items {
             display: flex;
             justify-content: space-between;
@@ -91,10 +89,6 @@ $breadcrumbItems = [
             object-fit: cover;
         }
 
-        .main-img:hover img {
-            transform: scale(1.02);
-        }
-
         .smaller-imgs {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -109,6 +103,7 @@ $breadcrumbItems = [
             border-radius: var(--radius-md);
             overflow: hidden;
             cursor: pointer;
+            transition: all var(--transition-fast);
         }
 
         .small-img:hover {
@@ -127,7 +122,7 @@ $breadcrumbItems = [
             object-fit: cover;
         }
 
-        /* Product Info Section - Unique layout */
+        /* Product Info Section */
         .product-info {
             display: flex;
             flex-direction: column;
@@ -159,15 +154,13 @@ $breadcrumbItems = [
             border: 1px solid var(--primary-color);
             border-radius: var(--radius-round);
             padding: 4px 12px;
-            width: auto;
-            max-width: fit-content;
+            width: fit-content;
         }
 
         .cat-badge .cat-name {
             font-size: var(--font-xs);
             font-weight: var(--font-medium);
             color: var(--primary-color);
-            white-space: nowrap;
         }
 
         .description {
@@ -193,7 +186,7 @@ $breadcrumbItems = [
             gap: var(--spacing-sm);
         }
 
-        /* Seller Reviews Section - Unique to product details */
+        /* Seller Reviews Section */
         .rev-container {
             display: flex;
             flex-direction: column;
@@ -212,7 +205,6 @@ $breadcrumbItems = [
             border-radius: var(--radius-round);
             width: auto;
             min-width: 140px;
-            height: 34px;
         }
 
         .verified-badge {
@@ -284,6 +276,7 @@ $breadcrumbItems = [
             background-color: var(--white);
             font-weight: var(--font-medium);
             cursor: pointer;
+            transition: all var(--transition-fast);
         }
 
         .view-profile:hover {
@@ -335,6 +328,7 @@ $breadcrumbItems = [
             justify-content: center;
             gap: var(--spacing-sm);
             cursor: pointer;
+            transition: all var(--transition-fast);
         }
 
         .action-btns .cart-btn {
@@ -343,7 +337,7 @@ $breadcrumbItems = [
             border: 2px solid var(--primary-color);
         }
 
-        .action-btns .cart-btn:hover {
+        .action-btns .cart-btn:hover:not(:disabled) {
             background-color: var(--primary-fade);
             transform: translateY(-2px);
         }
@@ -360,11 +354,15 @@ $breadcrumbItems = [
         }
 
         .action-btns .cart-btn.out-of-stock-btn {
-            background-color: #ccc;
+            background-color: var(--gray-light);
             cursor: not-allowed;
             opacity: 0.6;
-            color: #666;
-            border-color: #ccc;
+            color: var(--gray-dark);
+            border-color: var(--gray-light);
+        }
+
+        .action-btns .cart-btn.out-of-stock-btn:hover {
+            transform: none;
         }
 
         /* Report button */
@@ -402,7 +400,7 @@ $breadcrumbItems = [
             width: auto;
         }
 
-        /* Report Modal - Unique to product details */
+        /* Report Modal */
         .report-modal .modal-content {
             max-width: 500px;
         }

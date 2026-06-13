@@ -67,7 +67,86 @@ if (!$auth->isAdmin()) {
             border-color: var(--primary-color);
         }
 
-        /* Role Badges (using components.css pattern) */
+        /* Search bar with icon */
+        .search-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: var(--spacing-sm);
+        }
+
+        .search-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .search-group label {
+            font-size: var(--font-sm);
+            font-weight: var(--font-semibold);
+            color: var(--gray-dark);
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+        }
+
+        .search-input-wrapper input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
+            width: 250px;
+        }
+
+        .search-input-wrapper input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .search-input-wrapper button {
+            padding: 8px 12px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-input-wrapper button img {
+            width: 16px;
+            height: 16px;
+            filter: brightness(0) invert(1);
+        }
+
+        .search-input-wrapper button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .reset-btn {
+            padding: 8px 16px;
+            background: var(--gray-bg);
+            color: var(--gray-dark);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+            height: 38px;
+            align-self: flex-end;
+        }
+
+        .reset-btn:hover {
+            background: var(--gray-lighter);
+            transform: translateY(-1px);
+        }
+
+        /* Role Badges */
         .role-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -91,7 +170,7 @@ if (!$auth->isAdmin()) {
             color: var(--info);
         }
 
-        /* Verification Badges (using components.css pattern) */
+        /* Verification Badges */
         .verified-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -110,6 +189,30 @@ if (!$auth->isAdmin()) {
             font-weight: var(--font-medium);
             background: var(--warning-light);
             color: var(--warning);
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+        }
+
+        .status-badge.active {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .status-badge.suspended {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .status-badge.banned {
+            background: var(--error-light);
+            color: var(--error);
         }
 
         /* Action Buttons */
@@ -165,30 +268,37 @@ if (!$auth->isAdmin()) {
             transform: translateY(-1px);
         }
 
-        .filter-btn-small {
-            padding: 8px 16px;
-            background: var(--primary-color);
+        .suspend-btn {
+            background: var(--warning-light);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .suspend-btn:hover {
+            background: var(--warning);
             color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
         }
 
-        .filter-btn-small:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
+        .ban-btn {
+            background: var(--error-light);
+            color: var(--error);
+            border: 1px solid var(--error);
         }
 
-        .filter-btn-small.reset {
-            background: var(--gray-bg-light);
-            color: var(--gray-dark);
-            border: 1px solid var(--border-light);
+        .ban-btn:hover {
+            background: var(--error);
+            color: white;
         }
 
-        .filter-btn-small.reset:hover {
-            background: var(--gray-lighter);
+        .activate-btn {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .activate-btn:hover {
+            background: var(--success);
+            color: white;
         }
 
         /* Responsive */
@@ -202,7 +312,16 @@ if (!$auth->isAdmin()) {
                 width: 100%;
             }
 
-            .filter-btn-small {
+            .search-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input-wrapper input {
+                width: 100%;
+            }
+
+            .reset-btn {
                 align-self: stretch;
             }
 
@@ -284,12 +403,19 @@ if (!$auth->isAdmin()) {
                         <option value="pending">Pending Verification</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label for="searchInput">Search</label>
-                    <input type="text" id="searchInput" placeholder="Name or email...">
+
+                <div class="search-wrapper">
+                    <div class="search-group">
+                        <label for="searchInput">Search</label>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="searchInput" placeholder="Name or email...">
+                            <button id="searchBtn">
+                                <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search">
+                            </button>
+                        </div>
+                    </div>
+                    <button id="resetBtn" class="reset-btn">Reset</button>
                 </div>
-                <button id="searchBtn" class="filter-btn-small">Search</button>
-                <button id="resetBtn" class="filter-btn-small reset">Reset</button>
             </div>
 
             <div class="table-wrapper">
@@ -302,13 +428,14 @@ if (!$auth->isAdmin()) {
                             <th>Phone</th>
                             <th>Role</th>
                             <th>Verified</th>
+                            <th>Status</th>
                             <th>Joined Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="usersTable">
                         <tr>
-                            <td colspan="8" class="loading-cell">Loading users...</td>
+                            <td colspan="9" class="loading-cell">Loading users...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -319,7 +446,7 @@ if (!$auth->isAdmin()) {
     </main>
 
     <script>
-        // Page state variables - tracking filters and pagination
+        // Page state variables
         var $usersTable = null,
             $pagination = null,
             $roleFilter = null,
@@ -330,7 +457,6 @@ if (!$auth->isAdmin()) {
             currentRole = 'all',
             currentSearch = '';
 
-        // Cache DOM elements on load - saves repeatedly querying the DOM
         function cacheElements() {
             $usersTable = $('#usersTable');
             $pagination = $('#pagination');
@@ -344,21 +470,18 @@ if (!$auth->isAdmin()) {
             cacheElements();
             loadUsers();
 
-            // Role filter changed - reset to page 1 and reload
             $roleFilter.on('change', function() {
                 currentRole = $(this).val();
                 currentPage = 1;
                 loadUsers();
             });
 
-            // Search button clicked
             $searchBtn.on('click', function() {
                 currentSearch = $searchInput.val().trim();
                 currentPage = 1;
                 loadUsers();
             });
 
-            // Reset all filters
             $resetBtn.on('click', function() {
                 $roleFilter.val('all');
                 $searchInput.val('');
@@ -368,7 +491,6 @@ if (!$auth->isAdmin()) {
                 loadUsers();
             });
 
-            // Enter key in search field triggers search
             $searchInput.on('keypress', function(e) {
                 if (e.which === 13) {
                     currentSearch = $searchInput.val().trim();
@@ -378,9 +500,8 @@ if (!$auth->isAdmin()) {
             });
         });
 
-        // Fetch users from server with current filters
         function loadUsers() {
-            $usersTable.html('<tr><td colspan="8" class="loading-cell">Loading users...</td></tr>');
+            $usersTable.html('<tr><td colspan="9" class="loading-cell">Loading users...</td></tr>');
 
             $.ajax({
                 url: baseUrl + 'php/endpoints/get-users.php',
@@ -394,7 +515,6 @@ if (!$auth->isAdmin()) {
                 success: function(data) {
                     if (data.success && data.users && data.users.length) {
                         displayUsers(data.users);
-                        // Use the global pagination function from main.js
                         if (typeof renderPagination === 'function') {
                             renderPagination($pagination, currentPage, data.total_pages, function(page) {
                                 currentPage = page;
@@ -407,61 +527,88 @@ if (!$auth->isAdmin()) {
                             $pagination.empty();
                         }
                     } else {
-                        // Show empty state with helpful message based on active filters
-                        var emptyTitle = '';
-                        var emptyMessage = '';
-
-                        if (currentRole === 'pending') {
-                            emptyTitle = 'No Pending Verifications';
-                            emptyMessage = 'All sellers have been verified. No pending verifications at this time.';
-                        } else if (currentRole === 'seller') {
-                            emptyTitle = 'No Sellers Found';
-                            emptyMessage = 'There are no registered sellers' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
-                        } else if (currentRole === 'buyer') {
-                            emptyTitle = 'No Buyers Found';
-                            emptyMessage = 'There are no registered buyers' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
-                        } else if (currentRole === 'admin') {
-                            emptyTitle = 'No Admins Found';
-                            emptyMessage = 'There are no admin accounts' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
-                        } else {
-                            emptyTitle = 'No Users Found';
-                            emptyMessage = currentSearch ? 'No users found matching "' + escapeHtml(currentSearch) + '".' : 'No users are registered on the platform yet.';
-                        }
-
-                        var resetButtonHtml = '';
-                        if (currentSearch !== '' || currentRole !== 'all') {
-                            resetButtonHtml = '<button onclick="$resetBtn.click()" class="view-all-btn" style="background: var(--primary-color); color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-top: 16px;">Clear Filters</button>';
-                        }
-
-                        $usersTable.html(
-                            '<tr><td colspan="8" style="text-align: center; padding: 60px;">' +
-                            '<div class="empty-state">' +
-                            '<img src="' + baseUrl + 'images/icons/users-svgrepo-com.svg" width="64" height="64" alt="No users" style="opacity: 0.4;">' +
-                            '<h3 style="font-size: 20px; font-weight: bold; margin-top: 16px; margin-bottom: 8px;">' + escapeHtml(emptyTitle) + '</h3>' +
-                            '<p style="color: var(--gray-medium);">' + escapeHtml(emptyMessage) + '</p>' +
-                            resetButtonHtml +
-                            '</div>' +
-                            '</td></tr>'
-                        );
+                        showEmptyState();
                         $pagination.empty();
                     }
                 },
                 error: function() {
-                    $usersTable.html('<tr><td colspan="8" class="error-cell">Error loading users. Please refresh the page.</td></tr>');
+                    $usersTable.html('<tr><td colspan="9" class="error-cell">Error loading users. Please refresh the page.</td></tr>');
                 }
             });
         }
 
-        // Render user rows in the table
+        function showEmptyState() {
+            var emptyTitle = '';
+            var emptyMessage = '';
+
+            if (currentRole === 'pending') {
+                emptyTitle = 'No Pending Verifications';
+                emptyMessage = 'All sellers have been verified. No pending verifications at this time.';
+            } else if (currentRole === 'seller') {
+                emptyTitle = 'No Sellers Found';
+                emptyMessage = 'There are no registered sellers' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
+            } else if (currentRole === 'buyer') {
+                emptyTitle = 'No Buyers Found';
+                emptyMessage = 'There are no registered buyers' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
+            } else if (currentRole === 'admin') {
+                emptyTitle = 'No Admins Found';
+                emptyMessage = 'There are no admin accounts' + (currentSearch ? ' matching "' + escapeHtml(currentSearch) + '"' : '') + '.';
+            } else {
+                emptyTitle = 'No Users Found';
+                emptyMessage = currentSearch ? 'No users found matching "' + escapeHtml(currentSearch) + '".' : 'No users are registered on the platform yet.';
+            }
+
+            var resetButtonHtml = '';
+            if (currentSearch !== '' || currentRole !== 'all') {
+                resetButtonHtml = '<button onclick="$resetBtn.click()" class="view-all-btn" style="background: var(--primary-color); color: white; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; margin-top: 16px;">Clear Filters</button>';
+            }
+
+            $usersTable.html(
+                '<tr><td colspan="9" style="text-align: center; padding: 60px;">' +
+                '<div class="empty-state">' +
+                '<img src="' + baseUrl + 'images/icons/users-svgrepo-com.svg" width="64" height="64" alt="No users" style="opacity: 0.4;">' +
+                '<h3 style="font-size: 20px; font-weight: bold; margin-top: 16px; margin-bottom: 8px;">' + escapeHtml(emptyTitle) + '</h3>' +
+                '<p style="color: var(--gray-medium);">' + escapeHtml(emptyMessage) + '</p>' +
+                resetButtonHtml +
+                '</div>' +
+                '</td>' +
+                '</tr>'
+            );
+        }
+
         function displayUsers(users) {
             $usersTable.empty();
 
             $.each(users, function(i, user) {
                 var roleClass = user.role === 'admin' ? 'role-admin' : (user.role === 'seller' ? 'role-seller' : 'role-buyer');
                 var verifiedBadge = user.id_verified ? '<span class="verified-badge">Verified</span>' : '<span class="unverified-badge">Not Verified</span>';
+
+                // Status Badge
+                var statusBadge = '';
+                if (user.status === 'active') {
+                    statusBadge = '<span class="status-badge active">Active</span>';
+                } else if (user.status === 'suspended') {
+                    statusBadge = '<span class="status-badge suspended">Suspended</span>';
+                } else if (user.status === 'banned') {
+                    statusBadge = '<span class="status-badge banned">Banned</span>';
+                } else {
+                    statusBadge = '<span class="status-badge active">Active</span>';
+                }
+
+                // Action Buttons
                 var actionButtons = '<div class="action-buttons">';
 
-                // Sellers have verification actions
+                // Status action buttons
+                if (user.status === 'active') {
+                    // User is active - show buttons to suspend or ban
+                    actionButtons += '<button class="action-btn suspend-btn" onclick="updateUserStatus(' + user.user_id + ', \'suspended\')">Suspend</button>';
+                    actionButtons += '<button class="action-btn ban-btn" onclick="updateUserStatus(' + user.user_id + ', \'banned\')">Ban</button>';
+                } else {
+                    // User is suspended or banned - show button to activate
+                    actionButtons += '<button class="action-btn activate-btn" onclick="updateUserStatus(' + user.user_id + ', \'active\')">Activate</button>';
+                }
+
+                // Seller verification actions
                 if (user.role === 'seller') {
                     if (user.has_document && !user.id_verified) {
                         actionButtons += '<button class="action-btn verify-btn" onclick="reviewDocuments(' + user.user_id + ')">Review Docs</button>';
@@ -472,7 +619,7 @@ if (!$auth->isAdmin()) {
                     }
                 }
 
-                // Don't allow deleting yourself or other admins
+                // Delete button (don't allow deleting yourself or other admins)
                 if (user.role !== 'admin' || user.user_id !== currentUserId) {
                     actionButtons += '<button class="action-btn delete-btn" onclick="deleteUser(' + user.user_id + ')">Delete</button>';
                 }
@@ -491,6 +638,7 @@ if (!$auth->isAdmin()) {
                     '<td data-label="Phone">' + (typeof escapeHtml === 'function' ? escapeHtml(user.phone || '-') : (user.phone || '-')) + '</td>' +
                     '<td data-label="Role"><span class="role-badge ' + roleClass + '">' + user.role + '</span></td>' +
                     '<td data-label="Verified">' + verifiedBadge + '</td>' +
+                    '<td data-label="Status">' + statusBadge + '</td>' +
                     '<td data-label="Joined Date">' + user.created_at + '</td>' +
                     '<td data-label="Actions">' + actionButtons + '</td>' +
                     '</tr>'
@@ -498,12 +646,10 @@ if (!$auth->isAdmin()) {
             });
         }
 
-        // Redirect to document review page for pending sellers
         function reviewDocuments(userId) {
             window.location.href = baseUrl + 'admin/verify-seller.php?seller_id=' + userId;
         }
 
-        // Toggle seller verification status
         function toggleUserVerification(userId, verify) {
             var confirmMsg = verify ? 'Verify this seller?' : 'Remove verification from this seller?';
             if (confirm(confirmMsg)) {
@@ -543,7 +689,41 @@ if (!$auth->isAdmin()) {
             }
         }
 
-        // Delete user account - permanent action
+        function updateUserStatus(userId, status) {
+            var confirmMsg = '';
+            if (status === 'suspended') {
+                confirmMsg = 'Suspend this user? They will not be able to log in.';
+            } else if (status === 'banned') {
+                confirmMsg = 'Ban this user? This action is permanent.';
+            } else {
+                confirmMsg = 'Activate this user? They will be able to log in again.';
+            }
+
+            if (confirm(confirmMsg)) {
+                $.ajax({
+                    url: baseUrl + 'php/endpoints/update-user-status.php',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        user_id: userId,
+                        status: status
+                    }),
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success) {
+                            showSuccessToast(data.message);
+                            loadUsers();
+                        } else {
+                            showErrorToast(data.message);
+                        }
+                    },
+                    error: function() {
+                        showErrorToast('Something went wrong');
+                    }
+                });
+            }
+        }
+
         function deleteUser(userId) {
             if (confirm('Delete this user? This cannot be undone.')) {
                 $.ajax({
