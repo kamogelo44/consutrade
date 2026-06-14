@@ -391,7 +391,7 @@ if ($from_product_id > 0 && $from_product_name) {
 
         <div class="seller-public-header">
             <div class="seller-public-avatar">
-                <img src="<?php echo $profile_image; ?>" alt="<?php echo htmlspecialchars($seller->getFullName()); ?>">
+                <img src="<?php echo $profile_image; ?>" alt="<?php echo htmlspecialchars($seller->getFullName()); ?>" loading="lazy">
             </div>
             <div class="seller-public-info">
                 <h1><?php echo htmlspecialchars($seller->getFullName()); ?></h1>
@@ -458,7 +458,7 @@ if ($from_product_id > 0 && $from_product_name) {
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="empty-state">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" loading="lazy">
                         <h3>No Products Yet</h3>
                         <p>This seller has no products available at the moment.</p>
                     </div>
@@ -475,7 +475,7 @@ if ($from_product_id > 0 && $from_product_name) {
                             <div class="review-header">
                                 <div class="reviewer-info">
                                     <div class="reviewer-avatar">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="<?php echo htmlspecialchars($review['buyer_name']); ?>">
+                                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="<?php echo htmlspecialchars($review['buyer_name']); ?>" loading="lazy">
                                     </div>
                                     <div>
                                         <div class="reviewer-name"><?php echo htmlspecialchars($review['buyer_name']); ?></div>

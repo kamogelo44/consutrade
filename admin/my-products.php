@@ -34,7 +34,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
     <style>
         /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
 
-        /* Action Bar */
         .action-bar {
             display: flex;
             justify-content: space-between;
@@ -62,7 +61,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             transform: translateY(-2px);
         }
 
-        /* Products Grid */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -136,7 +134,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             color: var(--warning);
         }
 
-        /* Action Button Group */
         .btn-group {
             display: flex;
             gap: var(--spacing-sm);
@@ -208,7 +205,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             color: var(--white);
         }
 
-        /* Admin Suspension Notice */
         .admin-suspension-notice {
             background: var(--error-light);
             color: var(--error);
@@ -227,7 +223,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             word-break: break-word;
         }
 
-        /* Empty State */
         .empty-state {
             grid-column: 1 / -1;
             text-align: center;
@@ -254,7 +249,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             margin-bottom: var(--spacing-lg);
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .action-bar {
                 flex-direction: column;
@@ -296,9 +290,6 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
                 <h1>My Products</h1>
                 <p>Manage your product listings</p>
             </div>
-
-            <!-- Flash messages using global component -->
-            <?php include dirname(__DIR__) . '/includes/flash-message.php'; ?>
 
             <div class="action-bar">
                 <a href="add-product.php" class="add-product-btn">

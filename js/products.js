@@ -52,7 +52,7 @@ function displayProducts(products) {
         else if (conditionText == 'Good') conditionClass = 'good';
         else if (conditionText == 'Fair') conditionClass = 'fair';
         
-        // stock badge - FIXED: default to 0, not 1
+        // stock badge - default to 0, not 1
         var stockQty = parseInt(product.stock_quantity) || 0;
         var stockBadge = '';
         if (stockQty <= 0) {
@@ -88,7 +88,7 @@ function displayProducts(products) {
         
         $card.html(
             '<div class="img-container">' +
-                '<img src="' + imagePath + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                '<img src="' + imagePath + '" alt="' + escapeHtml(product.name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
                 '<div class="condition-badge ' + conditionClass + '">' + conditionText + '</div>' +
                 stockBadge +
             '</div>' +
@@ -97,12 +97,12 @@ function displayProducts(products) {
                 '<p class="prod-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
                 '<div class="seller-info">' +
                     '<div class="seller-avatar">' +
-                        '<img src="' + sellerAvatar + '" alt="' + escapeHtml(product.seller_name) + '" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
+                        '<img src="' + sellerAvatar + '" alt="' + escapeHtml(product.seller_name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
                     '</div>' +
                     '<div class="seller-details">' +
                         '<p class="seller-name">' + escapeHtml(product.seller_name) + '</p>' +
                         '<p class="location">' +
-                            '<img src="' + baseUrl + 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location">' +
+                            '<img src="' + baseUrl + 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location" loading="lazy">' +
                             escapeHtml(product.location || 'South Africa') +
                         '</p>' +
                     '</div>' +
@@ -111,7 +111,7 @@ function displayProducts(products) {
                 addToCartButton +
                 '<div class="payment-badge">' +
                     '<span>Secure payment via</span>' +
-                    '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast">' +
+                    '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast" loading="lazy">' +
                 '</div>' +
             '</div>'
         );
@@ -123,7 +123,7 @@ function displayProducts(products) {
 function showEmptyState() {
     $('#products-grid').html(
         '<div class="empty-state" id="empty-products-state">' +
-            '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">' +
+            '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" loading="lazy">' +
             '<h3>No products found</h3>' +
             '<p>We couldn\'t find any products matching your criteria.</p>' +
             '<button class="view-all-btn" id="resetFiltersEmptyBtn">Reset Filters</button>' +
@@ -143,7 +143,7 @@ function showEmptyState() {
 function showErrorState() {
     $('#products-grid').html(
         '<div class="empty-state" id="error-products-state">' +
-            '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error">' +
+            '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error" loading="lazy">' +
             '<h3>Something went wrong</h3>' +
             '<p>Error loading products. Please try again.</p>' +
             '<button class="view-all-btn" id="refreshPageBtn">Refresh Page</button>' +
@@ -226,13 +226,11 @@ function loadProductDetails(id) {
     
     $.get(baseUrl + 'php/endpoints/get-product.php?id=' + id, function(data) {
         if (data.success && data.product) {
-            // Show product even if out of stock - the display function handles the badge
             displayProductDetails(data.product);
         } else {
-            // Only show "not found" if product truly doesn't exist
             $('.product-details-container').html(
                 '<div class="empty-state">' +
-                    '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No product">' +
+                    '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No product" loading="lazy">' +
                     '<h3>Product Not Found</h3>' +
                     '<p>The product you\'re looking for does not exist or has been removed.</p>' +
                     '<a href="' + baseUrl + 'product-listings.php" class="view-all-btn">Browse Products</a>' +
@@ -242,7 +240,7 @@ function loadProductDetails(id) {
     }).fail(function() {
         $('.product-details-container').html(
             '<div class="empty-state">' +
-                '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error">' +
+                '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error" loading="lazy">' +
                 '<h3>Something went wrong</h3>' +
                 '<p>Unable to load product details. Please try again.</p>' +
                 '<a href="' + baseUrl + 'product-listings.php" class="view-all-btn">Browse Products</a>' +
@@ -272,11 +270,10 @@ function displayProductDetails(product) {
     for (var i = 0; i < thumbnails.length; i++) {
         var isActive = (i === 0) ? 'active' : '';
         galleryHtml += '<div class="small-img ' + isActive + '" data-image-path="' + thumbnails[i] + '">' +
-                            '<img src="' + thumbnails[i] + '" alt="Thumbnail ' + (i+1) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                            '<img src="' + thumbnails[i] + '" alt="Thumbnail ' + (i+1) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
                         '</div>';
     }
     
-    // Stock status - show even if out of stock
     var stockQty = parseInt(product.stock_quantity) || 0;
     var isOutOfStock = stockQty <= 0;
     var isLowStock = stockQty > 0 && stockQty <= 5;
@@ -298,7 +295,6 @@ function displayProductDetails(product) {
     
     var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
     
-    // Action buttons - disable if out of stock
     var actionButtonsHtml = '';
     
     if (isOutOfStock) {
@@ -308,14 +304,13 @@ function displayProductDetails(product) {
                             '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
     }
     
-    // report button - only for logged in buyers
     var isLoggedInFlag = (typeof isLoggedIn !== 'undefined' && isLoggedIn === true);
     var isBuyer = (typeof currentUserRole !== 'undefined' && currentUserRole == 'buyer');
     var showReportButton = isLoggedInFlag && isBuyer;
     
     if (showReportButton) {
         actionButtonsHtml += '<button class="report-btn" id="reportProductBtn">' +
-                                '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="16" height="16" alt="Report"> Report This Product' +
+                                '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="16" height="16" alt="Report" loading="lazy"> Report This Product' +
                               '</button>';
     }
     
@@ -348,14 +343,14 @@ function displayProductDetails(product) {
             '<div class="rev-container">' +
                 '<div class="seller-profile">' +
                     '<div class="profile-pic">' +
-                        '<img src="' + sellerImage + '" width="40" height="40" alt="' + escapeHtml(product.seller_name) + '" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
+                        '<img src="' + sellerImage + '" width="40" height="40" alt="' + escapeHtml(product.seller_name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
                     '</div>' +
                     '<p class="seller-name">' + escapeHtml(product.seller_name) + '</p>' +
                 '</div>' +
                 '<div class="verification">' +
                     (product.is_verified ? 
-                        '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20"><p>Verified Seller</p></div>' : 
-                        '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20"><p>Not Verified</p></div>') +
+                        '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Verified Seller</p></div>' : 
+                        '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Not Verified</p></div>') +
                 '</div>' +
                 '<div class="star-reviews">' +
                     '<h1>Seller Reviews</h1>' +
@@ -369,14 +364,13 @@ function displayProductDetails(product) {
             '<div class="actions-card">' +
                 '<div class="action-btns">' + actionButtonsHtml + '</div>' +
                 '<div class="payfast-badge">' +
-                    '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast">' +
+                    '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast" loading="lazy">' +
                     '<span>Secure payments by PayFast</span>' +
                 '</div>' +
             '</div>' +
         '</div>'
     );
     
-    // setup gallery click handlers
     $('.small-img').on('click', function() {
         var newImagePath = $(this).data('image-path');
         $('#main-product-image').attr('src', newImagePath);
@@ -384,7 +378,6 @@ function displayProductDetails(product) {
         $(this).addClass('active');
     });
     
-    // report button handler
     if (showReportButton) {
         $('#reportProductBtn').off('click').on('click', function(e) {
             e.stopPropagation();

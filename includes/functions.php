@@ -170,13 +170,13 @@ if (!function_exists('renderSellerBadge')) {
 
         if ($seller && $seller->isVerified()) {
             return '<div class="verified-badge-card">
-                        <img src="' . $baseUrl . 'images/icons/verified-svgrepo-com.svg" width="14" height="14" alt="Verified">
+                        <img src="' . $baseUrl . 'images/icons/verified-svgrepo-com.svg" width="14" height="14" alt="Verified" loading="lazy">
                         <span>Verified Seller</span>
                     </div>';
         }
 
         return '<div class="unverified-badge-card">
-                    <img src="' . $baseUrl . 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14" alt="Unverified">
+                    <img src="' . $baseUrl . 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14" alt="Unverified" loading="lazy">
                     <span>Unverified</span>
                 </div>';
     }
@@ -371,7 +371,7 @@ if (!function_exists('renderProductCard')) {
         if (!$isOutOfStock) {
             $escapedName = addslashes($product->getTitle());
             $addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' . $product->getProductId() . ', \'' . $escapedName . '\', ' . $product->getPrice() . ')">
-                                    <img src="' . $baseUrl . 'images/icons/shopping-cart-01-svgrepo-com.svg" width="16" height="16" alt="Cart">
+                                    <img src="' . $baseUrl . 'images/icons/shopping-cart-01-svgrepo-com.svg" width="16" height="16" alt="Cart" loading="lazy">
                                     Add to Cart
                                 </button>';
         } else {
@@ -382,6 +382,7 @@ if (!function_exists('renderProductCard')) {
                     <div class="img-container">
                         <img src="' . $imageUrl . '" 
                              alt="' . $productName . '" 
+                             loading="lazy"
                              onerror="this.src=\'' . $baseUrl . 'images/default-product.png\'">
                         ' . renderConditionBadge($product->getCondition()) . '
                         ' . renderStockBadge($product->getStockQuantity()) . '
@@ -393,12 +394,13 @@ if (!function_exists('renderProductCard')) {
                             <div class="seller-avatar">
                                 <img src="' . $sellerAvatar . '" 
                                      alt="' . $sellerName . '" 
+                                     loading="lazy"
                                      onerror="this.src=\'' . $baseUrl . 'images/icons/profile-svgrepo-com.svg\'">
                             </div>
                             <div class="seller-details">
                                 <p class="seller-name">' . $sellerName . '</p>
                                 <p class="location">
-                                    <img src="' . $baseUrl . 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location">
+                                    <img src="' . $baseUrl . 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location" loading="lazy">
                                     ' . $sellerLocation . '
                                 </p>
                             </div>
@@ -407,7 +409,7 @@ if (!function_exists('renderProductCard')) {
                         ' . $addToCartButton . '
                         <div class="payment-badge">
                             <span>Secure payment via</span>
-                            <img src="' . $baseUrl . 'images/icons/Payfast logo.svg" alt="PayFast">
+                            <img src="' . $baseUrl . 'images/icons/Payfast logo.svg" alt="PayFast" loading="lazy">
                         </div>
                     </div>
                 </div>';
