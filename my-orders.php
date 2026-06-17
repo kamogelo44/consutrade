@@ -33,7 +33,6 @@ $breadcrumbItems = [
             width: 100%;
             margin: 0 auto;
             padding: var(--spacing-xl);
-            margin-top: 70px;
         }
 
         .search-bar {
@@ -135,7 +134,6 @@ $breadcrumbItems = [
             transform: translateY(-1px);
         }
 
-        /* Review button for completed orders */
         .review-btn {
             background: var(--success-light);
             color: var(--success);

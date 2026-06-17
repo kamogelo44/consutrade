@@ -59,8 +59,7 @@ if ($from_product_id > 0 && $from_product_name) {
         /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
         .public-seller-profile-container {
             width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: 100%;
             padding: var(--spacing-xl);
             min-height: calc(100vh - 200px);
         }

@@ -429,6 +429,36 @@ $breadcrumbItems = [
             font-size: var(--font-md);
         }
 
+        .report-modal .modal-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-xl);
+            justify-content: flex-end;
+        }
+
+        .report-modal .btn-primary {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: var(--font-bold);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .report-modal .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .report-modal .btn-primary:disabled {
+            background: var(--gray-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+
         /* Responsive */
         @media (max-width: 992px) {
             .top-items {
@@ -497,7 +527,7 @@ $breadcrumbItems = [
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Report Product</h3>
-                <button class="modal-close" id="closeReportModalBtn">&times;</button>
+                <button class="btn-close " id="closeReportModalBtn">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="reportErrorContainer" class="error-container" style="display:none;"></div>
@@ -519,7 +549,6 @@ $breadcrumbItems = [
                         <small>Maximum 1000 characters</small>
                     </div>
                     <div class="modal-actions" style="display:flex; gap:12px; margin-top:20px; justify-content: flex-end;">
-                        <button type="button" class="btn-secondary" id="cancelReportBtn">Cancel</button>
                         <button type="submit" class="btn-primary" id="submitReportBtn">Submit Report</button>
                     </div>
                 </form>

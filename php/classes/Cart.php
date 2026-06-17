@@ -15,16 +15,7 @@ class Cart
     private $cartId;
 
     /** @var int */
-    private $userId;
-
-    /** @var int */
-    private $productId;
-
-    /** @var int */
     private $quantity;
-
-    /** @var string */
-    private $addedAt;
 
     /** @var float Price from the joined products table */
     private $price;
@@ -37,10 +28,7 @@ class Cart
     public function __construct($data)
     {
         $this->cartId    = (int) ($data['cart_id']    ?? 0);
-        $this->userId    = (int) ($data['user_id']    ?? 0);
-        $this->productId = (int) ($data['product_id'] ?? 0);
         $this->quantity  = (int) ($data['quantity']   ?? 1);
-        $this->addedAt   = (string) ($data['added_at'] ?? '');
         $this->price     = (float) ($data['price']    ?? 0.00);
     }
 
