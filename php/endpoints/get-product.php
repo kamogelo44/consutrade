@@ -44,7 +44,7 @@ foreach ($gallery as $img) {
 $rating = $reviewRepo->getSellerRating($product->getSellerId());
 $categoryName = $categoryRepo->getCategoryName($product->getCategoryId()) ?? 'General';
 
-// Get seller info
+// Get seller info with phone and email
 $seller = $userRepo->findById($product->getSellerId());
 $sellerProfileImage = $seller ? $seller->getProfileImageUrl() : getBaseUrl() . 'images/icons/profile-svgrepo-com.svg';
 
@@ -63,6 +63,8 @@ $response['product'] = [
     'seller_id' => $product->getSellerId(),
     'seller_name' => $seller ? $seller->getFullName() : 'Unknown',
     'seller_profile_image' => $sellerProfileImage,
+    'seller_phone' => $seller ? $seller->getPhone() : '',
+    'seller_email' => $seller ? $seller->getEmail() : '',
     'is_verified' => $seller ? $seller->isVerified() : false,
     'stock_quantity' => $product->getStockQuantity(),
     'status' => $product->getStatus(),

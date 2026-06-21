@@ -285,6 +285,52 @@ $breadcrumbItems = [
             color: var(--primary-color);
         }
 
+        /* Contact Buttons */
+        .contact-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-size: var(--font-sm);
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .whatsapp-btn {
+            background: #25D366;
+            color: white;
+        }
+
+        .whatsapp-btn:hover {
+            background: #1da851;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .email-btn {
+            background: var(--gray-bg-light);
+            color: var(--gray-dark);
+            border: 1px solid var(--border-light);
+        }
+
+        .email-btn:hover {
+            background: var(--gray-lighter);
+            box-shadow: var(--shadow-sm);
+        }
+
         /* Action Buttons Section */
         .actions {
             display: flex;
@@ -503,6 +549,18 @@ $breadcrumbItems = [
             .action-btns button {
                 height: 44px;
                 font-size: var(--font-sm);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .contact-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .contact-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>

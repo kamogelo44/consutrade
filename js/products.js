@@ -274,6 +274,7 @@ function displayProductDetails(product) {
                         '</div>';
     }
     
+    // Stock status
     var stockQty = parseInt(product.stock_quantity) || 0;
     var isOutOfStock = stockQty <= 0;
     var isLowStock = stockQty > 0 && stockQty <= 5;
@@ -295,6 +296,7 @@ function displayProductDetails(product) {
     
     var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
     
+    // Action buttons
     var actionButtonsHtml = '';
     
     if (isOutOfStock) {
@@ -304,6 +306,7 @@ function displayProductDetails(product) {
                             '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
     }
     
+    // report button - only for logged in buyers
     var isLoggedInFlag = (typeof isLoggedIn !== 'undefined' && isLoggedIn === true);
     var isBuyer = (typeof currentUserRole !== 'undefined' && currentUserRole == 'buyer');
     var showReportButton = isLoggedInFlag && isBuyer;
@@ -312,6 +315,37 @@ function displayProductDetails(product) {
         actionButtonsHtml += '<button class="report-btn" id="reportProductBtn">' +
                                 '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="16" height="16" alt="Report" loading="lazy"> Report This Product' +
                               '</button>';
+    }
+    
+    // ========== CONTACT BUTTONS ==========
+    var contactHtml = '';
+    var sellerPhone = product.seller_phone || '';
+    var sellerEmail = product.seller_email || '';
+    
+    // Format phone for WhatsApp (remove non-digits, add 27 prefix if needed)
+    var whatsappNumber = '';
+    if (sellerPhone) {
+        var digits = sellerPhone.replace(/\D/g, '');
+        // Remove leading 0 if present
+        if (digits.startsWith('0')) {
+            digits = digits.substring(1);
+        }
+        // Add 27 country code if not already there
+        if (!digits.startsWith('27')) {
+            digits = '27' + digits;
+        }
+        whatsappNumber = digits;
+    }
+    
+    if (sellerPhone) {
+        contactHtml += '<a href="https://wa.me/' + whatsappNumber + '" target="_blank" class="contact-btn whatsapp-btn">' +
+                            '<img src="' + baseUrl + 'images/icons/whatsapp-svgrepo-com.svg" width="18" height="18" alt="WhatsApp" loading="lazy"> WhatsApp' +
+                        '</a>';
+    }
+    if (sellerEmail) {
+        contactHtml += '<a href="mailto:' + sellerEmail + '" class="contact-btn email-btn">' +
+                            '<img src="' + baseUrl + 'images/icons/email-svgrepo-com.svg" width="16" height="16" alt="Email" loading="lazy"> Email Seller' +
+                        '</a>';
     }
     
     var sellerImage = fixImageUrl(product.seller_profile_image);
@@ -352,6 +386,7 @@ function displayProductDetails(product) {
                         '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Verified Seller</p></div>' : 
                         '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Not Verified</p></div>') +
                 '</div>' +
+                '<div class="contact-buttons">' + contactHtml + '</div>' +
                 '<div class="star-reviews">' +
                     '<h1>Seller Reviews</h1>' +
                     starsHtml +
@@ -371,6 +406,7 @@ function displayProductDetails(product) {
         '</div>'
     );
     
+    // setup gallery click handlers
     $('.small-img').on('click', function() {
         var newImagePath = $(this).data('image-path');
         $('#main-product-image').attr('src', newImagePath);
@@ -378,6 +414,7 @@ function displayProductDetails(product) {
         $(this).addClass('active');
     });
     
+    // report button handler
     if (showReportButton) {
         $('#reportProductBtn').off('click').on('click', function(e) {
             e.stopPropagation();
