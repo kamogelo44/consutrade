@@ -29,6 +29,7 @@ require_once __DIR__ . '/php/classes/UserRepository.php';
 require_once __DIR__ . '/php/classes/CategoryRepository.php';
 require_once __DIR__ . '/php/classes/ProductRepository.php';
 require_once __DIR__ . '/php/classes/ProductImageRepository.php';
+require_once __DIR__ . '/php/classes/ProductImageService.php';
 require_once __DIR__ . '/php/classes/OrderRepository.php';
 require_once __DIR__ . '/php/classes/CartRepository.php';
 require_once __DIR__ . '/php/classes/ReviewRepository.php';
@@ -38,7 +39,8 @@ require_once __DIR__ . '/php/classes/ReportRepository.php';
 // Create repository instances
 $userRepo = new UserRepository($conn);
 $categoryRepo = new CategoryRepository($conn);
-$productRepo = new ProductRepository($conn);
+$productImageService = new ProductImageService();
+$productRepo = new ProductRepository($conn, $productImageService);
 $productImageRepo = new ProductImageRepository($conn);
 $orderRepo = new OrderRepository($conn);
 $cartRepo = new CartRepository($conn);

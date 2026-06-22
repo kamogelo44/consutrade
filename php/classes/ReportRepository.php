@@ -437,6 +437,15 @@ class ReportRepository
     }
 
     /**
+     * Count pending reports
+     * Alias for getPendingReportsCount() for consistency with other repositories
+     */
+    public function countPending(): int
+    {
+        return $this->getPendingReportsCount();
+    }
+
+    /**
      * Get total count of reports with status filter.
      *
      * @param string $status Status filter

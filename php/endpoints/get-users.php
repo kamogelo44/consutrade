@@ -27,7 +27,7 @@ try {
     $offset = ($page - 1) * $limit;
 
     if ($recentOnly) {
-        $users = $userRepo->getRecentUsers($limit);
+        $users = $userRepo->findRecent($limit);
         $response['success'] = true;
         $response['users'] = $users;
         $response['total_pages'] = 1;
@@ -39,7 +39,7 @@ try {
     if ($roleFilter === 'pending') {
         $totalRows = $userRepo->getPendingVerificationsCount();
         $totalPages = ceil($totalRows / $limit);
-        $users = $userRepo->getPendingVerificationsWithPagination($limit, $offset);
+        $users = $userRepo->findPendingVerifications($limit, $offset);
 
         $response['success'] = true;
         $response['users'] = $users;
@@ -52,10 +52,9 @@ try {
     if ($roleFilter !== 'all') {
         $totalRows = $userRepo->countUsersByRole($roleFilter, $searchTerm);
         $totalPages = ceil($totalRows / $limit);
-        $users = $userRepo->getUsersByRoleWithPagination($roleFilter, $searchTerm, $limit, $offset);
+        $users = $userRepo->findByRoleWithPagination($roleFilter, $searchTerm, $limit, $offset);
     } else {
-        // For 'all', we need to use getAll with proper parameters
-        $users = $userRepo->getAll('all', $searchTerm, $limit, $offset);
+        $users = $userRepo->findAll('all', $searchTerm, $limit, $offset);
         $totalRows = $userRepo->countUsersByRole('all', $searchTerm);
         $totalPages = ceil($totalRows / $limit);
     }

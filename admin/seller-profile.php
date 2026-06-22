@@ -577,7 +577,7 @@ if ($verificationObj) {
                             <span class="stat-value highlight" id="statProducts">-</span>
                         </div>
                         <div class="stat-row">
-                            <span class="stat-label">Completed Orders</span> <!-- Changed from "Orders Completed" -->
+                            <span class="stat-label">Completed Orders</span>
                             <span class="stat-value highlight" id="statSales">-</span>
                         </div>
                         <div class="stat-row">

@@ -2,6 +2,9 @@
 /*
  * ConsuTrade - Get User Statistics (AJAX)
  * Author: Kamogelo Phale
+ * 
+ * This endpoint acts as a controller - it receives requests,
+ * delegates to repositories, and returns JSON responses.
  */
 
 require_once dirname(__DIR__, 2) . '/init.php';
@@ -9,33 +12,47 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Admin requesting platform-wide stats
+// ============================================
+// ADMIN STATS
+// ============================================
 if ($auth->isAdmin() && !isset($_GET['seller_id']) && !isset($_GET['user_id'])) {
-    $totalUsers = $userRepo->getTotalUsers();
-    $totalProducts = $productRepo->getProductsCountForAdmin('all', '');
-
-    $revenueSql = "SELECT COALESCE(SUM(amount), 0) as total_revenue FROM transactions WHERE status = 'completed'";
-    $revenueResult = $conn->query($revenueSql);
-    $revenueRow = $revenueResult->fetch_assoc();
-    $totalRevenue = (float)($revenueRow['total_revenue'] ?? 0);
-
-    $pendingSql = "SELECT COUNT(*) as pending FROM orders WHERE status = 'pending'";
-    $pendingResult = $conn->query($pendingSql);
-    $pendingRow = $pendingResult->fetch_assoc();
-    $pendingOrders = (int)($pendingRow['pending'] ?? 0);
-
-    $response = [
-        'success' => true,
-        'total_users' => $totalUsers,
-        'total_products' => $totalProducts,
-        'total_revenue' => $totalRevenue,
-        'pending_orders' => $pendingOrders
+    $userStats = [
+        'total_users' => $userRepo->getTotalUsers(),
+        'total_buyers' => $userRepo->countByRole('buyer'),
+        'total_sellers' => $userRepo->countByRole('seller'),
+        'pending_verifications' => $userRepo->getPendingVerificationsCount()
     ];
+
+    $orderStats = [
+        'total_orders' => $orderRepo->countAll(),
+        'total_revenue' => $orderRepo->getTotalRevenue(),
+        'pending_orders' => $orderRepo->countByStatus('pending')
+    ];
+
+    $productStats = [
+        'total_products' => $productRepo->countAll()
+    ];
+
+    $reportStats = [
+        'pending_reports' => $reportRepo->getPendingReportsCount()
+    ];
+
+    $admin = new Admin([]);
+    $dashboardData = $admin->calculateDashboardStats(
+        $userStats,
+        $orderStats,
+        $productStats,
+        $reportStats
+    );
+
+    $response = ['success' => true] + $dashboardData;
     echo json_encode($response);
     exit;
 }
 
-// Get specific user stats
+// ============================================
+// SELLER OR BUYER STATS
+// ============================================
 $sellerId = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
 $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $targetId = $sellerId > 0 ? $sellerId : $userId;
@@ -54,50 +71,73 @@ if (!$targetUser) {
     exit;
 }
 
-// Seller stats
+// ============================================
+// SELLER STATS
+// ============================================
 if ($targetUser instanceof Seller) {
     $totalProducts = $productRepo->countUserProducts($targetId);
-
-    $totalRevenue = $orderRepo->getSellerTotalRevenue($targetId);
+    $totalOrders = $orderRepo->countSellerOrders($targetId);
+    $pendingOrders = $orderRepo->countSellerOrdersByStatus($targetId, 'pending');
     $completedOrders = $orderRepo->getSellerTotalOrders($targetId);
-    $allOrders = $orderRepo->countSellerOrders($targetId, 'all', '');
-
+    $totalRevenue = $orderRepo->getSellerTotalRevenue($targetId);
     $ratingData = $reviewRepo->getSellerRating($targetId);
-    $avgRating = $ratingData['avg_rating'] ?? 0;
-    $reviewCount = $ratingData['review_count'] ?? 0;
+
+    $stats = $targetUser->calculateStats(
+        $totalProducts,
+        $totalOrders,
+        $totalRevenue,
+        $ratingData['avg_rating'] ?? 0
+    );
 
     $response = [
         'success' => true,
-        'total_products' => $totalProducts,
-        'total_revenue' => $totalRevenue,
-        'completed_orders' => $completedOrders,
-        'all_orders' => $allOrders,
-        'avg_rating' => $avgRating
+        'total_products' => $stats['total_products'],
+        'total_revenue' => $stats['total_revenue'],
+        'total_orders' => $stats['total_orders'],
+        'pending_orders' => $pendingOrders,
+        'avg_rating' => round($stats['avg_rating'], 1),
+        'is_verified' => $stats['is_verified'],
+        'member_since' => date('F Y', strtotime($stats['member_since'])),
+        'has_verification_document' => $stats['has_verification_document']
     ];
+    echo json_encode($response);
+    exit;
 }
-// Buyer stats
-elseif ($targetUser instanceof Buyer) {
+
+// ============================================
+// BUYER STATS
+// ============================================
+if ($targetUser instanceof Buyer) {
     $isAuthenticated = ($isLoggedIn && $currentUser instanceof Buyer && $currentUser->getUserId() === $targetId);
 
-    if ($isAuthenticated) {
-        $orderStats = $orderRepo->getBuyerStats($targetId);
-        $reviewsCount = $reviewRepo->countBuyerReviews($targetId);
-
-        $response = [
-            'success' => true,
-            'total_orders' => $orderStats['total_orders'],
-            'total_spent' => $orderStats['total_spent'],
-            'pending_orders' => $orderStats['pending_orders'],
-            'completed_orders' => $orderStats['completed_orders'],
-            'reviews_written' => $reviewsCount
-        ];
-    } else {
+    if (!$isAuthenticated) {
         $response['message'] = 'Unauthorized to view buyer stats';
+        echo json_encode($response);
+        exit;
     }
-}
-// Fallback for other user types (should not happen)
-else {
-    $response['message'] = 'User stats not available for this account type';
+
+    $orderStats = $orderRepo->getBuyerStats($targetId);
+    $reviewsCount = $reviewRepo->countBuyerReviews($targetId);
+
+    $stats = $targetUser->getStats(
+        $orderStats['total_orders'] ?? 0,
+        $orderStats['total_spent'] ?? 0
+    );
+
+    $response = [
+        'success' => true,
+        'total_orders' => $stats['total_orders'],
+        'total_spent' => $stats['total_spent'],
+        'member_since' => date('F Y', strtotime($stats['member_since'])),
+        'is_active' => $stats['is_active'],
+        'reviews_written' => $reviewsCount
+    ];
+    echo json_encode($response);
+    exit;
 }
 
+// ============================================
+// FALLBACK
+// ============================================
+$response['message'] = 'User stats not available for this account type';
 echo json_encode($response);

@@ -19,6 +19,46 @@ class UserRepository
         $this->db = $db;
     }
 
+    // ============================================================
+    // CREATE
+    // ============================================================
+
+    /**
+     * Create a new user.
+     *
+     * @param array $userData User data (full_name, email, phone, password, role)
+     * @return int|false Insert ID or false on failure
+     */
+    public function create(array $userData): int|false
+    {
+        $stmt = $this->db->prepare(
+            "INSERT INTO users (full_name, email, phone, password, role, status, created_at) 
+             VALUES (?, ?, ?, ?, ?, 'active', NOW())"
+        );
+
+        $stmt->bind_param(
+            'sssss',
+            $userData['full_name'],
+            $userData['email'],
+            $userData['phone'],
+            $userData['password'],
+            $userData['role']
+        );
+
+        if ($stmt->execute()) {
+            $userId = $stmt->insert_id;
+            $stmt->close();
+            return $userId;
+        }
+
+        $stmt->close();
+        return false;
+    }
+
+    // ============================================================
+    // READ
+    // ============================================================
+
     /**
      * Find user by ID and return User object.
      *
@@ -108,46 +148,209 @@ class UserRepository
     }
 
     /**
-     * Hydrate database row into appropriate User subclass.
-     * NO repositories are injected into domain models!
+     * Get all users as array (for admin listing).
      *
-     * @param array $data Database row
-     * @return User
+     * @param string $filter Role filter
+     * @param string $search Search term
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array
      */
-    private function hydrate(array $data): User
+    public function findAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
-        $role = $data['role'] ?? 'buyer';
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
+                FROM users 
+                WHERE 1=1";
+        $params = [];
+        $types = "";
 
-        switch ($role) {
-            case 'admin':
-                return new Admin($data);
-
-            case 'seller':
-                $verification = $this->getSellerVerification($data['user_id']);
-                return new Seller($data, $verification);
-
-            case 'buyer':
-            default:
-                return new Buyer($data);
+        if ($filter !== 'all') {
+            $sql .= " AND role = ?";
+            $params[] = $filter;
+            $types .= "s";
         }
+
+        if (!empty($search)) {
+            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $sql .= " ORDER BY created_at DESC";
+
+        if ($limit > 0) {
+            $sql .= " LIMIT ? OFFSET ?";
+            $params[] = $limit;
+            $params[] = $offset;
+            $types .= "ii";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+        $stmt->close();
+
+        return $users;
     }
 
     /**
-     * Get seller verification data as domain object.
+     * Get users by role with pagination (for admin).
+     *
+     * @param string $role User role
+     * @param string $search Search term
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array
+     */
+    public function findByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
+    {
+        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
+                FROM users 
+                WHERE role = ?";
+        $params = [$role];
+        $types = "s";
+
+        if (!empty($search)) {
+            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+        $stmt->close();
+
+        return $users;
+    }
+
+    /**
+     * Get pending seller verifications with pagination.
+     *
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array
+     */
+    public function findPendingVerifications(int $limit = 10, int $offset = 0): array
+    {
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, u.status,
+                   DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
+                   sv.document_path, sv.document_type
+            FROM users u
+            INNER JOIN seller_verification sv ON u.user_id = sv.seller_id
+            WHERE u.role = 'seller' AND sv.document_verified = 0
+            ORDER BY u.created_at ASC
+            LIMIT ? OFFSET ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $limit, $offset);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = [
+                'user_id' => (int) $row['user_id'],
+                'full_name' => $row['full_name'],
+                'email' => $row['email'],
+                'phone' => $row['phone'] ?? '-',
+                'role' => $row['role'],
+                'is_verified' => false,
+                'status' => $row['status'] ?? 'active',
+                'created_at' => $row['created_at'],
+                'has_document' => true,
+                'document_type' => $row['document_type']
+            ];
+        }
+        $stmt->close();
+
+        return $users;
+    }
+
+    /**
+     * Get recent users for admin dashboard.
+     *
+     * @param int $limit Number of users
+     * @return array
+     */
+    public function findRecent(int $limit = 5): array
+    {
+        $sql = "SELECT user_id, full_name, email, role, id_verified, status, created_at 
+                FROM users 
+                ORDER BY created_at DESC 
+                LIMIT ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $roleClass = match ($row['role']) {
+                'admin' => 'role-admin',
+                'seller' => 'role-seller',
+                default => 'role-buyer'
+            };
+
+            $users[] = [
+                'user_id' => (int) $row['user_id'],
+                'full_name' => $row['full_name'],
+                'email' => $row['email'],
+                'role' => $row['role'],
+                'role_class' => $roleClass,
+                'is_verified' => (bool) $row['id_verified'],
+                'status' => $row['status'] ?? 'active',
+                'created_at' => date('d M Y', strtotime($row['created_at']))
+            ];
+        }
+        $stmt->close();
+
+        return $users;
+    }
+
+    /**
+     * Get seller public profile data (array, not object).
      *
      * @param int $sellerId Seller ID
-     * @return SellerVerification|null
+     * @return array|null
      */
-    private function getSellerVerification(int $sellerId): ?SellerVerification
+    public function getSellerPublicProfile(int $sellerId): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM seller_verification WHERE seller_id = ?");
+        $sql = "SELECT user_id, full_name, profile_image, location, id_verified, status, created_at 
+                FROM users 
+                WHERE user_id = ? AND role = 'seller'";
+        $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $sellerId);
         $stmt->execute();
         $result = $stmt->get_result();
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
-            return new SellerVerification($row);
+            return $row;
         }
 
         $stmt->close();
@@ -155,36 +358,82 @@ class UserRepository
     }
 
     /**
-     * Create a new user.
+     * Search users by name or email.
      *
-     * @param array $userData User data (full_name, email, phone, password, role)
-     * @return int|false Insert ID or false on failure
+     * @param string $query Search query
+     * @return array
      */
-    public function createUser(array $userData): int|false
+    public function search(string $query): array
     {
-        $stmt = $this->db->prepare(
-            "INSERT INTO users (full_name, email, phone, password, role, status, created_at) 
-             VALUES (?, ?, ?, ?, ?, 'active', NOW())"
-        );
+        $sql = "SELECT user_id, full_name, email, phone, role, id_verified, status, created_at 
+                FROM users 
+                WHERE full_name LIKE ? OR email LIKE ? 
+                ORDER BY full_name ASC 
+                LIMIT 20";
+        $searchParam = "%$query%";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ss', $searchParam, $searchParam);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        $stmt->bind_param(
-            'sssss',
-            $userData['full_name'],
-            $userData['email'],
-            $userData['phone'],
-            $userData['password'],
-            $userData['role']
-        );
-
-        if ($stmt->execute()) {
-            $userId = $stmt->insert_id;
-            $stmt->close();
-            return $userId;
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
         }
-
         $stmt->close();
-        return false;
+
+        return $users;
     }
+
+    /**
+     * Check if email already exists.
+     *
+     * @param string $email Email to check
+     * @param int $excludeUserId Optional user ID to exclude
+     * @return bool
+     */
+    public function emailExists(string $email, int $excludeUserId = 0): bool
+    {
+        if ($excludeUserId > 0) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE email = ? AND user_id != ?");
+            $stmt->bind_param('si', $email, $excludeUserId);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE email = ?");
+            $stmt->bind_param('s', $email);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $count = (int) ($result->fetch_assoc()['count'] ?? 0);
+        $stmt->close();
+        return $count > 0;
+    }
+
+    /**
+     * Check if phone already exists.
+     *
+     * @param string $phone Phone to check
+     * @param int $excludeUserId Optional user ID to exclude
+     * @return bool
+     */
+    public function phoneExists(string $phone, int $excludeUserId = 0): bool
+    {
+        if ($excludeUserId > 0) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE phone = ? AND user_id != ?");
+            $stmt->bind_param('si', $phone, $excludeUserId);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE phone = ?");
+            $stmt->bind_param('s', $phone);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $count = (int) ($result->fetch_assoc()['count'] ?? 0);
+        $stmt->close();
+        return $count > 0;
+    }
+
+    // ============================================================
+    // UPDATE
+    // ============================================================
 
     /**
      * Update user profile.
@@ -285,103 +534,129 @@ class UserRepository
     }
 
     /**
-     * Get all users as array (for admin listing).
+     * Verify a seller's ID (mark as verified).
      *
-     * @param string $filter Role filter
-     * @param string $search Search term
-     * @param int $limit Limit
-     * @param int $offset Offset
-     * @return array
+     * @param int $sellerId Seller ID
+     * @return bool
      */
-    public function getAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
+    public function verifySeller(int $sellerId): bool
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
-                FROM users 
-                WHERE 1=1";
-        $params = [];
-        $types = "";
-
-        if ($filter !== 'all') {
-            $sql .= " AND role = ?";
-            $params[] = $filter;
-            $types .= "s";
-        }
-
-        if (!empty($search)) {
-            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
-            $searchParam = "%$search%";
-            $params[] = $searchParam;
-            $params[] = $searchParam;
-            $types .= "ss";
-        }
-
-        $sql .= " ORDER BY created_at DESC";
-
-        if ($limit > 0) {
-            $sql .= " LIMIT ? OFFSET ?";
-            $params[] = $limit;
-            $params[] = $offset;
-            $types .= "ii";
-        }
-
-        $stmt = $this->db->prepare($sql);
-        if (!empty($params)) {
-            $stmt->bind_param($types, ...$params);
-        }
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = $row;
-        }
+        $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ? AND role = 'seller'");
+        $stmt->bind_param('i', $sellerId);
+        $result = $stmt->execute();
         $stmt->close();
-
-        return $users;
+        return $result;
     }
 
     /**
-     * Get users by role with pagination (for admin).
+     * Unverify a seller's ID.
      *
-     * @param string $role User role
-     * @param string $search Search term
-     * @param int $limit Limit
-     * @param int $offset Offset
-     * @return array
+     * @param int $sellerId Seller ID
+     * @return bool
      */
-    public function getUsersByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
+    public function unverifySeller(int $sellerId): bool
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
-                FROM users 
-                WHERE role = ?";
-        $params = [$role];
-        $types = "s";
+        $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ? AND role = 'seller'");
+        $stmt->bind_param('i', $sellerId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
 
-        if (!empty($search)) {
-            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
-            $searchParam = "%$search%";
-            $params[] = $searchParam;
-            $params[] = $searchParam;
-            $types .= "ss";
+    /**
+     * Upgrade a buyer to seller.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function upgradeToSeller(int $userId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE users SET role = 'seller' WHERE user_id = ? AND role = 'buyer'");
+        $stmt->bind_param('i', $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    // ============================================================
+    // DELETE / SOFT DELETE
+    // ============================================================
+
+    /**
+     * Suspend a user account.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function suspend(int $userId): bool
+    {
+        return $this->updateStatus($userId, 'suspended');
+    }
+
+    /**
+     * Reinstate a suspended user account.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function reinstate(int $userId): bool
+    {
+        return $this->updateStatus($userId, 'active');
+    }
+
+    /**
+     * Ban a user account.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function ban(int $userId): bool
+    {
+        return $this->updateStatus($userId, 'banned');
+    }
+
+    // ============================================================
+    // COUNTS / STATISTICS
+    // ============================================================
+
+    /**
+     * Get total user count (optionally by role).
+     *
+     * @param string|null $role Optional role filter
+     * @return int
+     */
+    public function count(?string $role = null): int
+    {
+        if ($role) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users WHERE role = ?");
+            $stmt->bind_param('s', $role);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users");
         }
 
-        $sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
-        $params[] = $limit;
-        $params[] = $offset;
-        $types .= "ii";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
-
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = $row;
-        }
+        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
         $stmt->close();
 
-        return $users;
+        return $total;
+    }
+
+    /**
+     * Count users by role.
+     *
+     * @param string $role User role
+     * @return int
+     */
+    public function countByRole(string $role): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE role = ? AND status = 'active'");
+        $stmt->bind_param('s', $role);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return (int)($row['count'] ?? 0);
     }
 
     /**
@@ -432,129 +707,6 @@ class UserRepository
     }
 
     /**
-     * Get recent users for admin dashboard.
-     *
-     * @param int $limit Number of users
-     * @return array
-     */
-    public function getRecentUsers(int $limit = 5): array
-    {
-        $sql = "SELECT user_id, full_name, email, role, id_verified, status, created_at 
-                FROM users 
-                ORDER BY created_at DESC 
-                LIMIT ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $limit);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $roleClass = match ($row['role']) {
-                'admin' => 'role-admin',
-                'seller' => 'role-seller',
-                default => 'role-buyer'
-            };
-
-            $users[] = [
-                'user_id' => (int) $row['user_id'],
-                'full_name' => $row['full_name'],
-                'email' => $row['email'],
-                'role' => $row['role'],
-                'role_class' => $roleClass,
-                'is_verified' => (bool) $row['id_verified'],
-                'status' => $row['status'] ?? 'active',
-                'created_at' => date('d M Y', strtotime($row['created_at']))
-            ];
-        }
-        $stmt->close();
-
-        return $users;
-    }
-
-    /**
-     * Get total user count (optionally by role).
-     *
-     * @param string|null $role Optional role filter
-     * @return int
-     */
-    public function getTotalUsers(?string $role = null): int
-    {
-        if ($role) {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users WHERE role = ?");
-            $stmt->bind_param('s', $role);
-        } else {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users");
-        }
-
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
-        $stmt->close();
-
-        return $total;
-    }
-
-    /**
-     * Get user statistics for admin dashboard.
-     *
-     * @return array
-     */
-    public function getUserStats(): array
-    {
-        return [
-            'total_users' => $this->getTotalUsers(),
-            'total_buyers' => $this->getTotalUsers('buyer'),
-            'total_sellers' => $this->getTotalUsers('seller'),
-            'pending_verifications' => $this->getPendingVerificationsCount()
-        ];
-    }
-
-    /**
-     * Get pending seller verifications with pagination.
-     *
-     * @param int $limit Limit
-     * @param int $offset Offset
-     * @return array
-     */
-    public function getPendingVerificationsWithPagination(int $limit = 10, int $offset = 0): array
-    {
-        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, u.status,
-                   DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
-                   sv.document_path, sv.document_type
-            FROM users u
-            INNER JOIN seller_verification sv ON u.user_id = sv.seller_id
-            WHERE u.role = 'seller' AND sv.document_verified = 0
-            ORDER BY u.created_at ASC
-            LIMIT ? OFFSET ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('ii', $limit, $offset);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = [
-                'user_id' => (int) $row['user_id'],
-                'full_name' => $row['full_name'],
-                'email' => $row['email'],
-                'phone' => $row['phone'] ?? '-',
-                'role' => $row['role'],
-                'is_verified' => false,
-                'status' => $row['status'] ?? 'active',
-                'created_at' => $row['created_at'],
-                'has_document' => true,
-                'document_type' => $row['document_type']
-            ];
-        }
-        $stmt->close();
-
-        return $users;
-    }
-
-    /**
      * Get count of pending seller verifications.
      *
      * @return int
@@ -575,179 +727,89 @@ class UserRepository
     }
 
     /**
-     * Get seller public profile data (array, not object).
+     * Count pending verifications (alias).
+     *
+     * @return int
+     */
+    public function countPendingVerifications(): int
+    {
+        return $this->getPendingVerificationsCount();
+    }
+
+    /**
+     * Get user statistics for admin dashboard.
+     *
+     * @return array
+     */
+    public function getStats(): array
+    {
+        return [
+            'total_users' => $this->count(),
+            'total_buyers' => $this->count('buyer'),
+            'total_sellers' => $this->count('seller'),
+            'pending_verifications' => $this->getPendingVerificationsCount()
+        ];
+    }
+
+    /**
+     * Get total user count (alias).
+     *
+     * @param string|null $role Optional role filter
+     * @return int
+     */
+    public function getTotalUsers(?string $role = null): int
+    {
+        return $this->count($role);
+    }
+
+    // ============================================================
+    // PRIVATE HELPERS
+    // ============================================================
+
+    /**
+     * Hydrate database row into appropriate User subclass.
+     * NO repositories are injected into domain models!
+     *
+     * @param array $data Database row
+     * @return User
+     */
+    private function hydrate(array $data): User
+    {
+        $role = $data['role'] ?? 'buyer';
+
+        switch ($role) {
+            case 'admin':
+                return new Admin($data);
+
+            case 'seller':
+                $verification = $this->getSellerVerification($data['user_id']);
+                return new Seller($data, $verification);
+
+            case 'buyer':
+            default:
+                return new Buyer($data);
+        }
+    }
+
+    /**
+     * Get seller verification data as domain object.
      *
      * @param int $sellerId Seller ID
-     * @return array|null
+     * @return SellerVerification|null
      */
-    public function getSellerPublicProfile(int $sellerId): ?array
+    private function getSellerVerification(int $sellerId): ?SellerVerification
     {
-        $sql = "SELECT user_id, full_name, profile_image, location, id_verified, status, created_at 
-                FROM users 
-                WHERE user_id = ? AND role = 'seller'";
-        $stmt = $this->db->prepare($sql);
+        $stmt = $this->db->prepare("SELECT * FROM seller_verification WHERE seller_id = ?");
         $stmt->bind_param('i', $sellerId);
         $stmt->execute();
         $result = $stmt->get_result();
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
-            return $row;
+            return new SellerVerification($row);
         }
 
         $stmt->close();
         return null;
-    }
-
-    /**
-     * Search users by name or email.
-     *
-     * @param string $query Search query
-     * @return array
-     */
-    public function searchUsers(string $query): array
-    {
-        $sql = "SELECT user_id, full_name, email, phone, role, id_verified, status, created_at 
-                FROM users 
-                WHERE full_name LIKE ? OR email LIKE ? 
-                ORDER BY full_name ASC 
-                LIMIT 20";
-        $searchParam = "%$query%";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('ss', $searchParam, $searchParam);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = $row;
-        }
-        $stmt->close();
-
-        return $users;
-    }
-
-    /**
-     * Suspend a user account.
-     *
-     * @param int $userId User ID
-     * @return bool
-     */
-    public function suspendUser(int $userId): bool
-    {
-        return $this->updateStatus($userId, 'suspended');
-    }
-
-    /**
-     * Reinstate a suspended user account.
-     *
-     * @param int $userId User ID
-     * @return bool
-     */
-    public function reinstateUser(int $userId): bool
-    {
-        return $this->updateStatus($userId, 'active');
-    }
-
-    /**
-     * Ban a user account.
-     *
-     * @param int $userId User ID
-     * @return bool
-     */
-    public function banUser(int $userId): bool
-    {
-        return $this->updateStatus($userId, 'banned');
-    }
-
-    /**
-     * Upgrade a buyer to seller.
-     *
-     * @param int $userId User ID
-     * @return bool
-     */
-    public function upgradeToSeller(int $userId): bool
-    {
-        $stmt = $this->db->prepare("UPDATE users SET role = 'seller' WHERE user_id = ? AND role = 'buyer'");
-        $stmt->bind_param('i', $userId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Verify a seller's ID (mark as verified).
-     *
-     * @param int $sellerId Seller ID
-     * @return bool
-     */
-    public function verifySeller(int $sellerId): bool
-    {
-        $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ? AND role = 'seller'");
-        $stmt->bind_param('i', $sellerId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Unverify a seller's ID.
-     *
-     * @param int $sellerId Seller ID
-     * @return bool
-     */
-    public function unverifySeller(int $sellerId): bool
-    {
-        $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ? AND role = 'seller'");
-        $stmt->bind_param('i', $sellerId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Check if email already exists.
-     *
-     * @param string $email Email to check
-     * @param int $excludeUserId Optional user ID to exclude
-     * @return bool
-     */
-    public function emailExists(string $email, int $excludeUserId = 0): bool
-    {
-        if ($excludeUserId > 0) {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE email = ? AND user_id != ?");
-            $stmt->bind_param('si', $email, $excludeUserId);
-        } else {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE email = ?");
-            $stmt->bind_param('s', $email);
-        }
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $count = (int) ($result->fetch_assoc()['count'] ?? 0);
-        $stmt->close();
-        return $count > 0;
-    }
-
-    /**
-     * Check if phone already exists.
-     *
-     * @param string $phone Phone to check
-     * @param int $excludeUserId Optional user ID to exclude
-     * @return bool
-     */
-    public function phoneExists(string $phone, int $excludeUserId = 0): bool
-    {
-        if ($excludeUserId > 0) {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE phone = ? AND user_id != ?");
-            $stmt->bind_param('si', $phone, $excludeUserId);
-        } else {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE phone = ?");
-            $stmt->bind_param('s', $phone);
-        }
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $count = (int) ($result->fetch_assoc()['count'] ?? 0);
-        $stmt->close();
-        return $count > 0;
     }
 }

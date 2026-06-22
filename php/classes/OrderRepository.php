@@ -623,4 +623,98 @@ class OrderRepository
 
         return (int)($row['total'] ?? 0);
     }
+
+    /**
+     * Count seller orders by status
+     */
+    public function countSellerOrdersByStatus(int $sellerId, string $status): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM orders WHERE seller_id = ? AND status = ?");
+        $stmt->bind_param('is', $sellerId, $status);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return (int)($row['count'] ?? 0);
+    }
+
+    /**
+     * Count all orders
+     */
+    public function countAll(): int
+    {
+        $result = $this->db->query("SELECT COUNT(*) as count FROM orders");
+        $row = $result->fetch_assoc();
+        return (int)($row['count'] ?? 0);
+    }
+
+    /**
+     * Count orders by status
+     */
+    public function countByStatus(string $status): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM orders WHERE status = ?");
+        $stmt->bind_param('s', $status);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return (int)($row['count'] ?? 0);
+    }
+
+    /**
+     * Get total revenue from completed transactions
+     * Uses transactions table (not orders) for accurate revenue
+     */
+    public function getTotalRevenue(): float
+    {
+        $result = $this->db->query(
+            "SELECT COALESCE(SUM(amount), 0) as total_revenue 
+         FROM transactions 
+         WHERE status = 'completed'"
+        );
+        $row = $result->fetch_assoc();
+        return (float)($row['total_revenue'] ?? 0);
+    }
+
+    /**
+     * Get recent orders with buyer names (for admin dashboard)
+     * This is an alias/improvement of getRecentOrders() with consistent formatting
+     */
+    public function getRecentWithBuyerNames(int $limit = 5): array
+    {
+        $sql = "SELECT o.order_id as id, o.total_price as total, o.status, 
+            DATE_FORMAT(o.created_at, '%d %b %Y, %h:%i %p') as created_at,
+            DATE_FORMAT(o.created_at, '%d %b %Y') as short_created_at,
+            buyer.full_name as buyer_name,
+            seller.full_name as seller_name,
+            (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+            FROM orders o
+            JOIN users buyer ON o.buyer_id = buyer.user_id
+            JOIN users seller ON o.seller_id = seller.user_id
+            ORDER BY o.created_at DESC 
+            LIMIT ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $limit);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $orders = [];
+        while ($row = $result->fetch_assoc()) {
+            $orders[] = [
+                'id' => (int)$row['id'],
+                'total' => (float)$row['total'],
+                'status' => $row['status'],
+                'created_at' => $row['short_created_at'] ?? $row['created_at'],
+                'full_created_at' => $row['created_at'],
+                'buyer_name' => $row['buyer_name'],
+                'seller_name' => $row['seller_name'],
+                'item_count' => (int)($row['item_count'] ?? 0)
+            ];
+        }
+        $stmt->close();
+
+        return $orders;
+    }
 }

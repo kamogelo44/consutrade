@@ -182,83 +182,73 @@ window.loadSellerProducts = function(limit) {
 
 // ========== ADMIN DASHBOARD ==========
 
-function loadAdminStats() {
+function loadAdminDashboard() {
+    // Show loading states
+    $('#totalRevenue, #totalUsers, #totalProducts, #pendingOrders, #pendingVerifications, #flaggedReports')
+        .text('Loading...');
+    
     $.ajax({
         url: baseUrl + 'php/endpoints/get-user-stats.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
             if (data.success) {
+                // Update stats
                 $('#totalRevenue').text('R ' + (data.total_revenue || 0).toFixed(2));
                 $('#totalUsers').text(data.total_users || 0);
                 $('#totalProducts').text(data.total_products || 0);
                 $('#pendingOrders').text(data.pending_orders || 0);
-            }
-        }
-    });
-}
-
-function loadFlaggedReportsCount() {
-    var $flaggedReports = $('#flaggedReports');
-    if (!$flaggedReports.length) return;
-    
-    $.ajax({
-        url: baseUrl + 'php/endpoints/get-flagged-listings.php',
-        type: 'GET',
-        dataType: 'json',
-        data: { page: 1, limit: 1 },
-        success: function(data) {
-            if (data.success) {
-                var count = data.total || 0;
-                $flaggedReports.text(count);
+                $('#pendingVerifications').text(data.pending_verifications || 0);
+                $('#flaggedReports').text(data.pending_reports || 0);
                 
-                if (count > 0) {
-                    $('#flaggedReportsNotice').show();
-                    $('#flaggedReportsMessage').text(count + ' product ' + (count == 1 ? 'report requires' : 'reports require') + ' your attention.');
-                } else {
-                    $('#flaggedReportsNotice').hide();
-                }
+                // Show/hide notices
+                updateNotices(data);
             } else {
-                $flaggedReports.text('0');
+                showErrorToast('Failed to load dashboard data');
             }
         },
         error: function() {
-            $flaggedReports.text('0');
+            showErrorToast('Error loading dashboard. Please refresh.');
         }
     });
+    
+    // Load recent data in parallel
+    loadRecentUsers();
+    loadRecentOrders(5);
 }
 
-function loadPendingVerifications() {
-    var $pendingVerifications = $('#pendingVerifications');
+function updateNotices(data) {
+    // Pending verifications notice
+    if (data.pending_verifications > 0) {
+        $('#pendingNotice').show();
+        $('#pendingMessage').html(
+            '<strong>' + data.pending_verifications + '</strong> seller(s) waiting for document verification.'
+        );
+    } else {
+        $('#pendingNotice').hide();
+    }
     
-    $.ajax({
-        url: baseUrl + 'php/endpoints/get-users.php?role=pending',
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-            if (data.success) {
-                var count = data.users ? data.users.length : 0;
-                $pendingVerifications.text(count);
-                if (count > 0) {
-                    $('#pendingNotice').show();
-                    $('#pendingMessage').html('<strong>' + count + '</strong> seller(s) waiting for document verification.');
-                } else {
-                    $('#pendingNotice').hide();
-                }
-            }
-        },
-        error: function() {
-            $pendingVerifications.text('0');
-        }
-    });
+    // Flagged reports notice
+    if (data.pending_reports > 0) {
+        $('#flaggedReportsNotice').show();
+        $('#flaggedReportsMessage').text(
+            data.pending_reports + ' product ' + 
+            (data.pending_reports == 1 ? 'report requires' : 'reports require') + 
+            ' your attention.'
+        );
+    } else {
+        $('#flaggedReportsNotice').hide();
+    }
 }
 
 function loadRecentUsers() {
     var $table = $('#recent-users-table');
     if (!$table.length) return;
     
+    $table.html('<tr><td colspan="4" class="loading-cell">Loading...</td></tr>');
+    
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-users.php?recent=true',
+        url: baseUrl + 'php/endpoints/get-users.php?recent=true&limit=5',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -271,7 +261,9 @@ function loadRecentUsers() {
                         '<tr>' +
                             '<td>' + escapeHtml(user.full_name) + '</td>' +
                             '<td>' + escapeHtml(user.email) + '</td>' +
-                            '<td><span class="role-badge ' + roleClass + '">' + capitalizeFirst(user.role) + '</span></td>' +
+                            '<td><span class="role-badge ' + roleClass + '">' + 
+                                capitalizeFirst(user.role) + 
+                            '</span></td>' +
                             '<td>' + escapeHtml(user.created_at) + '</td>' +
                         '</tr>'
                     );
@@ -291,6 +283,8 @@ function loadRecentOrders(limit) {
     var $table = $('#recent-orders-table');
     if (!$table.length) return;
     
+    $table.html('<tr><td colspan="5" class="loading-cell">Loading...</td></tr>');
+    
     $.ajax({
         url: baseUrl + 'php/endpoints/get-recent-orders.php?limit=' + limit,
         type: 'GET',
@@ -304,9 +298,11 @@ function loadRecentOrders(limit) {
                     $table.append(
                         '<tr onclick="viewOrder(' + order.id + ')" style="cursor: pointer;">' +
                             '<td>#' + order.id + '</td>' +
-                            '<td>' + escapeHtml(order.buyer_name) + '</td>' +
+                            '<td>' + escapeHtml(order.buyer_name || 'Guest') + '</td>' +
                             '<td>R ' + parseFloat(order.total).toFixed(2) + '</td>' +
-                            '<td><span class="order-status-badge ' + statusClass + '">' + capitalizeFirst(order.status) + '</span></td>' +
+                            '<td><span class="order-status-badge ' + statusClass + '">' + 
+                                capitalizeFirst(order.status) + 
+                            '</span></td>' +
                             '<td>' + escapeHtml(order.created_at) + '</td>' +
                         '</tr>'
                     );
@@ -321,14 +317,6 @@ function loadRecentOrders(limit) {
     });
 }
 
-function loadAdminDashboard() {
-    loadAdminStats();
-    loadRecentUsers();
-    loadRecentOrders(5);
-    loadPendingVerifications();
-    loadFlaggedReportsCount();
-}
-
 // ========== SELLER DASHBOARD ==========
 
 function loadSellerStats() {
@@ -341,7 +329,12 @@ function loadSellerStats() {
                 $('#stat-earnings').text('R ' + parseFloat(data.total_revenue || 0).toFixed(2));
                 $('#stat-products').text(data.total_products || 0);
                 $('#stat-pending').text(data.pending_orders || 0);
+            } else {
+                showErrorToast('Failed to load seller stats');
             }
+        },
+        error: function() {
+            showErrorToast('Error loading seller stats');
         }
     });
 }
@@ -350,6 +343,8 @@ function loadSellerRecentOrders(limit) {
     limit = limit || 5;
     var $list = $('#recent-orders-list');
     if (!$list.length) return;
+    
+    $list.html('<div class="loading-spinner">Loading recent orders...</div>');
     
     $.ajax({
         url: baseUrl + 'php/endpoints/get-seller-recent-orders.php?limit=' + limit,

@@ -126,7 +126,8 @@ class Seller extends User
 
     /**
      * Calculate seller statistics from provided data.
-     * This method receives data from repositories, doesn't fetch it.
+     * This is pure business logic - data comes from repositories.
+     * FIXED: No formatting (dates, rounding) - view layer handles that.
      *
      * @param int $totalProducts Total products count
      * @param int $totalOrders Total orders count
@@ -144,10 +145,10 @@ class Seller extends User
             'total_products' => $totalProducts,
             'total_orders' => $totalOrders,
             'total_revenue' => $totalRevenue,
-            'avg_rating' => round($averageRating, 1),
+            'avg_rating' => $averageRating,
             'is_verified' => $this->idVerified,
             'has_verification_document' => $this->verification !== null,
-            'member_since' => date('F Y', strtotime($this->createdAt))
+            'member_since' => $this->createdAt
         ];
     }
 
@@ -156,7 +157,7 @@ class Seller extends User
      * Receives products and stats from repositories.
      *
      * @param array $products List of products (from ProductRepository)
-     * @param array $stats Pre-calculated stats
+     * @param array $stats Pre-calculated stats (from calculateStats)
      * @return array
      */
     public function getPublicProfile(array $products, array $stats): array
@@ -167,10 +168,10 @@ class Seller extends User
             'profile_image' => $this->getProfileImageUrl(),
             'location' => $this->location,
             'is_verified' => $this->idVerified,
-            'member_since' => date('F Y', strtotime($this->createdAt)),
+            'member_since' => $this->createdAt,
             'total_products' => $stats['total_products'],
             'total_sales' => $stats['total_orders'],
-            'rating' => $stats['avg_rating'] ?? 0,
+            'rating' => $stats['avg_rating'],
             'products' => $products
         ];
     }
