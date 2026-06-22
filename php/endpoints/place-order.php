@@ -1,9 +1,13 @@
 <?php
+/*
+ * ConsuTrade - Checkout Endpoint
+ * Author: Kamogelo Phale
+ */
+
 require_once dirname(__DIR__, 2) . '/init.php';
 
 $baseUrl = getBaseUrl();
 
-// Check if this is an AJAX request
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
@@ -17,7 +21,7 @@ if (!$isLoggedIn || !$currentUser instanceof Buyer) {
 }
 
 $userId = $currentUser->getUserId();
-$cartItems = $cartRepo->getCartItems($userId);
+$cartItems = $cartRepo->findByUser($userId);
 
 if (empty($cartItems)) {
     if ($isAjax) {
@@ -28,7 +32,7 @@ if (empty($cartItems)) {
     exit;
 }
 
-$stockErrors = $cartRepo->verifyCartStock($cartItems);
+$stockErrors = $cartRepo->verifyStock($cartItems);
 
 if (!empty($stockErrors)) {
     $_SESSION['checkout_errors'] = $stockErrors;
@@ -52,8 +56,8 @@ if (!$checkoutResult['success']) {
     exit;
 }
 
-$userInfo = $cartRepo->getUserCheckoutInfo($userId);
-$totals = $cartRepo->calculateCartTotals($cartItems);
+$userInfo = $cartRepo->findUserCheckoutInfo($userId);
+$totals = $cartRepo->calculateTotals($cartItems);
 
 $_SESSION['checkout_data'] = [
     'payment_id' => $checkoutResult['payment_id'],

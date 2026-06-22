@@ -12,34 +12,29 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check if user is admin
 if (!$isLoggedIn || !$currentUser instanceof Admin) {
     $response['message'] = 'Unauthorized access.';
     echo json_encode($response);
     exit;
 }
 
-// Get input
 $input = json_decode(file_get_contents('php://input'), true);
 $reportId = (int) ($input['report_id'] ?? 0);
 $action = trim($input['action'] ?? '');
 $adminNotes = trim($input['admin_notes'] ?? '');
 
-// Validate report ID
 if ($reportId <= 0) {
     $response['message'] = 'Invalid report ID.';
     echo json_encode($response);
     exit;
 }
 
-// Validate action
 if (!in_array($action, ['dismiss', 'suspend'])) {
     $response['message'] = 'Invalid action.';
     echo json_encode($response);
     exit;
 }
 
-// Get report details
 $report = $reportRepo->getReportWithDetails($reportId);
 if (!$report) {
     $response['message'] = 'Report not found.';
@@ -51,7 +46,6 @@ $adminId = $currentUser->getUserId();
 $productId = $report['product_id'];
 
 if ($action === 'dismiss') {
-    // Mark the report as dismissed
     $success = $reportRepo->dismissReport($reportId, $adminId, $adminNotes);
 
     if ($success) {
@@ -61,8 +55,7 @@ if ($action === 'dismiss') {
         $response['message'] = 'Failed to update report status.';
     }
 } else if ($action === 'suspend') {
-    // Suspend the product
-    $updateResult = $productRepo->updateProductStatus(
+    $updateResult = $productRepo->updateStatus(
         $productId,
         $report['seller_id'],
         'suspend',
@@ -71,7 +64,6 @@ if ($action === 'dismiss') {
     );
 
     if ($updateResult['success']) {
-        // Mark the report as action_taken
         $fullNotes = "Product suspended. " . $adminNotes;
         $success = $reportRepo->markActionTaken($reportId, $adminId, $fullNotes);
 

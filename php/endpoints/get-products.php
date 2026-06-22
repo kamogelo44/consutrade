@@ -19,6 +19,7 @@ $sort = $_GET['sort'] ?? 'newest';
 $categories = isset($_GET['categories']) ? explode(',', $_GET['categories']) : [];
 $price_range = $_GET['price_range'] ?? '';
 $location = isset($_GET['location']) ? trim($_GET['location']) : '';
+$sellerId = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
 
 // Remove empty category values
 $categories = array_filter($categories, function ($cat) {
@@ -26,13 +27,14 @@ $categories = array_filter($categories, function ($cat) {
 });
 
 // Get products from repository
-$result = $productRepo->getPublicProducts([
+$result = $productRepo->findPublic([
     'categories'  => $categories,
     'price_range' => $price_range,
     'location'    => $location,
     'sort'        => $sort,
     'limit'       => $limit,
     'offset'      => ($page - 1) * $limit,
+    'seller_id'   => $sellerId
 ]);
 
 // Convert image URLs to full paths

@@ -10,7 +10,6 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check authentication using globals from init.php
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     $response['message'] = 'Please login to update cart';
     echo json_encode($response);
@@ -30,7 +29,6 @@ if ($cartId <= 0) {
 
 $quantity = max(1, min(99, $quantity));
 
-// Get product ID from cart using the connection from init.php
 $productStmt = $conn->prepare("SELECT product_id FROM cart WHERE cart_id = ? AND user_id = ?");
 $productStmt->bind_param('ii', $cartId, $userId);
 $productStmt->execute();
@@ -44,8 +42,7 @@ if (!$productRow) {
     exit;
 }
 
-// Use productRepo from init.php
-$product = $productRepo->getProductObject($productRow['product_id']);
+$product = $productRepo->findById($productRow['product_id']);
 
 if (!$product) {
     $response['message'] = 'Product not found';
@@ -59,20 +56,16 @@ if (!$product->canDecreaseStock($quantity)) {
     exit;
 }
 
-// Use cartRepo from init.php
-$result = $cartRepo->updateCartQuantity($cartId, $userId, $quantity);
+$result = $cartRepo->updateQuantity($cartId, $userId, $quantity);
 
-if ($result) {a
-
-    // Get fresh cart data using cartRepo
-    $freshCartItems = $cartRepo->getCartItems($userId);
-    $freshTotals = $cartRepo->calculateCartTotals($freshCartItems);
+if ($result) {
+    $freshCartItems = $cartRepo->findByUser($userId);
+    $freshTotals = $cartRepo->calculateTotals($freshCartItems);
     $items = [];
     $itemCount = 0;
 
     foreach ($freshCartItems as $item) {
         $itemCount += $item['quantity'];
-        // Use productRepo to fix image URL
         $imageUrl = $productRepo->getImageUrl($item['image_url']);
 
         $items[] = [

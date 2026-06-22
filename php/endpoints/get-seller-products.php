@@ -21,7 +21,7 @@ if ($sellerId <= 0) {
 
 $isOwner = ($isLoggedIn && $currentUser instanceof Seller && $currentUser->getUserId() === $sellerId);
 
-$products = $productRepo->getSellerProductsForDisplay($sellerId, $isOwner, $limit);
+$products = $productRepo->findBySellerForDisplay($sellerId, $isOwner, $limit);
 
 $response['success'] = true;
 $response['products'] = $products;

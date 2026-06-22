@@ -20,7 +20,7 @@ if (!$auth->isSeller()) {
 $seller_id = $currentUser->getUserId();
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
 
-$orders = $orderRepo->getSellerRecentOrders($seller_id, $limit);
+$orders = $orderRepo->findRecentBySeller($seller_id, $limit);
 
 $response['success'] = true;
 $response['orders'] = $orders;

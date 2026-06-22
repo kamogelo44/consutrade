@@ -35,11 +35,9 @@ if ($rating < 1 || $rating > 5) {
     exit;
 }
 
-// Limit comment length
 $comment = substr($comment, 0, 500);
 
-// Check if review exists first
-$existing = $reviewRepo->getReviewByOrderAndBuyer($order_id, $currentUser->getUserId());
+$existing = $reviewRepo->findByOrderAndBuyer($order_id, $currentUser->getUserId());
 
 if (!$existing) {
     $response['message'] = 'Review not found.';
@@ -47,7 +45,7 @@ if (!$existing) {
     exit;
 }
 
-$result = $reviewRepo->updateReview($order_id, $currentUser->getUserId(), $rating, $comment);
+$result = $reviewRepo->update($order_id, $currentUser->getUserId(), $rating, $comment);
 
 $response['success'] = $result['success'];
 $response['message'] = $result['message'];

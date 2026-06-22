@@ -15,7 +15,6 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check if user is logged in
 if (!$isLoggedIn) {
     $response['message'] = 'Unauthorized. Please log in.';
     echo json_encode($response);
@@ -37,15 +36,13 @@ $userRole = $currentUserRole;
 
 // ========== BUYER CANCELLATION ==========
 if ($userRole === 'buyer') {
-    // Buyers can ONLY cancel orders
     if ($newStatus !== 'cancelled') {
         $response['message'] = 'Buyers can only cancel orders.';
         echo json_encode($response);
         exit;
     }
 
-    // Use the existing repository method
-    $result = $orderRepo->cancelBuyerOrder($orderId, $userId);
+    $result = $orderRepo->cancelByBuyer($orderId, $userId);
 
     if ($result) {
         $response['success'] = true;
@@ -60,7 +57,7 @@ if ($userRole === 'buyer') {
 
 // ========== SELLER UPDATE ==========
 if ($userRole === 'seller') {
-    $orderData = $orderRepo->getOrderDetails($orderId, $userId, 'seller');
+    $orderData = $orderRepo->findById($orderId, $userId, 'seller');
 
     if (!$orderData) {
         $response['message'] = 'Order not found.';
@@ -77,7 +74,7 @@ if ($userRole === 'seller') {
         exit;
     }
 
-    $result = $orderRepo->updateSellerOrderStatus($orderId, $userId, $newStatus);
+    $result = $orderRepo->updateStatus($orderId, $userId, $newStatus);
     $response['success'] = $result['success'];
     $response['message'] = $result['message'];
 
@@ -87,7 +84,7 @@ if ($userRole === 'seller') {
 
 // ========== ADMIN UPDATE ==========
 if ($userRole === 'admin') {
-    $orderData = $orderRepo->getAllOrders();
+    $orderData = $orderRepo->findAll();
     $targetOrder = null;
 
     foreach ($orderData as $ord) {
@@ -125,7 +122,7 @@ if ($userRole === 'admin') {
         $updateStmt->close();
 
         if ($newStatus === 'cancelled') {
-            $productRepo->restoreOrderStock($orderId);
+            $productRepo->restoreStockFromOrder($orderId);
         }
 
         $conn->commit();

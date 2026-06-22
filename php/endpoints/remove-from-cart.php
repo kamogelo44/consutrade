@@ -10,7 +10,6 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
-// Check authentication using globals from init.php
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     $response['message'] = 'Please login to remove items from cart';
     echo json_encode($response);
@@ -27,11 +26,10 @@ if ($productId <= 0) {
     exit;
 }
 
-// Use cartRepo from init.php
-$result = $cartRepo->removeCartItemByProductId($productId, $userId);
+$result = $cartRepo->deleteItemByProduct($productId, $userId);
 
 if ($result) {
-    $cartCount = $cartRepo->getCartCount($userId);
+    $cartCount = $cartRepo->countItems($userId);
 
     $response['success'] = true;
     $response['message'] = 'Item removed from cart';

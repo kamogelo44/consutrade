@@ -5,7 +5,6 @@
 
 require_once dirname(__DIR__, 2) . '/init.php';
 
-// Enable error logging for debugging
 error_log("[DEBUG] get-all-products.php called");
 
 header('Content-Type: application/json');
@@ -27,8 +26,8 @@ $offset = ($page - 1) * $limit;
 error_log("[DEBUG] Getting products: page=$page, status=$status, search=$search");
 
 try {
-    $products = $productRepo->getAllProductsForAdmin($status, $search, $limit, $offset);
-    $totalProducts = $productRepo->getProductsCountForAdmin($status, $search);
+    $products = $productRepo->findAll($status, $search, $limit, $offset);
+    $totalProducts = $productRepo->countForAdmin($status, $search);
     $totalPages = ceil($totalProducts / $limit);
 
     error_log("[DEBUG] Found " . count($products) . " products, total $totalProducts");

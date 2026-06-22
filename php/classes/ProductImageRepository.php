@@ -25,13 +25,78 @@ class ProductImageRepository
         $this->db = $db;
     }
 
+    // ============================================================
+    // CREATE
+    // ============================================================
+
+    /**
+     * Add a single gallery image (database only).
+     *
+     * @param int $productId Product ID
+     * @param string $imageUrl Image path
+     * @param bool $isPrimary Whether this is the primary image
+     * @param int $sortOrder Sort order
+     * @return int|false Insert ID or false on failure
+     */
+    public function create(int $productId, string $imageUrl, bool $isPrimary = false, int $sortOrder = 0): int|false
+    {
+        $primaryInt = $isPrimary ? 1 : 0;
+        $stmt = $this->db->prepare(
+            "INSERT INTO product_images (product_id, image_url, is_primary, sort_order) VALUES (?, ?, ?, ?)"
+        );
+        $stmt->bind_param('isii', $productId, $imageUrl, $primaryInt, $sortOrder);
+
+        if ($stmt->execute()) {
+            $imageId = $stmt->insert_id;
+            $stmt->close();
+            return $imageId;
+        }
+        $stmt->close();
+        return false;
+    }
+
+    /**
+     * Add multiple gallery images.
+     *
+     * @param int $productId Product ID
+     * @param array $imageUrls Array of image paths
+     * @return int Number of images successfully added
+     */
+    public function createMultiple(int $productId, array $imageUrls): int
+    {
+        $count = 0;
+
+        $maxSql = "SELECT MAX(sort_order) as max_sort FROM product_images WHERE product_id = ?";
+        $maxStmt = $this->db->prepare($maxSql);
+        $maxStmt->bind_param('i', $productId);
+        $maxStmt->execute();
+        $maxResult = $maxStmt->get_result();
+        $maxRow = $maxResult->fetch_assoc();
+        $sortOrder = (int)($maxRow['max_sort'] ?? -1) + 1;
+        $maxStmt->close();
+
+        foreach ($imageUrls as $imageUrl) {
+            $imageId = $this->create($productId, $imageUrl, false, $sortOrder);
+            if ($imageId) {
+                $count++;
+                $sortOrder++;
+            }
+        }
+
+        return $count;
+    }
+
+    // ============================================================
+    // READ
+    // ============================================================
+
     /**
      * Get all images for a product.
      *
      * @param int $productId Product ID
      * @return array
      */
-    public function getByProductId(int $productId): array
+    public function findByProductId(int $productId): array
     {
         $sql = "SELECT image_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -56,7 +121,7 @@ class ProductImageRepository
      * @param int $productId Product ID
      * @return array|null
      */
-    public function getPrimaryImage(int $productId): ?array
+    public function findPrimaryByProductId(int $productId): ?array
     {
         $sql = "SELECT image_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -81,7 +146,7 @@ class ProductImageRepository
      * @param int $imageId Image ID
      * @return array|null
      */
-    public function getById(int $imageId): ?array
+    public function findById(int $imageId): ?array
     {
         $sql = "SELECT image_id, product_id, image_url, is_primary, sort_order 
                 FROM product_images 
@@ -100,61 +165,26 @@ class ProductImageRepository
     }
 
     /**
-     * Add a single gallery image (database only).
+     * Count images for a product.
      *
      * @param int $productId Product ID
-     * @param string $imageUrl Image path
-     * @param bool $isPrimary Whether this is the primary image
-     * @param int $sortOrder Sort order
-     * @return int|false Insert ID or false on failure
+     * @return int
      */
-    public function add(int $productId, string $imageUrl, bool $isPrimary = false, int $sortOrder = 0): int|false
+    public function countByProductId(int $productId): int
     {
-        $primaryInt = $isPrimary ? 1 : 0;
-        $stmt = $this->db->prepare(
-            "INSERT INTO product_images (product_id, image_url, is_primary, sort_order) VALUES (?, ?, ?, ?)"
-        );
-        $stmt->bind_param('isii', $productId, $imageUrl, $primaryInt, $sortOrder);
-
-        if ($stmt->execute()) {
-            $imageId = $stmt->insert_id;
-            $stmt->close();
-            return $imageId;
-        }
+        $sql = "SELECT COUNT(*) as total FROM product_images WHERE product_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $productId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int)($result->fetch_assoc()['total'] ?? 0);
         $stmt->close();
-        return false;
+        return $total;
     }
 
-    /**
-     * Add multiple gallery images.
-     *
-     * @param int $productId Product ID
-     * @param array $imageUrls Array of image paths
-     * @return int Number of images successfully added
-     */
-    public function addMultiple(int $productId, array $imageUrls): int
-    {
-        $count = 0;
-
-        $maxSql = "SELECT MAX(sort_order) as max_sort FROM product_images WHERE product_id = ?";
-        $maxStmt = $this->db->prepare($maxSql);
-        $maxStmt->bind_param('i', $productId);
-        $maxStmt->execute();
-        $maxResult = $maxStmt->get_result();
-        $maxRow = $maxResult->fetch_assoc();
-        $sortOrder = (int)($maxRow['max_sort'] ?? -1) + 1;
-        $maxStmt->close();
-
-        foreach ($imageUrls as $imageUrl) {
-            $imageId = $this->add($productId, $imageUrl, false, $sortOrder);
-            if ($imageId) {
-                $count++;
-                $sortOrder++;
-            }
-        }
-
-        return $count;
-    }
+    // ============================================================
+    // UPDATE
+    // ============================================================
 
     /**
      * Set an image as the primary image for a product.
@@ -196,6 +226,10 @@ class ProductImageRepository
         return $result;
     }
 
+    // ============================================================
+    // DELETE
+    // ============================================================
+
     /**
      * Delete an image.
      *
@@ -205,7 +239,7 @@ class ProductImageRepository
      */
     public function delete(int $imageId, int $productId): bool
     {
-        $image = $this->getById($imageId);
+        $image = $this->findById($imageId);
 
         // Delete the physical file using ProductRepository
         if ($image && $image['product_id'] == $productId) {
@@ -231,7 +265,7 @@ class ProductImageRepository
      */
     public function deleteByProductId(int $productId): bool
     {
-        $images = $this->getByProductId($productId);
+        $images = $this->findByProductId($productId);
 
         // Delete physical files
         global $productRepo;

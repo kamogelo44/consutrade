@@ -1,9 +1,15 @@
-// main.js - core functionality for the whole site
-// handles mobile menus, search, auth modals, cart operations, etc.
+/**
+ * ConsuTrade - Core JavaScript
+ * Author: Kamogelo Phale
+ * 
+ * Core functionality shared across all pages.
+ * Handles: Authentication modals, cart operations, toast notifications, DOM utilities.
+ * Used on: All pages
+ */
 
 var baseUrl = baseUrl || '';
 
-// Global references - caching these for performance
+// Cache DOM references for better performance
 var $toastContainer = null;
 var $registerModal = null;
 var $loginModal = null;
@@ -11,20 +17,34 @@ var $deleteModal = null;
 var $bodyElement = null;
 var $cartCountElements = null;
 
-// For XSS I always escape user input
+// ========== DOM UTILITIES ==========
+
+/**
+ * Escapes user input to prevent XSS attacks
+ * 
+ * @param {string} text - The text to escape
+ * @returns {string} Escaped HTML safe for insertion
+ */
 function escapeHtml(text) {
     if (!text) return '';
     return $('<div>').text(text).html();
 }
 
-// Simple helper - wish JS had this built in
+/**
+ * Capitalizes the first letter of a string
+ * 
+ * @param {string} str - The string to capitalize
+ * @returns {string} Capitalized string
+ */
 function capitalizeFirst(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// Maps database status values to CSS classes
-// Had to align these with what's in components.css
+/**
+ * Maps database status values to CSS classes
+ * Aligns with components.css styles
+ */
 function getOrderStatusClass(status) {
     if (status == 'pending') return 'status-pending';
     if (status == 'processing') return 'status-processing';
@@ -34,7 +54,9 @@ function getOrderStatusClass(status) {
     return '';
 }
 
-// Human-readable status labels for UI display
+/**
+ * Human-readable status labels for UI display
+ */
 function getStatusLabel(status) {
     if (status == 'pending') return 'Pending';
     if (status == 'processing') return 'Processing';
@@ -44,24 +66,22 @@ function getStatusLabel(status) {
     return capitalizeFirst(status);
 }
 
-// Image paths were a nightmare with mixed absolute/relative paths
-// This function fixes all the edge cases I've encountered
+/**
+ * Fixes mixed absolute/relative image paths
+ * Handles: full URLs, relative paths, uploads folder, and fallback
+ */
 function fixImageUrl(url, defaultPath) {
     defaultPath = defaultPath || 'images/default-product.png';
     if (!url || url == '') return baseUrl + defaultPath;
     
-    // Already a full URL - nothing to fix
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     
-    // Remove leading slash that breaks relative paths
     var cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     
-    // Path already has the right structure
     if (cleanUrl.startsWith('uploads/') || cleanUrl.startsWith('images/')) {
         return baseUrl + cleanUrl;
     }
     
-    // Sometimes the path contains uploads/ deeper in the string
     var uploadsIndex = cleanUrl.indexOf('uploads/');
     if (uploadsIndex !== -1) {
         return baseUrl + cleanUrl.substring(uploadsIndex);
@@ -72,16 +92,16 @@ function fixImageUrl(url, defaultPath) {
         return baseUrl + cleanUrl.substring(imagesIndex);
     }
     
-    // Just a filename - assume it's in the products upload folder
     if (!cleanUrl.includes('/')) {
         return baseUrl + 'uploads/products/' + cleanUrl;
     }
     
-    // No idea what this is, use default
     return baseUrl + defaultPath;
 }
 
-// Generates the empty state HTML that shows when no data exists
+/**
+ * Generates empty state HTML when no data exists
+ */
 function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
     var html = '<div class="empty-state">' +
         '<img src="' + baseUrl + 'images/icons/' + icon + '" width="64" height="64" alt="' + escapeHtml(title) + '">' +
@@ -96,8 +116,9 @@ function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
     return html;
 }
 
-// Pagination was surprisingly tricky to get right
-// The logic for when to show ellipsis took several iterations
+/**
+ * Renders pagination controls with ellipsis for large page sets
+ */
 function renderPagination($container, currentPage, totalPages, onPageChange) {
     if (!$container.length || totalPages <= 1) {
         $container.empty();
@@ -111,7 +132,6 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     }
 
     // Show first page, current page neighborhood, and last page
-    // Hide middle pages with ellipsis to save space
     for (var i = 1; i <= totalPages; i++) {
         if (i == currentPage) {
             html += '<button class="page-btn active" disabled>' + i + '</button>';
@@ -136,11 +156,16 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     });
 }
 
-// Toast notifications - user feedback without annoying popups
+// ========== TOAST NOTIFICATIONS ==========
+
+/**
+ * Shows user feedback without intrusive popups
+ * Auto-dismisses after 4 seconds to prevent UI clutter
+ * Supports: success, error, warning, info
+ */
 function showToast(message, type) {
     type = type || 'success';
     
-    // Remove existing toasts to prevent stacking
     $('.toast-notification').remove();
     
     if (!$toastContainer) {
@@ -156,20 +181,23 @@ function showToast(message, type) {
     
     $toastContainer.append(toast);
     
-    // Auto-dismiss after 4 seconds so it doesn't linger
     setTimeout(function() {
         toast.addClass('hiding');
         setTimeout(function() { toast.remove(); }, 300);
     }, 4000);
 }
 
-// Wrappers for different toast types - cleaner than passing type every time
+// Cleaner wrappers for different toast types
 function showSuccessToast(message) { showToast(message, 'success'); }
 function showErrorToast(message) { showToast(message, 'error'); }
 function showInfoToast(message) { showToast(message, 'info'); }
 function showWarningToast(message) { showToast(message, 'warning'); }
 
-// Password visibility toggle - saves users from typos
+// ========== PASSWORD TOGGLE ==========
+
+/**
+ * Toggles password visibility - helps users avoid typos
+ */
 function togglePassword(fieldId, button) {
     var $input = $('#' + fieldId);
     var $img = $(button).find('img');
@@ -185,10 +213,14 @@ function togglePassword(fieldId, button) {
     }
 }
 
-// Opens order details modal and fetches data via AJAX
-// Uses local DOM references instead of globals - more reliable
+// ========== ORDER DETAILS MODAL ==========
+
+/**
+ * Opens order details modal and fetches data via AJAX
+ * Single modal component used by buyers, sellers, and admins
+ * Action buttons change based on user role and order status
+ */
 function openOrderModal(orderId) {
-    // Get fresh references each time - no global state needed
     var $modal = $('#orderModal');
     var $modalBody = $('#orderModalBody');
     var $modalFooter = $('#orderModalFooter');
@@ -250,6 +282,7 @@ function openOrderModal(orderId) {
                     '</div>'
                 );
                 
+                // Status-specific action buttons
                 var actionButtons = '';
                 if (order.status == 'pending') {
                     actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
@@ -277,7 +310,11 @@ function closeOrderModal() {
     $('#orderModal').removeClass('active');
 }
 
-// Status update function - used by admin and seller dashboards
+/**
+ * Updates order status with confirmation
+ * Used by admin and seller dashboards
+ * Business rule: status transitions follow pending → processing → shipped → completed
+ */
 function updateOrderStatus(orderId, newStatus) {
     var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
     if (newStatus == 'cancelled') {
@@ -306,13 +343,12 @@ function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-
-// Shared order functions - works for buyers, sellers, and admins
-// Saves me from writing the same thing three times
+// ========== ORDER LISTING FUNCTIONS ==========
 
 /**
- * Fetches orders and sticks them in the table
- * endpoint changes depending on who's logged in
+ * Fetches orders and renders them in the table
+ * Endpoint changes depending on who's logged in
+ * Used by buyers, sellers, and admins
  */
 function loadOrders(endpoint, $container, $pagination, page, status, search, userRole, onPageChange) {
     $container.html('<tr><td colspan="8"><div class="loading-spinner">Loading orders...</div></td></tr>');
@@ -341,8 +377,12 @@ function loadOrders(endpoint, $container, $pagination, page, status, search, use
     });
 }
 
-// Renders orders with the right action buttons based on who's looking
-// Buyers just get cancel, sellers get process/ship/complete/cancel
+/**
+ * Renders orders with role-specific action buttons
+ * Buyers: cancel only
+ * Sellers: process, ship, complete, cancel
+ * Admins: all actions
+ */
 function renderOrdersTable(orders, $container, userRole) {
     $container.empty();
     
@@ -354,7 +394,6 @@ function renderOrdersTable(orders, $container, userRole) {
         var buttons = '<div class="action-buttons">';
         buttons += '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
         
-        // Sellers get more buttons than buyers
         if (userRole === 'seller') {
             if (order.status === 'pending') {
                 buttons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
@@ -368,7 +407,6 @@ function renderOrdersTable(orders, $container, userRole) {
             }
         }
         
-        // Buyers can only cancel if the order is pending/processing
         if (userRole === 'buyer') {
             if (order.status === 'pending' || order.status === 'processing') {
                 buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>';
@@ -376,16 +414,13 @@ function renderOrdersTable(orders, $container, userRole) {
             // Review button for completed orders
             if (order.status === 'completed') {
                 if (order.has_review) {
-                    // Already reviewed - show Edit Review button
                     buttons += '<button class="action-btn edit-review-btn" onclick="openEditReviewModal(' + order.order_id + ', ' + order.seller_id + ', \'' + escapeHtml(order.seller_name) + '\', ' + order.review_rating + ', \'' + escapeHtml(order.review_comment).replace(/'/g, "\\'") + '\')">Edit Review</button>';
                 } else {
-                    // Not reviewed yet - show Write Review button
                     buttons += '<button class="action-btn review-btn" onclick="openReviewModal(' + order.order_id + ', ' + order.seller_id + ', \'' + escapeHtml(order.seller_name) + '\')">Write a Review</button>';
                 }
             }
         }
         
-        // Admins get all the buttons
         if (userRole === 'admin') {
             if (order.status === 'pending') {
                 buttons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
@@ -420,7 +455,9 @@ function renderOrdersTable(orders, $container, userRole) {
     }
 }
 
-// Empty state for orders - changes message based on who's looking and what filters are active
+/**
+ * Shows empty state for orders with role-specific messaging
+ */
 function showOrdersEmptyState($container, status, search, userRole) {
     var title = '';
     var message = '';
@@ -465,7 +502,11 @@ function showOrdersEmptyState($container, status, search, userRole) {
     );
 }
 
-// Clears validation errors from auth modals
+// ========== MODAL ERROR HANDLING ==========
+
+/**
+ * Clears validation errors from auth modals
+ */
 function clearModalErrors(modalId) {
     var $modal = $(modalId);
     $modal.find('.error-container').hide().empty();
@@ -473,7 +514,9 @@ function clearModalErrors(modalId) {
     $modal.find('.error-text').remove();
 }
 
-// Displays validation errors from server response
+/**
+ * Displays validation errors from server response
+ */
 function displayModalErrors(modalId, errors, formData) {
     var $modal = $(modalId);
     if (!formData) formData = {};
@@ -559,7 +602,11 @@ function clearRegisterErrors() {
     $('#register-form .error-text').remove();
 }
 
-// Cached cart elements to avoid repeated DOM queries
+// ========== CART OPERATIONS ==========
+
+/**
+ * Cache cart elements to avoid repeated DOM queries
+ */
 function getCartCountElements() {
     if (!$cartCountElements) {
         $cartCountElements = $('.cart-count, .item-num, .cart-badge, .mobile-cart-count');
@@ -567,13 +614,19 @@ function getCartCountElements() {
     return $cartCountElements;
 }
 
-// Updates the cart badge across all locations on the page
+/**
+ * Updates cart badge across all locations on the page
+ * Caches in sessionStorage for faster subsequent loads
+ */
 function updateCartCountDisplay(count) {
     getCartCountElements().text(count);
     if (window.sessionStorage) sessionStorage.setItem('cart_count', count);
 }
 
-// Adds product to cart - used by product cards and detail pages
+/**
+ * Adds product to cart via AJAX
+ * Used by product cards and detail pages
+ */
 function addToCart(productId, productName, productPrice) {
     $.ajax({
         url: baseUrl + 'php/endpoints/add-to-cart.php',
@@ -592,7 +645,9 @@ function addToCart(productId, productName, productPrice) {
     });
 }
 
-// Removes item from cart - with confirmation to prevent accidents
+/**
+ * Removes item from cart with confirmation
+ */
 function removeFromCart(productId) {
     if (!confirm('Are you sure you want to remove this item from your cart?')) return;
     
@@ -617,11 +672,12 @@ function removeFromCart(productId) {
     });
 }
 
-// ============================================
-// CART PAGE SPECIFIC FUNCTIONS
-// ============================================
+// ========== CART PAGE FUNCTIONS ==========
 
-// Initial cart load - uses pre-loaded PHP data to avoid extra AJAX call
+/**
+ * Loads cart page using pre-loaded PHP data
+ * Avoids extra AJAX call on initial load
+ */
 function loadCartPage() {
     if (!window.location.pathname.includes('cart.php')) return;
     
@@ -649,14 +705,18 @@ function loadCartPage() {
     }
 }
 
-// Updates the order summary section with current totals
+/**
+ * Updates the order summary section with current totals
+ */
 function updateCartTotalsDisplay(cartData) {
     $('.sub-total-val').text('R ' + parseFloat(cartData.subtotal).toFixed(2));
     $('.deliv-fee-val').text('R ' + parseFloat(cartData.delivery_fee).toFixed(2));
     $('.total-val').text('R ' + parseFloat(cartData.total).toFixed(2));
 }
 
-// Refreshes cart via AJAX - used after quantity updates or removals
+/**
+ * Refreshes cart via AJAX after quantity updates or removals
+ */
 function refreshCart() {
     if (!window.location.pathname.includes('cart.php')) return;
     
@@ -684,9 +744,10 @@ function refreshCart() {
     });
 }
 
-// Updates cart badge from server - for non-cart pages only
+/**
+ * Updates cart badge from server for non-cart pages
+ */
 function updateCartCount() {
-    // Only buyers need cart count - sellers and guests see zero
     if (!isLoggedIn || currentUserRole !== 'buyer') {
         updateCartCountDisplay(0);
         return;
@@ -712,7 +773,9 @@ function updateCartCount() {
     }
 }
 
-// Renders cart items in both desktop table and mobile card views
+/**
+ * Renders cart items in both desktop table and mobile card views
+ */
 function displayCartItems(cartData) {
     var $desktopTableBody = $('#cart-table-body');
     var $mobileContainer = $('#mobile-cart-items');
@@ -829,7 +892,7 @@ function displayCartItems(cartData) {
         }
     }
     
-    // Event handlers for quantity controls
+    // Quantity control event handlers
     $('.qty-increase').off('click').on('click', function() {
         var $btn = $(this);
         var cartId = $btn.data('cart-id');
@@ -876,7 +939,9 @@ function displayCartItems(cartData) {
     });
 }
 
-// Updates cart quantity via AJAX and refreshes the display
+/**
+ * Updates cart quantity via AJAX and refreshes the display
+ */
 function updateCartQuantity(cartId, quantity) {
     $.ajax({
         url: baseUrl + 'php/endpoints/update-cart.php',
@@ -906,7 +971,11 @@ function updateCartQuantity(cartId, quantity) {
     });
 }
 
-// Modal animation functions - smooth open/close with CSS transitions
+// ========== MODAL CONTROLS ==========
+
+/**
+ * Opens modal with smooth CSS transition animation
+ */
 function openModal($modal) {
     if (!$modal.length) return;
     
@@ -921,7 +990,7 @@ function openModal($modal) {
     $modal.css('visibility', 'visible');
     $modal.addClass('active');
     
-    // Force reflow before adding animation class
+    // Force reflow for smooth animation
     $modal[0].offsetHeight;
     $content.addClass('animate-in');
     $('body').css('overflow', 'hidden');
@@ -929,6 +998,9 @@ function openModal($modal) {
     setTimeout(function() { $content.removeClass('animate-in'); }, 350);
 }
 
+/**
+ * Closes modal with smooth CSS transition animation
+ */
 function closeModal($modal) {
     if (!$modal.length) return;
     
@@ -948,7 +1020,9 @@ function closeModal($modal) {
     }, 280);
 }
 
-// Clears field errors as soon as user starts typing
+/**
+ * Clears field errors as soon as user starts typing
+ */
 function initErrorClearingOnInput() {
     $('#login-email, #login-password').on('input', function() { 
         clearLoginErrors(); 
@@ -968,7 +1042,9 @@ function initErrorClearingOnInput() {
     });
 }
 
-// AJAX login handler - prevents page reload and shows errors inline
+/**
+ * AJAX login handler - prevents page reload and shows errors inline
+ */
 function initAjaxLogin() {
     var $loginForm = $('#login-form');
     if (!$loginForm.length) return;
@@ -1004,7 +1080,9 @@ function initAjaxLogin() {
     });
 }
 
-// AJAX registration handler - validates and creates account without page reload
+/**
+ * AJAX registration handler - validates and creates account without page reload
+ */
 function initAjaxRegister() {
     var $registerForm = $('#register-form');
     if (!$registerForm.length) return;
@@ -1043,7 +1121,11 @@ function initAjaxRegister() {
     });
 }
 
-// Mobile menu toggle - handles open/close with overlay
+// ========== UI CONTROLS ==========
+
+/**
+ * Mobile menu toggle with overlay
+ */
 function initMobileMenu() {
     var $menuToggle = $('#menuToggle');
     var $closeMenu = $('#closeMenu');
@@ -1083,7 +1165,9 @@ function initMobileMenu() {
     });
 }
 
-// Mobile search bar toggle - shows/hides search on small screens
+/**
+ * Mobile search bar toggle
+ */
 function initMobileSearch() {
     var $mobileSearchIcon = $('#mobileSearchIcon');
     var $mobileSearchContainer = $('#mobileSearch');
@@ -1104,7 +1188,9 @@ function initMobileSearch() {
     }
 }
 
-// User dropdown menu for account settings
+/**
+ * User dropdown menu for account settings
+ */
 function initUserDropdown() {
     var $accountBtn = $('#accountBtn');
     var $accountDropdown = $('#accountDropdown');
@@ -1124,7 +1210,9 @@ function initUserDropdown() {
     }
 }
 
-// Modal open/close and switch between login/register
+/**
+ * Modal open/close and switch between login/register
+ */
 function initModalControls() {
     var $registerModal = $('#register-modal');
     var $loginModal = $('#login-modal');
@@ -1190,7 +1278,9 @@ function initModalControls() {
     }
 }
 
-// Highlights current page in navigation menu
+/**
+ * Highlights current page in navigation menu
+ */
 function setActiveLink() {
     var path = window.location.pathname;
     var currentPage = path.substring(path.lastIndexOf('/') + 1) || 'index.php';
@@ -1208,7 +1298,9 @@ function setActiveLink() {
     });
 }
 
-// Auto-dismiss flash messages after a few seconds
+/**
+ * Auto-dismiss flash messages after a few seconds
+ */
 function initFlashMessages() {
     var $flashMsg = $('.flash-message');
     if ($flashMsg.length) {
@@ -1216,7 +1308,8 @@ function initFlashMessages() {
     }
 }
 
-// Document ready - initialize everything
+// ========== DOCUMENT READY ==========
+
 $(function() {
     initMobileMenu();
     initMobileSearch();

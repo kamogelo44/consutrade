@@ -29,7 +29,7 @@ if (!$image_id || !$product_id) {
     exit;
 }
 
-$product = $productRepo->getProductObject($product_id);
+$product = $productRepo->findById($product_id);
 
 if (!$product || $product->getSellerId() !== $seller_id) {
     $response['message'] = 'Product not found';
@@ -37,7 +37,7 @@ if (!$product || $product->getSellerId() !== $seller_id) {
     exit;
 }
 
-$image = $productImageRepo->getById($image_id);
+$image = $productImageRepo->findById($image_id);
 
 if (!$image || $image['product_id'] !== $product_id) {
     $response['message'] = 'Image not found';

@@ -579,7 +579,7 @@ class UserRepository
     }
 
     // ============================================================
-    // DELETE / SOFT DELETE
+    // DELETE
     // ============================================================
 
     /**
@@ -613,6 +613,36 @@ class UserRepository
     public function ban(int $userId): bool
     {
         return $this->updateStatus($userId, 'banned');
+    }
+
+    /**
+     * Delete seller verification record.
+     *
+     * @param int $sellerId Seller ID
+     * @return bool
+     */
+    public function deleteVerification(int $sellerId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM seller_verification WHERE seller_id = ?");
+        $stmt->bind_param('i', $sellerId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Delete user account.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function delete(int $userId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM users WHERE user_id = ?");
+        $stmt->bind_param('i', $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
     // ============================================================

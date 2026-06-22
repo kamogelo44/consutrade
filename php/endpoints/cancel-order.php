@@ -26,7 +26,7 @@ if ($orderId <= 0) {
     exit;
 }
 
-$orderData = $orderRepo->getOrderDetails($orderId, $currentUser->getUserId(), 'buyer');
+$orderData = $orderRepo->findById($orderId, $currentUser->getUserId(), 'buyer');
 
 if (!$orderData) {
     $response['message'] = 'Order not found';
@@ -45,7 +45,7 @@ if (!$order->canBeCancelledByBuyer()) {
 $conn->begin_transaction();
 
 try {
-    $result = $orderRepo->cancelBuyerOrder($orderId, $currentUser->getUserId());
+    $result = $orderRepo->cancelByBuyer($orderId, $currentUser->getUserId());
 
     if (!$result) {
         throw new Exception('Failed to cancel order');

@@ -19,7 +19,7 @@ if ($product_id <= 0) {
 // Get product title for breadcrumb only
 $product_name = 'Product Details';
 try {
-    $productData = $productRepo->getProductForDisplay($product_id);
+    $productData = $productRepo->findForDisplay($product_id);
     if ($productData && isset($productData['title'])) {
         $product_name = $productData['title'];
     }

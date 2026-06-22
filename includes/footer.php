@@ -57,10 +57,9 @@
 
 <!-- GLOBAL JAVASCRIPT VARIABLES -->
 <script>
-    // global vars for javascript - set from php session
     var baseUrl = '<?php echo $baseUrl; ?>';
-    var currentUserId = <?php echo isset($currentUser) ? $currentUser->getUserId() : 0; ?>;
-    var currentUserRole = '<?php echo isset($currentUser) ? $currentUser->getRole() : ''; ?>';
+    var currentUserId = <?php echo $currentUser ? $currentUser->getUserId() : 0; ?>;
+    var currentUserRole = '<?php echo $currentUserRole ?? ''; ?>';
     var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
 </script>
 

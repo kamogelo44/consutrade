@@ -1,4 +1,9 @@
 <?php
+/*
+ * ConsuTrade - Delete Product Image (AJAX)
+ * Author: Kamogelo Phale
+ */
+
 require_once dirname(__DIR__, 2) . '/init.php';
 
 header('Content-Type: application/json');
@@ -16,7 +21,7 @@ $image_id = (int)($data['image_id'] ?? 0);
 $product_id = (int)($data['product_id'] ?? 0);
 $seller_id = $currentUser->getUserId();
 
-$product = $productRepo->getProductObject($product_id);
+$product = $productRepo->findById($product_id);
 
 if (!$product || $product->getSellerId() !== $seller_id) {
     $response['message'] = 'Product not found';

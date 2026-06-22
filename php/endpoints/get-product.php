@@ -21,30 +21,23 @@ if ($productId <= 0) {
     exit;
 }
 
-$product = $productRepo->getProductObject($productId);
+$product = $productRepo->findById($productId);
 
-// Check if product exists and is not deleted
 if (!$product || $product->getStatus() === 'deleted') {
     $response['error'] = 'Product not found';
     echo json_encode($response);
     exit;
 }
 
-// Product exists - show it even if out of stock or suspended
-// Buyers will see the status via badges
-
-// Get gallery images
-$gallery = $productImageRepo->getByProductId($productId);
+$gallery = $productImageRepo->findByProductId($productId);
 $galleryUrls = [];
 foreach ($gallery as $img) {
     $galleryUrls[] = $productRepo->getImageUrl($img['image_url']);
 }
 
-// Get seller rating
 $rating = $reviewRepo->getSellerRating($product->getSellerId());
-$categoryName = $categoryRepo->getCategoryName($product->getCategoryId()) ?? 'General';
+$categoryName = $categoryRepo->findNameById($product->getCategoryId()) ?? 'General';
 
-// Get seller info with phone and email
 $seller = $userRepo->findById($product->getSellerId());
 $sellerProfileImage = $seller ? $seller->getProfileImageUrl() : getBaseUrl() . 'images/icons/profile-svgrepo-com.svg';
 

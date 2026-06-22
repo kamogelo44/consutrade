@@ -16,7 +16,7 @@ if ($seller_id <= 0) {
     exit;
 }
 
-$reviews = $reviewRepo->getSellerReviews($seller_id);
+$reviews = $reviewRepo->findBySeller($seller_id);
 $response['success'] = true;
 $response['reviews'] = $reviews;
 echo json_encode($response);

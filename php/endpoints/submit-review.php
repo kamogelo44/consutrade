@@ -36,10 +36,9 @@ if ($rating < 1 || $rating > 5) {
     exit;
 }
 
-// Limit comment length
 $comment = substr($comment, 0, 500);
 
-$result = $reviewRepo->submitReview($order_id, $seller_id, $currentUser->getUserId(), $rating, $comment);
+$result = $reviewRepo->create($order_id, $seller_id, $currentUser->getUserId(), $rating, $comment);
 
 $response['success'] = $result['success'];
 $response['message'] = $result['message'];

@@ -4,6 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Displays public seller profile with products and reviews
+ * Products loaded via AJAX for consistency with product listings
  */
 
 require_once __DIR__ . '/init.php';
@@ -28,8 +29,7 @@ $profile_image = $seller->getProfileImageUrl();
 $ratingData = $reviewRepo->getSellerRating($seller_id);
 $avgRating = $ratingData['avg_rating'] ?? 0;
 $reviewCount = $ratingData['review_count'] ?? 0;
-$sellerProducts = $productRepo->getSellerProductsForDisplay($seller_id, false);
-$sellerReviews = $reviewRepo->getSellerReviews($seller_id);
+$sellerReviews = $reviewRepo->findBySeller($seller_id);
 
 // Breadcrumb setup
 $from_product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
@@ -64,7 +64,6 @@ if ($from_product_id > 0 && $from_product_name) {
             min-height: calc(100vh - 200px);
         }
 
-        /* Seller Header */
         .seller-public-header {
             display: flex;
             align-items: center;
@@ -163,7 +162,6 @@ if ($from_product_id > 0 && $from_product_name) {
             filter: brightness(0) invert(1);
         }
 
-        /* Stats Cards */
         .seller-public-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -216,7 +214,6 @@ if ($from_product_id > 0 && $from_product_name) {
             margin-top: var(--spacing-sm);
         }
 
-        /* Products Section */
         .seller-public-products {
             width: 100%;
         }
@@ -237,7 +234,6 @@ if ($from_product_id > 0 && $from_product_name) {
             gap: var(--spacing-lg);
         }
 
-        /* Reviews Section */
         .seller-reviews-section {
             margin-top: var(--spacing-2xl);
             width: 100%;
@@ -319,7 +315,6 @@ if ($from_product_id > 0 && $from_product_name) {
             margin-top: var(--spacing-md);
         }
 
-        /* Empty State */
         .empty-state {
             text-align: center;
             padding: var(--spacing-2xl);
@@ -344,7 +339,6 @@ if ($from_product_id > 0 && $from_product_name) {
             color: var(--gray-medium);
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .public-seller-profile-container {
                 padding: var(--spacing-lg);
@@ -418,7 +412,7 @@ if ($from_product_id > 0 && $from_product_name) {
         <div class="seller-public-stats">
             <div class="stat-card">
                 <h3>Products</h3>
-                <p class="stat-number"><?php echo count($sellerProducts); ?></p>
+                <p class="stat-number" id="sellerProductCount">-</p>
             </div>
             <div class="stat-card">
                 <h3>Reviews</h3>
@@ -438,30 +432,8 @@ if ($from_product_id > 0 && $from_product_name) {
 
         <div class="seller-public-products">
             <h2>Products from <?php echo htmlspecialchars($seller->getFullName()); ?></h2>
-            <div class="products-grid">
-                <?php if (!empty($sellerProducts)): ?>
-                    <?php foreach ($sellerProducts as $productData): ?>
-                        <?php
-                        $product = new Product([
-                            'product_id' => $productData['id'],
-                            'title' => $productData['name'],
-                            'price' => $productData['price'],
-                            'image_url' => $productData['display_image'],
-                            'condition' => $productData['condition'] ?? 'Good',
-                            'stock_quantity' => $productData['stock_quantity'] ?? 1,
-                            'location' => $productData['location'] ?? $seller->getLocation(),
-                            'status' => $productData['status'] ?? 'active'
-                        ]);
-                        echo renderProductCard($product, $seller);
-                        ?>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" loading="lazy">
-                        <h3>No Products Yet</h3>
-                        <p>This seller has no products available at the moment.</p>
-                    </div>
-                <?php endif; ?>
+            <div class="products-grid" id="seller-products-grid">
+                <div class="loading-spinner">Loading products...</div>
             </div>
         </div>
 
@@ -499,8 +471,52 @@ if ($from_product_id > 0 && $from_product_name) {
         </div>
     </main>
 
+    <?php $load_products_js = true; ?>
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
+
+    <script>
+        $(function() {
+            var sellerId = <?php echo $seller_id; ?>;
+
+            function loadSellerProducts() {
+                var $grid = $('#seller-products-grid');
+
+                $.ajax({
+                    url: baseUrl + 'php/endpoints/get-products.php?limit=12&seller_id=' + sellerId,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success && data.products && data.products.length > 0) {
+                            $('#sellerProductCount').text(data.total || data.products.length);
+                            displayProducts(data.products, '#seller-products-grid');
+                        } else {
+                            $('#sellerProductCount').text(0);
+                            $grid.html(
+                                '<div class="empty-state">' +
+                                '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" loading="lazy">' +
+                                '<h3>No Products Yet</h3>' +
+                                '<p>This seller has no products available at the moment.</p>' +
+                                '</div>'
+                            );
+                        }
+                    },
+                    error: function() {
+                        $('#sellerProductCount').text(0);
+                        $grid.html(
+                            '<div class="empty-state">' +
+                            '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error" loading="lazy">' +
+                            '<h3>Something went wrong</h3>' +
+                            '<p>Error loading products. Please refresh the page.</p>' +
+                            '</div>'
+                        );
+                    }
+                });
+            }
+
+            loadSellerProducts();
+        });
+    </script>
 
 </body>
 

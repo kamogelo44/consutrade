@@ -27,7 +27,7 @@ class CartRepository
     }
 
     // ============================================================
-    //  CART ITEMS
+    // CREATE
     // ============================================================
 
     /**
@@ -38,7 +38,7 @@ class CartRepository
      * @param int $quantity  Quantity to add
      * @return bool
      */
-    public function addItem(int $userId, int $productId, int $quantity): bool
+    public function createItem(int $userId, int $productId, int $quantity): bool
     {
         $stmt = $this->db->prepare(
             "INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)"
@@ -49,6 +49,10 @@ class CartRepository
         return $result;
     }
 
+    // ============================================================
+    // READ
+    // ============================================================
+
     /**
      * Get a specific cart item by user and product.
      *
@@ -56,7 +60,7 @@ class CartRepository
      * @param int $productId Product ID
      * @return array|null
      */
-    public function getCartItemByProduct(int $userId, int $productId): ?array
+    public function findItemByProduct(int $userId, int $productId): ?array
     {
         $sql = "SELECT cart_id, quantity FROM cart WHERE user_id = ? AND product_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -79,7 +83,7 @@ class CartRepository
      * @param int $userId User ID
      * @return array       Cart items with product details, seller name, and subtotal
      */
-    public function getCartItems(int $userId): array
+    public function findByUser(int $userId): array
     {
         $sql = "SELECT c.cart_id, c.quantity, c.added_at,
             p.product_id, p.title, p.price, p.image_url, p.seller_id, p.stock_quantity,
@@ -95,13 +99,11 @@ class CartRepository
         $stmt->execute();
         $result = $stmt->get_result();
 
-        // create ProductRepository once outside the loop
         $productRepo = new ProductRepository($this->db);
         $items = [];
 
         while ($row = $result->fetch_assoc()) {
             $row['subtotal']  = $row['price'] * $row['quantity'];
-            // use the existing repo instance
             $row['image_url'] = $productRepo->getImageUrl($row['image_url']);
             $row['is_verified'] = (bool)($row['is_verified'] ?? false);
             $items[] = $row;
@@ -112,73 +114,12 @@ class CartRepository
     }
 
     /**
-     * Calculate cart totals including delivery fee.
-     * Free delivery over R500, R50 otherwise.
-     *
-     * @param array $items Array of cart items
-     * @return array       ['subtotal' => float, 'delivery_fee' => float, 'total' => float]
-     */
-    public function calculateCartTotals(array $items): array
-    {
-        $subtotal = 0;
-        foreach ($items as $item) {
-            $subtotal += $item['price'] * $item['quantity'];
-        }
-
-        $deliveryFee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
-        $total       = $subtotal + $deliveryFee;
-
-        return [
-            'subtotal'     => $subtotal,
-            'delivery_fee' => $deliveryFee,
-            'total'        => $total
-        ];
-    }
-
-    /**
-     * Update cart item quantity.
-     *
-     * @param int $cartId Cart item ID
-     * @param int $userId User ID (for verification)
-     * @param int $qty    New quantity
-     * @return bool
-     */
-    public function updateCartQuantity(int $cartId, int $userId, int $qty): bool
-    {
-        $stmt = $this->db->prepare(
-            "UPDATE cart SET quantity = ? WHERE cart_id = ? AND user_id = ?"
-        );
-        $stmt->bind_param('iii', $qty, $cartId, $userId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Remove item from cart by product ID.
-     *
-     * @param int $productId Product ID
-     * @param int $userId    User ID (for verification)
-     * @return bool
-     */
-    public function removeCartItemByProductId(int $productId, int $userId): bool
-    {
-        $stmt = $this->db->prepare(
-            "DELETE FROM cart WHERE product_id = ? AND user_id = ?"
-        );
-        $stmt->bind_param('ii', $productId, $userId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
      * Get total number of items in cart (sum of quantities).
      *
      * @param int $userId User ID
      * @return int
      */
-    public function getCartCount(int $userId): int
+    public function countItems(int $userId): int
     {
         $stmt = $this->db->prepare(
             "SELECT SUM(quantity) as total FROM cart WHERE user_id = ?"
@@ -193,12 +134,75 @@ class CartRepository
     }
 
     /**
+     * Get user checkout info (name, email, phone).
+     *
+     * @param int $userId User ID
+     * @return array|null
+     */
+    public function findUserCheckoutInfo(int $userId): ?array
+    {
+        $sql = "SELECT full_name, email, phone FROM users WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+        return $user;
+    }
+
+    // ============================================================
+    // UPDATE
+    // ============================================================
+
+    /**
+     * Update cart item quantity.
+     *
+     * @param int $cartId Cart item ID
+     * @param int $userId User ID (for verification)
+     * @param int $qty    New quantity
+     * @return bool
+     */
+    public function updateQuantity(int $cartId, int $userId, int $qty): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE cart SET quantity = ? WHERE cart_id = ? AND user_id = ?"
+        );
+        $stmt->bind_param('iii', $qty, $cartId, $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    // ============================================================
+    // DELETE
+    // ============================================================
+
+    /**
+     * Remove item from cart by product ID.
+     *
+     * @param int $productId Product ID
+     * @param int $userId    User ID (for verification)
+     * @return bool
+     */
+    public function deleteItemByProduct(int $productId, int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "DELETE FROM cart WHERE product_id = ? AND user_id = ?"
+        );
+        $stmt->bind_param('ii', $productId, $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
      * Clear all items from a user's cart.
      *
      * @param int $userId User ID
      * @return bool
      */
-    public function clearUserCart(int $userId): bool
+    public function deleteAllByUser(int $userId): bool
     {
         $stmt = $this->db->prepare("DELETE FROM cart WHERE user_id = ?");
         $stmt->bind_param('i', $userId);
@@ -208,8 +212,32 @@ class CartRepository
     }
 
     // ============================================================
-    //  CHECKOUT
+    // CHECKOUT / BUSINESS LOGIC
     // ============================================================
+
+    /**
+     * Calculate cart totals including delivery fee.
+     * Free delivery over R500, R50 otherwise.
+     *
+     * @param array $items Array of cart items
+     * @return array       ['subtotal' => float, 'delivery_fee' => float, 'total' => float]
+     */
+    public function calculateTotals(array $items): array
+    {
+        $subtotal = 0;
+        foreach ($items as $item) {
+            $subtotal += $item['price'] * $item['quantity'];
+        }
+
+        $deliveryFee = ($subtotal > 0 && $subtotal < 500) ? 75 : 0;
+        $total       = $subtotal + $deliveryFee;
+
+        return [
+            'subtotal'     => $subtotal,
+            'delivery_fee' => $deliveryFee,
+            'total'        => $total
+        ];
+    }
 
     /**
      * Verify all cart items have sufficient stock before checkout.
@@ -217,13 +245,13 @@ class CartRepository
      * @param array $items Array of cart items (must include product_id, title, quantity)
      * @return array       Array of error messages (empty if all stock is sufficient)
      */
-    public function verifyCartStock(array $items): array
+    public function verifyStock(array $items): array
     {
         $errors = [];
         $productRepo = new ProductRepository($this->db);
 
         foreach ($items as $item) {
-            $currentStock = $productRepo->getProductStock($item['product_id']);
+            $currentStock = $productRepo->getStock($item['product_id']);
 
             if ($currentStock < $item['quantity']) {
                 $errors[] = $item['title'] . ': Only ' . $currentStock
@@ -245,26 +273,22 @@ class CartRepository
      */
     public function processCheckout(int $userId, array $cartItems): array
     {
-        // Verify stock before starting
-        $stockErrors = $this->verifyCartStock($cartItems);
+        $stockErrors = $this->verifyStock($cartItems);
         if (!empty($stockErrors)) {
             return ['success' => false, 'errors' => $stockErrors];
         }
 
-        // Get unique seller IDs
         $sellerIds = array_unique(array_column($cartItems, 'seller_id'));
 
         $this->db->begin_transaction();
 
         try {
             $orderRepo    = new OrderRepository($this->db);
-            $orderResult  = $orderRepo->createOrdersFromCart($userId, $cartItems, $sellerIds);
+            $orderResult  = $orderRepo->createFromCart($userId, $cartItems, $sellerIds);
 
             if (!$orderResult) {
                 throw new Exception('Failed to create orders');
             }
-
-            //$this->clearUserCart($userId);
 
             $this->db->commit();
 
@@ -279,10 +303,6 @@ class CartRepository
             return ['success' => false, 'errors' => ['Could not complete checkout.']];
         }
     }
-
-    // ============================================================
-    //  PAYFAST
-    // ============================================================
 
     /**
      * Prepare PayFast payment form data.
@@ -306,27 +326,5 @@ class CartRepository
             'name_first'       => $orderInfo['buyer_name'],
             'email_address'    => $orderInfo['buyer_email']
         ];
-    }
-
-    // ============================================================
-    //  USER INFO
-    // ============================================================
-
-    /**
-     * Get user checkout info (name, email, phone).
-     *
-     * @param int $userId User ID
-     * @return array|null
-     */
-    public function getUserCheckoutInfo(int $userId): ?array
-    {
-        $sql = "SELECT full_name, email, phone FROM users WHERE user_id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $user = $result->fetch_assoc();
-        $stmt->close();
-        return $user;
     }
 }

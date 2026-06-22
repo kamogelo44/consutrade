@@ -12,14 +12,12 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check if user is logged in using Auth class
 if (!$auth->isLoggedIn()) {
     $response['message'] = 'Please login.';
     echo json_encode($response);
     exit;
 }
 
-// Get current user ID from User object
 $current_user_id = $currentUser->getUserId();
 $action = $_POST['action'] ?? '';
 
@@ -42,7 +40,6 @@ if ($action === 'upload_image') {
     $filename = 'user_' . $current_user_id . '_' . time() . '.' . $ext;
     $dest = $uploadDir . $filename;
 
-    // Get current profile image using User object
     $current_profile_image = $currentUser->getProfileImage();
 
     if (!empty($current_profile_image)) {
@@ -55,13 +52,11 @@ if ($action === 'upload_image') {
     if (move_uploaded_file($file['tmp_name'], $dest)) {
         $imagePath = 'uploads/profiles/' . $filename;
 
-        // Update using UserRepository
         $result = $userRepo->updateProfileImage($current_user_id, $imagePath);
 
         if ($result) {
             $_SESSION['profile_image'] = $imagePath;
 
-            // Update session user object
             $updatedUser = $userRepo->findById($current_user_id);
             $_SESSION['user_object'] = serialize($updatedUser);
 
@@ -91,7 +86,6 @@ if ($action === 'update_profile') {
         exit;
     }
 
-    // Clean phone number
     $cleanPhone = !empty($phone) ? preg_replace('/[^0-9]/', '', $phone) : '';
     if (!empty($cleanPhone) && !preg_match('/^0[0-9]{9,10}$/', $cleanPhone)) {
         $response['message'] = 'Please enter a valid phone number.';
@@ -99,7 +93,6 @@ if ($action === 'update_profile') {
         exit;
     }
 
-    // Update using UserRepository
     $updateData = ['full_name' => $fullName];
     if (!empty($cleanPhone)) {
         $updateData['phone'] = $cleanPhone;
@@ -111,7 +104,6 @@ if ($action === 'update_profile') {
     $result = $userRepo->updateProfile($current_user_id, $updateData);
 
     if ($result) {
-        // Update session data
         $_SESSION['full_name'] = $fullName;
         if (!empty($cleanPhone)) {
             $_SESSION['phone'] = $cleanPhone;
@@ -120,7 +112,6 @@ if ($action === 'update_profile') {
             $_SESSION['location'] = $location;
         }
 
-        // Update session user object
         $updatedUser = $userRepo->findById($current_user_id);
         $_SESSION['user_object'] = serialize($updatedUser);
 

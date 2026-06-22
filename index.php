@@ -10,6 +10,7 @@
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
+$load_products_js = true;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,7 +25,6 @@ include __DIR__ . '/includes/functions.php';
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
 
     <style>
-        /* Homepage specific overrides */
         .featured .prod-grid .empty-state {
             grid-column: 1 / -1;
             width: 100%;
@@ -44,7 +44,6 @@ include __DIR__ . '/includes/functions.php';
             color: rgba(255, 255, 255, 0.9);
         }
 
-        /* Hide duplicate search in hero section */
         .hero .search-container {
             display: none;
         }
@@ -110,27 +109,8 @@ include __DIR__ . '/includes/functions.php';
                 <h1 class="section-heading">Recently Listed</h1>
                 <a href="product-listings.php" class="view-all-link">View All Products →</a>
             </div>
-            <div class="prod-grid" id="products-grid">
-                <?php
-                // Get featured products as Product objects
-                $featuredProducts = $productRepo->getPublicProductObjects(['limit' => 4]);
-
-                if (!empty($featuredProducts)):
-                    foreach ($featuredProducts as $product):
-                        // Get seller for this product
-                        $seller = $userRepo->findById($product->getSellerId());
-                        // Render the product card using the reusable function from functions.php
-                        echo renderProductCard($product, $seller);
-                    endforeach;
-                else:
-                ?>
-                    <div class="empty-state">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
-                        <h3>No products yet</h3>
-                        <p>Be the first to list a product on ConsuTrade!</p>
-                        <a href="sell.php" class="view-all-btn" style="display: inline-block;">Start Selling</a>
-                    </div>
-                <?php endif; ?>
+            <div class="prod-grid" id="featured-products-grid">
+                <div class="loading-spinner">Loading products...</div>
             </div>
         </section>
 
@@ -157,7 +137,60 @@ include __DIR__ . '/includes/functions.php';
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
 
+    <!-- Page specific Javascript-->
     <script>
+        // Load featured products via AJAX using existing functions
+        function loadFeaturedProducts() {
+            var $grid = $('#featured-products-grid');
+            $grid.html('<div class="loading-spinner">Loading products...</div>');
+
+            $.ajax({
+                url: baseUrl + 'php/endpoints/get-products.php?limit=4&page=1',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success && data.products && data.products.length > 0) {
+                        // Reuse displayProducts with container parameter
+                        displayProducts(data.products, '#featured-products-grid');
+                    } else {
+                        showFeaturedEmptyState();
+                    }
+                },
+                error: function() {
+                    $grid.html(
+                        '<div class="empty-state">' +
+                        '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error" loading="lazy">' +
+                        '<h3>Could not load products</h3>' +
+                        '<p>Please refresh the page to try again.</p>' +
+                        '</div>'
+                    );
+                }
+            });
+        }
+
+        function showFeaturedEmptyState() {
+            $('#featured-products-grid').html(
+                '<div class="empty-state">' +
+                '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">' +
+                '<h3>No products yet</h3>' +
+                '<p>Be the first to list a product on ConsuTrade!</p>' +
+                '<a href="' + baseUrl + 'sell.php" class="view-all-btn" style="display: inline-block;">Start Selling</a>' +
+                '</div>'
+            );
+        }
+
+        // Empty state for featured products (only used here)
+        function showFeaturedEmptyState() {
+            $('#featured-products-grid').html(
+                '<div class="empty-state">' +
+                '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">' +
+                '<h3>No products yet</h3>' +
+                '<p>Be the first to list a product on ConsuTrade!</p>' +
+                '<a href="' + baseUrl + 'sell.php" class="view-all-btn" style="display: inline-block;">Start Selling</a>' +
+                '</div>'
+            );
+        }
+
         // Handle Start Selling button
         $('#primary-btn').on('click', function() {
             var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
@@ -171,6 +204,11 @@ include __DIR__ . '/includes/functions.php';
                 openModal($('#register-modal'));
                 $('#seller').prop('checked', true);
             }
+        });
+
+        // Load featured products when page is ready
+        $(function() {
+            loadFeaturedProducts();
         });
     </script>
 

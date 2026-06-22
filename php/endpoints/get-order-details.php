@@ -17,14 +17,12 @@ header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'order' => null];
 
-// Verify user is logged in
 if (!$isLoggedIn) {
     $response['error'] = 'Not logged in';
     echo json_encode($response);
     exit;
 }
 
-// Get and validate order ID
 $order_id = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
 
 if ($order_id <= 0) {
@@ -36,7 +34,6 @@ if ($order_id <= 0) {
 $user_id = $currentUser->getUserId();
 $role = $currentUser->getRole();
 
-// Check if order exists in database
 $checkSql = "SELECT order_id, buyer_id, seller_id, status FROM orders WHERE order_id = ?";
 $checkStmt = $conn->prepare($checkSql);
 $checkStmt->bind_param('i', $order_id);
@@ -51,14 +48,13 @@ if (!$orderExists) {
     exit;
 }
 
-// Verify user has permission to view this order
 $hasPermission = false;
 if ($role === 'admin') {
-    $hasPermission = true;  // Admin can view any order
+    $hasPermission = true;
 } elseif ($role === 'buyer' && $orderExists['buyer_id'] == $user_id) {
-    $hasPermission = true;  // Buyer can view their own orders
+    $hasPermission = true;
 } elseif ($role === 'seller' && $orderExists['seller_id'] == $user_id) {
-    $hasPermission = true;  // Seller can view orders for their products
+    $hasPermission = true;
 }
 
 if (!$hasPermission) {
@@ -67,8 +63,7 @@ if (!$hasPermission) {
     exit;
 }
 
-// Get full order details with items
-$order = $orderRepo->getOrderDetails($order_id, $user_id, $role);
+$order = $orderRepo->findById($order_id, $user_id, $role);
 
 if (!$order) {
     $response['error'] = 'Order details not found';
@@ -76,16 +71,14 @@ if (!$order) {
     exit;
 }
 
-// Calculate subtotal from items and format image URLs
 $subtotal = 0;
 foreach ($order['items'] as &$item) {
-    $item['image_url'] = $productRepo->getProductImageUrl($item['image_url'] ?? '');
+    $item['image_url'] = $productRepo->getImageUrl($item['image_url'] ?? '');
     $item['total'] = $item['price'] * $item['quantity'];
     $subtotal += $item['total'];
 }
 unset($item);
 
-// Calculate delivery fee (R50 for orders under R500, free otherwise)
 $delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
 $total = $subtotal + $delivery_fee;
 
@@ -93,7 +86,6 @@ $shipping_address = isset($order['shipping_address']) && !empty($order['shipping
     ? $order['shipping_address']
     : 'Not provided';
 
-// Build response
 $response['success'] = true;
 $response['order'] = [
     'order_id' => (int) $order['order_id'],

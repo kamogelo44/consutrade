@@ -9,14 +9,12 @@
 
 require_once dirname(__DIR__, 2) . '/init.php';
 
-// Check if user is logged in and is a seller
 if (!$isLoggedIn || !$currentUser instanceof Seller) {
     $_SESSION['error'] = 'Unauthorized. Please login as a seller.';
     header('Location: ' . $baseUrl . 'admin/add-product.php');
     exit;
 }
 
-// Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . $baseUrl . 'admin/add-product.php');
     exit;
@@ -24,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $sellerId = $currentUser->getUserId();
 
-// Get form data
 $title = trim($_POST['title'] ?? '');
 $categoryId = isset($_POST['category_id']) ? (int) $_POST['category_id'] : 0;
 $price = isset($_POST['price']) ? (float) $_POST['price'] : 0;
@@ -33,7 +30,6 @@ $condition = $_POST['condition'] ?? '';
 $location = trim($_POST['location'] ?? '');
 $description = trim($_POST['description'] ?? '');
 
-// Validate form data
 $errors = [];
 if (empty($title)) $errors[] = 'Product title is required';
 if ($categoryId <= 0) $errors[] = 'Please select a category';
@@ -41,7 +37,6 @@ if ($price <= 0) $errors[] = 'Valid price is required';
 if ($stockQuantity < 1) $errors[] = 'Stock quantity must be at least 1';
 if (empty($description)) $errors[] = 'Description is required';
 
-// Check if images were uploaded
 if (!isset($_FILES['product_images']) || empty($_FILES['product_images']['name'][0])) {
     $errors[] = 'At least one product image is required';
 }
@@ -52,12 +47,10 @@ if (!empty($errors)) {
     exit;
 }
 
-// Handle uploaded images
 $uploadedImages = $_FILES['product_images'];
 $totalImages = count($uploadedImages['name']);
-$maxImages = min($totalImages, 4); // Max 4 images total
+$maxImages = min($totalImages, 4);
 
-// Upload first image as MAIN image
 $firstFile = [
     'name' => $uploadedImages['name'][0],
     'type' => $uploadedImages['type'][0],
@@ -66,7 +59,7 @@ $firstFile = [
     'size' => $uploadedImages['size'][0]
 ];
 
-$mainImagePath = $productRepo->uploadProductImage($firstFile, $sellerId, $title, 'main');
+$mainImagePath = $productRepo->uploadImage($firstFile, $sellerId, $title, 'main');
 
 if (!$mainImagePath) {
     $_SESSION['error'] = 'Failed to upload main image. Please try again.';
@@ -74,7 +67,6 @@ if (!$mainImagePath) {
     exit;
 }
 
-// Create product with main image
 $productData = [
     'seller_id' => $sellerId,
     'category_id' => $categoryId,
@@ -89,7 +81,7 @@ $productData = [
 ];
 
 $product = new Product($productData);
-$productId = $productRepo->createProduct($product);
+$productId = $productRepo->create($product);
 
 if (!$productId) {
     $_SESSION['error'] = 'Failed to create product. Please try again.';
@@ -97,7 +89,6 @@ if (!$productId) {
     exit;
 }
 
-// Upload remaining images as GALLERY images (indices 1, 2, 3)
 $galleryUrls = [];
 for ($i = 1; $i < $maxImages; $i++) {
     if ($uploadedImages['error'][$i] === UPLOAD_ERR_OK) {
@@ -109,16 +100,15 @@ for ($i = 1; $i < $maxImages; $i++) {
             'size' => $uploadedImages['size'][$i]
         ];
 
-        $imagePath = $productRepo->uploadProductImage($file, $sellerId, $title, 'gallery_' . $i);
+        $imagePath = $productRepo->uploadImage($file, $sellerId, $title, 'gallery_' . $i);
         if ($imagePath) {
             $galleryUrls[] = $imagePath;
         }
     }
 }
 
-// Save gallery images to database
 if (!empty($galleryUrls)) {
-    $productImageRepo->addMultiple($productId, $galleryUrls);
+    $productImageRepo->createMultiple($productId, $galleryUrls);
 }
 
 $_SESSION['success'] = 'Product added successfully!';

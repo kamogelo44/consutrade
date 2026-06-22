@@ -1,13 +1,23 @@
-// products.js - handles product listings, filtering, pagination, product details
-// Author: Kamogelo Phale
+/**
+ * ConsuTrade - Product Listings JavaScript
+ * Author: Kamogelo Phale
+ * 
+ * Handles product listings, filtering, pagination, and product details.
+ * Used on: product-listings.php, product-details.php, index.php (featured products)
+ */
 
-// product listings page variables
+// ========== PRODUCT LISTINGS VARIABLES ==========
+
 var currentPage = 1;
 var currentFilters = {};
 var currentSort = 'newest';
 var totalPages = 1;
 
-// load products from server with filters
+// ========== PRODUCT LISTINGS FUNCTIONS ==========
+
+/**
+ * Loads products from server with current filters
+ */
 function loadProducts() {
     var params = new URLSearchParams();
     params.append('page', currentPage);
@@ -35,16 +45,27 @@ function loadProducts() {
     });
 }
 
-// display products in grid
-function displayProducts(products) {
-    var $grid = $('#products-grid');
+/**
+ * Displays products in grid with optional container selector
+ */
+function displayProducts(products, containerSelector) {
+    var $grid;
+    if (containerSelector) {
+        $grid = $(containerSelector);
+    } else {
+        $grid = $('#products-grid');
+    }
+    
+    if (!$grid || !$grid.length) {
+        $grid = $('#products-grid');
+    }
+    
     $grid.empty();
     
     for (var i = 0; i < products.length; i++) {
         var product = products[i];
         var imagePath = fixImageUrl(product.display_image || product.image || product.image_url);
         
-        // condition class for badge
         var conditionText = product.condition || 'Good';
         var conditionClass = 'good';
         if (conditionText == 'New') conditionClass = 'new';
@@ -52,7 +73,6 @@ function displayProducts(products) {
         else if (conditionText == 'Good') conditionClass = 'good';
         else if (conditionText == 'Fair') conditionClass = 'fair';
         
-        // stock badge - default to 0, not 1
         var stockQty = parseInt(product.stock_quantity) || 0;
         var stockBadge = '';
         if (stockQty <= 0) {
@@ -61,7 +81,6 @@ function displayProducts(products) {
             stockBadge = '<div class="low-stock-badge-card">Only ' + stockQty + ' left</div>';
         }
         
-        // seller verification badge
         var sellerBadge = '';
         if (product.is_verified) {
             sellerBadge = '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>';
@@ -69,7 +88,6 @@ function displayProducts(products) {
             sellerBadge = '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
         }
         
-        // button logic - out of stock OR add to cart
         var isOutOfStock = stockQty <= 0;
         var addToCartButton = '';
         
@@ -119,7 +137,9 @@ function displayProducts(products) {
     }
 }
 
-// show empty state when no products
+/**
+ * Shows empty state when no products match filters
+ */
 function showEmptyState() {
     $('#products-grid').html(
         '<div class="empty-state" id="empty-products-state">' +
@@ -139,7 +159,9 @@ function showEmptyState() {
     });
 }
 
-// show error state
+/**
+ * Shows error state when product loading fails
+ */
 function showErrorState() {
     $('#products-grid').html(
         '<div class="empty-state" id="error-products-state">' +
@@ -156,7 +178,9 @@ function showErrorState() {
     });
 }
 
-// display pagination controls
+/**
+ * Renders pagination controls
+ */
 function displayPagination() {
     renderPagination($('#pagination'), currentPage, totalPages, function(page) {
         currentPage = page;
@@ -165,7 +189,11 @@ function displayPagination() {
     });
 }
 
-// collect filter values from form
+// ========== FILTER FUNCTIONS ==========
+
+/**
+ * Collects filter values from the filter form
+ */
 function collectFilters() {
     var categories = [];
     $('input[name="category[]"]').each(function() {
@@ -184,7 +212,9 @@ function collectFilters() {
     };
 }
 
-// setup event listeners for filtering
+/**
+ * Sets up event listeners for product filtering
+ */
 function setupProductEventListeners() {
     $('#mobileFilterBtn').on('click', function() {
         $('#filterSidebar').toggleClass('active');
@@ -214,11 +244,13 @@ function setupProductEventListeners() {
     });
 }
 
-// ========== PRODUCT DETAILS PAGE ==========
+// ========== PRODUCT DETAILS FUNCTIONS ==========
 
 var currentProductId = 0;
 
-// load product details for single product page
+/**
+ * Loads product details for single product page
+ */
 function loadProductDetails(id) {
     if (!$('.product-details-container').length) return;
     
@@ -249,7 +281,9 @@ function loadProductDetails(id) {
     });
 }
 
-// display product details on the page
+/**
+ * Renders product details on the page
+ */
 function displayProductDetails(product) {
     var mainImage = fixImageUrl(product.image_url);
     var galleryImages = product.gallery_images || [];
@@ -274,7 +308,6 @@ function displayProductDetails(product) {
                         '</div>';
     }
     
-    // Stock status
     var stockQty = parseInt(product.stock_quantity) || 0;
     var isOutOfStock = stockQty <= 0;
     var isLowStock = stockQty > 0 && stockQty <= 5;
@@ -296,7 +329,6 @@ function displayProductDetails(product) {
     
     var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
     
-    // Action buttons
     var actionButtonsHtml = '';
     
     if (isOutOfStock) {
@@ -306,31 +338,25 @@ function displayProductDetails(product) {
                             '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
     }
     
-    // report button - only for logged in buyers
     var isLoggedInFlag = (typeof isLoggedIn !== 'undefined' && isLoggedIn === true);
     var isBuyer = (typeof currentUserRole !== 'undefined' && currentUserRole == 'buyer');
     var showReportButton = isLoggedInFlag && isBuyer;
     
     if (showReportButton) {
         actionButtonsHtml += '<button class="report-btn" id="reportProductBtn">' +
-                                '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="16" height="16" alt="Report" loading="lazy"> Report This Product' +
-                              '</button>';
+                                '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="16" height="16" alt="Report" loading="lazy"> Report This Product</button>';
     }
     
-    // ========== CONTACT BUTTONS ==========
     var contactHtml = '';
     var sellerPhone = product.seller_phone || '';
     var sellerEmail = product.seller_email || '';
     
-    // Format phone for WhatsApp (remove non-digits, add 27 prefix if needed)
     var whatsappNumber = '';
     if (sellerPhone) {
         var digits = sellerPhone.replace(/\D/g, '');
-        // Remove leading 0 if present
         if (digits.startsWith('0')) {
             digits = digits.substring(1);
         }
-        // Add 27 country code if not already there
         if (!digits.startsWith('27')) {
             digits = '27' + digits;
         }
@@ -339,13 +365,11 @@ function displayProductDetails(product) {
     
     if (sellerPhone) {
         contactHtml += '<a href="https://wa.me/' + whatsappNumber + '" target="_blank" class="contact-btn whatsapp-btn">' +
-                            '<img src="' + baseUrl + 'images/icons/whatsapp-svgrepo-com.svg" width="18" height="18" alt="WhatsApp" loading="lazy"> WhatsApp' +
-                        '</a>';
+                            '<img src="' + baseUrl + 'images/icons/whatsapp-svgrepo-com.svg" width="18" height="18" alt="WhatsApp" loading="lazy"> WhatsApp</a>';
     }
     if (sellerEmail) {
         contactHtml += '<a href="mailto:' + sellerEmail + '" class="contact-btn email-btn">' +
-                            '<img src="' + baseUrl + 'images/icons/email-svgrepo-com.svg" width="16" height="16" alt="Email" loading="lazy"> Email Seller' +
-                        '</a>';
+                            '<img src="' + baseUrl + 'images/icons/email-svgrepo-com.svg" width="16" height="16" alt="Email" loading="lazy"> Email Seller</a>';
     }
     
     var sellerImage = fixImageUrl(product.seller_profile_image);
@@ -406,7 +430,6 @@ function displayProductDetails(product) {
         '</div>'
     );
     
-    // setup gallery click handlers
     $('.small-img').on('click', function() {
         var newImagePath = $(this).data('image-path');
         $('#main-product-image').attr('src', newImagePath);
@@ -414,7 +437,6 @@ function displayProductDetails(product) {
         $(this).addClass('active');
     });
     
-    // report button handler
     if (showReportButton) {
         $('#reportProductBtn').off('click').on('click', function(e) {
             e.stopPropagation();
@@ -423,7 +445,8 @@ function displayProductDetails(product) {
     }
 }
 
-// report modal functions
+// ========== REPORT MODAL FUNCTIONS ==========
+
 function openReportModal(productId) {
     currentProductId = productId;
     
@@ -491,13 +514,16 @@ function initReportModal() {
     });
 }
 
-// buy now - add to cart and go to checkout
+/**
+ * Buy now - adds to cart and redirects to checkout
+ */
 function buyNow(productId, productName, productPrice) {
     addToCart(productId, productName, productPrice);
     window.location.href = baseUrl + 'checkout.php';
 }
 
-// initialize everything when document is ready
+// ========== DOCUMENT READY ==========
+
 $(function() {
     if ($('#products-grid').length) {
         loadProducts();

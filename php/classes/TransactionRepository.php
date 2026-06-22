@@ -18,19 +18,23 @@ class TransactionRepository
         $this->db = $db;
     }
 
+    // ============================================================
+    // CREATE
+    // ============================================================
+
     /**
-     * Create a transaction record from successful payment
+     * Create a transaction record from successful payment.
      *
      * @param int $orderId Order ID
      * @param string $payfastRef PayFast reference
      * @param float $amount Payment amount
-     * @return Transaction
+     * @return Transaction|false
      */
-    public function createFromPayment($orderId, $payfastRef, $amount)
+    public function createFromPayment(int $orderId, string $payfastRef, float $amount): Transaction|false
     {
         $stmt = $this->db->prepare(
             "INSERT INTO transactions (order_id, payfast_ref, amount, status, paid_at) 
-         VALUES (?, ?, ?, 'completed', NOW())"
+             VALUES (?, ?, ?, 'completed', NOW())"
         );
         $stmt->bind_param('isd', $orderId, $payfastRef, $amount);
 
@@ -57,34 +61,17 @@ class TransactionRepository
         return false;
     }
 
-    /**
-     * Get transaction by order ID
-     *
-     * @param int $orderId Order ID
-     * @return Transaction|null
-     */
-    public function getByOrderId($orderId)
-    {
-        $stmt = $this->db->prepare("SELECT * FROM transactions WHERE order_id = ? LIMIT 1");
-        $stmt->bind_param('i', $orderId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            return new Transaction($row);
-        }
-        $stmt->close();
-        return null;
-    }
+    // ============================================================
+    // READ
+    // ============================================================
 
     /**
-     * Get transaction by ID
+     * Get transaction by ID.
      *
      * @param int $transactionId Transaction ID
      * @return Transaction|null
      */
-    public function getById($transactionId)
+    public function findById(int $transactionId): ?Transaction
     {
         $stmt = $this->db->prepare("SELECT * FROM transactions WHERE transaction_id = ?");
         $stmt->bind_param('i', $transactionId);
@@ -100,13 +87,56 @@ class TransactionRepository
     }
 
     /**
-     * Get all transactions (for admin)
+     * Get transaction by order ID.
+     *
+     * @param int $orderId Order ID
+     * @return Transaction|null
+     */
+    public function findByOrderId(int $orderId): ?Transaction
+    {
+        $stmt = $this->db->prepare("SELECT * FROM transactions WHERE order_id = ? LIMIT 1");
+        $stmt->bind_param('i', $orderId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return new Transaction($row);
+        }
+        $stmt->close();
+        return null;
+    }
+
+    /**
+     * Get all transactions for a specific order.
+     *
+     * @param int $orderId Order ID
+     * @return array
+     */
+    public function findAllByOrderId(int $orderId): array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM transactions WHERE order_id = ? ORDER BY transaction_id DESC");
+        $stmt->bind_param('i', $orderId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $transactions = [];
+        while ($row = $result->fetch_assoc()) {
+            $transactions[] = new Transaction($row);
+        }
+        $stmt->close();
+
+        return $transactions;
+    }
+
+    /**
+     * Get all transactions (for admin).
      *
      * @param int $limit Results per page
      * @param int $offset Pagination offset
      * @return array
      */
-    public function getAll($limit = 50, $offset = 0)
+    public function findAll(int $limit = 50, int $offset = 0): array
     {
         $stmt = $this->db->prepare("
             SELECT t.*, o.buyer_id, o.seller_id 
@@ -129,85 +159,12 @@ class TransactionRepository
     }
 
     /**
-     * Get transactions for a specific order
-     *
-     * @param int $orderId Order ID
-     * @return array
-     */
-    public function getByOrderIdAll($orderId)
-    {
-        $stmt = $this->db->prepare("SELECT * FROM transactions WHERE order_id = ? ORDER BY transaction_id DESC");
-        $stmt->bind_param('i', $orderId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $transactions = [];
-        while ($row = $result->fetch_assoc()) {
-            $transactions[] = new Transaction($row);
-        }
-        $stmt->close();
-
-        return $transactions;
-    }
-
-    /**
-     * Update transaction status
-     *
-     * @param int $transactionId Transaction ID
-     * @param string $status New status
-     * @return bool
-     */
-    public function updateStatus($transactionId, $status)
-    {
-        $validStatuses = ['pending', 'completed', 'failed', 'refunded'];
-        if (!in_array($status, $validStatuses)) {
-            return false;
-        }
-
-        $stmt = $this->db->prepare("UPDATE transactions SET status = ? WHERE transaction_id = ?");
-        $stmt->bind_param('si', $status, $transactionId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Get total transaction count
-     *
-     * @return int
-     */
-    public function getTotalCount()
-    {
-        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM transactions");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
-        $stmt->close();
-        return $total;
-    }
-
-    /**
-     * Get total revenue from completed transactions
-     *
-     * @return float
-     */
-    public function getTotalRevenue()
-    {
-        $stmt = $this->db->prepare("SELECT SUM(amount) as total FROM transactions WHERE status = 'completed'");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $total = (float) ($result->fetch_assoc()['total'] ?? 0);
-        $stmt->close();
-        return $total;
-    }
-
-    /**
-     * Get recent transactions for dashboard
+     * Get recent transactions for dashboard.
      *
      * @param int $limit Number of transactions
      * @return array
      */
-    public function getRecentTransactions($limit = 5)
+    public function findRecent(int $limit = 5): array
     {
         $stmt = $this->db->prepare("
             SELECT t.*, o.buyer_id, o.seller_id,
@@ -236,5 +193,94 @@ class TransactionRepository
         $stmt->close();
 
         return $transactions;
+    }
+
+    /**
+     * Get total transaction count.
+     *
+     * @return int
+     */
+    public function countAll(): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM transactions");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $total;
+    }
+
+    /**
+     * Get total revenue from completed transactions.
+     *
+     * @return float
+     */
+    public function getTotalRevenue(): float
+    {
+        $stmt = $this->db->prepare("SELECT SUM(amount) as total FROM transactions WHERE status = 'completed'");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (float) ($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $total;
+    }
+
+    // ============================================================
+    // UPDATE
+    // ============================================================
+
+    /**
+     * Update transaction status.
+     *
+     * @param int $transactionId Transaction ID
+     * @param string $status New status
+     * @return bool
+     */
+    public function updateStatus(int $transactionId, string $status): bool
+    {
+        $validStatuses = ['pending', 'completed', 'failed', 'refunded'];
+        if (!in_array($status, $validStatuses)) {
+            return false;
+        }
+
+        $stmt = $this->db->prepare("UPDATE transactions SET status = ? WHERE transaction_id = ?");
+        $stmt->bind_param('si', $status, $transactionId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    // ============================================================
+    // DELETE
+    // ============================================================
+
+    /**
+     * Delete a transaction by ID.
+     *
+     * @param int $transactionId Transaction ID
+     * @return bool
+     */
+    public function delete(int $transactionId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM transactions WHERE transaction_id = ?");
+        $stmt->bind_param('i', $transactionId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Delete all transactions for an order.
+     *
+     * @param int $orderId Order ID
+     * @return bool
+     */
+    public function deleteByOrderId(int $orderId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM transactions WHERE order_id = ?");
+        $stmt->bind_param('i', $orderId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 }

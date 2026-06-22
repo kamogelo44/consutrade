@@ -25,7 +25,7 @@ class ReviewRepository
     }
 
     // ============================================================
-    //  SUBMIT
+    // CREATE
     // ============================================================
 
     /**
@@ -38,9 +38,8 @@ class ReviewRepository
      * @param string $comment Review comment
      * @return array
      */
-    public function submitReview($orderId, $sellerId, $buyerId, $rating, $comment)
+    public function create(int $orderId, int $sellerId, int $buyerId, int $rating, string $comment): array
     {
-        // Verify the order is completed and belongs to this buyer
         $checkSql = "SELECT order_id FROM orders
                      WHERE order_id = ? AND buyer_id = ? AND seller_id = ? AND status = 'completed'";
         $checkStmt = $this->db->prepare($checkSql);
@@ -53,7 +52,6 @@ class ReviewRepository
         }
         $checkStmt->close();
 
-        // Check for duplicate review
         $dupSql = "SELECT review_id FROM reviews WHERE order_id = ? AND buyer_id = ?";
         $dupStmt = $this->db->prepare($dupSql);
         $dupStmt->bind_param('ii', $orderId, $buyerId);
@@ -65,7 +63,6 @@ class ReviewRepository
         }
         $dupStmt->close();
 
-        // Insert the review
         $insertSql = "INSERT INTO reviews (order_id, seller_id, buyer_id, rating, comment, created_at)
                       VALUES (?, ?, ?, ?, ?, NOW())";
         $insertStmt = $this->db->prepare($insertSql);
@@ -81,17 +78,17 @@ class ReviewRepository
     }
 
     // ============================================================
-    //  CHECK & UPDATE
+    // READ
     // ============================================================
 
     /**
-     * Check if a review already exists for an order.
+     * Get a review by order ID and buyer ID.
      *
      * @param int $orderId Order ID
      * @param int $buyerId Buyer ID
      * @return array|null
      */
-    public function getReviewByOrderAndBuyer($orderId, $buyerId)
+    public function findByOrderAndBuyer(int $orderId, int $buyerId): ?array
     {
         $sql = "SELECT review_id, rating, comment, created_at FROM reviews WHERE order_id = ? AND buyer_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -114,47 +111,12 @@ class ReviewRepository
     }
 
     /**
-     * Update an existing review.
-     *
-     * @param int $orderId Order ID
-     * @param int $buyerId Buyer ID
-     * @param int $rating New rating (1-5)
-     * @param string $comment New comment
-     * @return array
-     */
-    public function updateReview($orderId, $buyerId, $rating, $comment)
-    {
-        // Check if review exists
-        $existing = $this->getReviewByOrderAndBuyer($orderId, $buyerId);
-        if (!$existing) {
-            return ['success' => false, 'message' => 'Review not found'];
-        }
-
-        // Update the review
-        $sql = "UPDATE reviews SET rating = ?, comment = ?, updated_at = NOW() WHERE order_id = ? AND buyer_id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('isii', $rating, $comment, $orderId, $buyerId);
-
-        if ($stmt->execute()) {
-            $stmt->close();
-            return ['success' => true, 'message' => 'Review updated successfully'];
-        }
-
-        $stmt->close();
-        return ['success' => false, 'message' => 'Failed to update review'];
-    }
-
-    // ============================================================
-    //  RETRIEVE
-    // ============================================================
-
-    /**
      * Get reviews for a seller with buyer details.
      *
      * @param int $sellerId Seller ID
      * @return array
      */
-    public function getSellerReviews($sellerId)
+    public function findBySeller(int $sellerId): array
     {
         $sql = "SELECT r.review_id, r.rating, r.comment, r.created_at,
                        u.full_name as buyer_name, u.user_id as buyer_id,
@@ -193,7 +155,7 @@ class ReviewRepository
      * @param int $limit Maximum number of reviews
      * @return array
      */
-    public function getRecentSellerReviews($sellerId, $limit = 5)
+    public function findRecentBySeller(int $sellerId, int $limit = 5): array
     {
         $sql = "SELECT r.review_id, r.rating, r.comment, r.created_at,
                        u.full_name as buyer_name
@@ -224,56 +186,13 @@ class ReviewRepository
     }
 
     /**
-     * Get the average rating and review count for a seller.
-     *
-     * @param int $sellerId Seller ID
-     * @return array
-     */
-    public function getSellerRating($sellerId)
-    {
-        $sql = "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
-                FROM reviews
-                WHERE seller_id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $sellerId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $stmt->close();
-
-        return [
-            'avg_rating'   => round((float) ($row['avg_rating'] ?? 0), 1),
-            'review_count' => (int) ($row['review_count'] ?? 0)
-        ];
-    }
-
-    /**
-     * Count reviews written by a buyer.
-     *
-     * @param int $buyerId Buyer ID
-     * @return int
-     */
-    public function countBuyerReviews($buyerId)
-    {
-        $sql = "SELECT COUNT(*) as total FROM reviews WHERE buyer_id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $buyerId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $count = (int)($result->fetch_assoc()['total'] ?? 0);
-        $stmt->close();
-        return $count;
-    }
-
-    /**
      * Get all reviews for admin (across all sellers).
      *
      * @param int $limit Results per page
      * @param int $offset Pagination offset
      * @return array
      */
-    public function getAllReviews($limit = 20, $offset = 0)
+    public function findAll(int $limit = 20, int $offset = 0): array
     {
         $sql = "SELECT r.review_id, r.rating, r.comment, r.created_at,
                        buyer.full_name as buyer_name,
@@ -312,11 +231,54 @@ class ReviewRepository
     }
 
     /**
+     * Get the average rating and review count for a seller.
+     *
+     * @param int $sellerId Seller ID
+     * @return array
+     */
+    public function getSellerRating(int $sellerId): array
+    {
+        $sql = "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
+                FROM reviews
+                WHERE seller_id = ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $sellerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return [
+            'avg_rating'   => round((float) ($row['avg_rating'] ?? 0), 1),
+            'review_count' => (int) ($row['review_count'] ?? 0)
+        ];
+    }
+
+    /**
+     * Count reviews written by a buyer.
+     *
+     * @param int $buyerId Buyer ID
+     * @return int
+     */
+    public function countByBuyer(int $buyerId): int
+    {
+        $sql = "SELECT COUNT(*) as total FROM reviews WHERE buyer_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $buyerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $count = (int)($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $count;
+    }
+
+    /**
      * Get total review count.
      *
      * @return int
      */
-    public function getTotalReviewCount()
+    public function countAll(): int
     {
         $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM reviews");
         $stmt->execute();
@@ -326,16 +288,83 @@ class ReviewRepository
         return $total;
     }
 
+    // ============================================================
+    // UPDATE
+    // ============================================================
+
+    /**
+     * Update an existing review.
+     *
+     * @param int $orderId Order ID
+     * @param int $buyerId Buyer ID
+     * @param int $rating New rating (1-5)
+     * @param string $comment New comment
+     * @return array
+     */
+    public function update(int $orderId, int $buyerId, int $rating, string $comment): array
+    {
+        $existing = $this->findByOrderAndBuyer($orderId, $buyerId);
+        if (!$existing) {
+            return ['success' => false, 'message' => 'Review not found'];
+        }
+
+        $sql = "UPDATE reviews SET rating = ?, comment = ?, updated_at = NOW() WHERE order_id = ? AND buyer_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('isii', $rating, $comment, $orderId, $buyerId);
+
+        if ($stmt->execute()) {
+            $stmt->close();
+            return ['success' => true, 'message' => 'Review updated successfully'];
+        }
+
+        $stmt->close();
+        return ['success' => false, 'message' => 'Failed to update review'];
+    }
+
+    // ============================================================
+    // DELETE
+    // ============================================================
+
     /**
      * Delete a review (admin function).
      *
      * @param int $reviewId Review ID
      * @return bool
      */
-    public function deleteReview($reviewId)
+    public function delete(int $reviewId): bool
     {
         $stmt = $this->db->prepare("DELETE FROM reviews WHERE review_id = ?");
         $stmt->bind_param('i', $reviewId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Delete all reviews by a buyer.
+     *
+     * @param int $buyerId Buyer ID
+     * @return bool
+     */
+    public function deleteByBuyer(int $buyerId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM reviews WHERE buyer_id = ?");
+        $stmt->bind_param('i', $buyerId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Delete all reviews for a seller.
+     *
+     * @param int $sellerId Seller ID
+     * @return bool
+     */
+    public function deleteBySeller(int $sellerId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM reviews WHERE seller_id = ?");
+        $stmt->bind_param('i', $sellerId);
         $result = $stmt->execute();
         $stmt->close();
         return $result;

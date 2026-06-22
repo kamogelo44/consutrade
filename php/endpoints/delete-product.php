@@ -26,11 +26,11 @@ if ($productId <= 0) {
 }
 
 if ($currentUser instanceof Seller) {
-    $result = $productRepo->deleteSellerProduct($productId, $currentUser->getUserId());
+    $result = $productRepo->delete($productId, $currentUser->getUserId());
     $response['success'] = $result['success'];
     $response['message'] = $result['message'];
 } elseif ($currentUser instanceof Admin) {
-    $product = $productRepo->getProductObject($productId);
+    $product = $productRepo->findById($productId);
 
     if (!$product) {
         $response['message'] = 'Product not found.';
@@ -38,7 +38,7 @@ if ($currentUser instanceof Seller) {
         exit;
     }
 
-    $result = $productRepo->deleteSellerProduct($productId, $product->getSellerId());
+    $result = $productRepo->delete($productId, $product->getSellerId());
     $response['success'] = $result['success'];
     $response['message'] = $result['message'];
 } else {

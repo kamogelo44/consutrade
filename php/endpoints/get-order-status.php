@@ -17,14 +17,12 @@ header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'status' => null, 'message' => ''];
 
-// Verify user is logged in
 if (!$isLoggedIn) {
     $response['message'] = 'Unauthorized. Please login.';
     echo json_encode($response);
     exit;
 }
 
-// Get and validate order ID
 $orderId = isset($_GET['order_id']) ? (int) $_GET['order_id'] : 0;
 
 if ($orderId <= 0) {
@@ -33,10 +31,9 @@ if ($orderId <= 0) {
     exit;
 }
 
-// Get order details based on user role
 $role = $currentUser->getRole();
 $userId = $currentUser->getUserId();
-$order = $orderRepo->getOrderDetails($orderId, $userId, $role);
+$order = $orderRepo->findById($orderId, $userId, $role);
 
 if (!$order) {
     $response['message'] = 'Order not found';
@@ -44,7 +41,6 @@ if (!$order) {
     exit;
 }
 
-// Status descriptions for user-friendly messages
 $statusDescriptions = [
     'pending' => 'Your order is pending confirmation',
     'processing' => 'Your order is being processed',
@@ -53,7 +49,6 @@ $statusDescriptions = [
     'cancelled' => 'Your order has been cancelled'
 ];
 
-// Build response
 $response['success'] = true;
 $response['status'] = $order['status'];
 $response['created_at'] = date('d M Y, h:i A', strtotime($order['created_at']));

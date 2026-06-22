@@ -17,7 +17,7 @@ if (!$auth->isAdmin()) {
 }
 
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
-$orders = $orderRepo->getRecentOrders($limit);
+$orders = $orderRepo->findRecent($limit);
 
 $response['success'] = true;
 $response['orders'] = $orders;

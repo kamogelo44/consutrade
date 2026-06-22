@@ -24,12 +24,41 @@ class CategoryRepository
         $this->db = $db;
     }
 
+    // ============================================================
+    // CREATE
+    // ============================================================
+
+    /**
+     * Create a new category.
+     *
+     * @param string $categoryName Category name
+     * @return int|false Insert ID on success, false on failure
+     */
+    public function create(string $categoryName): int|false
+    {
+        $stmt = $this->db->prepare("INSERT INTO categories (category_name) VALUES (?)");
+        $stmt->bind_param('s', $categoryName);
+
+        if ($stmt->execute()) {
+            $id = $stmt->insert_id;
+            $stmt->close();
+            return $id;
+        }
+
+        $stmt->close();
+        return false;
+    }
+
+    // ============================================================
+    // READ
+    // ============================================================
+
     /**
      * Get all categories.
      *
      * @return array Array of categories
      */
-    public function getAll()
+    public function findAll(): array
     {
         $sql = "SELECT category_id, category_name FROM categories ORDER BY category_name ASC";
         $stmt = $this->db->prepare($sql);
@@ -54,7 +83,7 @@ class CategoryRepository
      * @param int $categoryId Category ID
      * @return array|null Category data or null if not found
      */
-    public function getById($categoryId)
+    public function findById(int $categoryId): ?array
     {
         $sql = "SELECT category_id, category_name FROM categories WHERE category_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -80,7 +109,7 @@ class CategoryRepository
      * @param string $name Category name
      * @return array|null Category data or null if not found
      */
-    public function getByName($name)
+    public function findByName(string $name): ?array
     {
         $sql = "SELECT category_id, category_name FROM categories WHERE category_name = ?";
         $stmt = $this->db->prepare($sql);
@@ -106,56 +135,10 @@ class CategoryRepository
      * @param int $categoryId Category ID
      * @return string|null Category name or null if not found
      */
-    public function getCategoryName($categoryId)
+    public function findNameById(int $categoryId): ?string
     {
-        $category = $this->getById($categoryId);
+        $category = $this->findById($categoryId);
         return $category ? $category['name'] : null;
-    }
-
-    /**
-     * Create a new category.
-     *
-     * @param string $categoryName Category name
-     * @return bool True on success, false on failure
-     */
-    public function create($categoryName)
-    {
-        $stmt = $this->db->prepare("INSERT INTO categories (category_name) VALUES (?)");
-        $stmt->bind_param('s', $categoryName);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Update a category.
-     *
-     * @param int $categoryId Category ID
-     * @param string $name New category name
-     * @return bool True on success, false on failure
-     */
-    public function update($categoryId, $name)
-    {
-        $stmt = $this->db->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
-        $stmt->bind_param('si', $name, $categoryId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
-    }
-
-    /**
-     * Delete a category.
-     *
-     * @param int $categoryId Category ID
-     * @return bool True on success, false on failure
-     */
-    public function delete($categoryId)
-    {
-        $stmt = $this->db->prepare("DELETE FROM categories WHERE category_id = ?");
-        $stmt->bind_param('i', $categoryId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
     }
 
     /**
@@ -163,7 +146,7 @@ class CategoryRepository
      *
      * @return int
      */
-    public function getTotalCategories()
+    public function count(): int
     {
         $sql = "SELECT COUNT(*) as total FROM categories";
         $stmt = $this->db->prepare($sql);
@@ -172,5 +155,44 @@ class CategoryRepository
         $total = (int) ($result->fetch_assoc()['total'] ?? 0);
         $stmt->close();
         return $total;
+    }
+
+    // ============================================================
+    // UPDATE
+    // ============================================================
+
+    /**
+     * Update a category.
+     *
+     * @param int $categoryId Category ID
+     * @param string $name New category name
+     * @return bool True on success, false on failure
+     */
+    public function update(int $categoryId, string $name): bool
+    {
+        $stmt = $this->db->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
+        $stmt->bind_param('si', $name, $categoryId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    // ============================================================
+    // DELETE
+    // ============================================================
+
+    /**
+     * Delete a category.
+     *
+     * @param int $categoryId Category ID
+     * @return bool True on success, false on failure
+     */
+    public function delete(int $categoryId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM categories WHERE category_id = ?");
+        $stmt->bind_param('i', $categoryId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 }

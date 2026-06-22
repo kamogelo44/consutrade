@@ -10,7 +10,6 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
-// Check authentication using globals from init.php
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     $response['message'] = 'Please login to add items to cart';
     echo json_encode($response);
@@ -28,8 +27,7 @@ if ($productId <= 0) {
     exit;
 }
 
-// Use productRepo from init.php
-$product = $productRepo->getProductObject($productId);
+$product = $productRepo->findById($productId);
 
 if (!$product || $product->getStatus() !== 'active') {
     $response['message'] = 'Product not available';
@@ -43,18 +41,17 @@ if (!$product->canDecreaseStock($quantity)) {
     exit;
 }
 
-// Check if item already in cart using cartRepo from init.php
-$existingItem = $cartRepo->getCartItemByProduct($userId, $productId);
+$existingItem = $cartRepo->findItemByProduct($userId, $productId);
 
 if ($existingItem) {
     $newQuantity = $existingItem['quantity'] + $quantity;
-    $result = $cartRepo->updateCartQuantity($existingItem['cart_id'], $userId, $newQuantity);
+    $result = $cartRepo->updateQuantity($existingItem['cart_id'], $userId, $newQuantity);
 } else {
-    $result = $cartRepo->addItem($userId, $productId, $quantity);
+    $result = $cartRepo->createItem($userId, $productId, $quantity);
 }
 
 if ($result) {
-    $cartCount = $cartRepo->getCartCount($userId);
+    $cartCount = $cartRepo->countItems($userId);
 
     $response['success'] = true;
     $response['message'] = 'Item added to cart';

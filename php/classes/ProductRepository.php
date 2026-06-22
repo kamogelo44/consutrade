@@ -58,6 +58,21 @@ class ProductRepository
         return $this->imageService->deleteImageFile($imageUrl);
     }
 
+    /**
+     * Upload and convert product image to WebP.
+     * Delegates to ProductImageService.
+     *
+     * @param array $file The uploaded file from $_FILES
+     * @param int $sellerId The seller's ID (used in filename)
+     * @param string $productTitle The product title (used in filename)
+     * @param string $prefix Filename prefix (main, gallery, thumb)
+     * @return string|false Relative path on success, false on failure
+     */
+    public function uploadImage(array $file, int $sellerId, string $productTitle, string $prefix = 'main'): string|false
+    {
+        return $this->imageService->uploadImage($file, $sellerId, $productTitle, $prefix);
+    }
+
     // ============================================================
     // CREATE
     // ============================================================
@@ -194,23 +209,6 @@ class ProductRepository
         }
 
         $stmt->close();
-        return null;
-    }
-
-    /**
-     * Get single product as Product object for public view.
-     *
-     * @param int $productId Product ID
-     * @return Product|null
-     */
-    public function findPublicById(int $productId): ?Product
-    {
-        $product = $this->findById($productId);
-
-        if ($product && $product->getStatus() === 'active') {
-            return $product;
-        }
-
         return null;
     }
 
@@ -426,6 +424,7 @@ class ProductRepository
         $sort        = $filters['sort'] ?? 'newest';
         $limit       = $filters['limit'] ?? 12;
         $offset      = $filters['offset'] ?? 0;
+        $sellerId    = $filters['seller_id'] ?? 0;
 
         $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url,
                        p.location, p.condition, p.stock_quantity, p.created_at,
@@ -470,6 +469,12 @@ class ProductRepository
             $sql    .= " AND p.location LIKE ?";
             $params[] = "%$location%";
             $types  .= "s";
+        }
+
+        if ($sellerId > 0) {
+            $sql .= " AND p.seller_id = ?";
+            $params[] = $sellerId;
+            $types .= "i";
         }
 
         $countSql = $sql;
@@ -530,37 +535,6 @@ class ProductRepository
             'products' => $products,
             'total'    => $total
         ];
-    }
-
-    /**
-     * Get public products as Product objects (for featured sections).
-     *
-     * @param array $filters Associative array of filters (limit, etc.)
-     * @return Product[] Array of Product objects
-     */
-    public function findPublicObjects(array $filters = []): array
-    {
-        $limit = $filters['limit'] ?? 12;
-
-        $result = $this->findPublic(['limit' => $limit]);
-        $products = [];
-
-        foreach ($result['products'] as $productData) {
-            $mappedData = [
-                'product_id' => $productData['id'],
-                'seller_id' => $productData['seller_id'],
-                'title' => $productData['name'],
-                'price' => $productData['price'],
-                'image_url' => $productData['image'],
-                'condition' => $productData['condition'] ?? 'Good',
-                'stock_quantity' => $productData['stock_quantity'] ?? 1,
-                'location' => $productData['location'] ?? '',
-                'status' => 'active'
-            ];
-            $products[] = new Product($mappedData);
-        }
-
-        return $products;
     }
 
     /**
@@ -961,6 +935,21 @@ class ProductRepository
         return ['success' => false, 'message' => 'Failed to delete product.'];
     }
 
+    /**
+     * Delete all products for a seller (soft delete).
+     *
+     * @param int $sellerId Seller ID
+     * @return bool
+     */
+    public function deleteBySeller(int $sellerId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE products SET status = 'deleted' WHERE seller_id = ?");
+        $stmt->bind_param('i', $sellerId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
     // ============================================================
     // COUNTS / STATISTICS
     // ============================================================
@@ -970,22 +959,11 @@ class ProductRepository
      *
      * @return int
      */
-    public function count(): int
+    public function countAll(): int
     {
         $result = $this->db->query("SELECT COUNT(*) as count FROM products WHERE status = 'active'");
         $row = $result->fetch_assoc();
         return (int)($row['count'] ?? 0);
-    }
-
-    /**
-     * Count all active products.
-     * Alias for count() for consistency with other repositories.
-     *
-     * @return int
-     */
-    public function countAll(): int
-    {
-        return $this->count();
     }
 
     /**
@@ -1078,189 +1056,5 @@ class ProductRepository
         $stock = (int) ($row['stock_quantity'] ?? 0);
         $stmt->close();
         return $stock;
-    }
-
-    // ============================================================
-    // LEGACY METHODS (for backward compatibility)
-    // ============================================================
-
-    /**
-     * Legacy method - use create() instead.
-     *
-     * @deprecated Use create() instead
-     */
-    public function createProduct(Product $product): int|false
-    {
-        return $this->create($product);
-    }
-
-    /**
-     * Legacy method - use findById() instead.
-     *
-     * @deprecated Use findById() instead
-     */
-    public function getProductObject(int $productId): ?Product
-    {
-        return $this->findById($productId);
-    }
-
-    /**
-     * Legacy method - use findForDisplay() instead.
-     *
-     * @deprecated Use findForDisplay() instead
-     */
-    public function getProductForDisplay($productId)
-    {
-        return $this->findForDisplay($productId);
-    }
-
-    /**
-     * Legacy method - use findForEdit() instead.
-     *
-     * @deprecated Use findForEdit() instead
-     */
-    public function getProductForEdit(int $productId, int $sellerId): ?array
-    {
-        return $this->findForEdit($productId, $sellerId);
-    }
-
-    /**
-     * Legacy method - use findBySeller() instead.
-     *
-     * @deprecated Use findBySeller() instead
-     */
-    public function getSellerProducts(int $id, string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
-    {
-        return $this->findBySeller($id, $filter, $search, $limit, $offset);
-    }
-
-    /**
-     * Legacy method - use findBySellerForDisplay() instead.
-     *
-     * @deprecated Use findBySellerForDisplay() instead
-     */
-    public function getSellerProductsForDisplay(int $sellerId, bool $isOwner = false, int $limit = 0): array
-    {
-        return $this->findBySellerForDisplay($sellerId, $isOwner, $limit);
-    }
-
-    /**
-     * Legacy method - use findAll() instead.
-     *
-     * @deprecated Use findAll() instead
-     */
-    public function getAllProductsForAdmin(string $status = 'all', string $search = '', int $limit = 12, int $offset = 0): array
-    {
-        return $this->findAll($status, $search, $limit, $offset);
-    }
-
-    /**
-     * Legacy method - use countForAdmin() instead.
-     *
-     * @deprecated Use countForAdmin() instead
-     */
-    public function getProductsCountForAdmin(string $status = 'all', string $search = ''): int
-    {
-        return $this->countForAdmin($status, $search);
-    }
-
-    /**
-     * Legacy method - use findPublic() instead.
-     *
-     * @deprecated Use findPublic() instead
-     */
-    public function getPublicProducts(array $filters = []): array
-    {
-        return $this->findPublic($filters);
-    }
-
-    /**
-     * Legacy method - use findPublicObjects() instead.
-     *
-     * @deprecated Use findPublicObjects() instead
-     */
-    public function getPublicProductObjects(array $filters = []): array
-    {
-        return $this->findPublicObjects($filters);
-    }
-
-    /**
-     * Legacy method - use findPublicById() instead.
-     *
-     * @deprecated Use findPublicById() instead
-     */
-    public function getPublicProductObject(int $productId): ?Product
-    {
-        return $this->findPublicById($productId);
-    }
-
-    /**
-     * Legacy method - use search() instead.
-     *
-     * @deprecated Use search() instead
-     */
-    public function searchProducts(string $search, array $filters = []): array
-    {
-        return $this->search($search, $filters);
-    }
-
-    /**
-     * Legacy method - use update() instead.
-     *
-     * @deprecated Use update() instead
-     */
-    public function saveProduct(Product $product): bool
-    {
-        return $this->update($product);
-    }
-
-    /**
-     * Legacy method - use updateStatus() instead.
-     *
-     * @deprecated Use updateStatus() instead
-     */
-    public function updateProductStatus(int $id, int $sellerId, string $action, string $suspendedBy = 'seller', string $suspendedReason = ''): array
-    {
-        return $this->updateStatus($id, $sellerId, $action, $suspendedBy, $suspendedReason);
-    }
-
-    /**
-     * Legacy method - use delete() instead.
-     *
-     * @deprecated Use delete() instead
-     */
-    public function deleteSellerProduct(int $id, int $sellerId): array
-    {
-        return $this->delete($id, $sellerId);
-    }
-
-    /**
-     * Legacy method - use restoreStockFromOrder() instead.
-     *
-     * @deprecated Use restoreStockFromOrder() instead
-     */
-    public function restoreOrderStock(int $orderId): bool
-    {
-        return $this->restoreStockFromOrder($orderId);
-    }
-
-    /**
-     * Legacy method - use getStock() instead.
-     *
-     * @deprecated Use getStock() instead
-     */
-    public function getProductStock(int $productId): int
-    {
-        return $this->getStock($productId);
-    }
-
-    /**
-     * Legacy method - use decreaseStock() instead.
-     *
-     * @deprecated Use decreaseStock() instead
-     */
-    public function decreaseProductStock(int $productId, int $quantity): bool
-    {
-        return $this->decreaseStock($productId, $quantity);
     }
 }

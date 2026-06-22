@@ -18,7 +18,6 @@ $response = [
     'total' => 0
 ];
 
-// Check if user is logged in and is a buyer using globals from init.php
 if (!$isLoggedIn || !$currentUser instanceof Buyer) {
     echo json_encode($response);
     exit;
@@ -26,9 +25,8 @@ if (!$isLoggedIn || !$currentUser instanceof Buyer) {
 
 $userId = $currentUser->getUserId();
 
-// Use cartRepo from init.php
-$cartItems = $cartRepo->getCartItems($userId);
-$totals = $cartRepo->calculateCartTotals($cartItems);
+$cartItems = $cartRepo->findByUser($userId);
+$totals = $cartRepo->calculateTotals($cartItems);
 
 $items = [];
 $itemCount = 0;
@@ -36,7 +34,6 @@ $itemCount = 0;
 foreach ($cartItems as $item) {
     $itemCount += $item['quantity'];
 
-    // Use productRepo from init.php to fix image URL
     $imageUrl = $productRepo->getImageUrl($item['image_url']);
 
     $items[] = [

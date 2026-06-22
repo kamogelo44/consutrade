@@ -25,14 +25,12 @@ $offset = ($page - 1) * $limit;
 $userId = $currentUser->getUserId();
 
 if ($currentUserRole === 'seller') {
-    $orders = $orderRepo->getSellerOrders($userId, $status, $search, $limit, $offset);
-    $totalOrders = $orderRepo->countSellerOrders($userId, $status, $search);
+    $orders = $orderRepo->findBySeller($userId, $status, $search, $limit, $offset);
+    $totalOrders = $orderRepo->countBySeller($userId, $status, $search);
 } else {
-    // buyer - get orders with review data
-    $orders = $orderRepo->getBuyerOrders($userId, $status, $search, $limit, $offset);
-    $totalOrders = $orderRepo->countBuyerOrders($userId, $status, $search);
+    $orders = $orderRepo->findByBuyer($userId, $status, $search, $limit, $offset);
+    $totalOrders = $orderRepo->countByBuyer($userId, $status, $search);
 
-    // Add review data to each order for buyers
     foreach ($orders as &$order) {
         $review = $reviewRepo->getReviewByOrderAndBuyer($order['order_id'], $userId);
         if ($review) {

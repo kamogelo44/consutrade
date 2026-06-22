@@ -23,9 +23,8 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $limit  = 10;
 $offset = ($page - 1) * $limit;
 
-$allOrders = $orderRepo->getAllOrders();
+$allOrders = $orderRepo->findAll();
 
-// Filter and paginate
 $filtered = array_filter($allOrders, function ($order) use ($status, $search) {
     if ($status !== 'all' && $order['status'] !== $status) return false;
     if (!empty($search)) {
