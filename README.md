@@ -45,7 +45,7 @@ This project was my attempt to fix that. I built ConsuTrade as a C2C marketplace
 | Layer    | What I Used                     |
 | -------- | ------------------------------- |
 | Frontend | HTML5, CSS3, JavaScript, jQuery |
-| Backend  | PHP (OOP)                       |
+| Backend  | PHP 7.4 (OOP)                   |
 | Database | MySQL                           |
 | Payments | PayFast (sandbox/live)          |
 | Images   | GD Library (WebP conversion)    |
@@ -53,257 +53,34 @@ This project was my attempt to fix that. I built ConsuTrade as a C2C marketplace
 
 ## Project Structure
 
-C:.
-└───consutrade
-│ .env
-│ .gitignore
-│ about.php
-│ cart.php
-│ checkout.php
-│ index.php
-│ init.php
-│ jsconfig.json
-│ my-orders.php
-│ order-confirmation.php
-│ product-details.php
-│ product-listings.php
-│ profile.php
-│ README.md
-│ search-results.php
-│ sell.php
-│ seller-profile-public.php
-│  
- ├───admin
-│ │ add-product.php
-│ │ admin-dashboard.php
-│ │ admin-profile.php
-│ │ all-orders.php
-│ │ all-products.php
-│ │ edit-product.php
-│ │ flagged-listings.php
-│ │ login.php
-│ │ my-products.php
-│ │ seller-dashboard.php
-│ │ seller-orders.php
-│ │ seller-profile.php
-│ │ users.php
-│ │  
- │ ├───css
-│ │ dashboard-layout.css
-│ │ sidebar.css
-│ │  
- │ ├───includes
-│ │ sidebar.php
-│ │  
- │ └───js
-│ dashboard.js
-│  
- ├───css
-│ animations.css
-│ components.css
-│ forms.css
-│ layout.css
-│ main.css
-│ old-style.css
-│ orders.css
-│ products.css
-│ reset.css
-│ responsive.css
-│ variables.css
-│  
- ├───design
-│ └───wireframes
-│ │ AdminDashboard - Desktop.png
-│ │ AdminDashboard - Phone.png
-│ │ AdminDashboard - Tablet.png
-│ │  
- │ ├───admin-website
-│ └───main-website
-│ Homepage_Prototype - Desktop.png
-│ HomePage_Prototype - Tablet.png
-│ Homepage_Prototype- Phone.png
-│ LoginModal - Desktop.png
-│ LoginModal - Phone.png
-│ LoginModal - Tablet.png
-│ Product Detail - Desktop.png
-│ Product Detail - Phone.png
-│ Product Detail - Tablet.png
-│ Product Listing - Desktop.png
-│ Product Listing - Phone.png
-│ Product Listing - Tablet.png
-│ Register Modal - Desktop.png
-│ Register Modal - Phone.png
-│ Register Modal - Tablet.png
-│ Sellerdashboard - Desktop.png
-│ Sellerdashboard - Phone.png
-│ Sellerdashboard - Tablet.png
-│  
- ├───fonts
-│ Poppins-Bold.ttf
-│ Poppins-Regular.ttf
-│  
- ├───images
-│ │ default-product.png
-│ │ hero-img-phones.webp
-│ │ hero-img-tablets.png
-│ │ hero-img-tablets.webp
-│ │ hero-img.webp
-│ │  
- │ └───icons
-│ add-svgrepo-com.svg
-│ ban-svgrepo-com.svg
-│ buy-cash-finance-svgrepo-com.svg
-│ camera-svgrepo-com.svg
-│ cart-check-svgrepo-com.svg
-│ cash-atm-svgrepo-com.svg
-│ chevron-down-svgrepo-com.svg
-│ clock-svgrepo-com.svg
-│ comment-svgrepo-com.svg
-│ contact-location.svg
-│ continue-svgrepo-com.svg
-│ dashboard-svgrepo-com.svg
-│ delete-svgrepo-com.svg
-│ delivery-svgrepo-com.svg
-│ dismiss-svgrepo-com.svg
-│ edit-svgrepo-com.svg
-│ email-svgrepo-com.svg
-│ eye-close-svgrepo-com.svg
-│ eye-open-svgrepo-com.svg
-│ facebook-svgrepo-com.svg
-│ filter-svgrepo-com.svg
-│ form-close-svgrepo-com.svg
-│ hide-svgrepo-com.svg
-│ instagram-svgrepo-com.svg
-│ linkedin-svgrepo-com.svg
-│ location-svgrepo-com.svg
-│ logout-svgrepo-com.svg
-│ money-total-line-svgrepo-com.svg
-│ not-verified-svgrepo-com.svg
-│ noun-on-stock-7633735.svg
-│ Payfast logo.svg
-│ phone-call-svgrepo-com.svg
-│ phone-number.svg
-│ photos-filled-svgrepo-com.svg
-│ pin-location-svgrepo-com.svg
-│ product-catalog-svgrepo-com.svg
-│ products-svgrepo-com.svg
-│ profile-svgrepo-com.svg
-│ register-svgrepo-com.svg
-│ right-arrow-1-svgrepo-com.svg
-│ search-svgrepo-com.svg
-│ secure-card-svgrepo-com.svg
-│ sell-svgrepo-com.svg
-│ shopping-cart-01-svgrepo-com.svg
-│ show-svgrepo-com.svg
-│ twitter-svgrepo-com.svg
-│ users-svgrepo-com.svg
-│ valid-document-svgrepo-com.svg
-│ verified-svgrepo-com.svg
-│ warning-svgrepo-com.svg
-│ whatsapp-svgrepo-com.svg
-│  
- ├───includes
-│ breadcrumb.php
-│ empty-state.php
-│ flash-message.php
-│ footer.php
-│ functions.php
-│ header.php
-│ modal-errors.php
-│ order-amount.php
-│ order-card.php
-│ order-party-info.php
-│ order-status-badge.php
-│ product-helpers.php
-│ search-bar.php
-│ session-vars.php
-│  
- ├───js
-│ jquery-3.7.1.min.js
-│ main.js
-│ products.js
-│  
- ├───php
-│ │ config.php
-│ │  
- │ ├───classes
-│ │ Admin.php
-│ │ Auth.php
-│ │ Buyer.php
-│ │ Cart.php
-│ │ CartRepository.php
-│ │ Category.php
-│ │ CategoryRepository.php
-│ │ Database.php
-│ │ Order.php
-│ │ OrderItem.php
-│ │ OrderRepository.php
-│ │ PayFastService.php
-│ │ Product.php
-│ │ ProductImage.php
-│ │ ProductImageRepository.php
-│ │ ProductImageService.php
-│ │ ProductRepository.php
-│ │ Report.php
-│ │ ReportRepository.php
-│ │ Review.php
-│ │ ReviewRepository.php
-│ │ Seller.php
-│ │ SellerVerification.php
-│ │ Transaction.php
-│ │ TransactionRepository.php
-│ │ User.php
-│ │ UserRepository.php
-│ │  
- │ └───endpoints
-│ add-product.php
-│ add-to-cart.php
-│ cancel-order.php
-│ change-password.php
-│ delete-account.php
-│ delete-product.php
-│ edit-product.php
-│ get-all-orders.php
-│ get-all-products.php
-│ get-cart.php
-│ get-flagged-listings.php
-│ get-my-orders.php
-│ get-order-details.php
-│ get-order-status.php
-│ get-product.php
-│ get-products.php
-│ get-recent-orders.php
-│ get-reviews.php
-│ get-seller-products.php
-│ get-seller-recent-orders.php
-│ get-user-stats.php
-│ get-users.php
-│ login.php
-│ logout.php
-│ payfast-notify.php
-│ place-order.php
-│ register.php
-│ remove-from-cart.php
-│ remove-gallery-image.php
-│ report-product.php
-│ search-products.php
-│ set-primary-image.php
-│ submit-review.php
-│ update-cart.php
-│ update-order-status.php
-│ update-product-status.php
-│ update-profile.php
-│ update-report-status.php
-│ update-review.php
-│ update-user-status.php
-│ update-user-verification.php
-│ upload-verification.php
-│ verify-seller.php
-│  
- └───uploads
-├───products
-│  
- └───profiles
+consutrade/
+├── admin/ # Seller & admin dashboard
+│ ├── css/ # Dashboard styles
+│ ├── includes/ # Sidebar component
+│ └── _.php # Dashboard pages
+├── css/ # Main stylesheets
+│ ├── components.css # Reusable components
+│ ├── layout.css # Header, footer, hero
+│ └── variables.css # CSS variables
+├── includes/ # PHP components
+│ ├── header.php
+│ ├── footer.php
+│ ├── breadcrumb.php
+│ └── flash-message.php
+├── js/ # JavaScript
+│ ├── main.js # Core functionality
+│ ├── products.js # Product listings & details
+│ └── dashboard.js # Admin/seller dashboard
+├── php/
+│ ├── classes/ # All PHP classes
+│ │ ├── Domain/ # Business logic (Product, User, Order)
+│ │ └── Repository/ # Database operations
+│ ├── endpoints/ # AJAX handlers
+│ └── config.php # Configuration
+├── uploads/
+│ ├── products/ # Product images (WebP)
+│ └── profiles/ # Profile pictures
+└── _.php # Public pages
 
 ## OOP Architecture
 
