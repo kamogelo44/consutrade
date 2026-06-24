@@ -76,11 +76,13 @@ if (!$targetUser) {
 // ============================================
 if ($targetUser instanceof Seller) {
     $totalProducts = $productRepo->countUserProducts($targetId);
-    $totalOrders = $orderRepo->countSellerOrders($targetId);
-    $pendingOrders = $orderRepo->countSellerOrdersByStatus($targetId, 'pending');
+    $totalOrders = $orderRepo->countBySeller($targetId);
     $completedOrders = $orderRepo->getSellerTotalOrders($targetId);
     $totalRevenue = $orderRepo->getSellerTotalRevenue($targetId);
     $ratingData = $reviewRepo->getSellerRating($targetId);
+
+    // Get pending orders count for this seller
+    $pendingOrders = $orderRepo->countBySellerAndStatus($targetId, 'pending');
 
     $stats = $targetUser->calculateStats(
         $totalProducts,
@@ -95,6 +97,7 @@ if ($targetUser instanceof Seller) {
         'total_revenue' => $stats['total_revenue'],
         'total_orders' => $stats['total_orders'],
         'pending_orders' => $pendingOrders,
+        'completed_orders' => $completedOrders,
         'avg_rating' => round($stats['avg_rating'], 1),
         'is_verified' => $stats['is_verified'],
         'member_since' => date('F Y', strtotime($stats['member_since'])),
@@ -116,8 +119,8 @@ if ($targetUser instanceof Buyer) {
         exit;
     }
 
-    $orderStats = $orderRepo->getBuyerStats($targetId);
-    $reviewsCount = $reviewRepo->countBuyerReviews($targetId);
+    $orderStats = $orderRepo->findBuyerStats($targetId);
+    $reviewsCount = $reviewRepo->countByBuyer($targetId);
 
     $stats = $targetUser->getStats(
         $orderStats['total_orders'] ?? 0,

@@ -22,6 +22,12 @@ if ($order_id == 0 && isset($_GET['m_payment_id'])) {
     $order_id = (int)($parts[0] ?? 0);
 }
 
+// Get transaction for this order
+$transaction = null;
+if ($order_id > 0) {
+    $transaction = $transactionRepo->findByOrderId($order_id);
+}
+
 $breadcrumbItems = [
     ['label' => 'Order Confirmation']
 ];
@@ -35,9 +41,6 @@ $breadcrumbItems = [
     <title>Order Confirmation - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== CONFIRMATION PAGE STYLES ========== */
-
-        /* Main container */
         .confirmation-wrapper {
             max-width: 600px;
             margin: 0 auto;
@@ -48,7 +51,6 @@ $breadcrumbItems = [
             justify-content: center;
         }
 
-        /* Confirmation card */
         .confirmation-card {
             background: var(--white);
             border: 1px solid var(--border-light);
@@ -59,7 +61,6 @@ $breadcrumbItems = [
             width: 100%;
         }
 
-        /* Success icon */
         .confirmation-icon {
             width: 80px;
             height: 80px;
@@ -77,7 +78,6 @@ $breadcrumbItems = [
             filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(500%);
         }
 
-        /* Title */
         .confirmation-title {
             font-size: var(--font-3xl);
             font-weight: var(--font-bold);
@@ -85,33 +85,90 @@ $breadcrumbItems = [
             margin-bottom: var(--spacing-md);
         }
 
-        /* Message text */
         .confirmation-message {
             font-size: var(--font-lg);
             color: var(--dark-bg);
             margin-bottom: var(--spacing-sm);
         }
 
-        /* Order number */
         .order-number {
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
             color: var(--primary-color);
             margin: var(--spacing-md) 0;
-            padding: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-lg);
             background: var(--gray-bg-light);
             border-radius: var(--radius-md);
             display: inline-block;
         }
 
-        /* Email note */
         .confirmation-email {
             font-size: var(--font-sm);
             color: var(--gray-medium);
             margin-bottom: var(--spacing-xl);
         }
 
-        /* Action buttons */
+        .transaction-details {
+            text-align: left;
+            margin: var(--spacing-lg) 0;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--gray-bg-light);
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--success);
+        }
+
+        .transaction-details h3 {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--spacing-md);
+            color: var(--dark-bg);
+            text-align: center;
+        }
+
+        .transaction-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-xs) 0;
+            border-bottom: 1px solid var(--border-light);
+            font-size: var(--font-sm);
+        }
+
+        .transaction-row:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-row .label {
+            color: var(--gray-medium);
+        }
+
+        .transaction-row .value {
+            font-weight: var(--font-medium);
+            color: var(--dark-bg);
+        }
+
+        .transaction-row .value .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: var(--radius-round);
+            font-size: var(--font-xs);
+            font-weight: var(--font-medium);
+        }
+
+        .transaction-row .value .status-badge.completed {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .transaction-row .value .status-badge.pending {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .transaction-row .value .status-badge.failed {
+            background: var(--error-light);
+            color: var(--error);
+        }
+
         .confirmation-actions {
             display: flex;
             gap: var(--spacing-md);
@@ -154,7 +211,6 @@ $breadcrumbItems = [
             transform: translateY(-2px);
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
             .confirmation-wrapper {
                 padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);
@@ -176,10 +232,28 @@ $breadcrumbItems = [
                 font-size: var(--font-lg);
             }
 
+            .transaction-details {
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+
+            .transaction-row {
+                font-size: var(--font-xs);
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                padding: var(--spacing-sm) 0;
+            }
+
             .btn-primary,
             .btn-secondary {
                 padding: 10px 20px;
                 font-size: var(--font-sm);
+                width: 100%;
+                text-align: center;
+            }
+
+            .confirmation-actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -189,7 +263,6 @@ $breadcrumbItems = [
 
     <?php include 'includes/header.php'; ?>
 
-    <!-- Breadcrumb -->
     <?php include 'includes/breadcrumb.php'; ?>
 
     <main class="confirmation-wrapper">
@@ -206,6 +279,39 @@ $breadcrumbItems = [
                 <div class="order-number">Order #<?php echo $order_id; ?></div>
             <?php endif; ?>
 
+            <?php if ($transaction): ?>
+                <div class="transaction-details">
+                    <h3>💳 Payment Details</h3>
+                    <div class="transaction-row">
+                        <span class="label">Transaction Reference</span>
+                        <span class="value"><?php echo htmlspecialchars($transaction->getPayfastRef()); ?></span>
+                    </div>
+                    <div class="transaction-row">
+                        <span class="label">Payment Status</span>
+                        <span class="value">
+                            <span class="status-badge <?php echo $transaction->getStatus(); ?>">
+                                <?php echo ucfirst($transaction->getStatus()); ?>
+                            </span>
+                        </span>
+                    </div>
+                    <div class="transaction-row">
+                        <span class="label">Amount Paid</span>
+                        <span class="value">R <?php echo number_format($transaction->getAmount(), 2); ?></span>
+                    </div>
+                    <div class="transaction-row">
+                        <span class="label">Paid On</span>
+                        <span class="value"><?php echo date('d M Y, h:i A', strtotime($transaction->getPaidAt())); ?></span>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="transaction-details" style="border-left-color: var(--warning);">
+                    <h3>⏳ Payment Processing</h3>
+                    <p style="color: var(--gray-medium); font-size: var(--font-sm); margin: 0;">
+                        Your payment is being confirmed. You will receive a confirmation email shortly.
+                    </p>
+                </div>
+            <?php endif; ?>
+
             <p class="confirmation-email">A confirmation email has been sent to your registered email address.</p>
 
             <div class="confirmation-actions">
@@ -220,7 +326,6 @@ $breadcrumbItems = [
 
     <script>
         $(function() {
-            // Clear cart count from session and UI
             if (typeof updateCartCount === 'function') {
                 updateCartCount();
             } else {

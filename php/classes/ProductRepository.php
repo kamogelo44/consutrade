@@ -996,6 +996,46 @@ class ProductRepository
     }
 
     /**
+     * Count products for a seller with filters.
+     *
+     * @param int $sellerId Seller ID
+     * @param string $filter Status filter (all, active, suspended)
+     * @param string $search Search term
+     * @return int
+     */
+    public function countBySeller(int $sellerId, string $filter = 'all', string $search = ''): int
+    {
+        $sql = "SELECT COUNT(*) as total FROM products p
+            LEFT JOIN categories c ON p.category_id = c.category_id
+            WHERE p.seller_id = ? AND p.status != 'deleted'";
+
+        $params = [$sellerId];
+        $types = "i";
+
+        if ($filter !== 'all') {
+            $sql .= " AND p.status = ?";
+            $params[] = $filter;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (p.title LIKE ? OR p.product_id LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "ss";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int) ($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+        return $total;
+    }
+
+    /**
      * Get total count of products for admin with filters.
      *
      * @param string $status Status filter
@@ -1056,5 +1096,23 @@ class ProductRepository
         $stock = (int) ($row['stock_quantity'] ?? 0);
         $stmt->close();
         return $stock;
+    }
+
+    /**
+     * Increase product stock (for restoring stock on payment failure or cancellation).
+     *
+     * @param int $productId Product ID
+     * @param int $quantity Quantity to increase by
+     * @return bool
+     */
+    public function increaseStock(int $productId, int $quantity): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?"
+        );
+        $stmt->bind_param('ii', $quantity, $productId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 }

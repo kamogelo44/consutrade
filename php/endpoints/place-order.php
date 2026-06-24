@@ -37,7 +37,7 @@ $stockErrors = $cartRepo->verifyStock($cartItems);
 if (!empty($stockErrors)) {
     $_SESSION['checkout_errors'] = $stockErrors;
     if ($isAjax) {
-        echo json_encode(['success' => false, 'message' => 'Stock issues with some items', 'errors' => $stockErrors]);
+        echo json_encode(['success' => false, 'message' => 'Some items are out of stock. Please update your cart.']);
         exit;
     }
     header('Location: ' . $baseUrl . 'cart.php');

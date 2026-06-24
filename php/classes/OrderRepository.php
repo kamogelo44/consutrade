@@ -78,6 +78,45 @@ class OrderRepository
     // ============================================================
 
     /**
+     * Check if an order exists by ID and return basic data.
+     *
+     * @param int $orderId Order ID
+     * @return array|null Order data (order_id, buyer_id, seller_id, status) or null
+     */
+    public function existsById(int $orderId): ?array
+    {
+        $sql = "SELECT order_id, buyer_id, seller_id, status FROM orders WHERE order_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $orderId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $order = $result->fetch_assoc();
+        $stmt->close();
+        return $order;
+    }
+
+    /**
+     * Get order items by order ID.
+     *
+     * @param int $orderId Order ID
+     * @return array
+     */
+    public function getOrderItems(int $orderId): array
+    {
+        $sql = "SELECT product_id, quantity FROM order_items WHERE order_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $orderId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $items = [];
+        while ($row = $result->fetch_assoc()) {
+            $items[] = $row;
+        }
+        $stmt->close();
+        return $items;
+    }
+
+    /**
      * Get single order details with items.
      *
      * @param int $orderId Order ID

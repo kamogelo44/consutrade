@@ -20,9 +20,9 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
 }
 
 $show_sell_link = !$is_logged_in;
-// Only query if user is a logged-in buyer
+
 if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
-    $cart_count = $cartRepo->getCartCount($currentUser->getUserId());
+    $cart_count = $cartRepo->countItems($currentUser->getUserId());
 } else {
     $cart_count = 0;
 }
@@ -50,7 +50,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
         <!-- Center Section: Search Bar -->
         <div class="header-center">
             <div class="search-wrapper">
-                <form action="<?php echo $baseUrl; ?>search-results.php" method="GET">
+                <form action="<?php echo $baseUrl; ?>product-listings.php" method="GET">
                     <input type="search" name="search" placeholder="Search products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit" class="search-btn">
                         <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">
@@ -100,7 +100,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
 
     <!-- Mobile Search (hidden on desktop) -->
     <div class="mobile-search" id="mobileSearch">
-        <form action="<?php echo $baseUrl; ?>search-results.php" method="GET">
+        <form action="<?php echo $baseUrl; ?>product-listings.php" method="GET">
             <input type="search" name="search" placeholder="Search products...">
             <button type="submit">
                 <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">

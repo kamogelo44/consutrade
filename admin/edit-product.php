@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Allows sellers to edit existing products
- * Uses same gallery interface as add-product.php
+ * Uses gallery functions from dashboard.js
  */
 
 require_once dirname(__DIR__) . '/init.php';
@@ -22,17 +22,17 @@ if ($product_id <= 0) {
     exit;
 }
 
-$product = $productRepo->getProductObject($product_id);
+$product = $productRepo->findById($product_id);
 
 if (!$product || $product->getSellerId() != $seller_id) {
     header('Location: my-products.php');
     exit;
 }
 
-$gallery_images = $productImageRepo->getByProductId($product_id);
-$categories = $categoryRepo->getAll();
+$gallery_images = $productImageRepo->findByProductId($product_id);
+$categories = $categoryRepo->findAll();
 
-// Prepare existing images for JavaScript gallery (same format as add-product expects)
+// Prepare existing images for JavaScript gallery
 $existingImagesForJs = [];
 
 // First, add the main image from product table
@@ -43,7 +43,7 @@ $existingImagesForJs[] = [
     'image_id' => 0
 ];
 
-// Then add gallery images (I want to avoid duplicate if main image is also in gallery)
+// Then add gallery images (avoid duplicate if main image is also in gallery)
 foreach ($gallery_images as $img) {
     $imgUrl = $productRepo->getImageUrl($img['image_url']);
     if ($imgUrl !== $mainImageUrl) {
@@ -76,6 +76,242 @@ unset($_SESSION['error'], $_SESSION['success']);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-light);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--spacing-sm);
+            color: var(--dark-bg);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: var(--font-md);
+            transition: all var(--transition-fast);
+            background: var(--white);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: var(--spacing-xs);
+            font-size: var(--font-xs);
+            color: var(--gray-medium);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+        }
+
+        .form-actions {
+            margin-top: var(--spacing-xl);
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .btn-submit {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-bold);
+            transition: all var(--transition-fast);
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background: var(--gray-bg-light);
+            color: var(--gray-dark);
+            padding: 12px 24px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-cancel:hover {
+            background: var(--border-light);
+            transform: translateY(-2px);
+        }
+
+        .main-image-container {
+            background: var(--gray-bg-light);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            text-align: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .main-image-container img {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: var(--radius-lg);
+        }
+
+        #gallery-thumbnails {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+            margin-top: var(--spacing-md);
+            justify-content: center;
+        }
+
+        .gallery-thumb {
+            cursor: pointer;
+            width: 80px;
+            text-align: center;
+            position: relative;
+            transition: all var(--transition-fast);
+        }
+
+        .gallery-thumb:hover {
+            transform: translateY(-2px);
+        }
+
+        .gallery-thumb img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-light);
+            background: var(--gray-bg);
+        }
+
+        .gallery-thumb .remove-image-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--error);
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 12px;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+            z-index: 10;
+            font-weight: var(--font-bold);
+        }
+
+        .gallery-thumb .remove-image-btn:hover {
+            background: var(--error-dark);
+            transform: scale(1.1);
+        }
+
+        .gallery-thumb .gallery-label {
+            font-size: 10px;
+            margin-top: 4px;
+            color: var(--gray-medium);
+        }
+
+        .gallery-thumb .gallery-label.main {
+            color: var(--primary-color);
+            font-weight: var(--font-bold);
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: var(--spacing-md);
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .main-image-container img {
+                height: 200px;
+            }
+
+            .gallery-thumb {
+                width: 60px;
+            }
+
+            .gallery-thumb img {
+                height: 60px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn-submit,
+            .btn-cancel {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-container {
+                padding: var(--spacing-sm);
+            }
+
+            .main-image-container img {
+                height: 150px;
+            }
+
+            .gallery-thumb {
+                width: 50px;
+            }
+
+            .gallery-thumb img {
+                height: 50px;
+            }
+
+            .gallery-thumb .remove-image-btn {
+                width: 18px;
+                height: 18px;
+                font-size: 10px;
+                line-height: 16px;
+                top: -6px;
+                right: -6px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -97,13 +333,13 @@ unset($_SESSION['error'], $_SESSION['success']);
                     <input type="hidden" name="product_id" value="<?php echo $product->getProductId(); ?>">
 
                     <div class="form-group">
-                        <label>Product Title *</label>
-                        <input type="text" name="title" required value="<?php echo htmlspecialchars($product->getTitle()); ?>">
+                        <label for="title">Product Title *</label>
+                        <input type="text" id="title" name="title" required value="<?php echo htmlspecialchars($product->getTitle()); ?>">
                     </div>
 
                     <div class="form-group">
-                        <label>Category *</label>
-                        <select name="category_id" required>
+                        <label for="category_id">Category *</label>
+                        <select id="category_id" name="category_id" required>
                             <option value="">Select Category</option>
                             <?php foreach ($categories as $category): ?>
                                 <option value="<?php echo $category['id']; ?>" <?php echo $category['id'] == $product->getCategoryId() ? 'selected' : ''; ?>>
@@ -115,19 +351,19 @@ unset($_SESSION['error'], $_SESSION['success']);
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Price (R) *</label>
-                            <input type="number" name="price" step="0.01" min="0" required value="<?php echo $product->getPrice(); ?>">
+                            <label for="price">Price (R) *</label>
+                            <input type="number" id="price" name="price" step="0.01" min="0" required value="<?php echo $product->getPrice(); ?>">
                         </div>
                         <div class="form-group">
-                            <label>Stock Quantity *</label>
-                            <input type="number" name="stock_quantity" min="1" required value="<?php echo $product->getStockQuantity(); ?>">
+                            <label for="stock_quantity">Stock Quantity *</label>
+                            <input type="number" id="stock_quantity" name="stock_quantity" min="1" required value="<?php echo $product->getStockQuantity(); ?>">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Condition</label>
-                            <select name="condition">
+                            <label for="condition">Condition</label>
+                            <select id="condition" name="condition">
                                 <option value="">Not Specified</option>
                                 <option value="New" <?php echo $product->getCondition() == 'New' ? 'selected' : ''; ?>>New</option>
                                 <option value="Like New" <?php echo $product->getCondition() == 'Like New' ? 'selected' : ''; ?>>Like New</option>
@@ -136,29 +372,26 @@ unset($_SESSION['error'], $_SESSION['success']);
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Location</label>
-                            <input type="text" name="location" value="<?php echo htmlspecialchars($product->getLocation()); ?>" placeholder="e.g., Johannesburg, Cape Town">
+                            <label for="location">Location</label>
+                            <input type="text" id="location" name="location" value="<?php echo htmlspecialchars($product->getLocation()); ?>" placeholder="e.g., Johannesburg, Cape Town">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Description *</label>
-                        <textarea name="description" rows="5" required><?php echo htmlspecialchars($product->getDescription()); ?></textarea>
+                        <label for="description">Description *</label>
+                        <textarea id="description" name="description" rows="5" required><?php echo htmlspecialchars($product->getDescription()); ?></textarea>
                     </div>
 
-                    <!-- Unified Image Gallery (same as add-product.php) -->
                     <div class="form-group">
                         <label>Product Images (Max 4 total)</label>
                         <input type="file" name="new_product_images[]" accept="image/*" multiple onchange="addNewImagesToGallery(this)">
                         <small>Click on any image to set it as the main product photo. Click × to delete. You can add up to <?php echo 4 - count($existingImagesForJs); ?> new images.</small>
 
-                        <!-- Gallery Container -->
                         <div id="image-gallery-container" style="margin-top: var(--spacing-lg);">
                             <div class="main-image-container">
                                 <img id="gallery-main-preview" src="" alt="Main preview">
                             </div>
-                            <div id="gallery-thumbnails" style="display: flex; gap: var(--spacing-md); flex-wrap: wrap; margin-top: var(--spacing-md); justify-content: center;">
-                            </div>
+                            <div id="gallery-thumbnails"></div>
                         </div>
                     </div>
 
@@ -172,152 +405,15 @@ unset($_SESSION['error'], $_SESSION['success']);
     </main>
 
     <script>
-        // Existing images passed from PHP
+        var baseUrl = '<?php echo $baseUrl; ?>';
         var existingImages = <?php echo json_encode($existingImagesForJs); ?>;
-        var newImageFiles = [];
-        var imagesToDelete = [];
-        var allDisplayImages = [];
-
-        // Initialize gallery with existing images
-        function initGallery() {
-            allDisplayImages = [];
-            for (var i = 0; i < existingImages.length; i++) {
-                allDisplayImages.push({
-                    url: existingImages[i].url,
-                    is_primary: existingImages[i].is_primary,
-                    image_id: existingImages[i].image_id,
-                    source: 'existing'
-                });
-            }
-
-            // Ensure at least one primary
-            var hasPrimary = false;
-            for (var i = 0; i < allDisplayImages.length; i++) {
-                if (allDisplayImages[i].is_primary) hasPrimary = true;
-            }
-            if (!hasPrimary && allDisplayImages.length > 0) {
-                allDisplayImages[0].is_primary = true;
-            }
-
-            renderGallery();
-        }
-
-        // Render thumbnails and main preview
-        function renderGallery() {
-            var $container = $('#gallery-thumbnails');
-            $container.empty();
-
-            for (var i = 0; i < allDisplayImages.length; i++) {
-                var img = allDisplayImages[i];
-                var isPrimary = img.is_primary;
-                var borderColor = isPrimary ? 'var(--primary-color)' : 'var(--border-light)';
-                var label = isPrimary ? 'Main' : 'Gallery';
-                var imgSrc = img.source === 'existing' ? img.url : (img.previewUrl || '');
-
-                var $thumb = $(
-                    '<div class="gallery-thumb" data-index="' + i + '" style="cursor: pointer; width: 80px; text-align: center; position: relative;">' +
-                    '<img src="' + imgSrc + '" style="width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-md); border: 2px solid ' + borderColor + ';">' +
-                    '<div style="font-size: 10px; margin-top: 4px;">' + label + '</div>' +
-                    '<div class="remove-image-btn" onclick="event.stopPropagation(); removeImage(' + i + ')">×</div>' +
-                    '</div>'
-                );
-                $container.append($thumb);
-            }
-
-            // Find and display primary image
-            for (var i = 0; i < allDisplayImages.length; i++) {
-                if (allDisplayImages[i].is_primary) {
-                    var primaryImg = allDisplayImages[i];
-                    var src = primaryImg.source === 'existing' ? primaryImg.url : (primaryImg.previewUrl || '');
-                    $('#gallery-main-preview').attr('src', src);
-                    break;
-                }
-            }
-
-            // Attach click handlers
-            $('.gallery-thumb').off('click').on('click', function() {
-                var index = $(this).data('index');
-                for (var i = 0; i < allDisplayImages.length; i++) {
-                    allDisplayImages[i].is_primary = (i === index);
-                }
-                renderGallery();
-            });
-        }
-
-        // Remove image from gallery
-        function removeImage(index) {
-            var img = allDisplayImages[index];
-            if (img.source === 'existing' && img.image_id > 0) {
-                imagesToDelete.push(img.image_id);
-            }
-            allDisplayImages.splice(index, 1);
-            if (allDisplayImages.length === 0) {
-                $('#gallery-thumbnails').empty();
-                $('#gallery-main-preview').attr('src', '');
-                return;
-            }
-            // Ensure at least one primary
-            var hasPrimary = false;
-            for (var i = 0; i < allDisplayImages.length; i++) {
-                if (allDisplayImages[i].is_primary) hasPrimary = true;
-            }
-            if (!hasPrimary) allDisplayImages[0].is_primary = true;
-            renderGallery();
-        }
-
-        // Add new images from file input
-        function addNewImagesToGallery(input) {
-            var files = Array.from(input.files);
-            var available = 4 - allDisplayImages.length;
-            if (files.length > available) {
-                alert('You can only add ' + available + ' more images (max 4 total).');
-                files = files.slice(0, available);
-            }
-
-            for (var i = 0; i < files.length; i++) {
-                var previewUrl = URL.createObjectURL(files[i]);
-                allDisplayImages.push({
-                    file: files[i],
-                    previewUrl: previewUrl,
-                    is_primary: false,
-                    source: 'new'
-                });
-            }
-
-            // If no primary, set first as primary
-            var hasPrimary = false;
-            for (var i = 0; i < allDisplayImages.length; i++) {
-                if (allDisplayImages[i].is_primary) hasPrimary = true;
-            }
-            if (!hasPrimary && allDisplayImages.length > 0) {
-                allDisplayImages[0].is_primary = true;
-            }
-
-            renderGallery();
-            input.value = '';
-        }
-
-        // Prepare form data before submit
-        function prepareSubmit() {
-            var orderData = [];
-            for (var i = 0; i < allDisplayImages.length; i++) {
-                var img = allDisplayImages[i];
-                orderData.push({
-                    is_primary: img.is_primary,
-                    image_id: img.image_id || 0,
-                    is_new: img.source === 'new'
-                });
-            }
-            $('<input type="hidden" name="image_order" value=\'' + JSON.stringify(orderData) + '\'>').appendTo('#edit-product-form');
-            if (imagesToDelete.length > 0) {
-                $('<input type="hidden" name="delete_images" value=\'' + JSON.stringify(imagesToDelete) + '\'>').appendTo('#edit-product-form');
-            }
-            return true;
-        }
 
         $(document).ready(function() {
-            initGallery();
-            $('#edit-product-form').on('submit', prepareSubmit);
+            initImageGalleryFromExisting(existingImages);
+
+            $('#edit-product-form').on('submit', function() {
+                return prepareEditFormData();
+            });
         });
     </script>
 </body>

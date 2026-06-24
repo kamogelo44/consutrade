@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Allows:
- * - Sellers to update orders they received (processing → shipped → completed)
+ * - Sellers to update orders they received (pending → processing → shipped → completed)
  * - Admins to update any order
  * - Buyers to CANCEL their own pending orders (uses OrderRepository)
  */
@@ -74,9 +74,50 @@ if ($userRole === 'seller') {
         exit;
     }
 
-    $result = $orderRepo->updateStatus($orderId, $userId, $newStatus);
-    $response['success'] = $result['success'];
-    $response['message'] = $result['message'];
+    // ============================================================
+    // When seller changes from pending to processing,
+    // complete the payment workflow (create transaction, clear cart)
+    // ============================================================
+    $oldStatus = $orderData['status'];
+
+    // Start transaction
+    $conn->begin_transaction();
+
+    try {
+        // Update order status
+        $result = $orderRepo->updateStatus($orderId, $userId, $newStatus);
+
+        if (!$result['success']) {
+            throw new Exception($result['message']);
+        }
+
+        // If going from pending to processing, complete the payment flow
+        if ($oldStatus === 'pending' && $newStatus === 'processing') {
+            // Check if transaction already exists
+            $transaction = $transactionRepo->findByOrderId($orderId);
+
+            if (!$transaction) {
+                // Create transaction record
+                $transactionRepo->createFromPayment(
+                    $orderId,
+                    'PF-MANUAL-' . time(),
+                    $orderData['total_price']
+                );
+            }
+
+            // Clear the buyer's cart
+            $cartRepo->deleteAllByUser($orderData['buyer_id']);
+        }
+
+        $conn->commit();
+
+        $response['success'] = true;
+        $response['message'] = $result['message'];
+    } catch (Exception $e) {
+        $conn->rollback();
+        $response['success'] = false;
+        $response['message'] = $e->getMessage();
+    }
 
     echo json_encode($response);
     exit;

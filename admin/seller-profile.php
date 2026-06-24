@@ -713,7 +713,7 @@ if ($verificationObj) {
         var isLoggedIn = true;
 
         $(function() {
-            function loadSellerStats() {
+            function loadProfileStats() {
                 $.ajax({
                     url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + currentUserId,
                     type: 'GET',
@@ -833,7 +833,7 @@ if ($verificationObj) {
                 });
             });
 
-            loadSellerStats();
+            loadProfileStats();
         });
     </script>
 </body>

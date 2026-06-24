@@ -23,7 +23,12 @@ $subtotal    = $data['subtotal'];
 $delivery_fee = $data['delivery_fee'];
 $total       = $data['total'];
 
-$payfast_data = $payfastService->preparePayFastData([
+// Split buyer name for PayFast
+$name_parts = explode(' ', $data['buyer_name'], 2);
+$first_name = $name_parts[0];
+$last_name = isset($name_parts[1]) ? $name_parts[1] : '';
+
+$payfast_data = $cartRepo->preparePayFastData([
     'payment_id' => $data['payment_id'],
     'primary_order_id' => $data['primary_order_id'],
     'total' => $total,
@@ -42,16 +47,12 @@ unset($_SESSION['checkout_data']);
     <title>Checkout - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== CHECKOUT PAGE STYLES ========== */
-
-        /* Main container - breadcrumb sits outside */
         .checkout-wrapper {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 var(--spacing-xl) var(--spacing-xl) var(--spacing-xl);
         }
 
-        /* Page title - space after breadcrumb */
         .checkout-title {
             margin-top: var(--spacing-lg);
             margin-bottom: var(--spacing-xl);
@@ -64,14 +65,12 @@ unset($_SESSION['checkout_data']);
             margin: 0;
         }
 
-        /* Two column layout */
         .checkout-grid {
             display: grid;
             grid-template-columns: 1fr 380px;
             gap: var(--spacing-xl);
         }
 
-        /* ===== ORDER SUMMARY SECTION ===== */
         .checkout-items {
             background: var(--white);
             border: 1px solid var(--border-light);
@@ -88,7 +87,6 @@ unset($_SESSION['checkout_data']);
             color: var(--dark-bg);
         }
 
-        /* Item row */
         .cart-item-row {
             display: flex;
             justify-content: space-between;
@@ -124,7 +122,6 @@ unset($_SESSION['checkout_data']);
             text-align: right;
         }
 
-        /* Totals */
         .totals {
             margin-top: var(--spacing-lg);
             padding-top: var(--spacing-md);
@@ -148,7 +145,6 @@ unset($_SESSION['checkout_data']);
             border-top: 1px solid var(--border-light);
         }
 
-        /* ===== PAYMENT SECTION ===== */
         .payment-methods {
             background: var(--white);
             border: 1px solid var(--border-light);
@@ -165,7 +161,6 @@ unset($_SESSION['checkout_data']);
             color: var(--dark-bg);
         }
 
-        /* Payment option card */
         .payment-card {
             display: flex;
             align-items: center;
@@ -193,7 +188,6 @@ unset($_SESSION['checkout_data']);
             color: var(--gray-dark);
         }
 
-        /* Pay button */
         .pay-now-btn {
             width: 100%;
             padding: 14px;
@@ -220,7 +214,6 @@ unset($_SESSION['checkout_data']);
             transform: none;
         }
 
-        /* Security note */
         .security-note {
             text-align: center;
             font-size: var(--font-xs);
@@ -238,7 +231,6 @@ unset($_SESSION['checkout_data']);
             opacity: 0.6;
         }
 
-        /* ===== LOADING OVERLAY ===== */
         .checkout-loading {
             position: fixed;
             top: 0;
@@ -274,7 +266,6 @@ unset($_SESSION['checkout_data']);
             font-size: var(--font-sm);
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 900px) {
             .checkout-grid {
                 grid-template-columns: 1fr;
@@ -317,7 +308,6 @@ unset($_SESSION['checkout_data']);
 
     <?php include 'includes/header.php'; ?>
 
-    <!-- Breadcrumb-->
     <?php include 'includes/breadcrumb.php'; ?>
 
     <main class="checkout-wrapper">
@@ -375,8 +365,8 @@ unset($_SESSION['checkout_data']);
                     <input type="hidden" name="amount" value="<?php echo htmlspecialchars($payfast_data['amount']); ?>">
                     <input type="hidden" name="item_name" value="<?php echo htmlspecialchars($payfast_data['item_name']); ?>">
                     <input type="hidden" name="item_description" value="<?php echo htmlspecialchars($payfast_data['item_description']); ?>">
-                    <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($payfast_data['name_first']); ?>">
-                    <input type="hidden" name="name_last" value="<?php echo htmlspecialchars($payfast_data['name_last']); ?>">
+                    <input type="hidden" name="name_first" value="<?php echo htmlspecialchars($first_name); ?>">
+                    <input type="hidden" name="name_last" value="<?php echo htmlspecialchars($last_name); ?>">
                     <input type="hidden" name="email_address" value="<?php echo htmlspecialchars($payfast_data['email_address']); ?>">
                     <?php if (!empty($data['buyer_phone'])): ?>
                         <input type="hidden" name="cell_number" value="<?php echo htmlspecialchars($data['buyer_phone']); ?>">
@@ -405,8 +395,6 @@ unset($_SESSION['checkout_data']);
     <?php include 'includes/modal-errors.php'; ?>
 
     <script>
-        var baseUrl = '<?php echo $baseUrl; ?>';
-
         $(document).ready(function() {
             $('#payfast-form').on('submit', function() {
                 $('#payNowBtn').prop('disabled', true);

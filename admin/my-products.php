@@ -4,8 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Displays all products for the logged-in seller with filtering and search.
- * Allows sellers to edit, suspend, activate, or delete their products.
- * If a product was suspended by admin, the seller cannot reactivate it.
+ * Uses table layout with pagination for efficient product management.
  */
 
 require_once dirname(__DIR__) . '/init.php';
@@ -18,7 +17,13 @@ if (!$auth->isSeller()) {
 $seller_id = $currentUser->getUserId();
 $status = $_GET['status'] ?? 'all';
 $search = $_GET['search'] ?? '';
-$products = $productRepo->getSellerProducts($seller_id, $status, $search);
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit = 10;
+$offset = ($page - 1) * $limit;
+
+$products = $productRepo->findBySeller($seller_id, $status, $search, $limit, $offset);
+$totalProducts = $productRepo->countBySeller($seller_id, $status, $search);
+$totalPages = ceil($totalProducts / $limit);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -33,194 +38,21 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
         /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
+        /* These styles are unique to this page and not in any global CSS */
 
-        .action-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
+        .page-header {
             margin-bottom: var(--spacing-xl);
         }
 
-        .add-product-btn {
-            background: var(--primary-color);
-            color: var(--white);
-            padding: 10px 20px;
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-        }
-
-        .add-product-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: var(--spacing-lg);
-        }
-
-        .product-card {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-            overflow: hidden;
-            transition: all var(--transition-fast);
-        }
-
-        .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .product-image {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            background: var(--gray-bg);
-        }
-
-        .product-info {
-            padding: var(--spacing-md);
-        }
-
-        .product-info h3 {
-            font-size: var(--font-base);
-            font-weight: var(--font-semibold);
-            margin-bottom: 5px;
+        .page-header h1 {
+            font-size: var(--font-2xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--spacing-xs);
             color: var(--dark-bg);
         }
 
-        .product-price {
-            color: var(--primary-color);
-            font-size: var(--font-xl);
-            font-weight: bold;
-            margin: 8px 0;
-        }
-
-        .product-stock {
-            font-size: var(--font-sm);
+        .page-header p {
             color: var(--gray-medium);
-            margin: 4px 0;
-        }
-
-        .product-status {
-            font-size: var(--font-sm);
-            margin: 4px 0;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .status-badge.active {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .status-badge.suspended {
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-md);
-        }
-
-        .btn-group a,
-        .btn-group button {
-            flex: 1;
-            text-align: center;
-            padding: 8px;
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            font-size: var(--font-sm);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            border: none;
-        }
-
-        .btn-edit {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-        }
-
-        .btn-edit:hover {
-            background: var(--primary-color);
-            color: var(--white);
-        }
-
-        .btn-suspend {
-            background: var(--warning-light);
-            color: var(--warning);
-            border: 1px solid var(--warning);
-        }
-
-        .btn-suspend:hover {
-            background: var(--warning);
-            color: var(--white);
-        }
-
-        .btn-activate {
-            background: var(--success-light);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .btn-activate:hover:not(:disabled) {
-            background: var(--success);
-            color: var(--white);
-        }
-
-        .btn-activate:disabled {
-            background: var(--gray-bg-light);
-            color: var(--gray-medium);
-            border: 1px solid var(--border-light);
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .btn-delete {
-            background: var(--error-light);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        .btn-delete:hover {
-            background: var(--error);
-            color: var(--white);
-        }
-
-        .admin-suspension-notice {
-            background: var(--error-light);
-            color: var(--error);
-            padding: 8px 12px;
-            border-radius: var(--radius-md);
-            font-size: var(--font-sm);
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-left: 3px solid var(--error);
-        }
-
-        .suspension-reason {
-            flex: 1;
-            word-break: break-word;
         }
 
         .empty-state {
@@ -249,32 +81,81 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             margin-bottom: var(--spacing-lg);
         }
 
+        .empty-state .view-all-btn {
+            display: inline-block;
+            padding: 10px 24px;
+            background: var(--primary-color);
+            color: var(--white);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: var(--font-bold);
+            transition: all var(--transition-fast);
+        }
+
+        .empty-state .view-all-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .products-table-wrapper {
+            overflow-x: auto;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .products-table-wrapper table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
+        }
+
+        .products-table-wrapper th {
+            text-align: left;
+            padding: var(--spacing-md);
+            background: var(--gray-bg);
+            font-weight: var(--font-semibold);
+            border-bottom: 2px solid var(--border-light);
+            font-size: var(--font-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .products-table-wrapper td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .products-table-wrapper tr:hover td {
+            background: var(--gray-bg-light);
+        }
+
+        .products-table-wrapper tr:last-child td {
+            border-bottom: none;
+        }
+
         @media (max-width: 768px) {
-            .action-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .btn-group {
-                flex-direction: column;
+            .products-table-wrapper table {
+                min-width: 600px;
             }
         }
 
         @media (max-width: 480px) {
+            .products-table-wrapper table {
+                min-width: 500px;
+            }
+
+            .products-table-wrapper th,
+            .products-table-wrapper td {
+                padding: var(--spacing-sm);
+                font-size: var(--font-xs);
+            }
+
             .page-header h1 {
                 font-size: var(--font-xl);
-            }
-
-            .product-info h3 {
-                font-size: var(--font-sm);
-            }
-
-            .product-price {
-                font-size: var(--font-md);
             }
         }
     </style>
@@ -291,11 +172,8 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
                 <p>Manage your product listings</p>
             </div>
 
-            <div class="action-bar">
-                <a href="add-product.php" class="add-product-btn">
-                    <span>+</span> Add Product
-                </a>
-
+            <!-- Action Bar - Uses orders.css classes -->
+            <div class="filters-bar">
                 <div class="filter-group">
                     <label>Filter by Status:</label>
                     <select id="statusFilter">
@@ -310,74 +188,121 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
                     <button id="searchBtn">
                         <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search">
                     </button>
-                    <?php if (!empty($search)): ?>
-                        <button id="resetBtn" class="reset-btn">Reset</button>
-                    <?php else: ?>
-                        <button id="resetBtn" class="reset-btn" style="display: none;">Reset</button>
-                    <?php endif; ?>
+                    <button id="resetBtn" class="reset-btn" <?php echo empty($search) ? 'style="display: none;"' : ''; ?>>Reset</button>
+                </div>
+
+                <div class="action-bar-right">
+                    <a href="add-product.php" class="add-product-btn">
+                        <span>+</span> Add Product
+                    </a>
                 </div>
             </div>
 
-            <div class="products-grid">
-                <?php if (empty($products)): ?>
-                    <div class="empty-state">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
-                        <h3>No products found</h3>
-                        <p>You haven't listed any products yet.</p>
-                        <a href="add-product.php" class="view-all-btn">Add Your First Product</a>
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($products as $product): ?>
-                        <div class="product-card">
-                            <img src="<?php echo $productRepo->getImageUrl($product['display_image'] ?? $product['image']); ?>" class="product-image" onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
-                            <div class="product-info">
-                                <h3><?php echo htmlspecialchars($product['title']); ?></h3>
-                                <p class="product-price">R <?php echo number_format($product['price'], 2); ?></p>
-                                <p class="product-stock">Stock: <?php echo $product['stock_quantity']; ?></p>
-                                <p class="product-status">Status: <span class="status-badge <?php echo $product['status']; ?>"><?php echo ucfirst($product['status']); ?></span></p>
-
-                                <?php if (isset($product['suspended_by']) && $product['suspended_by'] == 'admin'): ?>
-                                    <div class="admin-suspension-notice">
-                                        <img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" width="14" height="14" alt="Warning">
-                                        <span class="suspension-reason">
-                                            <?php if (!empty($product['suspended_reason'])): ?>
-                                                Suspended by admin: <?php echo htmlspecialchars($product['suspended_reason']); ?>
-                                            <?php else: ?>
-                                                Suspended by admin. Only an admin can reactivate.
-                                            <?php endif; ?>
+            <!-- Products Table -->
+            <?php if (empty($products)): ?>
+                <div class="empty-state">
+                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">
+                    <h3>No products found</h3>
+                    <p><?php echo !empty($search) || $status !== 'all' ? 'No products match your filters.' : 'You haven\'t listed any products yet.'; ?></p>
+                    <a href="add-product.php" class="view-all-btn">Add Your First Product</a>
+                </div>
+            <?php else: ?>
+                <div class="products-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($products as $product): ?>
+                                <tr>
+                                    <td>
+                                        <div class="product-cell">
+                                            <img src="<?php echo $productRepo->getImageUrl($product['display_image'] ?? $product['image']); ?>"
+                                                class="product-thumb"
+                                                onerror="this.src='<?php echo $baseUrl; ?>images/default-product.png'">
+                                            <span class="product-name"><?php echo htmlspecialchars($product['title']); ?></span>
+                                        </div>
+                                    </td>
+                                    <td class="price-cell">R <?php echo number_format($product['price'], 2); ?></td>
+                                    <td>
+                                        <span class="stock-cell <?php echo $product['stock_quantity'] <= 0 ? 'stock-low' : ($product['stock_quantity'] <= 5 ? 'stock-medium' : 'stock-high'); ?>">
+                                            <?php echo $product['stock_quantity']; ?>
                                         </span>
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="btn-group">
-                                    <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn-edit">Edit</a>
-                                    <?php if ($product['status'] == 'active'): ?>
-                                        <button class="btn-suspend" onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'active', function() { location.reload(); })">Suspend</button>
-                                    <?php else: ?>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge <?php echo $product['status']; ?>">
+                                            <?php echo ucfirst($product['status']); ?>
+                                        </span>
                                         <?php if (isset($product['suspended_by']) && $product['suspended_by'] == 'admin'): ?>
-                                            <button class="btn-activate" disabled title="This product was suspended by an admin. Only an admin can reactivate it.">Activate</button>
-                                        <?php else: ?>
-                                            <button class="btn-activate" onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'suspended', function() { location.reload(); })">Activate</button>
+                                            <div class="admin-suspension-notice">
+                                                <img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" alt="Warning">
+                                                <span>Admin suspended</span>
+                                            </div>
                                         <?php endif; ?>
-                                    <?php endif; ?>
-                                    <button class="btn-delete" onclick="deleteProduct(<?php echo $product['id']; ?>, '<?php echo addslashes(htmlspecialchars($product['title'])); ?>', function() { location.reload(); })">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="products-action-btn edit">Edit</a>
+                                            <?php if ($product['status'] == 'active'): ?>
+                                                <button class="products-action-btn suspend" onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'active', function() { location.reload(); })">Suspend</button>
+                                            <?php else: ?>
+                                                <?php if (isset($product['suspended_by']) && $product['suspended_by'] == 'admin'): ?>
+                                                    <button class="products-action-btn activate" disabled title="Suspended by admin. Only an admin can reactivate.">Activate</button>
+                                                <?php else: ?>
+                                                    <button class="products-action-btn activate" onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'suspended', function() { location.reload(); })">Activate</button>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+                                            <button class="products-action-btn delete" onclick="deleteProduct(<?php echo $product['id']; ?>, '<?php echo addslashes(htmlspecialchars($product['title'])); ?>', function() { location.reload(); })">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <?php if ($totalPages > 1): ?>
+                    <div class="pagination">
+                        <?php if ($page > 1): ?>
+                            <a href="?status=<?php echo $status; ?>&search=<?php echo urlencode($search); ?>&page=<?php echo $page - 1; ?>" class="page-btn">‹ Prev</a>
+                        <?php endif; ?>
+
+                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                            <a href="?status=<?php echo $status; ?>&search=<?php echo urlencode($search); ?>&page=<?php echo $i; ?>"
+                                class="page-btn <?php echo $i == $page ? 'active' : ''; ?>">
+                                <?php echo $i; ?>
+                            </a>
+                        <?php endfor; ?>
+
+                        <?php if ($page < $totalPages): ?>
+                            <a href="?status=<?php echo $status; ?>&search=<?php echo urlencode($search); ?>&page=<?php echo $page + 1; ?>" class="page-btn">Next ›</a>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
-            </div>
+
+                <div class="product-count">
+                    Showing <?php echo count($products); ?> of <?php echo $totalProducts; ?> product(s)
+                </div>
+            <?php endif; ?>
         </div>
     </main>
 
     <script>
         var currentStatus = '<?php echo $status; ?>';
         var currentSearch = '<?php echo addslashes($search); ?>';
+        var currentPage = <?php echo $page; ?>;
 
         $(function() {
             $('#statusFilter').on('change', function() {
                 var newStatus = $(this).val();
-                var url = '?status=' + newStatus;
+                var url = '?status=' + newStatus + '&page=1';
                 if (currentSearch) {
                     url += '&search=' + encodeURIComponent(currentSearch);
                 }
@@ -386,7 +311,7 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
 
             $('#searchBtn').on('click', function() {
                 var searchTerm = $('#searchInput').val().trim();
-                var url = '?status=' + currentStatus;
+                var url = '?status=' + currentStatus + '&page=1';
                 if (searchTerm) {
                     url += '&search=' + encodeURIComponent(searchTerm);
                 }
@@ -394,12 +319,20 @@ $products = $productRepo->getSellerProducts($seller_id, $status, $search);
             });
 
             $('#resetBtn').on('click', function() {
-                window.location.href = '?status=' + currentStatus;
+                window.location.href = '?status=' + currentStatus + '&page=1';
             });
 
             $('#searchInput').on('keypress', function(e) {
                 if (e.which === 13) {
                     $('#searchBtn').click();
+                }
+            });
+
+            $('#searchInput').on('input', function() {
+                if ($(this).val().trim() !== '') {
+                    $('#resetBtn').show();
+                } else {
+                    $('#resetBtn').hide();
                 }
             });
         });

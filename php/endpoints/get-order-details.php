@@ -34,13 +34,8 @@ if ($order_id <= 0) {
 $user_id = $currentUser->getUserId();
 $role = $currentUser->getRole();
 
-$checkSql = "SELECT order_id, buyer_id, seller_id, status FROM orders WHERE order_id = ?";
-$checkStmt = $conn->prepare($checkSql);
-$checkStmt->bind_param('i', $order_id);
-$checkStmt->execute();
-$checkResult = $checkStmt->get_result();
-$orderExists = $checkResult->fetch_assoc();
-$checkStmt->close();
+// Use repository to check if order exists
+$orderExists = $orderRepo->existsById($order_id);
 
 if (!$orderExists) {
     $response['error'] = 'Order does not exist';
@@ -48,6 +43,7 @@ if (!$orderExists) {
     exit;
 }
 
+// Check permission using repository data
 $hasPermission = false;
 if ($role === 'admin') {
     $hasPermission = true;
@@ -70,6 +66,9 @@ if (!$order) {
     echo json_encode($response);
     exit;
 }
+
+// Get transaction for this order using repository
+$transaction = $transactionRepo->findByOrderId($order_id);
 
 $subtotal = 0;
 foreach ($order['items'] as &$item) {
@@ -99,6 +98,12 @@ $response['order'] = [
     'other_party_name' => $order['other_party_name'],
     'shipping_address' => $shipping_address,
     'items' => $order['items'],
+    'transaction' => $transaction ? [
+        'reference' => $transaction->getPayfastRef(),
+        'status' => $transaction->getStatus(),
+        'amount' => $transaction->getAmount(),
+        'paid_at' => date('d M Y, h:i A', strtotime($transaction->getPaidAt()))
+    ] : null
 ];
 
 echo json_encode($response);

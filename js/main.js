@@ -242,6 +242,7 @@ function openOrderModal(orderId) {
             if (data.success && data.order) {
                 var order = data.order;
                 var isAdmin = window.location.pathname.includes('all-orders.php') || window.location.pathname.includes('admin-dashboard.php');
+                var userRole = currentUserRole || 'buyer';
                 
                 var itemsHtml = '';
                 if (order.items && order.items.length > 0) {
@@ -262,6 +263,27 @@ function openOrderModal(orderId) {
                     }
                 }
                 
+                // Build payment details HTML
+                var paymentHtml = '';
+                if (order.transaction) {
+                    var tx = order.transaction;
+                    var statusClass = tx.status === 'completed' ? 'completed' : (tx.status === 'pending' ? 'pending' : 'failed');
+                    paymentHtml = 
+                        '<div class="payment-details">' +
+                            '<h4>Payment Information</h4>' +
+                            '<div class="info-row"><span class="info-label">Transaction Reference:</span><span class="info-value">' + escapeHtml(tx.reference) + '</span></div>' +
+                            '<div class="info-row"><span class="info-label">Payment Status:</span><span class="info-value"><span class="payment-status-badge ' + statusClass + '">' + capitalizeFirst(tx.status) + '</span></span></div>' +
+                            '<div class="info-row"><span class="info-label">Amount Paid:</span><span class="info-value">R ' + parseFloat(tx.amount).toFixed(2) + '</span></div>' +
+                            '<div class="info-row"><span class="info-label">Paid On:</span><span class="info-value">' + escapeHtml(tx.paid_at) + '</span></div>' +
+                        '</div>';
+                } else {
+                    paymentHtml = 
+                        '<div class="payment-details" style="border-left-color: var(--warning);">' +
+                            '<h4>Payment Information</h4>' +
+                            '<p style="color: var(--gray-medium); font-size: var(--font-sm);">Payment is pending confirmation.</p>' +
+                        '</div>';
+                }
+                
                 $modalBody.html(
                     '<div class="order-info-section">' +
                         '<div class="info-row"><span class="info-label">Order Number:</span><span class="info-value">#' + order.order_id + '</span></div>' +
@@ -279,20 +301,48 @@ function openOrderModal(orderId) {
                         '<div class="total-row"><span>Subtotal:</span><span>R ' + parseFloat(order.subtotal || 0).toFixed(2) + '</span></div>' +
                         '<div class="total-row"><span>Delivery Fee:</span><span>R ' + parseFloat(order.delivery_fee || 0).toFixed(2) + '</span></div>' +
                         '<div class="total-row grand-total"><span>Total:</span><span>R ' + parseFloat(order.total || 0).toFixed(2) + '</span></div>' +
-                    '</div>'
+                    '</div>' +
+                    paymentHtml
                 );
                 
-                // Status-specific action buttons
+                // ============================================================
+                // Role-based action buttons
+                // ============================================================
                 var actionButtons = '';
-                if (order.status == 'pending') {
-                    actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
-                } else if (order.status == 'processing') {
-                    actionButtons = '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\'); closeOrderModal();">Mark as Shipped</button>';
-                } else if (order.status == 'shipped') {
-                    actionButtons = '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\'); closeOrderModal();">Mark as Completed</button>';
+                
+                // BUYER: Only cancel button
+                if (userRole === 'buyer') {
+                    if (order.status === 'pending' || order.status === 'processing') {
+                        actionButtons = '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
+                    }
                 }
-                if (order.status == 'pending' || order.status == 'processing') {
-                    actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
+                
+                // SELLER: Process, Ship, Complete, Cancel
+                if (userRole === 'seller') {
+                    if (order.status === 'pending') {
+                        actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
+                    } else if (order.status === 'processing') {
+                        actionButtons = '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\'); closeOrderModal();">Mark as Shipped</button>';
+                    } else if (order.status === 'shipped') {
+                        actionButtons = '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\'); closeOrderModal();">Mark as Completed</button>';
+                    }
+                    if (order.status === 'pending' || order.status === 'processing') {
+                        actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
+                    }
+                }
+                
+                // ADMIN: All actions
+                if (userRole === 'admin') {
+                    if (order.status === 'pending') {
+                        actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
+                    } else if (order.status === 'processing') {
+                        actionButtons = '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\'); closeOrderModal();">Mark as Shipped</button>';
+                    } else if (order.status === 'shipped') {
+                        actionButtons = '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\'); closeOrderModal();">Mark as Completed</button>';
+                    }
+                    if (order.status === 'pending' || order.status === 'processing') {
+                        actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
+                    }
                 }
                 
                 $modalFooter.html(actionButtons);
@@ -674,6 +724,8 @@ function removeFromCart(productId) {
 
 // ========== CART PAGE FUNCTIONS ==========
 
+// ========== CART PAGE FUNCTIONS ==========
+
 /**
  * Loads cart page using pre-loaded PHP data
  * Avoids extra AJAX call on initial load
@@ -698,7 +750,13 @@ function loadCartPage() {
     if (initialCartData.items.length > 0) {
         displayCartItems(initialCartData);
         updateCartTotalsDisplay(initialCartData);
-        updateCartCountDisplay(initialCartData.items.length);
+        
+        // Calculate total quantity (sum of all quantities)
+        var totalQty = 0;
+        for (var i = 0; i < initialCartData.items.length; i++) {
+            totalQty += initialCartData.items[i].quantity;
+        }
+        updateCartCountDisplay(totalQty);
     } else {
         $('#cart-layout').hide();
         $('#empty-cart').show();
@@ -745,7 +803,7 @@ function refreshCart() {
 }
 
 /**
- * Updates cart badge from server for non-cart pages
+ * Updates cart badge from server
  */
 function updateCartCount() {
     if (!isLoggedIn || currentUserRole !== 'buyer') {
@@ -753,24 +811,13 @@ function updateCartCount() {
         return;
     }
     
-    var cachedCount = sessionStorage.getItem('cart_count');
-    if (cachedCount && !isNaN(parseInt(cachedCount))) {
-        updateCartCountDisplay(parseInt(cachedCount));
-        // Background refresh to ensure accuracy
-        $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
-            if (data.success && data.item_count !== parseInt(cachedCount)) {
-                updateCartCountDisplay(data.item_count);
-                sessionStorage.setItem('cart_count', data.item_count);
-            }
-        });
-    } else {
-        $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
-            if (data.success) {
-                updateCartCountDisplay(data.item_count);
-                sessionStorage.setItem('cart_count', data.item_count);
-            }
-        });
-    }
+    // Always fetch fresh data - no caching issues
+    $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
+        if (data.success) {
+            updateCartCountDisplay(data.item_count);
+            sessionStorage.setItem('cart_count', data.item_count);
+        }
+    });
 }
 
 /**
@@ -808,7 +855,13 @@ function displayCartItems(cartData) {
     
     if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'none');
     if ($cartLayout.length) $cartLayout.css('display', 'flex');
-    if ($cartItemCount.length) $cartItemCount.text(items.length);
+    
+    // Calculate total quantity for the cart item count
+    var totalQty = 0;
+    for (var i = 0; i < items.length; i++) {
+        totalQty += items[i].quantity;
+    }
+    if ($cartItemCount.length) $cartItemCount.text(totalQty);
     
     if ($desktopTableBody.length) $desktopTableBody.empty();
     if ($mobileContainer.length) $mobileContainer.empty();

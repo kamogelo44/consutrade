@@ -14,7 +14,6 @@ ob_clean();
 header('Content-Type: text/plain');
 
 try {
-    // Use the payfast service that was already set up in init.php
     $result = $payfastService->handleItn($_POST);
 
     if ($result['success']) {

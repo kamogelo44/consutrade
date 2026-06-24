@@ -264,7 +264,7 @@ class CartRepository
 
     /**
      * Process the full checkout flow within a transaction.
-     * Verifies stock, creates orders, clears cart.
+     * Verifies stock, creates orders, reserves stock, creates pending transaction.
      *
      * @param int   $userId    The buyer's user ID
      * @param array $cartItems Array of cart items
@@ -283,19 +283,47 @@ class CartRepository
         $this->db->begin_transaction();
 
         try {
-            $orderRepo    = new OrderRepository($this->db);
-            $orderResult  = $orderRepo->createFromCart($userId, $cartItems, $sellerIds);
+            $orderRepo = new OrderRepository($this->db);
+            $orderResult = $orderRepo->createFromCart($userId, $cartItems, $sellerIds);
 
             if (!$orderResult) {
                 throw new Exception('Failed to create orders');
             }
 
+            // 1. Decrease stock IMMEDIATELY (reserve inventory)
+            $productRepo = new ProductRepository($this->db);
+            foreach ($cartItems as $item) {
+                $decreased = $productRepo->decreaseStock($item['product_id'], $item['quantity']);
+                if (!$decreased) {
+                    throw new Exception("Failed to reserve stock for product: {$item['product_id']}");
+                }
+            }
+
+            // 2. Create a PENDING transaction record
+            $transactionRepo = new TransactionRepository($this->db);
+            $primaryOrderId = $orderResult['order_ids'][0];
+
+            // Get the order total
+            $order = $orderRepo->findById($primaryOrderId, $userId, 'buyer');
+            $total = $order['total_price'] ?? 0;
+
+            // Use the payment_id from the order result
+            $paymentId = $orderResult['payment_id'];
+
+            $transactionRepo->createFromPayment(
+                $primaryOrderId,
+                'PF-PENDING-' . $paymentId,
+                $total
+            );
+
+            // 3. DO NOT clear cart here - wait for ITN or manual confirmation
+
             $this->db->commit();
 
             return [
-                'success'          => true,
-                'order_ids'        => $orderResult['order_ids'],
-                'payment_id'       => $orderResult['payment_id'],
+                'success' => true,
+                'order_ids' => $orderResult['order_ids'],
+                'payment_id' => $orderResult['payment_id'],
                 'primary_order_id' => $orderResult['order_ids'][0]
             ];
         } catch (Exception $e) {

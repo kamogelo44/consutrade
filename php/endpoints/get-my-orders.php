@@ -32,7 +32,7 @@ if ($currentUserRole === 'seller') {
     $totalOrders = $orderRepo->countByBuyer($userId, $status, $search);
 
     foreach ($orders as &$order) {
-        $review = $reviewRepo->getReviewByOrderAndBuyer($order['order_id'], $userId);
+        $review = $reviewRepo->findByOrderAndBuyer($order['order_id'], $userId);
         if ($review) {
             $order['has_review'] = true;
             $order['review_rating'] = $review['rating'];

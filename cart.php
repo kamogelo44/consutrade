@@ -17,9 +17,9 @@ $cart_totals = ['subtotal' => 0, 'delivery_fee' => 0, 'total' => 0];
 $total_quantity = 0;
 
 if ($isLoggedIn && $currentUser instanceof Buyer) {
-    $cart_items = $cartRepo->getCartItems($currentUser->getUserId());
-    $cart_totals = $cartRepo->calculateCartTotals($cart_items);
-    $total_quantity = $cartRepo->getCartCount($currentUser->getUserId());
+    $cart_items = $cartRepo->findByUser($currentUser->getUserId());
+    $cart_totals = $cartRepo->calculateTotals($cart_items);
+    $total_quantity = $cartRepo->countItems($currentUser->getUserId());
 }
 ?>
 
@@ -581,10 +581,10 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
 
             if (initialCartData.items && initialCartData.items.length > 0) {
                 if (typeof displayCartItems === 'function') displayCartItems(initialCartData);
-                if (typeof updateOrderSummary === 'function') updateOrderSummary(initialCartData);
+                if (typeof updateCartTotalsDisplay === 'function') updateCartTotalsDisplay(initialCartData);
                 $cartLayout.css('display', 'flex');
                 $emptyCart.css('display', 'none');
-                $cartItemCount.text(initialCartData.items.length);
+                $cartItemCount.text(<?php echo $total_quantity; ?>);
             } else {
                 $cartLayout.css('display', 'none');
                 $emptyCart.css('display', 'flex');

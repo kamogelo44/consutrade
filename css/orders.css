@@ -383,6 +383,65 @@
   color: var(--dark-bg);
 }
 
+/* ========== PAYMENT DETAILS ========== */
+#orderModal .payment-details {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--border-light);
+}
+
+#orderModal .payment-details h4 {
+  font-size: var(--font-md);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-md);
+  color: var(--dark-bg);
+}
+
+#orderModal .payment-details .info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-xs) 0;
+  font-size: var(--font-sm);
+}
+
+#orderModal .payment-details .info-row .info-label {
+  color: var(--gray-medium);
+}
+
+#orderModal .payment-details .info-row .info-value {
+  font-weight: var(--font-medium);
+  color: var(--dark-bg);
+}
+
+/* Payment Status Badges */
+.payment-status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-round);
+  font-size: var(--font-xs);
+  font-weight: var(--font-medium);
+}
+
+.payment-status-badge.completed {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.payment-status-badge.pending {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.payment-status-badge.failed {
+  background: var(--error-light);
+  color: var(--error);
+}
+
+.payment-status-badge.refunded {
+  background: var(--info-light);
+  color: var(--info);
+}
+
 #orderModal .order-modal-footer {
   padding: var(--spacing-md) var(--spacing-lg);
   border-top: 1px solid var(--border-light);
@@ -538,12 +597,10 @@
     padding: var(--spacing-lg);
   }
 
-  /* Hide table headers on mobile */
   .data-table thead {
     display: none;
   }
 
-  /* Each row becomes a card */
   .data-table tbody tr {
     display: block;
     border: 1px solid var(--border-light);
@@ -553,7 +610,6 @@
     padding: var(--spacing-md);
   }
 
-  /* Each cell becomes a row in the card */
   .data-table tbody td {
     display: flex;
     justify-content: space-between;
@@ -568,7 +624,6 @@
     border-bottom: none;
   }
 
-  /* Add labels using data-label attribute */
   .data-table tbody td:before {
     content: attr(data-label);
     font-weight: var(--font-bold);
@@ -578,7 +633,6 @@
     min-width: 100px;
   }
 
-  /* Action buttons on mobile */
   .action-buttons {
     flex-direction: row;
     justify-content: flex-end;
@@ -590,7 +644,6 @@
     padding: 6px 12px;
   }
 
-  /* Filters on mobile */
   .filters-bar {
     flex-direction: column;
     align-items: stretch;
@@ -611,6 +664,13 @@
   .search-group input {
     width: 100%;
   }
+
+  /* Payment details mobile */
+  #orderModal .payment-details .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
 }
 
 /* ========== EXTRA SMALL (480px and below) ========== */
@@ -623,7 +683,6 @@
     font-size: var(--font-lg);
   }
 
-  /* Smaller labels on very small screens */
   .data-table tbody td:before {
     min-width: 80px;
     font-size: var(--font-xs);
@@ -645,5 +704,9 @@
 
   .rating-stars .star {
     font-size: 28px;
+  }
+
+  #orderModal .payment-details .info-row {
+    font-size: var(--font-xs);
   }
 }

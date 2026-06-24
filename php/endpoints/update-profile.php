@@ -29,7 +29,7 @@ if ($action === 'upload_image') {
         exit;
     }
 
-    $uploadDir = dirname(__DIR__, 3) . '/uploads/profiles/';
+    $uploadDir = dirname(__DIR__, 2) . '/uploads/profiles/';
 
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0777, true);
