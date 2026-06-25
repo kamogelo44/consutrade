@@ -4,17 +4,24 @@
  * Author: Kamogelo Phale
  */
 
-$env = parse_ini_file(__DIR__ . '/../.env');
+// Check if we are running automated tests. If so, read the testing configurations.
+if (defined('PHPUNIT_TESTING') && PHPUNIT_TESTING === true) {
+    $env = parse_ini_file(__DIR__ . '/../.env.testing');
+} else {
+    $env = parse_ini_file(__DIR__ . '/../.env');
+}
 
 function getBaseUrl(): string
 {
     global $env;
+    // When running tests via terminal, $_SERVER['HTTP_HOST'] does not exist.
+    // This fallback prevents undefined index errors during test execution.
     if (isset($env['BASE_URL']) && !empty($env['BASE_URL'])) {
         return rtrim($env['BASE_URL'], '/') . '/';
     }
 
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'];
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     return $protocol . '://' . $host . '/';
 }
 

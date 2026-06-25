@@ -64,7 +64,13 @@ require_once __DIR__ . '/php/classes/Seller.php';
 require_once __DIR__ . '/php/classes/Admin.php';
 require_once __DIR__ . '/php/classes/Report.php';
 require_once __DIR__ . '/php/classes/PayFastService.php';
+require_once __DIR__ . '/php/classes/PaymentStatusService.php';
 require_once __DIR__ . '/php/classes/Auth.php';
+
+// Load services
+require_once __DIR__ . '/php/classes/CartService.php';
+require_once __DIR__ . '/php/classes/OrderService.php';
+require_once __DIR__ . '/php/classes/ProductService.php';
 
 // Create Auth instance (with UserRepository injected)
 $auth = new Auth($conn, $userRepo);
@@ -77,6 +83,30 @@ $payfastService = new PayFastService(
     $cartRepo,
     $transactionRepo
 );
+
+// Create PaymentStatusService instance (for order confirmation)
+$paymentStatusService = new PaymentStatusService(
+    $orderRepo,
+    $transactionRepo
+);
+
+// Create service instances
+$cartService = new CartService(
+    $conn,
+    $cartRepo,
+    $productRepo,
+    $orderRepo,
+    $transactionRepo
+);
+
+$orderService = new OrderService(
+    $conn,
+    $orderRepo,
+    $productRepo,
+    $transactionRepo
+);
+
+$productService = new ProductService($productRepo);
 
 // Start session and get user
 $currentUser = $auth->getCurrentUser();
@@ -99,6 +129,10 @@ $GLOBALS['reviewRepo'] = $reviewRepo;
 $GLOBALS['transactionRepo'] = $transactionRepo;
 $GLOBALS['reportRepo'] = $reportRepo;
 $GLOBALS['payfastService'] = $payfastService;
+$GLOBALS['paymentStatusService'] = $paymentStatusService;
+$GLOBALS['cartService'] = $cartService;
+$GLOBALS['orderService'] = $orderService;
+$GLOBALS['productService'] = $productService;
 $GLOBALS['currentUser'] = $currentUser;
 $GLOBALS['currentUserRole'] = $currentUserRole;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;

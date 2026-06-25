@@ -1,0 +1,15 @@
+# Create .gitkeep files to preserve directory structure
+touch uploads/products/.gitkeep
+touch uploads/profiles/.gitkeep
+touch uploads/verifications/.gitkeep
+
+# For test directories
+touch tests/_output/.gitkeep
+touch tests/coverage/.gitkeep
+
+# For logs directory (if you want to keep the folder)
+touch logs/.gitkeep
+
+# For cache directory
+touch cache/.gitkeep
+touch tmp/.gitkeep

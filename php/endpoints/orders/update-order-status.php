@@ -74,39 +74,28 @@ if ($userRole === 'seller') {
         exit;
     }
 
-    // ============================================================
-    // When seller changes from pending to processing,
-    // complete the payment workflow (create transaction, clear cart)
-    // ============================================================
     $oldStatus = $orderData['status'];
 
-    // Start transaction
     $conn->begin_transaction();
 
     try {
-        // Update order status
         $result = $orderRepo->updateStatus($orderId, $userId, $newStatus);
 
         if (!$result['success']) {
             throw new Exception($result['message']);
         }
 
-        // If going from pending to processing, complete the payment flow
+        // If going from pending to processing, create transaction if missing
         if ($oldStatus === 'pending' && $newStatus === 'processing') {
-            // Check if transaction already exists
             $transaction = $transactionRepo->findByOrderId($orderId);
 
             if (!$transaction) {
-                // Create transaction record
                 $transactionRepo->createFromPayment(
                     $orderId,
                     'PF-MANUAL-' . time(),
                     $orderData['total_price']
                 );
             }
-
-            // Clear the buyer's cart
-            $cartRepo->deleteAllByUser($orderData['buyer_id']);
         }
 
         $conn->commit();
@@ -153,14 +142,12 @@ if ($userRole === 'admin') {
     $conn->begin_transaction();
 
     try {
-        $updateSql = "UPDATE orders SET status = ? WHERE order_id = ?";
-        $updateStmt = $conn->prepare($updateSql);
-        $updateStmt->bind_param('si', $newStatus, $orderId);
+        // Use repository method instead of raw SQL
+        $updated = $orderRepo->updateStatusDirect($orderId, $newStatus);
 
-        if (!$updateStmt->execute()) {
-            throw new Exception('Update failed');
+        if (!$updated) {
+            throw new Exception('Failed to update order status');
         }
-        $updateStmt->close();
 
         if ($newStatus === 'cancelled') {
             $productRepo->restoreStockFromOrder($orderId);

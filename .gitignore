@@ -1,28 +1,148 @@
-# OS files
+# ============================================================
+# OS FILES
+# ============================================================
 .DS_Store
 Thumbs.db
 desktop.ini
+*.tmp
+*.temp
 
-# IDE files
+# ============================================================
+# IDE / EDITOR FILES
+# ============================================================
 .vscode/
 .idea/
 *.sublime-*
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.iml
 
-# Uploaded files
+# ============================================================
+# ENVIRONMENT & CONFIGURATION
+# ============================================================
+.env
+.env.*
+!.env.example
+!.env.testing.example
+
+# ============================================================
+# UPLOADED FILES
+# ============================================================
 uploads/products/*.webp
+uploads/products/*.jpg
+uploads/products/*.jpeg
+uploads/products/*.png
+uploads/products/*.gif
 uploads/profiles/*.jpg
+uploads/profiles/*.jpeg
 uploads/profiles/*.png
-uploads/verifications/*
+uploads/profiles/*.gif
+uploads/verifications/*.jpg
+uploads/verifications/*.jpeg
+uploads/verifications/*.png
+uploads/verifications/*.pdf
+uploads/verifications/*.doc
+uploads/verifications/*.docx
 
-# Database and Payfast credentials
+!uploads/products/.gitkeep
+!uploads/profiles/.gitkeep
+!uploads/verifications/.gitkeep
 
-*.env 
-
-# Logs
+# ============================================================
+# LOGS
+# ============================================================
 *.log
 error_log
+*.error.log
+access.log
+logs/
+*.log.*
 
-# Backup files
+# ============================================================
+# TESTING
+# ============================================================
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+.phpunit.cache/
+tests/_output/
+tests/_support/_generated/
+tests/coverage/
+coverage/
+.clover
+testdox.html
+testdox.txt
+.env.testing
+.env.testing.local
+.env.test
+*.codecoverage
+*.testlog
+
+# ============================================================
+# COMPOSER
+# ============================================================
+vendor/
+composer.phar
+.phar/
+.phpcs-cache
+
+# ============================================================
+# DATABASE BACKUPS
+# ============================================================
 *.sql
+*.sql.gz
+*.sql.zip
 *.bak
+*.backup
+db_backup/
+backup-*.sql
+
+# ============================================================
+# CACHE & TEMPORARY FILES
+# ============================================================
+cache/
+*.cache
+tmp/
+temp/
+.phpcs-cache
+
+# ============================================================
+# PACKAGE MANAGER FILES
+# ============================================================
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# ============================================================
+# COMPRESSED FILES
+# ============================================================
 *.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ============================================================
+# SESSION & COOKIE FILES
+# ============================================================
+sessions/
+session-*
+*.sess
+
+# ============================================================
+# MISCELLANEOUS
+# ============================================================
+*.metadata
+*.directory
+*.user
+*.user.ini
+build/
+dist/
+*.pf
+*.payfast

@@ -5,6 +5,7 @@
  *
  * Handles all product database operations ONLY.
  * Image operations are delegated to ProductImageService.
+ * Business logic moved to ProductService.
  *
  * @author Kamogelo Phale
  * @version 2.1.0
@@ -31,50 +32,26 @@ class ProductRepository
     }
 
     // ============================================================
-    // IMAGE DELEGATION METHODS
+    // IMAGE DELEGATION METHODS (Simple passthrough)
     // ============================================================
 
-    /**
-     * Get full URL for a product image.
-     * Delegates to ProductImageService.
-     *
-     * @param string|null $imageUrl Stored image path
-     * @return string Full URL with fallback to default
-     */
     public function getImageUrl(?string $imageUrl): string
     {
         return $this->imageService->getImageUrl($imageUrl);
     }
 
-    /**
-     * Delete a product image file from disk.
-     * Delegates to ProductImageService.
-     *
-     * @param string|null $imageUrl Relative URL of the image
-     * @return bool True if deleted or not needed, false on failure
-     */
     public function deleteImageFile(?string $imageUrl): bool
     {
         return $this->imageService->deleteImageFile($imageUrl);
     }
 
-    /**
-     * Upload and convert product image to WebP.
-     * Delegates to ProductImageService.
-     *
-     * @param array $file The uploaded file from $_FILES
-     * @param int $sellerId The seller's ID (used in filename)
-     * @param string $productTitle The product title (used in filename)
-     * @param string $prefix Filename prefix (main, gallery, thumb)
-     * @return string|false Relative path on success, false on failure
-     */
     public function uploadImage(array $file, int $sellerId, string $productTitle, string $prefix = 'main'): string|false
     {
         return $this->imageService->uploadImage($file, $sellerId, $productTitle, $prefix);
     }
 
     // ============================================================
-    // CREATE
+    // CREATE (C)
     // ============================================================
 
     /**
@@ -124,7 +101,7 @@ class ProductRepository
     }
 
     // ============================================================
-    // READ
+    // READ (R)
     // ============================================================
 
     /**
@@ -411,7 +388,7 @@ class ProductRepository
     }
 
     /**
-     * Get public product listings with filters, sorting, and pagination.
+     * Get public product listings with filters.
      *
      * @param array $filters Associative array of filters
      * @return array
@@ -695,7 +672,7 @@ class ProductRepository
     }
 
     // ============================================================
-    // UPDATE
+    // UPDATE (U)
     // ============================================================
 
     /**
@@ -752,61 +729,6 @@ class ProductRepository
     }
 
     /**
-     * Update product status with suspension tracking.
-     *
-     * @param int $id Product ID
-     * @param int $sellerId Seller ID
-     * @param string $action 'activate' or 'suspend'
-     * @param string $suspendedBy Who is performing the action
-     * @param string $suspendedReason Optional reason for suspension
-     * @return array
-     */
-    public function updateStatus(int $id, int $sellerId, string $action, string $suspendedBy = 'seller', string $suspendedReason = ''): array
-    {
-        $checkSql = "SELECT product_id, status, suspended_by FROM products
-                     WHERE product_id = ? AND seller_id = ? AND status != 'deleted'";
-        $checkStmt = $this->db->prepare($checkSql);
-        $checkStmt->bind_param('ii', $id, $sellerId);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-
-        if ($checkResult->num_rows === 0) {
-            $checkStmt->close();
-            return ['success' => false, 'message' => 'Product not found.'];
-        }
-
-        $product = $checkResult->fetch_assoc();
-        $checkStmt->close();
-
-        if ($action === 'activate') {
-            if ($product['suspended_by'] === 'admin' && $suspendedBy !== 'admin') {
-                return ['success' => false, 'message' => 'This product was suspended by an admin. Only an admin can reactivate it.'];
-            }
-
-            $newStatus = 'active';
-            $updateSql = "UPDATE products SET status = ?, suspended_by = NULL, suspended_reason = NULL 
-                          WHERE product_id = ? AND seller_id = ?";
-            $updateStmt = $this->db->prepare($updateSql);
-            $updateStmt->bind_param('sii', $newStatus, $id, $sellerId);
-        } else {
-            $newStatus = 'suspended';
-            $updateSql = "UPDATE products SET status = ?, suspended_by = ?, suspended_reason = ? 
-                          WHERE product_id = ? AND seller_id = ?";
-            $updateStmt = $this->db->prepare($updateSql);
-            $updateStmt->bind_param('sssii', $newStatus, $suspendedBy, $suspendedReason, $id, $sellerId);
-        }
-
-        if ($updateStmt->execute()) {
-            $updateStmt->close();
-            $message = ($action === 'activate') ? 'Product activated.' : 'Product suspended.';
-            return ['success' => true, 'message' => $message];
-        }
-
-        $updateStmt->close();
-        return ['success' => false, 'message' => 'Failed to update product status.'];
-    }
-
-    /**
      * Update product stock quantity.
      *
      * @param int $productId Product ID
@@ -842,20 +764,30 @@ class ProductRepository
      */
     public function decreaseStock(int $productId, int $quantity): bool
     {
-        $currentStock = $this->getStock($productId);
-
-        if ($currentStock < $quantity) {
-            error_log("Insufficient stock for product ID: $productId. Stock: $currentStock, Requested: $quantity");
-            return false;
-        }
-
         $stmt = $this->db->prepare(
             "UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND stock_quantity >= ?"
         );
         $stmt->bind_param('iii', $quantity, $productId, $quantity);
         $result = $stmt->execute();
         $stmt->close();
+        return $result;
+    }
 
+    /**
+     * Increase product stock (for restoring stock on payment failure or cancellation).
+     *
+     * @param int $productId Product ID
+     * @param int $quantity Quantity to increase by
+     * @return bool
+     */
+    public function increaseStock(int $productId, int $quantity): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?"
+        );
+        $stmt->bind_param('ii', $quantity, $productId);
+        $result = $stmt->execute();
+        $stmt->close();
         return $result;
     }
 
@@ -889,50 +821,54 @@ class ProductRepository
         return $success;
     }
 
-    // ============================================================
-    // DELETE / SOFT DELETE
-    // ============================================================
-
     /**
-     * Delete product (soft delete).
+     * Update product status (database only).
      *
      * @param int $id Product ID
      * @param int $sellerId Seller ID
-     * @return array
+     * @param string $newStatus New status
+     * @param string|null $suspendedBy Who suspended (if suspending)
+     * @param string|null $suspendedReason Reason for suspension
+     * @return bool
      */
-    public function delete(int $id, int $sellerId): array
+    public function updateStatusDirect(int $id, int $sellerId, string $newStatus, ?string $suspendedBy = null, ?string $suspendedReason = null): bool
     {
-        $checkSql = "SELECT product_id, image_url FROM products
-                     WHERE product_id = ? AND seller_id = ?";
-        $checkStmt = $this->db->prepare($checkSql);
-        $checkStmt->bind_param('ii', $id, $sellerId);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-
-        if ($checkResult->num_rows === 0) {
-            $checkStmt->close();
-            return ['success' => false, 'message' => 'Product not found.'];
+        if ($newStatus === 'suspended' && $suspendedBy !== null) {
+            $sql = "UPDATE products SET status = ?, suspended_by = ?, suspended_reason = ? 
+                    WHERE product_id = ? AND seller_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sssii', $newStatus, $suspendedBy, $suspendedReason, $id, $sellerId);
+        } else {
+            $sql = "UPDATE products SET status = ?, suspended_by = NULL, suspended_reason = NULL 
+                    WHERE product_id = ? AND seller_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param('sii', $newStatus, $id, $sellerId);
         }
 
-        $product = $checkResult->fetch_assoc();
-        $checkStmt->close();
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
 
-        $deleteSql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
-        $deleteStmt = $this->db->prepare($deleteSql);
-        $deleteStmt->bind_param('ii', $id, $sellerId);
+    // ============================================================
+    // DELETE (D)
+    // ============================================================
 
-        if ($deleteStmt->execute()) {
-            $deleteStmt->close();
-
-            if (!empty($product['image_url'])) {
-                $this->deleteImageFile($product['image_url']);
-            }
-
-            return ['success' => true, 'message' => 'Product deleted.'];
-        }
-
-        $deleteStmt->close();
-        return ['success' => false, 'message' => 'Failed to delete product.'];
+    /**
+     * Soft delete product (mark as deleted).
+     *
+     * @param int $id Product ID
+     * @param int $sellerId Seller ID
+     * @return bool
+     */
+    public function delete(int $id, int $sellerId): bool
+    {
+        $sql = "UPDATE products SET status = 'deleted' WHERE product_id = ? AND seller_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $id, $sellerId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
     /**
@@ -954,11 +890,6 @@ class ProductRepository
     // COUNTS / STATISTICS
     // ============================================================
 
-    /**
-     * Count all active products.
-     *
-     * @return int
-     */
     public function countAll(): int
     {
         $result = $this->db->query("SELECT COUNT(*) as count FROM products WHERE status = 'active'");
@@ -966,12 +897,6 @@ class ProductRepository
         return (int)($row['count'] ?? 0);
     }
 
-    /**
-     * Count user products.
-     *
-     * @param int $userId User ID
-     * @return int
-     */
     public function countByUser(int $userId): int
     {
         $sql = "SELECT COUNT(*) as total FROM products WHERE seller_id = ? AND status = 'active'";
@@ -984,25 +909,11 @@ class ProductRepository
         return $total;
     }
 
-    /**
-     * Count user products (alias).
-     *
-     * @param int $userId User ID
-     * @return int
-     */
     public function countUserProducts(int $userId): int
     {
         return $this->countByUser($userId);
     }
 
-    /**
-     * Count products for a seller with filters.
-     *
-     * @param int $sellerId Seller ID
-     * @param string $filter Status filter (all, active, suspended)
-     * @param string $search Search term
-     * @return int
-     */
     public function countBySeller(int $sellerId, string $filter = 'all', string $search = ''): int
     {
         $sql = "SELECT COUNT(*) as total FROM products p
@@ -1035,13 +946,6 @@ class ProductRepository
         return $total;
     }
 
-    /**
-     * Get total count of products for admin with filters.
-     *
-     * @param string $status Status filter
-     * @param string $search Search term
-     * @return int
-     */
     public function countForAdmin(string $status = 'all', string $search = ''): int
     {
         $sql = "SELECT COUNT(*) as total FROM products p
@@ -1077,7 +981,7 @@ class ProductRepository
     }
 
     // ============================================================
-    // STOCK MANAGEMENT
+    // STOCK MANAGEMENT (Data Access)
     // ============================================================
 
     /**
@@ -1096,23 +1000,5 @@ class ProductRepository
         $stock = (int) ($row['stock_quantity'] ?? 0);
         $stmt->close();
         return $stock;
-    }
-
-    /**
-     * Increase product stock (for restoring stock on payment failure or cancellation).
-     *
-     * @param int $productId Product ID
-     * @param int $quantity Quantity to increase by
-     * @return bool
-     */
-    public function increaseStock(int $productId, int $quantity): bool
-    {
-        $stmt = $this->db->prepare(
-            "UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?"
-        );
-        $stmt->bind_param('ii', $quantity, $productId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
     }
 }

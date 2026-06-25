@@ -110,6 +110,22 @@ class Database
     }
 
     /**
+     * Starts a new database transaction.
+     */
+    public function beginTransaction()
+    {
+        $this->getConnection()->begin_transaction();
+    }
+
+    /**
+     * Rolls back the current database transaction.
+     */
+    public function rollBack()
+    {
+        $this->getConnection()->rollback();
+    }
+
+    /**
      * Prevents cloning.
      */
     private function __clone() {}

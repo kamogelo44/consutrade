@@ -3,7 +3,7 @@
 /**
  * ConsuTrade - TransactionRepository
  *
- * Handles all transaction database operations.
+ * Handles all transaction database operations for payment records.
  *
  * @author Kamogelo Phale
  * @version 2.0.0
@@ -23,12 +23,13 @@ class TransactionRepository
     // ============================================================
 
     /**
-     * Create a transaction record from successful payment.
+     * Creates a transaction record after a successful payment.
+     * This links the PayFast reference to the order and records the amount paid.
      *
-     * @param int $orderId Order ID
-     * @param string $payfastRef PayFast reference
-     * @param float $amount Payment amount
-     * @return Transaction|false
+     * @param int $orderId The order ID
+     * @param string $payfastRef The PayFast payment reference
+     * @param float $amount The amount paid
+     * @return Transaction|false The transaction object or false on failure
      */
     public function createFromPayment(int $orderId, string $payfastRef, float $amount): Transaction|false
     {
@@ -66,10 +67,10 @@ class TransactionRepository
     // ============================================================
 
     /**
-     * Get transaction by ID.
+     * Gets a transaction by its ID.
      *
-     * @param int $transactionId Transaction ID
-     * @return Transaction|null
+     * @param int $transactionId The transaction ID
+     * @return Transaction|null The transaction object or null if not found
      */
     public function findById(int $transactionId): ?Transaction
     {
@@ -87,10 +88,11 @@ class TransactionRepository
     }
 
     /**
-     * Get transaction by order ID.
+     * Gets a transaction by its associated order ID.
+     * Each order should have at most one transaction.
      *
-     * @param int $orderId Order ID
-     * @return Transaction|null
+     * @param int $orderId The order ID
+     * @return Transaction|null The transaction object or null if not found
      */
     public function findByOrderId(int $orderId): ?Transaction
     {
@@ -108,10 +110,10 @@ class TransactionRepository
     }
 
     /**
-     * Get all transactions for a specific order.
+     * Gets all transactions for a specific order (in case of multiple attempts).
      *
-     * @param int $orderId Order ID
-     * @return array
+     * @param int $orderId The order ID
+     * @return array List of transaction objects
      */
     public function findAllByOrderId(int $orderId): array
     {
@@ -130,11 +132,11 @@ class TransactionRepository
     }
 
     /**
-     * Get all transactions (for admin).
+     * Gets all transactions for admin with pagination.
      *
      * @param int $limit Results per page
      * @param int $offset Pagination offset
-     * @return array
+     * @return array List of transaction objects
      */
     public function findAll(int $limit = 50, int $offset = 0): array
     {
@@ -159,10 +161,10 @@ class TransactionRepository
     }
 
     /**
-     * Get recent transactions for dashboard.
+     * Gets recent transactions for the admin dashboard.
      *
-     * @param int $limit Number of transactions
-     * @return array
+     * @param int $limit Number of transactions to return
+     * @return array List of transactions with buyer and seller names
      */
     public function findRecent(int $limit = 5): array
     {
@@ -196,9 +198,9 @@ class TransactionRepository
     }
 
     /**
-     * Get total transaction count.
+     * Counts all transactions.
      *
-     * @return int
+     * @return int Total number of transactions
      */
     public function countAll(): int
     {
@@ -211,9 +213,9 @@ class TransactionRepository
     }
 
     /**
-     * Get total revenue from completed transactions.
+     * Gets the total revenue from all completed transactions.
      *
-     * @return float
+     * @return float Total revenue
      */
     public function getTotalRevenue(): float
     {
@@ -230,11 +232,12 @@ class TransactionRepository
     // ============================================================
 
     /**
-     * Update transaction status.
+     * Updates the status of a transaction.
+     * Used when PayFast confirms or rejects a payment.
      *
-     * @param int $transactionId Transaction ID
-     * @param string $status New status
-     * @return bool
+     * @param int $transactionId The transaction ID
+     * @param string $status New status ('pending', 'completed', 'failed', 'refunded')
+     * @return bool True on success, false on failure
      */
     public function updateStatus(int $transactionId, string $status): bool
     {
@@ -255,10 +258,10 @@ class TransactionRepository
     // ============================================================
 
     /**
-     * Delete a transaction by ID.
+     * Deletes a transaction by ID.
      *
-     * @param int $transactionId Transaction ID
-     * @return bool
+     * @param int $transactionId The transaction ID
+     * @return bool True on success, false on failure
      */
     public function delete(int $transactionId): bool
     {
@@ -270,10 +273,10 @@ class TransactionRepository
     }
 
     /**
-     * Delete all transactions for an order.
+     * Deletes all transactions for a specific order.
      *
-     * @param int $orderId Order ID
-     * @return bool
+     * @param int $orderId The order ID
+     * @return bool True on success, false on failure
      */
     public function deleteByOrderId(int $orderId): bool
     {
