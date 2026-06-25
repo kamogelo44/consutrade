@@ -6,7 +6,7 @@
  * Allows buyers to edit their existing reviews
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -37,6 +37,7 @@ if ($rating < 1 || $rating > 5) {
 
 $comment = substr($comment, 0, 500);
 
+// ReviewRepository for data operations
 $existing = $reviewRepo->findByOrderAndBuyer($order_id, $currentUser->getUserId());
 
 if (!$existing) {

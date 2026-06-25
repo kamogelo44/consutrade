@@ -13,7 +13,7 @@
  * - Other policy violations
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -53,7 +53,8 @@ if (strlen($description) > 1000) {
     $description = substr($description, 0, 1000);
 }
 
-$product = $productRepo->findById($productId);
+// Use ProductService for product lookup
+$product = $productService->findById($productId);
 if (!$product) {
     $response['message'] = 'Product not found.';
     echo json_encode($response);

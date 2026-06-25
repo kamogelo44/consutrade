@@ -6,7 +6,7 @@
  * Allows buyers to submit reviews for completed orders
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -38,6 +38,7 @@ if ($rating < 1 || $rating > 5) {
 
 $comment = substr($comment, 0, 500);
 
+// ReviewRepository for data operations
 $result = $reviewRepo->create($order_id, $seller_id, $currentUser->getUserId(), $rating, $comment);
 
 $response['success'] = $result['success'];

@@ -6,7 +6,7 @@
  * Allows admin to dismiss reports or suspend products
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -55,7 +55,8 @@ if ($action === 'dismiss') {
         $response['message'] = 'Failed to update report status.';
     }
 } else if ($action === 'suspend') {
-    $updateResult = $productRepo->updateStatus(
+    // Use ProductService for status update
+    $updateResult = $productService->updateStatus(
         $productId,
         $report['seller_id'],
         'suspend',

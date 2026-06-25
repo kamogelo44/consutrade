@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -26,31 +26,10 @@ if ($user_id <= 0) {
     exit;
 }
 
-$targetUser = $userRepo->findById($user_id);
+// Use UserService for verification update
+$result = $userService->updateVerification($user_id, $verify);
 
-if (!$targetUser || $targetUser->getRole() !== 'seller') {
-    $response['message'] = 'Only sellers can be verified.';
-    echo json_encode($response);
-    exit;
-}
-
-$new_status = $verify ? 1 : 0;
-
-$sql = "UPDATE users SET id_verified = ? WHERE user_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('ii', $new_status, $user_id);
-
-if ($stmt->execute()) {
-    $response['success'] = true;
-    $response['message'] = $verify ? 'Seller verified.' : 'Verification removed.';
-
-    if ($currentUser && $currentUser->getUserId() === $user_id) {
-        $updatedUser = $userRepo->findById($user_id);
-        $_SESSION['user_object'] = serialize($updatedUser);
-    }
-} else {
-    $response['message'] = 'Could not update verification.';
-}
-$stmt->close();
+$response['success'] = $result['success'];
+$response['message'] = $result['message'];
 
 echo json_encode($response);

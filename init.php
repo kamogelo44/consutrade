@@ -76,6 +76,8 @@ require_once __DIR__ . '/php/classes/services/PaymentStatusService.php';
 require_once __DIR__ . '/php/classes/services/CartService.php';
 require_once __DIR__ . '/php/classes/services/OrderService.php';
 require_once __DIR__ . '/php/classes/services/ProductService.php';
+require_once __DIR__ . '/php/classes/services/UserService.php';
+require_once __DIR__ . '/php/classes/services/AdminService.php';
 
 // ============================================================
 // LOAD CORE
@@ -84,6 +86,24 @@ require_once __DIR__ . '/php/classes/core/Auth.php';
 
 // Create service instances
 $auth = new Auth($conn, $userRepo);
+
+// UserService
+$userService = new UserService(
+    $conn,
+    $userRepo,
+    $cartRepo,
+    $orderRepo,
+    $productRepo,
+    $reviewRepo,
+    $reportRepo,
+    $auth
+);
+
+// AdminService
+$adminService = new AdminService(
+    $conn,
+    $userRepo
+);
 
 $payfastService = new PayFastService(
     $conn,
@@ -142,6 +162,8 @@ $GLOBALS['paymentStatusService'] = $paymentStatusService;
 $GLOBALS['cartService'] = $cartService;
 $GLOBALS['orderService'] = $orderService;
 $GLOBALS['productService'] = $productService;
+$GLOBALS['userService'] = $userService;
+$GLOBALS['adminService'] = $adminService;
 $GLOBALS['currentUser'] = $currentUser;
 $GLOBALS['currentUserRole'] = $currentUserRole;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;

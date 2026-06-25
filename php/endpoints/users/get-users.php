@@ -4,9 +4,10 @@
  * Author: Kamogelo Phale
  * 
  * Handles user listing for admin panel with filtering, pagination, and search.
+ * Uses AdminService for all data retrieval.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'users' => [], 'total_pages' => 1, 'current_page' => 1];
@@ -24,7 +25,6 @@ try {
     $recentOnly = isset($_GET['recent']) && $_GET['recent'] === 'true';
 
     $limit = $recentOnly ? 5 : (isset($_GET['limit']) ? (int)$_GET['limit'] : 10);
-    $offset = ($page - 1) * $limit;
 
     if ($recentOnly) {
         $users = $userRepo->findRecent($limit);
@@ -36,36 +36,15 @@ try {
         exit;
     }
 
-    if ($roleFilter === 'pending') {
-        $totalRows = $userRepo->getPendingVerificationsCount();
-        $totalPages = ceil($totalRows / $limit);
-        $users = $userRepo->findPendingVerifications($limit, $offset);
-
-        $response['success'] = true;
-        $response['users'] = $users;
-        $response['total_pages'] = $totalPages;
-        $response['current_page'] = $page;
-        echo json_encode($response);
-        exit;
-    }
-
-    if ($roleFilter !== 'all') {
-        $totalRows = $userRepo->countUsersByRole($roleFilter, $searchTerm);
-        $totalPages = ceil($totalRows / $limit);
-        $users = $userRepo->findByRoleWithPagination($roleFilter, $searchTerm, $limit, $offset);
-    } else {
-        $users = $userRepo->findAll('all', $searchTerm, $limit, $offset);
-        $totalRows = $userRepo->countUsersByRole('all', $searchTerm);
-        $totalPages = ceil($totalRows / $limit);
-    }
+    // Use AdminService for user listing
+    $result = $adminService->getUsers($roleFilter, $searchTerm, $page, $limit);
 
     $response['success'] = true;
-    $response['users'] = $users;
-    $response['total_pages'] = $totalPages;
-    $response['current_page'] = $page;
+    $response['users'] = $result['users'];
+    $response['total_pages'] = $result['total_pages'];
+    $response['current_page'] = $result['current_page'];
 } catch (Exception $e) {
     error_log("GetUsers Error: " . $e->getMessage());
-    error_log("GetUsers Error Trace: " . $e->getTraceAsString());
     $response['error'] = $e->getMessage();
 }
 

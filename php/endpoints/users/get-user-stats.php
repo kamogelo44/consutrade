@@ -3,11 +3,10 @@
  * ConsuTrade - Get User Statistics (AJAX)
  * Author: Kamogelo Phale
  * 
- * This endpoint acts as a controller - it receives requests,
- * delegates to repositories, and returns JSON responses.
+ * Uses UserService for all statistics calculations.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
@@ -16,33 +15,14 @@ $response = ['success' => false, 'message' => ''];
 // ADMIN STATS
 // ============================================
 if ($auth->isAdmin() && !isset($_GET['seller_id']) && !isset($_GET['user_id'])) {
-    $userStats = [
-        'total_users' => $userRepo->getTotalUsers(),
-        'total_buyers' => $userRepo->countByRole('buyer'),
-        'total_sellers' => $userRepo->countByRole('seller'),
-        'pending_verifications' => $userRepo->getPendingVerificationsCount()
-    ];
-
-    $orderStats = [
-        'total_orders' => $orderRepo->countAll(),
-        'total_revenue' => $orderRepo->getTotalRevenue(),
-        'pending_orders' => $orderRepo->countByStatus('pending')
-    ];
-
-    $productStats = [
-        'total_products' => $productRepo->countAll()
-    ];
-
-    $reportStats = [
-        'pending_reports' => $reportRepo->getPendingReportsCount()
-    ];
+    $stats = $userService->getAdminStats();
 
     $admin = new Admin([]);
     $dashboardData = $admin->calculateDashboardStats(
-        $userStats,
-        $orderStats,
-        $productStats,
-        $reportStats
+        $stats,  // userStats
+        $stats,  // orderStats (same array)
+        $stats,  // productStats (same array)
+        $stats   // reportStats (same array)
     );
 
     $response = ['success' => true] + $dashboardData;
@@ -75,33 +55,19 @@ if (!$targetUser) {
 // SELLER STATS
 // ============================================
 if ($targetUser instanceof Seller) {
-    $totalProducts = $productRepo->countUserProducts($targetId);
-    $totalOrders = $orderRepo->countBySeller($targetId);
-    $completedOrders = $orderRepo->getSellerTotalOrders($targetId);
-    $totalRevenue = $orderRepo->getSellerTotalRevenue($targetId);
-    $ratingData = $reviewRepo->getSellerRating($targetId);
-
-    // Get pending orders count for this seller
-    $pendingOrders = $orderRepo->countBySellerAndStatus($targetId, 'pending');
-
-    $stats = $targetUser->calculateStats(
-        $totalProducts,
-        $totalOrders,
-        $totalRevenue,
-        $ratingData['avg_rating'] ?? 0
-    );
+    $stats = $userService->getSellerStats($targetId);
 
     $response = [
         'success' => true,
         'total_products' => $stats['total_products'],
         'total_revenue' => $stats['total_revenue'],
         'total_orders' => $stats['total_orders'],
-        'pending_orders' => $pendingOrders,
-        'completed_orders' => $completedOrders,
-        'avg_rating' => round($stats['avg_rating'], 1),
-        'is_verified' => $stats['is_verified'],
-        'member_since' => date('F Y', strtotime($stats['member_since'])),
-        'has_verification_document' => $stats['has_verification_document']
+        'pending_orders' => $stats['pending_orders'],
+        'completed_orders' => $stats['completed_orders'],
+        'avg_rating' => $stats['avg_rating'],
+        'is_verified' => $targetUser->isVerified(),
+        'member_since' => date('F Y', strtotime($targetUser->getCreatedAt())),
+        'has_verification_document' => $targetUser->getVerification() !== null
     ];
     echo json_encode($response);
     exit;
@@ -119,21 +85,15 @@ if ($targetUser instanceof Buyer) {
         exit;
     }
 
-    $orderStats = $orderRepo->findBuyerStats($targetId);
-    $reviewsCount = $reviewRepo->countByBuyer($targetId);
-
-    $stats = $targetUser->getStats(
-        $orderStats['total_orders'] ?? 0,
-        $orderStats['total_spent'] ?? 0
-    );
+    $stats = $userService->getBuyerStats($targetId);
 
     $response = [
         'success' => true,
         'total_orders' => $stats['total_orders'],
         'total_spent' => $stats['total_spent'],
-        'member_since' => date('F Y', strtotime($stats['member_since'])),
-        'is_active' => $stats['is_active'],
-        'reviews_written' => $reviewsCount
+        'member_since' => date('F Y', strtotime($targetUser->getCreatedAt())),
+        'is_active' => $targetUser->getStatus() === 'active',
+        'reviews_written' => $stats['reviews_written']
     ];
     echo json_encode($response);
     exit;

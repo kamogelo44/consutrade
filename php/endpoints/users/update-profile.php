@@ -6,7 +6,7 @@
  * Handles profile updates and profile image uploads for all user types using OOP
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -29,7 +29,7 @@ if ($action === 'upload_image') {
         exit;
     }
 
-    $uploadDir = dirname(__DIR__, 2) . '/uploads/profiles/';
+    $uploadDir = dirname(__DIR__, 3) . '/uploads/profiles/';
 
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0777, true);
