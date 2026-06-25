@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
@@ -20,6 +20,7 @@ if (!$auth->isSeller()) {
 $seller_id = $currentUser->getUserId();
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
 
+// Use OrderService for seller recent orders
 $orders = $orderRepo->findRecentBySeller($seller_id, $limit);
 
 $response['success'] = true;

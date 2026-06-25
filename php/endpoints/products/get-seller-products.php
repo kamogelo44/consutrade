@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -21,7 +21,8 @@ if ($sellerId <= 0) {
 
 $isOwner = ($isLoggedIn && $currentUser instanceof Seller && $currentUser->getUserId() === $sellerId);
 
-$products = $productRepo->findBySellerForDisplay($sellerId, $isOwner, $limit);
+// Use ProductService for seller products
+$products = $productService->findBySellerForDisplay($sellerId, $isOwner, $limit);
 
 $response['success'] = true;
 $response['products'] = $products;

@@ -126,6 +126,25 @@ class UserRepository
     }
 
     /**
+     * Get user checkout info (name, email, phone).
+     * Used during checkout flow.
+     *
+     * @param int $userId User ID
+     * @return array|null
+     */
+    public function findCheckoutInfo(int $userId): ?array
+    {
+        $sql = "SELECT full_name, email, phone FROM users WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+        return $user;
+    }
+
+    /**
      * Find users by role.
      *
      * @param string $role User role (buyer, seller, admin)

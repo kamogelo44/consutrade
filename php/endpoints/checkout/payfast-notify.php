@@ -7,9 +7,9 @@
  * Updates the order status in our database.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
-// Force clean output - no HTML, no extra spaces
+// Force clean output 
 ob_clean();
 header('Content-Type: text/plain');
 

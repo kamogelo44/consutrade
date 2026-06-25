@@ -7,7 +7,7 @@
  * Supports: updating product info, adding new images, deleting images, setting primary image.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 if (!$isLoggedIn || !$currentUser instanceof Seller) {
     header('Location: ' . $baseUrl . 'admin/login.php');
@@ -23,7 +23,8 @@ if ($productId <= 0) {
     exit;
 }
 
-$product = $productRepo->findById($productId);
+// Use ProductService for product lookup
+$product = $productService->findById($productId);
 
 if (!$product || $product->getSellerId() !== $sellerId) {
     $_SESSION['error'] = 'Product not found.';
@@ -111,7 +112,7 @@ if (!empty($imageOrder)) {
 
     $galleryUrlToId = [];
     foreach ($currentGallery as $galleryImg) {
-        $fullUrl = $productRepo->getImageUrl($galleryImg['image_url']);
+        $fullUrl = $productService->getImageUrl($galleryImg['image_url']);
         $galleryUrlToId[$fullUrl] = $galleryImg['image_id'];
     }
 
@@ -132,7 +133,7 @@ if (!empty($imageOrder)) {
                 $fileIndex = $imgData['file_index'];
                 if (isset($newImagePaths[$fileIndex])) {
                     $primaryImageUrl = $newImagePaths[$fileIndex];
-                    $fullUrl = $productRepo->getImageUrl($primaryImageUrl);
+                    $fullUrl = $productService->getImageUrl($primaryImageUrl);
                     if (isset($galleryUrlToId[$fullUrl])) {
                         $primaryImageId = $galleryUrlToId[$fullUrl];
                     }
@@ -151,7 +152,8 @@ if (!empty($imageOrder)) {
     }
 }
 
-$result = $productRepo->update($product);
+// Use ProductService for update
+$result = $productService->update($product);
 
 if ($result) {
     $_SESSION['success'] = 'Product updated successfully.';

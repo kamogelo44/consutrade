@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 $baseUrl = getBaseUrl();
 
@@ -32,7 +32,8 @@ if (empty($cartItems)) {
     exit;
 }
 
-$stockErrors = $cartRepo->verifyStock($cartItems);
+// Use CartService for stock verification
+$stockErrors = $cartService->verifyStock($cartItems);
 
 if (!empty($stockErrors)) {
     $_SESSION['checkout_errors'] = $stockErrors;
@@ -44,7 +45,8 @@ if (!empty($stockErrors)) {
     exit;
 }
 
-$checkoutResult = $cartRepo->processCheckout($userId, $cartItems);
+// Use CartService for checkout processing
+$checkoutResult = $cartService->processCheckout($userId, $cartItems);
 
 if (!$checkoutResult['success']) {
     $_SESSION['checkout_errors'] = $checkoutResult['errors'];
@@ -56,8 +58,11 @@ if (!$checkoutResult['success']) {
     exit;
 }
 
-$userInfo = $cartRepo->findUserCheckoutInfo($userId);
-$totals = $cartRepo->calculateTotals($cartItems);
+// Use UserRepository for user data (CRUD - READ)
+$userInfo = $userRepo->findCheckoutInfo($userId);
+
+// Use CartService for totals calculation
+$totals = $cartService->calculateTotals($cartItems);
 
 $_SESSION['checkout_data'] = [
     'payment_id' => $checkoutResult['payment_id'],

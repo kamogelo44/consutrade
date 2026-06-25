@@ -12,7 +12,6 @@
 
 class CartService
 {
-    private CartRepository $cartRepo;
     private ProductRepository $productRepo;
     private OrderRepository $orderRepo;
     private TransactionRepository $transactionRepo;
@@ -20,13 +19,11 @@ class CartService
 
     public function __construct(
         mysqli $db,
-        CartRepository $cartRepo,
         ProductRepository $productRepo,
         OrderRepository $orderRepo,
         TransactionRepository $transactionRepo
     ) {
         $this->db = $db;
-        $this->cartRepo = $cartRepo;
         $this->productRepo = $productRepo;
         $this->orderRepo = $orderRepo;
         $this->transactionRepo = $transactionRepo;
@@ -134,7 +131,7 @@ class CartService
             'merchant_key' => PAYFAST_MERCHANT_KEY,
             'return_url' => rtrim($baseUrl, '/') . '/order-confirmation.php',
             'cancel_url' => rtrim($baseUrl, '/') . '/cart.php',
-            'notify_url' => rtrim($baseUrl, '/') . '/php/endpoints/payfast-notify.php',
+            'notify_url' => rtrim($baseUrl, '/') . '/php/endpoints/checkout/payfast-notify.php',
             'm_payment_id' => $orderInfo['payment_id'],
             'amount' => number_format($orderInfo['total'], 2, '.', ''),
             'item_name' => 'ConsuTrade Order #' . ($orderInfo['primary_order_id'] ?? ''),

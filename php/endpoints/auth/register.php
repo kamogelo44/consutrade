@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
@@ -73,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if (empty($errors)) {
-        // FIXED: Use findByEmail() not getByEmail()
         $existing_user = $userRepo->findByEmail($email);
         if ($existing_user) {
             $errors['email'] = 'Unable to register with this email. Please contact support if you believe this is an error.';
@@ -81,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if (empty($errors) && !empty($clean_phone)) {
-        // FIXED: Use findByPhone() not getByPhone()
         $existing_phone = $userRepo->findByPhone($clean_phone);
         if ($existing_phone) {
             $errors['phone'] = 'Unable to register with this phone number. Please contact support.';
@@ -99,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'role' => $role
         ];
 
-        $userId = $userRepo->createUser($userData);
+        $userId = $userRepo->create($userData);
 
         if ($userId) {
             $auth->login($email, $password, $role);

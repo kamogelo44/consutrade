@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -26,11 +26,12 @@ if ($productId <= 0) {
 }
 
 if ($currentUser instanceof Seller) {
-    $result = $productRepo->delete($productId, $currentUser->getUserId());
+    // Use ProductService for deletion
+    $result = $productService->delete($productId, $currentUser->getUserId());
     $response['success'] = $result['success'];
     $response['message'] = $result['message'];
 } elseif ($currentUser instanceof Admin) {
-    $product = $productRepo->findById($productId);
+    $product = $productService->findById($productId);
 
     if (!$product) {
         $response['message'] = 'Product not found.';
@@ -38,7 +39,8 @@ if ($currentUser instanceof Seller) {
         exit;
     }
 
-    $result = $productRepo->delete($productId, $product->getSellerId());
+    // Use ProductService for deletion
+    $result = $productService->delete($productId, $product->getSellerId());
     $response['success'] = $result['success'];
     $response['message'] = $result['message'];
 } else {

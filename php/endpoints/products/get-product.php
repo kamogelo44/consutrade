@@ -7,7 +7,7 @@
  * Products are shown even if out of stock - buyer just can't add to cart.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -21,7 +21,8 @@ if ($productId <= 0) {
     exit;
 }
 
-$product = $productRepo->findById($productId);
+// Use ProductService for product lookup
+$product = $productService->findById($productId);
 
 if (!$product || $product->getStatus() === 'deleted') {
     $response['error'] = 'Product not found';
@@ -32,7 +33,7 @@ if (!$product || $product->getStatus() === 'deleted') {
 $gallery = $productImageRepo->findByProductId($productId);
 $galleryUrls = [];
 foreach ($gallery as $img) {
-    $galleryUrls[] = $productRepo->getImageUrl($img['image_url']);
+    $galleryUrls[] = $productService->getImageUrl($img['image_url']);
 }
 
 $rating = $reviewRepo->getSellerRating($product->getSellerId());
@@ -51,7 +52,7 @@ $response['product'] = [
     'location' => $product->getLocation(),
     'category_id' => $product->getCategoryId(),
     'category_name' => $categoryName,
-    'image_url' => $productRepo->getImageUrl($product->getImageUrl()),
+    'image_url' => $productService->getImageUrl($product->getImageUrl()),
     'gallery_images' => $galleryUrls,
     'seller_id' => $product->getSellerId(),
     'seller_name' => $seller ? $seller->getFullName() : 'Unknown',

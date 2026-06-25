@@ -6,10 +6,10 @@
  * Allows:
  * - Sellers to update orders they received (pending → processing → shipped → completed)
  * - Admins to update any order
- * - Buyers to CANCEL their own pending orders (uses OrderRepository)
+ * - Buyers to CANCEL their own pending orders
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -42,7 +42,8 @@ if ($userRole === 'buyer') {
         exit;
     }
 
-    $result = $orderRepo->cancelByBuyer($orderId, $userId);
+    // Use OrderService for cancellation with stock restoration
+    $result = $orderService->cancelByBuyer($orderId, $userId);
 
     if ($result) {
         $response['success'] = true;
@@ -57,7 +58,8 @@ if ($userRole === 'buyer') {
 
 // ========== SELLER UPDATE ==========
 if ($userRole === 'seller') {
-    $orderData = $orderRepo->findById($orderId, $userId, 'seller');
+    // Use OrderService for order lookup
+    $orderData = $orderService->findById($orderId, $userId, 'seller');
 
     if (!$orderData) {
         $response['message'] = 'Order not found.';
@@ -79,7 +81,8 @@ if ($userRole === 'seller') {
     $conn->begin_transaction();
 
     try {
-        $result = $orderRepo->updateStatus($orderId, $userId, $newStatus);
+        // Use OrderService for status update with stock restoration
+        $result = $orderService->updateStatus($orderId, $userId, $newStatus);
 
         if (!$result['success']) {
             throw new Exception($result['message']);
@@ -114,10 +117,10 @@ if ($userRole === 'seller') {
 
 // ========== ADMIN UPDATE ==========
 if ($userRole === 'admin') {
-    $orderData = $orderRepo->findAll();
+    $allOrders = $orderService->findAll();
     $targetOrder = null;
 
-    foreach ($orderData as $ord) {
+    foreach ($allOrders as $ord) {
         if ($ord['order_id'] == $orderId) {
             $targetOrder = $ord;
             break;
@@ -142,7 +145,7 @@ if ($userRole === 'admin') {
     $conn->begin_transaction();
 
     try {
-        // Use repository method instead of raw SQL
+        // Admin uses direct status update (bypasses seller validation)
         $updated = $orderRepo->updateStatusDirect($orderId, $newStatus);
 
         if (!$updated) {
@@ -150,7 +153,7 @@ if ($userRole === 'admin') {
         }
 
         if ($newStatus === 'cancelled') {
-            $productRepo->restoreStockFromOrder($orderId);
+            $productService->restoreStockFromOrder($orderId);
         }
 
         $conn->commit();

@@ -7,7 +7,7 @@
  * First image becomes main product photo, rest become gallery images.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 if (!$isLoggedIn || !$currentUser instanceof Seller) {
     $_SESSION['error'] = 'Unauthorized. Please login as a seller.';
@@ -59,7 +59,8 @@ $firstFile = [
     'size' => $uploadedImages['size'][0]
 ];
 
-$mainImagePath = $productRepo->uploadImage($firstFile, $sellerId, $title, 'main');
+// Use ProductService for image upload
+$mainImagePath = $productService->uploadImage($firstFile, $sellerId, $title, 'main');
 
 if (!$mainImagePath) {
     $_SESSION['error'] = 'Failed to upload main image. Please try again.';
@@ -81,7 +82,9 @@ $productData = [
 ];
 
 $product = new Product($productData);
-$productId = $productRepo->create($product);
+
+// Use ProductService for creation
+$productId = $productService->create($product);
 
 if (!$productId) {
     $_SESSION['error'] = 'Failed to create product. Please try again.';
@@ -100,7 +103,8 @@ for ($i = 1; $i < $maxImages; $i++) {
             'size' => $uploadedImages['size'][$i]
         ];
 
-        $imagePath = $productRepo->uploadImage($file, $sellerId, $title, 'gallery_' . $i);
+        // Use ProductService for image upload
+        $imagePath = $productService->uploadImage($file, $sellerId, $title, 'gallery_' . $i);
         if ($imagePath) {
             $galleryUrls[] = $imagePath;
         }

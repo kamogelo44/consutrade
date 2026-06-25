@@ -5,12 +5,9 @@
  * 
  * Retrieves order status information for buyers, sellers, and admins.
  * Used for order tracking and real-time status updates.
- * 
- * This endpoint is shared across all user roles. Session detection is handled
- * by Auth.php which checks for existing session cookies.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
@@ -33,7 +30,9 @@ if ($orderId <= 0) {
 
 $role = $currentUser->getRole();
 $userId = $currentUser->getUserId();
-$order = $orderRepo->findById($orderId, $userId, $role);
+
+// Use OrderService for order lookup
+$order = $orderService->findById($orderId, $userId, $role);
 
 if (!$order) {
     $response['message'] = 'Order not found';

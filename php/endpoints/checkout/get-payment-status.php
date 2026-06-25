@@ -1,5 +1,13 @@
 <?php
-require_once dirname(__DIR__, 2) . '/init.php';
+/*
+ * ConsuTrade - Get Payment Status Endpoint
+ * Author: Kamogelo Phale
+ * 
+ * Processes payment redirect from PayFast and returns status data.
+ * Called by order-confirmation.php via include.
+ */
+
+require_once dirname(__DIR__, 3) . '/init.php';
 
 if (!$isLoggedIn) {
     header('Location: ' . $baseUrl . 'index.php');

@@ -6,7 +6,7 @@
  * Allows sellers to set a gallery image as the primary image for a product
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -29,7 +29,8 @@ if (!$image_id || !$product_id) {
     exit;
 }
 
-$product = $productRepo->findById($product_id);
+// Use ProductService for product lookup
+$product = $productService->findById($product_id);
 
 if (!$product || $product->getSellerId() !== $seller_id) {
     $response['message'] = 'Product not found';

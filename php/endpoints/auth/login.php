@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 // Detect AJAX request
 $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&

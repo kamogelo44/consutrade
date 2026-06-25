@@ -146,3 +146,21 @@ build/
 dist/
 *.pf
 *.payfast
+
+# ============================================================
+# KEEP DIRECTORY STRUCTURE
+# ============================================================
+# Preserve empty directories with .gitkeep files
+!php/classes/core/.gitkeep
+!php/classes/repositories/.gitkeep
+!php/classes/services/.gitkeep
+!php/classes/domain/.gitkeep
+!php/endpoints/auth/.gitkeep
+!php/endpoints/cart/.gitkeep
+!php/endpoints/checkout/.gitkeep
+!php/endpoints/orders/.gitkeep
+!php/endpoints/products/.gitkeep
+!php/endpoints/users/.gitkeep
+!php/endpoints/reviews/.gitkeep
+!php/endpoints/reports/.gitkeep
+!tests/.gitkeep

@@ -3,10 +3,10 @@
  * ConsuTrade - Get All Orders (Admin AJAX)
  * Author: Kamogelo Phale
  * 
- * Returns paginated list of all orders for admin management using OrderRepository
+ * Returns paginated list of all orders for admin management
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -23,7 +23,8 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $limit  = 10;
 $offset = ($page - 1) * $limit;
 
-$allOrders = $orderRepo->findAll();
+// Use OrderService for data retrieval
+$allOrders = $orderService->findAll();
 
 $filtered = array_filter($allOrders, function ($order) use ($status, $search) {
     if ($status !== 'all' && $order['status'] !== $status) return false;

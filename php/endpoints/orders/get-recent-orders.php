@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -17,7 +17,9 @@ if (!$auth->isAdmin()) {
 }
 
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
-$orders = $orderRepo->findRecent($limit);
+
+// Use OrderService for recent orders
+$orders = $orderService->findRecent($limit);
 
 $response['success'] = true;
 $response['orders'] = $orders;

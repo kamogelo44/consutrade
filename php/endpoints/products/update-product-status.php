@@ -7,7 +7,7 @@
  * If admin suspends a product, only admin can reactivate it.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -36,7 +36,8 @@ if (!in_array($newStatus, ['active', 'suspended'])) {
     exit;
 }
 
-$product = $productRepo->findById($productId);
+// Use ProductService for product lookup
+$product = $productService->findById($productId);
 
 if (!$product) {
     $response['message'] = 'Product not found.';
@@ -69,7 +70,8 @@ if (!$hasPermission) {
     exit;
 }
 
-$result = $productRepo->updateStatus($productId, $product->getSellerId(), $action, $suspendedBy, $suspendedReason);
+// Use ProductService for status update
+$result = $productService->updateStatus($productId, $product->getSellerId(), $action, $suspendedBy, $suspendedReason);
 $response['success'] = $result['success'];
 $response['message'] = $result['message'];
 

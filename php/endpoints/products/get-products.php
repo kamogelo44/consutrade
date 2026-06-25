@@ -6,7 +6,7 @@
  * Returns paginated, filtered, and sorted products for listings page.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -26,8 +26,8 @@ $categories = array_filter($categories, function ($cat) {
     return !empty($cat);
 });
 
-// Get products from repository
-$result = $productRepo->findPublic([
+// Use ProductService for product lookup
+$result = $productService->findPublic([
     'categories'  => $categories,
     'price_range' => $price_range,
     'location'    => $location,
@@ -39,7 +39,7 @@ $result = $productRepo->findPublic([
 
 // Convert image URLs to full paths
 foreach ($result['products'] as &$product) {
-    $product['image'] = $productRepo->getImageUrl($product['image']);
+    $product['image'] = $productService->getImageUrl($product['image']);
 }
 
 $response['success'] = true;

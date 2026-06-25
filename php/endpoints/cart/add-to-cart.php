@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -27,7 +27,8 @@ if ($productId <= 0) {
     exit;
 }
 
-$product = $productRepo->findById($productId);
+// Use ProductService for product lookup
+$product = $productService->findById($productId);
 
 if (!$product || $product->getStatus() !== 'active') {
     $response['message'] = 'Product not available';
@@ -35,12 +36,14 @@ if (!$product || $product->getStatus() !== 'active') {
     exit;
 }
 
+// Use domain model for stock validation
 if (!$product->canDecreaseStock($quantity)) {
     $response['message'] = 'Only ' . $product->getStockQuantity() . ' available in stock.';
     echo json_encode($response);
     exit;
 }
 
+// CartRepository for data operations
 $existingItem = $cartRepo->findItemByProduct($userId, $productId);
 
 if ($existingItem) {

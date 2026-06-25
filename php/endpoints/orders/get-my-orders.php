@@ -4,7 +4,7 @@
  * Works for both buyers and sellers
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -25,11 +25,13 @@ $offset = ($page - 1) * $limit;
 $userId = $currentUser->getUserId();
 
 if ($currentUserRole === 'seller') {
-    $orders = $orderRepo->findBySeller($userId, $status, $search, $limit, $offset);
-    $totalOrders = $orderRepo->countBySeller($userId, $status, $search);
+    // Use OrderService for seller orders
+    $orders = $orderService->findBySeller($userId, $status, $search, $limit, $offset);
+    $totalOrders = $orderService->countBySeller($userId, $status, $search);
 } else {
-    $orders = $orderRepo->findByBuyer($userId, $status, $search, $limit, $offset);
-    $totalOrders = $orderRepo->countByBuyer($userId, $status, $search);
+    // Use OrderService for buyer orders
+    $orders = $orderService->findByBuyer($userId, $status, $search, $limit, $offset);
+    $totalOrders = $orderService->countByBuyer($userId, $status, $search);
 
     foreach ($orders as &$order) {
         $review = $reviewRepo->findByOrderAndBuyer($order['order_id'], $userId);

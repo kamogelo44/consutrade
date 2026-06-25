@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
@@ -25,8 +25,11 @@ if (!$isLoggedIn || !$currentUser instanceof Buyer) {
 
 $userId = $currentUser->getUserId();
 
+// CartRepository for data retrieval
 $cartItems = $cartRepo->findByUser($userId);
-$totals = $cartRepo->calculateTotals($cartItems);
+
+// Use CartService for totals calculation
+$totals = $cartService->calculateTotals($cartItems);
 
 $items = [];
 $itemCount = 0;
@@ -34,7 +37,8 @@ $itemCount = 0;
 foreach ($cartItems as $item) {
     $itemCount += $item['quantity'];
 
-    $imageUrl = $productRepo->getImageUrl($item['image_url']);
+    // Use ProductService for image URL
+    $imageUrl = $productService->getImageUrl($item['image_url']);
 
     $items[] = [
         'cart_id' => (int) $item['cart_id'],

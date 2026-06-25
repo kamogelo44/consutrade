@@ -5,12 +5,9 @@
  * 
  * Retrieves detailed order information for buyers, sellers, and admins.
  * Used by order details modal across the platform.
- * 
- * This endpoint is shared across all user roles. Session detection is handled
- * by Auth.php which checks for existing session cookies.
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
@@ -34,32 +31,16 @@ if ($order_id <= 0) {
 $user_id = $currentUser->getUserId();
 $role = $currentUser->getRole();
 
-// Use repository to check if order exists
-$orderExists = $orderRepo->existsById($order_id);
+// Use OrderService for order lookup
+$orderExists = $orderService->findById($order_id, $user_id, $role);
 
 if (!$orderExists) {
-    $response['error'] = 'Order does not exist';
+    $response['error'] = 'Order not found';
     echo json_encode($response);
     exit;
 }
 
-// Check permission using repository data
-$hasPermission = false;
-if ($role === 'admin') {
-    $hasPermission = true;
-} elseif ($role === 'buyer' && $orderExists['buyer_id'] == $user_id) {
-    $hasPermission = true;
-} elseif ($role === 'seller' && $orderExists['seller_id'] == $user_id) {
-    $hasPermission = true;
-}
-
-if (!$hasPermission) {
-    $response['error'] = 'You do not have permission to view this order';
-    echo json_encode($response);
-    exit;
-}
-
-$order = $orderRepo->findById($order_id, $user_id, $role);
+$order = $orderService->findById($order_id, $user_id, $role);
 
 if (!$order) {
     $response['error'] = 'Order details not found';
@@ -67,12 +48,12 @@ if (!$order) {
     exit;
 }
 
-// Get transaction for this order using repository
+// Get transaction for this order
 $transaction = $transactionRepo->findByOrderId($order_id);
 
 $subtotal = 0;
 foreach ($order['items'] as &$item) {
-    $item['image_url'] = $productRepo->getImageUrl($item['image_url'] ?? '');
+    $item['image_url'] = $productService->getImageUrl($item['image_url'] ?? '');
     $item['total'] = $item['price'] * $item['quantity'];
     $subtotal += $item['total'];
 }

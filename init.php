@@ -10,7 +10,7 @@
  * @version 2.1.0
  */
 
-// Session settings - use single session
+// Session settings
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
@@ -19,22 +19,23 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/php/config.php';
-require_once __DIR__ . '/php/classes/Database.php';
+require_once __DIR__ . '/php/classes/core/Database.php';
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
-// Load repositories
-require_once __DIR__ . '/php/classes/UserRepository.php';
-require_once __DIR__ . '/php/classes/CategoryRepository.php';
-require_once __DIR__ . '/php/classes/ProductRepository.php';
-require_once __DIR__ . '/php/classes/ProductImageRepository.php';
-require_once __DIR__ . '/php/classes/ProductImageService.php';
-require_once __DIR__ . '/php/classes/OrderRepository.php';
-require_once __DIR__ . '/php/classes/CartRepository.php';
-require_once __DIR__ . '/php/classes/ReviewRepository.php';
-require_once __DIR__ . '/php/classes/TransactionRepository.php';
-require_once __DIR__ . '/php/classes/ReportRepository.php';
+// ============================================================
+// LOAD REPOSITORIES
+// ============================================================
+require_once __DIR__ . '/php/classes/repositories/UserRepository.php';
+require_once __DIR__ . '/php/classes/repositories/CategoryRepository.php';
+require_once __DIR__ . '/php/classes/repositories/ProductRepository.php';
+require_once __DIR__ . '/php/classes/repositories/ProductImageRepository.php';
+require_once __DIR__ . '/php/classes/repositories/OrderRepository.php';
+require_once __DIR__ . '/php/classes/repositories/CartRepository.php';
+require_once __DIR__ . '/php/classes/repositories/ReviewRepository.php';
+require_once __DIR__ . '/php/classes/repositories/TransactionRepository.php';
+require_once __DIR__ . '/php/classes/repositories/ReportRepository.php';
 
 // Create repository instances
 $userRepo = new UserRepository($conn);
@@ -48,34 +49,42 @@ $reviewRepo = new ReviewRepository($conn);
 $transactionRepo = new TransactionRepository($conn);
 $reportRepo = new ReportRepository($conn, $productRepo);
 
-// Load domain models
-require_once __DIR__ . '/php/classes/Product.php';
-require_once __DIR__ . '/php/classes/OrderItem.php';
-require_once __DIR__ . '/php/classes/Order.php';
-require_once __DIR__ . '/php/classes/Cart.php';
-require_once __DIR__ . '/php/classes/Transaction.php';
-require_once __DIR__ . '/php/classes/Review.php';
-require_once __DIR__ . '/php/classes/SellerVerification.php';
-require_once __DIR__ . '/php/classes/ProductImage.php';
-require_once __DIR__ . '/php/classes/Category.php';
-require_once __DIR__ . '/php/classes/User.php';
-require_once __DIR__ . '/php/classes/Buyer.php';
-require_once __DIR__ . '/php/classes/Seller.php';
-require_once __DIR__ . '/php/classes/Admin.php';
-require_once __DIR__ . '/php/classes/Report.php';
-require_once __DIR__ . '/php/classes/PayFastService.php';
-require_once __DIR__ . '/php/classes/PaymentStatusService.php';
-require_once __DIR__ . '/php/classes/Auth.php';
+// ============================================================
+// LOAD DOMAIN MODELS
+// ============================================================
+require_once __DIR__ . '/php/classes/domain/Product.php';
+require_once __DIR__ . '/php/classes/domain/OrderItem.php';
+require_once __DIR__ . '/php/classes/domain/Order.php';
+require_once __DIR__ . '/php/classes/domain/Cart.php';
+require_once __DIR__ . '/php/classes/domain/Transaction.php';
+require_once __DIR__ . '/php/classes/domain/Review.php';
+require_once __DIR__ . '/php/classes/domain/SellerVerification.php';
+require_once __DIR__ . '/php/classes/domain/ProductImage.php';
+require_once __DIR__ . '/php/classes/domain/Category.php';
+require_once __DIR__ . '/php/classes/domain/User.php';
+require_once __DIR__ . '/php/classes/domain/Buyer.php';
+require_once __DIR__ . '/php/classes/domain/Seller.php';
+require_once __DIR__ . '/php/classes/domain/Admin.php';
+require_once __DIR__ . '/php/classes/domain/Report.php';
 
-// Load services
-require_once __DIR__ . '/php/classes/CartService.php';
-require_once __DIR__ . '/php/classes/OrderService.php';
-require_once __DIR__ . '/php/classes/ProductService.php';
+// ============================================================
+// LOAD SERVICES
+// ============================================================
+require_once __DIR__ . '/php/classes/services/ProductImageService.php';
+require_once __DIR__ . '/php/classes/services/PayFastService.php';
+require_once __DIR__ . '/php/classes/services/PaymentStatusService.php';
+require_once __DIR__ . '/php/classes/services/CartService.php';
+require_once __DIR__ . '/php/classes/services/OrderService.php';
+require_once __DIR__ . '/php/classes/services/ProductService.php';
 
-// Create Auth instance (with UserRepository injected)
+// ============================================================
+// LOAD CORE
+// ============================================================
+require_once __DIR__ . '/php/classes/core/Auth.php';
+
+// Create service instances
 $auth = new Auth($conn, $userRepo);
 
-// Create PayFastService instance (needed for checkout)
 $payfastService = new PayFastService(
     $conn,
     $orderRepo,
@@ -84,16 +93,13 @@ $payfastService = new PayFastService(
     $transactionRepo
 );
 
-// Create PaymentStatusService instance (for order confirmation)
 $paymentStatusService = new PaymentStatusService(
     $orderRepo,
     $transactionRepo
 );
 
-// Create service instances
 $cartService = new CartService(
     $conn,
-    $cartRepo,
     $productRepo,
     $orderRepo,
     $transactionRepo
@@ -108,14 +114,17 @@ $orderService = new OrderService(
 
 $productService = new ProductService($productRepo);
 
-// Start session and get user
+// ============================================================
+// SESSION & USER
+// ============================================================
 $currentUser = $auth->getCurrentUser();
 $isLoggedIn = $auth->isLoggedIn();
 $currentUserRole = $auth->getCurrentUserRole();
-
 $baseUrl = getBaseUrl();
 
-// Set global variables for easy access in templates
+// ============================================================
+// GLOBAL VARIABLES
+// ============================================================
 $GLOBALS['conn'] = $conn;
 $GLOBALS['db'] = $db;
 $GLOBALS['auth'] = $auth;
@@ -138,7 +147,7 @@ $GLOBALS['currentUserRole'] = $currentUserRole;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;
 $GLOBALS['baseUrl'] = $baseUrl;
 
-// Set cache control headers for logged-in users to prevent back-button issues
+// Cache control headers for logged-in users
 if ($isLoggedIn) {
     header('Cache-Control: no-cache, no-store, must-revalidate');
     header('Pragma: no-cache');

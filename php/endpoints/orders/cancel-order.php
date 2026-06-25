@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
@@ -26,7 +26,8 @@ if ($orderId <= 0) {
     exit;
 }
 
-$orderData = $orderRepo->findById($orderId, $currentUser->getUserId(), 'buyer');
+// Use OrderService for order lookup
+$orderData = $orderService->findById($orderId, $currentUser->getUserId(), 'buyer');
 
 if (!$orderData) {
     $response['message'] = 'Order not found';
@@ -45,7 +46,8 @@ if (!$order->canBeCancelledByBuyer()) {
 $conn->begin_transaction();
 
 try {
-    $result = $orderRepo->cancelByBuyer($orderId, $currentUser->getUserId());
+    // Use OrderService for cancellation with stock restoration
+    $result = $orderService->cancelByBuyer($orderId, $currentUser->getUserId());
 
     if (!$result) {
         throw new Exception('Failed to cancel order');

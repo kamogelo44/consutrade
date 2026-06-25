@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  */
 
-require_once dirname(__DIR__, 2) . '/init.php';
+require_once dirname(__DIR__, 3) . '/init.php';
 
 header('Content-Type: application/json');
 
@@ -29,6 +29,7 @@ if ($cartId <= 0) {
 
 $quantity = max(1, min(99, $quantity));
 
+// Get product ID from cart
 $productStmt = $conn->prepare("SELECT product_id FROM cart WHERE cart_id = ? AND user_id = ?");
 $productStmt->bind_param('ii', $cartId, $userId);
 $productStmt->execute();
@@ -42,7 +43,8 @@ if (!$productRow) {
     exit;
 }
 
-$product = $productRepo->findById($productRow['product_id']);
+// Use ProductService for product lookup
+$product = $productService->findById($productRow['product_id']);
 
 if (!$product) {
     $response['message'] = 'Product not found';
@@ -50,23 +52,31 @@ if (!$product) {
     exit;
 }
 
+// Use domain model for stock validation
 if (!$product->canDecreaseStock($quantity)) {
     $response['message'] = 'Only ' . $product->getStockQuantity() . ' available in stock.';
     echo json_encode($response);
     exit;
 }
 
+// CartRepository for data operations
 $result = $cartRepo->updateQuantity($cartId, $userId, $quantity);
 
 if ($result) {
+    // Fetch fresh cart data
     $freshCartItems = $cartRepo->findByUser($userId);
-    $freshTotals = $cartRepo->calculateTotals($freshCartItems);
+
+    // Use CartService for totals calculation
+    $freshTotals = $cartService->calculateTotals($freshCartItems);
+
     $items = [];
     $itemCount = 0;
 
     foreach ($freshCartItems as $item) {
         $itemCount += $item['quantity'];
-        $imageUrl = $productRepo->getImageUrl($item['image_url']);
+
+        // Use ProductService for image URL
+        $imageUrl = $productService->getImageUrl($item['image_url']);
 
         $items[] = [
             'cart_id' => (int) $item['cart_id'],
