@@ -483,7 +483,7 @@ if ($from_product_id > 0 && $from_product_name) {
                 var $grid = $('#seller-products-grid');
 
                 $.ajax({
-                    url: baseUrl + 'php/endpoints/get-products.php?limit=12&seller_id=' + sellerId,
+                    url: baseUrl + 'php/endpoints/products/get-products.php?limit=12&seller_id=' + sellerId,
                     type: 'GET',
                     dataType: 'json',
                     success: function(data) {

@@ -230,7 +230,7 @@ if (!$auth->isAdmin()) {
             $ordersTable.html('<tr><td colspan="8"><div class="loading-spinner">Loading orders...</div></td></tr>');
 
             $.ajax({
-                url: baseUrl + 'php/endpoints/get-all-orders.php',
+                url: baseUrl + 'php/endpoints/orders/get-all-orders.php',
                 type: 'GET',
                 dataType: 'json',
                 data: {

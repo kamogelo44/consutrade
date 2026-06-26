@@ -38,7 +38,7 @@ window.toggleProductStatus = function(productId, currentStatus, callback) {
     }
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/update-product-status.php',
+        url: baseUrl + 'php/endpoints/products/update-product-status.php',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(requestData),
@@ -69,7 +69,7 @@ window.deleteProduct = function(productId, productName, callback) {
     
     if (confirm(confirmMsg)) {
         $.ajax({
-            url: baseUrl + 'php/endpoints/delete-product.php',
+            url: baseUrl + 'php/endpoints/products/delete-product.php',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ product_id: productId }),
@@ -135,7 +135,7 @@ window.loadSellerProducts = function(limit) {
     if (!$grid.length) return;
     
     $grid.html('<div class="loading-spinner">Loading your products...</div>');
-    var url = baseUrl + 'php/endpoints/get-seller-products.php?seller_id=' + currentUserId;
+    var url = baseUrl + 'php/endpoints/products/get-seller-products.php?seller_id=' + currentUserId;
     if (limit) url += '&limit=' + limit;
     
     $.ajax({
@@ -188,7 +188,7 @@ function loadAdminDashboard() {
         .text('Loading...');
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-user-stats.php',
+        url: baseUrl + 'php/endpoints/users/get-user-stats.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -248,7 +248,7 @@ function loadRecentUsers() {
     $table.html('<tr><td colspan="4" class="loading-cell">Loading...</td></tr>');
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-users.php?recent=true&limit=5',
+        url: baseUrl + 'php/endpoints/users/get-users.php?recent=true&limit=5',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -286,7 +286,7 @@ function loadRecentOrders(limit) {
     $table.html('<tr><td colspan="5" class="loading-cell">Loading...</td></tr>');
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-recent-orders.php?limit=' + limit,
+        url: baseUrl + 'php/endpoints/orders/get-recent-orders.php?limit=' + limit,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -321,7 +321,7 @@ function loadRecentOrders(limit) {
 
 function loadSellerStats() {
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + currentUserId,
+        url: baseUrl + 'php/endpoints/users/get-user-stats.php?seller_id=' + currentUserId,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -347,7 +347,7 @@ function loadSellerRecentOrders(limit) {
     $list.html('<div class="loading-spinner">Loading recent orders...</div>');
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-seller-recent-orders.php?limit=' + limit,
+        url: baseUrl + 'php/endpoints/orders/get-seller-recent-orders.php?limit=' + limit,
         type: 'GET',
         dataType: 'json',
         success: function(data) {

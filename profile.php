@@ -34,15 +34,7 @@ $email = $currentUser->getEmail();
 $phone = $currentUser->getPhone();
 $location = $currentUser->getLocation();
 $created_at = $currentUser->getCreatedAt();
-$profile_image_path = $currentUser->getProfileImage();
-
-// Set profile image URL
-if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www/consutrade/' . $profile_image_path)) {
-    $profile_image = $baseUrl . $profile_image_path;
-} else {
-    // Set profile image URL - use the object method
-    $profile_image = $currentUser->getProfileImageUrl();
-}
+$profile_image = $currentUser->getProfileImageUrl();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -681,7 +673,6 @@ if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www
                         </div>
                     </div>
                     <div class="form-actions" style="margin-top: var(--spacing-lg);">
-                        <button type="button" class="delete-cancel-btn" onclick="closeDeleteModal()">Cancel</button>
                         <button type="submit" class="delete-confirm-btn">Confirm Delete</button>
                     </div>
                 </form>
@@ -742,70 +733,77 @@ if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www
     <script>
         /*
          * ConsuTrade - Profile Page Functionality
-         * Author: Kamogelo Phale
          */
         var baseUrl = '<?php echo $baseUrl; ?>';
         var currentUserId = <?php echo $user_id; ?>;
 
-        function showDeleteModal() {
-            $('#delete-modal').addClass('active');
+        // ============================================================
+        // DOM CACHE
+        // ============================================================
+        var $deleteModal = $('#delete-modal');
+        var $changePasswordModal = $('#change-password-modal');
+        var $deletePassword = $('#delete-password');
+        var $currentPassword = $('#current_password');
+        var $newPassword = $('#new_password');
+        var $confirmPassword = $('#confirm_password');
+        var $profileAvatar = $('#profile-avatar');
+        var $profileImageUpload = $('#profile-image-upload');
+        var $avatarUploadBtn = $('.avatar-upload-btn');
+        var $fullName = $('#full_name');
+        var $phone = $('#phone');
+        var $location = $('#location');
+        var $statOrders = $('#stat-orders');
+        var $statSpent = $('#stat-spent');
+        var $statPending = $('#stat-pending');
+        var $statReviews = $('#stat-reviews');
+        var $pendingRow = $('#pending-row');
+        var $reviewsRow = $('#reviews-row');
+        var $flashMessage = $('#flash-message');
+        var $errorMessage = $('#error-message');
+
+        // ============================================================
+        // MODAL CONTROLS 
+        // ============================================================
+
+        window.showDeleteModal = function() {
+            $deleteModal.addClass('active');
+        };
+
+        window.closeDeleteModal = function() {
+            $deleteModal.removeClass('active');
+            $deletePassword.val('');
+        };
+
+        window.openChangePasswordModal = function() {
+            $changePasswordModal.addClass('active');
+            $currentPassword.val('');
+            $newPassword.val('');
+            $confirmPassword.val('');
+        };
+
+        window.closeChangePasswordModal = function() {
+            $changePasswordModal.removeClass('active');
+        };
+
+        // ============================================================
+        // TOAST / MESSAGE HELPER
+        // ============================================================
+
+        function showMessage(message, isError) {
+            var $msg = isError ? $errorMessage : $flashMessage;
+            $msg.text(message).show();
+            setTimeout(function() {
+                $msg.fadeOut(500, function() {
+                    $msg.hide().text('');
+                });
+            }, 5000);
         }
 
-        function closeDeleteModal() {
-            $('#delete-modal').removeClass('active');
-            $('#delete-password').val('');
-        }
+        // ============================================================
+        // PASSWORD TOGGLE (MUST BE GLOBAL FOR ONCLICK)
+        // ============================================================
 
-        function openChangePasswordModal() {
-            $('#change-password-modal').addClass('active');
-            $('#current_password, #new_password, #confirm_password').val('');
-        }
-
-        function closeChangePasswordModal() {
-            $('#change-password-modal').removeClass('active');
-        }
-
-        $('#change-password-form').on('submit', function(e) {
-            e.preventDefault();
-
-            var currentPassword = $('#current_password').val();
-            var newPassword = $('#new_password').val();
-            var confirmPassword = $('#confirm_password').val();
-
-            if (newPassword.length < 6) {
-                alert('New password must be at least 6 characters');
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                alert('New passwords do not match');
-                return;
-            }
-
-            $.ajax({
-                url: baseUrl + 'php/endpoints/change-password.php',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    current_password: currentPassword,
-                    new_password: newPassword
-                }),
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success) {
-                        alert('Password changed successfully!');
-                        closeChangePasswordModal();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                },
-                error: function() {
-                    alert('Something went wrong. Please try again.');
-                }
-            });
-        });
-
-        function togglePassword(fieldId, button) {
+        window.togglePassword = function(fieldId, button) {
             var $input = $('#' + fieldId);
             var $img = $(button).find('img');
 
@@ -818,140 +816,286 @@ if (!empty($profile_image_path) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/www
                 $img.attr('src', baseUrl + 'images/icons/eye-open-svgrepo-com.svg');
                 $img.attr('alt', 'Show password');
             }
+        };
+
+        // ============================================================
+        // LOAD USER STATS
+        // ============================================================
+
+        function loadUserStats() {
+            $statOrders.text('Loading...');
+            $statSpent.text('Loading...');
+
+            $.ajax({
+                url: baseUrl + 'php/endpoints/users/get-user-stats.php?user_id=' + currentUserId,
+                type: 'GET',
+                dataType: 'json',
+                timeout: 10000,
+                success: function(data) {
+                    if (data.success) {
+                        $statOrders.text(data.total_orders || 0);
+                        $statSpent.text('R ' + (data.total_spent || 0).toFixed(2));
+
+                        if (data.pending_orders && data.pending_orders > 0) {
+                            $statPending.text(data.pending_orders);
+                            $pendingRow.show();
+                        } else {
+                            $pendingRow.hide();
+                        }
+
+                        if (data.reviews_written && data.reviews_written > 0) {
+                            $statReviews.text(data.reviews_written);
+                            $reviewsRow.show();
+                        } else {
+                            $reviewsRow.hide();
+                        }
+                    } else {
+                        showMessage('Could not load your statistics. Please refresh the page.', true);
+                        $statOrders.text('-');
+                        $statSpent.text('-');
+                    }
+                },
+                error: function(xhr, status) {
+                    console.warn('Failed to load user stats:', status);
+                    if (status === 'timeout') {
+                        showMessage('Request timed out. Please refresh the page.', true);
+                    } else {
+                        showMessage('Could not load your statistics. Please refresh the page.', true);
+                    }
+                    $statOrders.text('Error');
+                    $statSpent.text('Error');
+                }
+            });
         }
 
-        $(function() {
-            function showMessage(message, isError) {
-                var $msg = isError ? $('#error-message') : $('#flash-message');
-                $msg.text(message).show();
-                setTimeout(function() {
-                    $msg.fadeOut(500, function() {
-                        $msg.hide().text('');
-                    });
-                }, 5000);
+        // ============================================================
+        // PROFILE IMAGE UPLOAD
+        // ============================================================
+
+        $profileImageUpload.on('change', function() {
+            var file = this.files[0];
+            if (!file) return;
+
+            var validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showMessage('Invalid file type. Please upload a JPG, PNG, GIF, or WebP image.', true);
+                this.value = '';
+                return;
             }
 
-            function loadUserStats() {
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/get-user-stats.php?user_id=' + currentUserId,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success) {
-                            $('#stat-orders').text(data.total_orders || 0);
-                            $('#stat-spent').text('R ' + (data.total_spent || 0).toFixed(2));
-                            if (data.pending_orders > 0) {
-                                $('#stat-pending').text(data.pending_orders);
-                                $('#pending-row').show();
-                            }
-                            if (data.reviews_written > 0) {
-                                $('#stat-reviews').text(data.reviews_written);
-                                $('#reviews-row').show();
-                            }
-                        }
+            if (file.size > 2 * 1024 * 1024) {
+                showMessage('File is too large. Maximum size is 2MB.', true);
+                this.value = '';
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $profileAvatar.attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+
+            var formData = new FormData();
+            formData.append('action', 'upload_image');
+            formData.append('profile_image', file);
+
+            $avatarUploadBtn.html('<span style="font-size:14px; color: white;">...</span>');
+
+            $.ajax({
+                url: baseUrl + 'php/endpoints/users/update-profile.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                timeout: 30000,
+                success: function(data) {
+                    $avatarUploadBtn.html('<img src="' + baseUrl + 'images/icons/camera-svgrepo-com.svg" alt="Upload">');
+                    if (data.success) {
+                        showMessage(data.message, false);
+                    } else {
+                        showMessage(data.message || 'Failed to upload image.', true);
                     }
-                });
-            }
-
-            $('#profile-image-upload').on('change', function() {
-                var file = this.files[0];
-                if (file) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        $('#profile-avatar').attr('src', e.target.result);
-                    };
-                    reader.readAsDataURL(file);
-
-                    var formData = new FormData();
-                    formData.append('action', 'upload_image');
-                    formData.append('profile_image', file);
-
-                    $.ajax({
-                        url: baseUrl + 'php/endpoints/update-profile.php',
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        dataType: 'json',
-                        success: function(data) {
-                            if (data.success) {
-                                showMessage(data.message, false);
-                            } else {
-                                showMessage(data.message, true);
-                                setTimeout(function() {
-                                    location.reload();
-                                }, 2000);
-                            }
-                        },
-                        error: function() {
-                            showMessage('Error uploading image. Please try again.', true);
-                        }
-                    });
+                },
+                error: function(xhr, status) {
+                    $avatarUploadBtn.html('<img src="' + baseUrl + 'images/icons/camera-svgrepo-com.svg" alt="Upload">');
+                    if (status === 'timeout') {
+                        showMessage('Upload timed out. Please try again.', true);
+                    } else {
+                        showMessage('Error uploading image. Please try again.', true);
+                    }
                 }
             });
+        });
 
-            $('.avatar-upload-btn').on('click', function(e) {
-                e.preventDefault();
-                $('#profile-image-upload').click();
-            });
+        // ============================================================
+        // AVATAR UPLOAD BUTTON
+        // ============================================================
 
-            $('#profile-edit-form').on('submit', function(e) {
-                e.preventDefault();
-                var formData = new FormData(this);
-                formData.append('action', 'update_profile');
+        $avatarUploadBtn.on('click', function(e) {
+            e.preventDefault();
+            $profileImageUpload.click();
+        });
 
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/update-profile.php',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success) {
-                            showMessage(data.message, false);
-                            $('.profile-user-info h1').text($('#full_name').val());
-                        } else {
-                            showMessage(data.message, true);
-                        }
-                    },
-                    error: function() {
+        // ============================================================
+        // PROFILE UPDATE
+        // ============================================================
+
+        $('#profile-edit-form').on('submit', function(e) {
+            e.preventDefault();
+
+            var formData = new FormData(this);
+            formData.append('action', 'update_profile');
+
+            var $submitBtn = $(this).find('.save-btn');
+            var originalText = $submitBtn.text();
+            $submitBtn.prop('disabled', true).text('Saving...');
+
+            $.ajax({
+                url: baseUrl + 'php/endpoints/users/update-profile.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                timeout: 15000,
+                success: function(data) {
+                    $submitBtn.prop('disabled', false).text(originalText);
+                    if (data.success) {
+                        showMessage(data.message, false);
+                        $('.profile-user-info h1').text($fullName.val());
+                    } else {
+                        showMessage(data.message || 'Failed to update profile.', true);
+                    }
+                },
+                error: function(xhr, status) {
+                    $submitBtn.prop('disabled', false).text(originalText);
+                    if (status === 'timeout') {
+                        showMessage('Request timed out. Please try again.', true);
+                    } else {
                         showMessage('Error updating profile. Please try again.', true);
                     }
-                });
-            });
-
-            $('#delete-account-form').on('submit', function(e) {
-                e.preventDefault();
-                var password = $('#delete-password').val();
-                if (!password) {
-                    alert('Please enter your password');
-                    return;
-                }
-                if (confirm('WARNING: This will permanently delete your account and all your data. Are you absolutely sure?')) {
-                    $.ajax({
-                        url: baseUrl + 'php/endpoints/delete-account.php',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({
-                            password: password
-                        }),
-                        dataType: 'json',
-                        success: function(data) {
-                            if (data.success) {
-                                alert('Your account has been deleted. You will be redirected to the homepage.');
-                                window.location.href = baseUrl;
-                            } else {
-                                alert('Error: ' + data.message);
-                            }
-                        },
-                        error: function() {
-                            alert('Something went wrong. Please try again.');
-                        }
-                    });
                 }
             });
+        });
 
+        // ============================================================
+        // CHANGE PASSWORD
+        // ============================================================
+
+        $('#change-password-form').on('submit', function(e) {
+            e.preventDefault();
+
+            var currentPassword = $currentPassword.val();
+            var newPassword = $newPassword.val();
+            var confirmPassword = $confirmPassword.val();
+
+            $('.form-group').removeClass('error');
+
+            if (newPassword.length < 6) {
+                showMessage('New password must be at least 6 characters.', true);
+                $newPassword.closest('.form-group').addClass('error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessage('New passwords do not match.', true);
+                $confirmPassword.closest('.form-group').addClass('error');
+                return;
+            }
+
+            var $submitBtn = $(this).find('.save-btn');
+            var originalText = $submitBtn.text();
+            $submitBtn.prop('disabled', true).text('Updating...');
+
+            $.ajax({
+                url: baseUrl + 'php/endpoints/users/change-password.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                }),
+                dataType: 'json',
+                timeout: 15000,
+                success: function(data) {
+                    $submitBtn.prop('disabled', false).text(originalText);
+                    if (data.success) {
+                        showMessage('Password changed successfully!', false);
+                        closeChangePasswordModal();
+                    } else {
+                        showMessage(data.message || 'Failed to change password.', true);
+                    }
+                },
+                error: function(xhr, status) {
+                    $submitBtn.prop('disabled', false).text(originalText);
+                    if (status === 'timeout') {
+                        showMessage('Request timed out. Please try again.', true);
+                    } else if (status === 'error' && xhr.status === 401) {
+                        showMessage('Current password is incorrect.', true);
+                    } else {
+                        showMessage('Error changing password. Please try again.', true);
+                    }
+                }
+            });
+        });
+
+        // ============================================================
+        // DELETE ACCOUNT
+        // ============================================================
+
+        $('#delete-account-form').on('submit', function(e) {
+            e.preventDefault();
+
+            var password = $deletePassword.val();
+
+            if (!password) {
+                showMessage('Please enter your password.', true);
+                return;
+            }
+
+            var $submitBtn = $(this).find('.delete-confirm-btn');
+            var originalText = $submitBtn.text();
+            $submitBtn.prop('disabled', true).text('Processing...');
+
+            $.ajax({
+                url: baseUrl + 'php/endpoints/users/delete-account.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    password: password
+                }),
+                dataType: 'json',
+                timeout: 15000,
+                success: function(data) {
+                    if (data.success) {
+                        showMessage('Your account has been deleted.', false);
+                        setTimeout(function() {
+                            window.location.href = baseUrl;
+                        }, 2000);
+                    } else {
+                        $submitBtn.prop('disabled', false).text(originalText);
+                        showMessage(data.message || 'Failed to delete account.', true);
+                    }
+                },
+                error: function(xhr, status) {
+                    $submitBtn.prop('disabled', false).text(originalText);
+                    if (status === 'timeout') {
+                        showMessage('Request timed out. Please try again.', true);
+                    } else if (status === 'error' && xhr.status === 401) {
+                        showMessage('Invalid password. Please try again.', true);
+                    } else {
+                        showMessage('Error deleting account. Please try again.', true);
+                    }
+                }
+            });
+        });
+
+        // ============================================================
+        // DOCUMENT READY
+        // ============================================================
+
+        $(function() {
             loadUserStats();
         });
     </script>

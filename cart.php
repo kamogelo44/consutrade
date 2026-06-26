@@ -18,7 +18,8 @@ $total_quantity = 0;
 
 if ($isLoggedIn && $currentUser instanceof Buyer) {
     $cart_items = $cartRepo->findByUser($currentUser->getUserId());
-    $cart_totals = $cartRepo->calculateTotals($cart_items);
+    // Use CartService for totals calculation
+    $cart_totals = $cartService->calculateTotals($cart_items);
     $total_quantity = $cartRepo->countItems($currentUser->getUserId());
 }
 ?>

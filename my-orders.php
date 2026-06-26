@@ -357,7 +357,7 @@ $breadcrumbItems = [
 
         function loadBuyerOrders() {
             loadOrders(
-                'php/endpoints/get-my-orders.php',
+                'php/endpoints/orders/get-my-orders.php',
                 $ordersTable,
                 $pagination,
                 currentPage,

@@ -235,7 +235,7 @@ function openOrderModal(orderId) {
     $modalFooter.empty();
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-order-details.php?order_id=' + orderId,
+        url: baseUrl + 'php/endpoints/orders/get-order-details.php?order_id=' + orderId,
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -373,7 +373,7 @@ function updateOrderStatus(orderId, newStatus) {
     
     if (confirm(confirmMsg)) {
         $.ajax({
-            url: baseUrl + 'php/endpoints/update-order-status.php',
+            url: baseUrl + 'php/endpoints/orders/update-order-status.php',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ order_id: orderId, status: newStatus }),
@@ -679,7 +679,7 @@ function updateCartCountDisplay(count) {
  */
 function addToCart(productId, productName, productPrice) {
     $.ajax({
-        url: baseUrl + 'php/endpoints/add-to-cart.php',
+        url: baseUrl + 'php/endpoints/cart/add-to-cart.php',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ product_id: productId, product_name: productName, product_price: productPrice }),
@@ -702,7 +702,7 @@ function removeFromCart(productId) {
     if (!confirm('Are you sure you want to remove this item from your cart?')) return;
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/remove-from-cart.php',
+        url: baseUrl + 'php/endpoints/cart/remove-from-cart.php',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ product_id: productId }),
@@ -779,7 +779,7 @@ function refreshCart() {
     if (!window.location.pathname.includes('cart.php')) return;
     
     $.ajax({
-        url: baseUrl + 'php/endpoints/get-cart.php',
+        url: baseUrl + 'php/endpoints/cart/get-cart.php',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
@@ -812,7 +812,7 @@ function updateCartCount() {
     }
     
     // Always fetch fresh data - no caching issues
-    $.get(baseUrl + 'php/endpoints/get-cart.php', function(data) {
+    $.get(baseUrl + 'php/endpoints/cart/get-cart.php', function(data) {
         if (data.success) {
             updateCartCountDisplay(data.item_count);
             sessionStorage.setItem('cart_count', data.item_count);
@@ -997,7 +997,7 @@ function displayCartItems(cartData) {
  */
 function updateCartQuantity(cartId, quantity) {
     $.ajax({
-        url: baseUrl + 'php/endpoints/update-cart.php',
+        url: baseUrl + 'php/endpoints/cart/update-cart.php',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ cart_id: cartId, quantity: quantity }),
@@ -1112,7 +1112,7 @@ function initAjaxLogin() {
         $submitBtn.prop('disabled', true).text('Logging in...');
         
         $.ajax({
-            url: baseUrl + 'php/endpoints/login.php',
+            url: baseUrl + 'php/endpoints/auth/login.php',
             type: 'POST',
             data: formData,
             dataType: 'json',
@@ -1150,7 +1150,7 @@ function initAjaxRegister() {
         $submitBtn.prop('disabled', true).text('Creating account...');
         
         $.ajax({
-            url: baseUrl + 'php/endpoints/register.php',
+            url: baseUrl + 'php/endpoints/auth/register.php',
             type: 'POST',
             data: formData,
             dataType: 'json',

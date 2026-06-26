@@ -67,7 +67,7 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
                 <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Profile Settings
             </a>
         <?php endif; ?>
-        <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
+        <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="<?php echo $role_class; ?>-sidebar-link logout">
             <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
         </a>
     </div>
@@ -79,11 +79,11 @@ $dashboard_home = ($user_role === 'admin') ? $baseUrl . 'admin/admin-dashboard.p
 
 <div class="<?php echo $role_class; ?>-menu-overlay" id="<?php echo $role_class; ?>MenuOverlay"></div>
 
-<script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script>
     var baseUrl = '<?php echo $baseUrl; ?>';
     var currentUserId = <?php echo isset($currentUser) ? $currentUser->getUserId() : 0; ?>;
     var currentUserRole = '<?php echo isset($currentUser) ? $currentUser->getRole() : ''; ?>';
     var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
 </script>
+<script src="<?php echo $baseUrl; ?>js/main.js"></script>
 <script src="<?php echo $baseUrl; ?>admin/js/dashboard.js"></script>

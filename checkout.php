@@ -28,7 +28,8 @@ $name_parts = explode(' ', $data['buyer_name'], 2);
 $first_name = $name_parts[0];
 $last_name = isset($name_parts[1]) ? $name_parts[1] : '';
 
-$payfast_data = $cartRepo->preparePayFastData([
+// Use CartService for PayFast data preparation
+$payfast_data = $cartService->preparePayFastData([
     'payment_id' => $data['payment_id'],
     'primary_order_id' => $data['primary_order_id'],
     'total' => $total,

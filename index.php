@@ -145,7 +145,7 @@ $load_products_js = true;
             $grid.html('<div class="loading-spinner">Loading products...</div>');
 
             $.ajax({
-                url: baseUrl + 'php/endpoints/get-products.php?limit=4&page=1',
+                url: baseUrl + 'php/endpoints/products/get-products.php?limit=4&page=1',
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {

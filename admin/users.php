@@ -504,7 +504,7 @@ if (!$auth->isAdmin()) {
             $usersTable.html('<tr><td colspan="9" class="loading-cell">Loading users...</td></tr>');
 
             $.ajax({
-                url: baseUrl + 'php/endpoints/get-users.php',
+                url: baseUrl + 'php/endpoints/users/get-users.php',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -595,20 +595,23 @@ if (!$auth->isAdmin()) {
                     statusBadge = '<span class="status-badge active">Active</span>';
                 }
 
+                // Check if this is the current admin
+                var isCurrentAdmin = (user.role === 'admin' && user.user_id === currentUserId);
+
                 // Action Buttons
                 var actionButtons = '<div class="action-buttons">';
 
-                // Status action buttons
-                if (user.status === 'active') {
-                    // User is active - show buttons to suspend or ban
-                    actionButtons += '<button class="action-btn suspend-btn" onclick="updateUserStatus(' + user.user_id + ', \'suspended\')">Suspend</button>';
-                    actionButtons += '<button class="action-btn ban-btn" onclick="updateUserStatus(' + user.user_id + ', \'banned\')">Ban</button>';
-                } else {
-                    // User is suspended or banned - show button to activate
-                    actionButtons += '<button class="action-btn activate-btn" onclick="updateUserStatus(' + user.user_id + ', \'active\')">Activate</button>';
+                // Status action buttons - HIDE for current admin
+                if (!isCurrentAdmin) {
+                    if (user.status === 'active') {
+                        actionButtons += '<button class="action-btn suspend-btn" onclick="updateUserStatus(' + user.user_id + ', \'suspended\')">Suspend</button>';
+                        actionButtons += '<button class="action-btn ban-btn" onclick="updateUserStatus(' + user.user_id + ', \'banned\')">Ban</button>';
+                    } else {
+                        actionButtons += '<button class="action-btn activate-btn" onclick="updateUserStatus(' + user.user_id + ', \'active\')">Activate</button>';
+                    }
                 }
 
-                // Seller verification actions
+                // Seller verification actions (can still verify/unverify, but not for current admin if they're not a seller)
                 if (user.role === 'seller') {
                     if (user.has_document && !user.id_verified) {
                         actionButtons += '<button class="action-btn verify-btn" onclick="reviewDocuments(' + user.user_id + ')">Review Docs</button>';
@@ -619,8 +622,8 @@ if (!$auth->isAdmin()) {
                     }
                 }
 
-                // Delete button (don't allow deleting yourself or other admins)
-                if (user.role !== 'admin' || user.user_id !== currentUserId) {
+                // Delete button - HIDE for admins (including current admin)
+                if (user.role !== 'admin') {
                     actionButtons += '<button class="action-btn delete-btn" onclick="deleteUser(' + user.user_id + ')">Delete</button>';
                 }
 
@@ -654,7 +657,7 @@ if (!$auth->isAdmin()) {
             var confirmMsg = verify ? 'Verify this seller?' : 'Remove verification from this seller?';
             if (confirm(confirmMsg)) {
                 $.ajax({
-                    url: baseUrl + 'php/endpoints/update-user-verification.php',
+                    url: baseUrl + 'php/endpoints/users/update-user-verification.php',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
@@ -701,7 +704,7 @@ if (!$auth->isAdmin()) {
 
             if (confirm(confirmMsg)) {
                 $.ajax({
-                    url: baseUrl + 'php/endpoints/update-user-status.php',
+                    url: baseUrl + 'php/endpoints/users/update-user-status.php',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
@@ -727,7 +730,7 @@ if (!$auth->isAdmin()) {
         function deleteUser(userId) {
             if (confirm('Delete this user? This cannot be undone.')) {
                 $.ajax({
-                    url: baseUrl + 'php/endpoints/delete-user.php',
+                    url: baseUrl + 'php/endpoints/users/delete-user.php',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({

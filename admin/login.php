@@ -30,7 +30,6 @@ if ($auth->isSeller()) {
         var baseUrl = '<?php echo rtrim($baseUrl, '/') . '/'; ?>';
     </script>
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
-    <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <style>
         /* Page-specific layout - not in components */
         body {

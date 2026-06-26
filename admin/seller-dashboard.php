@@ -531,7 +531,7 @@ $profile_image = $currentUser->getProfileImageUrl();
                     <a href="seller-profile.php" class="store-action-link">
                         <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" alt="Profile"> Edit Profile
                     </a>
-                    <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php" class="store-action-link logout">
+                    <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="store-action-link logout">
                         <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" alt="Logout"> Logout
                     </a>
                 </div>

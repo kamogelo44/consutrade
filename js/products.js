@@ -32,7 +32,7 @@ function loadProducts() {
     
     $('#products-grid').html('<div class="loading-spinner">Loading products...</div>');
     
-    $.get(baseUrl + 'php/endpoints/get-products.php?' + params.toString(), function(data) {
+    $.get(baseUrl + 'php/endpoints/products/get-products.php?' + params.toString(), function(data) {
         if (data.success && data.products && data.products.length > 0) {
             displayProducts(data.products);
             totalPages = data.total_pages || 1;
@@ -256,7 +256,7 @@ function loadProductDetails(id) {
     
     $('#product-details-content').html('<div class="loading-spinner">Loading product details...</div>');
     
-    $.get(baseUrl + 'php/endpoints/get-product.php?id=' + id, function(data) {
+    $.get(baseUrl + 'php/endpoints/products/get-product.php?id=' + id, function(data) {
         if (data.success && data.product) {
             displayProductDetails(data.product);
         } else {
@@ -486,7 +486,7 @@ function initReportModal() {
         $('#submitReportBtn').prop('disabled', true).text('Submitting...');
         
         $.ajax({
-            url: baseUrl + 'php/endpoints/report-product.php',
+            url: baseUrl + 'php/endpoints/reports/report-product.php',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({

@@ -81,7 +81,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
                         <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
                         <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
                         <hr>
-                        <a href="<?php echo $baseUrl; ?>php/endpoints/logout.php">Logout</a>
+                        <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php">Logout</a>
                     </div>
                 </div>
             <?php else: ?>
@@ -142,7 +142,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
                 <li class="mobile-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>profile.php" class="<?php echo $current_page == 'profile.php' ? 'active' : ''; ?>">My Profile</a></li>
                 <li><a href="<?php echo $baseUrl; ?>my-orders.php" class="<?php echo $current_page == 'my-orders.php' ? 'active' : ''; ?>">My Orders</a></li>
-                <li><a href="<?php echo $baseUrl; ?>php/endpoints/logout.php">Logout</a></li>
+                <li><a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php">Logout</a></li>
             <?php else: ?>
                 <li class="mobile-divider"></li>
                 <li><button class="mobile-login-btn" id="mobileLoginBtn">Login</button></li>
@@ -164,7 +164,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
             <p>Welcome back! Please login to your account</p>
         </div>
         <div id="login-error-container" class="error-container" style="display: none;"></div>
-        <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/login.php">
+        <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/auth/login.php">
             <input type="hidden" name="role_type" value="buyer">
             <div class="input-group">
                 <label for="login-email">Email Address</label>
@@ -195,7 +195,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
             <p>Create your account to start buying and selling</p>
         </div>
         <div id="register-error-container" class="error-container" style="display: none;"></div>
-        <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/register.php">
+        <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/auth/register.php">
             <div class="input-group">
                 <label for="register-full-name">Full Name</label>
                 <input type="text" id="register-full-name" name="full_name" placeholder="Enter your full name" required>
