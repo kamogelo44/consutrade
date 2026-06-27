@@ -1,43 +1,112 @@
 <?php
-/*
- * ConsuTrade - Order Confirmation Page
- * Author: Kamogelo Phale
- * 
- * Pure view - displays payment result.
- * All logic handled by get-payment-status.php endpoint.
- */
-
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 
-// Get payment status data from endpoint
-$data = include __DIR__ . '/php/endpoints/get-payment-status.php';
+// ============================================================
+// Check if we have payment data from PayFast
+// ============================================================
+$hasPaymentData = !empty($_GET['payment_status']) || !empty($_GET['m_payment_id']) || !empty($_GET['order_id']);
 
-// Handle redirect if needed
-if ($data['redirect']) {
-    header('Location: ' . $data['redirect_url']);
+$isSuccess = false;
+$errorMessage = $_SESSION['payment_error'] ?? 'Payment issue';
+$orderId = 0;
+$order = null;
+$transaction = null;
+$pageTitle = 'Payment Status';
+
+// ============================================================
+// Try 1: Check by payment_id from URL
+// ============================================================
+if (!empty($_GET['m_payment_id'])) {
+    $paymentId = $_GET['m_payment_id'];
+    error_log("order-confirmation: looking for payment_id: $paymentId");
+    $orderByPayment = $orderRepo->findByPaymentId($paymentId);
+    if ($orderByPayment) {
+        $orderId = $orderByPayment['order_id'];
+        $userId = $currentUser->getUserId();
+        $order = $orderService->findById($orderId, $userId, 'buyer');
+        if ($order && $order['status'] !== 'pending') {
+            $isSuccess = true;
+            $transaction = $transactionRepo->findByOrderId($orderId);
+            $pageTitle = 'Order Confirmed';
+            unset($_SESSION['payment_error']);
+            goto show_confirmation;
+        }
+    }
+}
+
+// ============================================================
+// Try 2: Check by session checkout_data
+// ============================================================
+if (!$isSuccess && isset($_SESSION['checkout_data'])) {
+    $orderId = $_SESSION['checkout_data']['primary_order_id'] ?? 0;
+    $userId = $currentUser->getUserId();
+
+    if ($orderId > 0) {
+        error_log("order-confirmation: checking session order_id: $orderId");
+        $order = $orderService->findById($orderId, $userId, 'buyer');
+        if ($order && $order['status'] !== 'pending') {
+            $isSuccess = true;
+            $transaction = $transactionRepo->findByOrderId($orderId);
+            $pageTitle = 'Order Confirmed';
+            unset($_SESSION['checkout_data']);
+            unset($_SESSION['payment_error']);
+            goto show_confirmation;
+        }
+    }
+}
+
+// ============================================================
+// Try 3: If we have checkout_data but order is still pending
+// ============================================================
+if (isset($_SESSION['checkout_data']) && !$isSuccess) {
+    $orderId = $_SESSION['checkout_data']['primary_order_id'] ?? 0;
+    if ($orderId > 0) {
+        $errorMessage = 'Your payment is being processed. Please wait a moment...';
+        goto show_confirmation;
+    }
+}
+
+// ============================================================
+// Fallback: No data found
+// ============================================================
+if (!$hasPaymentData) {
+    header('Location: ' . $baseUrl . 'cart.php');
     exit;
 }
 
-$isSuccess = $data['success'];
-$errorMessage = $data['message'];
-$orderId = $data['order_id'];
-$order = $data['order'];
-$transaction = $data['transaction'];
-$pageTitle = $isSuccess ? 'Order Confirmation' : 'Payment Status';
-$redirectDelay = 5;
+// If we have payment data, get the status
+$data = include __DIR__ . '/php/endpoints/checkout/get-payment-status.php';
 
-$breadcrumbItems = [
-    ['label' => $pageTitle]
-];
+if (!empty($data['redirect'])) {
+    $redirectUrl = $data['redirect_url'] ?? ($data['url'] ?? $baseUrl . 'cart.php');
+    header('Location: ' . $redirectUrl);
+    exit;
+}
+
+$isSuccess = $data['success'] ?? false;
+$errorMessage = $_SESSION['payment_error'] ?? $data['message'] ?? 'Payment issue';
+$orderId = $data['order_id'] ?? ($data['order']['order_id'] ?? 0);
+$order = $data['order'] ?? null;
+$transaction = $data['transaction'] ?? null;
+$pageTitle = $isSuccess ? 'Order Confirmed' : 'Payment Status';
+
+unset($_SESSION['payment_error']);
+
+show_confirmation:
+
+$breadcrumbItems = [['label' => $pageTitle]];
+$showRedirect = false;
+$redirectDelay = 10;
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?> - ConsuTrade</title>
+    <title><?php echo htmlspecialchars($pageTitle); ?> - ConsuTrade</title>
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
         .confirmation-wrapper {
@@ -78,25 +147,9 @@ $breadcrumbItems = [
             background: var(--error-light);
         }
 
-        .confirmation-icon.warning {
-            background: var(--warning-light);
-        }
-
         .confirmation-icon img {
             width: 48px;
             height: 48px;
-        }
-
-        .confirmation-icon.success img {
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(500%);
-        }
-
-        .confirmation-icon.error img {
-            filter: brightness(0) saturate(100%) invert(30%) sepia(100%) saturate(500%);
-        }
-
-        .confirmation-icon.warning img {
-            filter: brightness(0) saturate(100%) invert(70%) sepia(50%) saturate(500%);
         }
 
         .confirmation-title {
@@ -111,10 +164,6 @@ $breadcrumbItems = [
 
         .confirmation-title.error {
             color: var(--error);
-        }
-
-        .confirmation-title.warning {
-            color: var(--warning);
         }
 
         .confirmation-message {
@@ -156,15 +205,6 @@ $breadcrumbItems = [
             margin-bottom: var(--spacing-md);
             color: var(--dark-bg);
             text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
-        }
-
-        .transaction-details h3 img {
-            width: 20px;
-            height: 20px;
         }
 
         .transaction-row {
@@ -188,7 +228,7 @@ $breadcrumbItems = [
             color: var(--dark-bg);
         }
 
-        .transaction-row .value .status-badge {
+        .status-badge {
             display: inline-block;
             padding: 2px 10px;
             border-radius: var(--radius-round);
@@ -196,17 +236,22 @@ $breadcrumbItems = [
             font-weight: var(--font-medium);
         }
 
-        .transaction-row .value .status-badge.completed {
+        .status-badge.completed {
             background: var(--success-light);
             color: var(--success);
         }
 
-        .transaction-row .value .status-badge.pending {
+        .status-badge.processing {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        .status-badge.pending {
             background: var(--warning-light);
             color: var(--warning);
         }
 
-        .transaction-row .value .status-badge.failed {
+        .status-badge.failed {
             background: var(--error-light);
             color: var(--error);
         }
@@ -256,44 +301,6 @@ $breadcrumbItems = [
             transform: translateY(-2px);
         }
 
-        .btn-danger {
-            display: inline-block;
-            padding: 12px 28px;
-            background: var(--error);
-            color: var(--white);
-            text-decoration: none;
-            border-radius: var(--radius-md);
-            font-weight: var(--font-bold);
-            transition: all var(--transition-fast);
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-danger:hover {
-            background: var(--error-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .redirect-countdown {
-            margin-top: var(--spacing-lg);
-            padding-top: var(--spacing-md);
-            border-top: 1px solid var(--border-light);
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-        }
-
-        .redirect-countdown .timer {
-            font-weight: var(--font-bold);
-            color: var(--primary-color);
-            font-size: var(--font-xl);
-        }
-
-        .redirect-countdown .timer-text {
-            display: inline-block;
-            min-width: 30px;
-        }
-
         .error-details {
             background: var(--error-light);
             border: 1px solid var(--error);
@@ -313,6 +320,19 @@ $breadcrumbItems = [
         .error-details ul {
             margin: 0;
             padding-left: var(--spacing-md);
+        }
+
+        .redirect-countdown {
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-light);
+            font-size: var(--font-sm);
+            color: var(--gray-medium);
+        }
+
+        .redirect-countdown .timer {
+            font-weight: var(--font-bold);
+            color: var(--primary-color);
         }
 
         @media (max-width: 600px) {
@@ -336,29 +356,14 @@ $breadcrumbItems = [
                 font-size: var(--font-lg);
             }
 
-            .transaction-details {
-                padding: var(--spacing-sm) var(--spacing-md);
-            }
-
-            .transaction-row {
-                font-size: var(--font-xs);
+            .confirmation-actions {
                 flex-direction: column;
-                align-items: center;
-                gap: 2px;
-                padding: var(--spacing-sm) 0;
             }
 
             .btn-primary,
-            .btn-secondary,
-            .btn-danger {
-                padding: 10px 20px;
-                font-size: var(--font-sm);
+            .btn-secondary {
                 width: 100%;
                 text-align: center;
-            }
-
-            .confirmation-actions {
-                flex-direction: column;
             }
         }
     </style>
@@ -375,7 +380,7 @@ $breadcrumbItems = [
             <?php if ($isSuccess): ?>
                 <!-- SUCCESS STATE -->
                 <div class="confirmation-icon success">
-                    <img src="<?php echo $baseUrl; ?>images/icons/check-circle.svg" alt="Success">
+                    <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo.svg" alt="Success">
                 </div>
 
                 <h1 class="confirmation-title success">Order Confirmed!</h1>
@@ -388,10 +393,7 @@ $breadcrumbItems = [
 
                 <?php if ($transaction): ?>
                     <div class="transaction-details">
-                        <h3>
-                            <img src="<?php echo $baseUrl; ?>images/icons/credit-card.svg" alt="Payment">
-                            Payment Details
-                        </h3>
+                        <h3>Payment Details</h3>
                         <div class="transaction-row">
                             <span class="label">Transaction Reference</span>
                             <span class="value"><?php echo htmlspecialchars($transaction->getPayfastRef()); ?></span>
@@ -421,31 +423,33 @@ $breadcrumbItems = [
                 </div>
 
             <?php else: ?>
-                <!-- ERROR STATE -->
+                <!-- ERROR/PENDING STATE -->
                 <div class="confirmation-icon error">
-                    <img src="<?php echo $baseUrl; ?>images/icons/x-circle.svg" alt="Error">
+                    <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo.svg" alt="Error">
                 </div>
 
                 <h1 class="confirmation-title error">Payment Issue</h1>
                 <p class="confirmation-message" style="color: var(--error);">
-                    <?php echo htmlspecialchars($errorMessage ?: 'There was an issue with your payment.'); ?>
+                    <?php echo htmlspecialchars($errorMessage); ?>
                 </p>
 
                 <div class="error-details">
                     <strong>What can I do?</strong>
                     <ul>
-                        <li>Check your payment method and try again</li>
-                        <li>Contact your bank if the issue persists</li>
-                        <li>Contact support for assistance</li>
+                        <li>Check your <a href="<?php echo $baseUrl; ?>my-orders.php">orders page</a> - your order may have been created</li>
+                        <li>Try checking out again from your <a href="<?php echo $baseUrl; ?>cart.php">cart</a></li>
+                        <li>Contact support if the issue persists</li>
                     </ul>
                 </div>
 
-                <div class="redirect-countdown" id="countdownContainer">
-                    <p>You will be redirected to your cart in <span class="timer"><span class="timer-text" id="countdownTimer"><?php echo $redirectDelay; ?></span>s</span></p>
-                    <button class="btn-danger" id="redirectNowBtn">Go to Cart Now</button>
-                </div>
+                <?php if ($showRedirect): ?>
+                    <div class="redirect-countdown" id="countdownContainer">
+                        <p>You will be redirected to your cart in <span class="timer"><span id="countdownTimer"><?php echo $redirectDelay; ?></span>s</span></p>
+                        <button class="btn-primary" id="redirectNowBtn" style="background: var(--error); margin-top: var(--spacing-sm);">Go to Cart Now</button>
+                    </div>
+                <?php endif; ?>
 
-                <div class="confirmation-actions" style="margin-top: var(--spacing-md);">
+                <div class="confirmation-actions">
                     <a href="<?php echo $baseUrl; ?>cart.php" class="btn-primary">Return to Cart</a>
                     <a href="<?php echo $baseUrl; ?>my-orders.php" class="btn-secondary">View My Orders</a>
                 </div>
@@ -456,7 +460,7 @@ $breadcrumbItems = [
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
 
-    <?php if (!$isSuccess): ?>
+    <?php if ($showRedirect): ?>
         <script>
             (function() {
                 var delay = <?php echo $redirectDelay; ?>;
@@ -486,21 +490,6 @@ $breadcrumbItems = [
                         redirectNow();
                     });
                 }
-            })();
-        </script>
-    <?php else: ?>
-        <!-- Clear cart count on successful payment -->
-        <script>
-            (function() {
-                if (typeof updateCartCountDisplay === 'function') {
-                    updateCartCountDisplay(0);
-                }
-                if (window.sessionStorage) {
-                    sessionStorage.setItem('cart_count', 0);
-                }
-                document.querySelectorAll('.cart-count, .cart-badge, #cart-item-count').forEach(function(el) {
-                    el.textContent = '0';
-                });
             })();
         </script>
     <?php endif; ?>

@@ -9,7 +9,6 @@
 
 require_once dirname(__DIR__) . '/init.php';
 include dirname(__DIR__) . '/includes/session-vars.php';
-include dirname(__DIR__) . '/includes/functions.php';
 
 if (!$auth->isSeller()) {
     header('Location: login.php');
@@ -19,7 +18,7 @@ if (!$auth->isSeller()) {
 $seller_id = $currentUser->getUserId();
 $user_name = $currentUser->getFullName();
 $profile_image = $currentUser->getProfileImageUrl();
-$categories = $categoryRepo->getAll();
+$categories = $categoryRepo->findAll();
 
 // Breadcrumb for subpage navigation
 $breadcrumbItems = [
@@ -73,7 +72,7 @@ unset($_SESSION['error'], $_SESSION['success']);
             <?php include dirname(__DIR__) . '/includes/flash-message.php'; ?>
 
             <div class="form-container">
-                <form id="product-form" action="<?php echo $baseUrl; ?>php/endpoints/add-product.php" method="post" enctype="multipart/form-data">
+                <form id="product-form" action="<?php echo $baseUrl; ?>php/endpoints/products/add-product.php" method="post" enctype="multipart/form-data">
 
                     <div class="form-group">
                         <label>Product Title *</label>

@@ -373,6 +373,8 @@ $breadcrumbItems = [
             );
         }
 
+        window.loadBuyerOrders = loadBuyerOrders;
+
         // Review functions
         function resetRatingStars() {
             $reviewRating.val(0);

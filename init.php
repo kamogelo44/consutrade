@@ -37,18 +37,6 @@ require_once __DIR__ . '/php/classes/repositories/ReviewRepository.php';
 require_once __DIR__ . '/php/classes/repositories/TransactionRepository.php';
 require_once __DIR__ . '/php/classes/repositories/ReportRepository.php';
 
-// Create repository instances
-$userRepo = new UserRepository($conn);
-$categoryRepo = new CategoryRepository($conn);
-$productImageService = new ProductImageService();
-$productRepo = new ProductRepository($conn, $productImageService);
-$productImageRepo = new ProductImageRepository($conn);
-$orderRepo = new OrderRepository($conn);
-$cartRepo = new CartRepository($conn);
-$reviewRepo = new ReviewRepository($conn);
-$transactionRepo = new TransactionRepository($conn);
-$reportRepo = new ReportRepository($conn, $productRepo);
-
 // ============================================================
 // LOAD DOMAIN MODELS
 // ============================================================
@@ -84,7 +72,25 @@ require_once __DIR__ . '/php/classes/services/AdminService.php';
 // ============================================================
 require_once __DIR__ . '/php/classes/core/Auth.php';
 
-// Create service instances
+// ============================================================
+// CREATE REPOSITORY INSTANCES
+// ============================================================
+$userRepo = new UserRepository($conn);
+$categoryRepo = new CategoryRepository($conn);
+
+// ProductImageService is now available because we loaded services first
+$productImageService = new ProductImageService();
+$productRepo = new ProductRepository($conn, $productImageService);
+$productImageRepo = new ProductImageRepository($conn);
+$orderRepo = new OrderRepository($conn);
+$cartRepo = new CartRepository($conn);
+$reviewRepo = new ReviewRepository($conn);
+$transactionRepo = new TransactionRepository($conn);
+$reportRepo = new ReportRepository($conn, $productRepo);
+
+// ============================================================
+// CREATE SERVICE INSTANCES
+// ============================================================
 $auth = new Auth($conn, $userRepo);
 
 // UserService
@@ -108,7 +114,6 @@ $adminService = new AdminService(
 $payfastService = new PayFastService(
     $conn,
     $orderRepo,
-    $productRepo,
     $cartRepo,
     $transactionRepo
 );

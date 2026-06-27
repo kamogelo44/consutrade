@@ -2,11 +2,22 @@
 /*
  * ConsuTrade - Checkout Endpoint
  * Author: Kamogelo Phale
+ * 
+ * Creates orders and prepares checkout data for payment.
+ * Called when user clicks "Proceed to Checkout" button.
+ * 
+ * Flow:
+ * 1. Verify user is logged in as buyer
+ * 2. Get cart items and verify stock
+ * 3. Create orders (pending status)
+ * 4. Create transaction with placeholder reference
+ * 5. Store checkout data in session
+ * 6. Redirect to checkout.php
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
-$baseUrl = getBaseUrl();
+// $baseUrl is already defined in init.php
 
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
@@ -32,20 +43,28 @@ if (empty($cartItems)) {
     exit;
 }
 
-// Use CartService for stock verification
+// Verify stock
 $stockErrors = $cartService->verifyStock($cartItems);
-
 if (!empty($stockErrors)) {
     $_SESSION['checkout_errors'] = $stockErrors;
     if ($isAjax) {
-        echo json_encode(['success' => false, 'message' => 'Some items are out of stock. Please update your cart.']);
+        echo json_encode(['success' => false, 'message' => 'Some items are out of stock.']);
         exit;
     }
     header('Location: ' . $baseUrl . 'cart.php');
     exit;
 }
 
-// Use CartService for checkout processing
+// Calculate totals
+$totals = $cartService->calculateTotals($cartItems);
+
+// Get user info
+$userInfo = $userRepo->findCheckoutInfo($userId);
+
+// Generate clean payment ID - NO "PF-PENDING-" prefix
+$paymentId = time() . '_' . $userId;
+
+// CREATE ORDER NOW (BEFORE PAYMENT)
 $checkoutResult = $cartService->processCheckout($userId, $cartItems);
 
 if (!$checkoutResult['success']) {
@@ -58,14 +77,9 @@ if (!$checkoutResult['success']) {
     exit;
 }
 
-// Use UserRepository for user data (CRUD - READ)
-$userInfo = $userRepo->findCheckoutInfo($userId);
-
-// Use CartService for totals calculation
-$totals = $cartService->calculateTotals($cartItems);
-
+// Store checkout data in session for the checkout page
 $_SESSION['checkout_data'] = [
-    'payment_id' => $checkoutResult['payment_id'],
+    'payment_id' => $paymentId,
     'primary_order_id' => $checkoutResult['primary_order_id'],
     'order_ids' => $checkoutResult['order_ids'],
     'total' => $totals['total'],

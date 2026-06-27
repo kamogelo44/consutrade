@@ -567,7 +567,30 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
     <?php include 'includes/footer.php'; ?>
 
     <script>
-        // Cart page specific data only - global vars already in footer.php
+        /**
+         * Cart Page - Shopping Cart Functionality
+         * Author: Kamogelo Phale
+         * 
+         * This page displays the user's cart items with:
+         * - Quantity controls (increase/decrease)
+         * - Remove item functionality
+         * - Real-time totals update
+         * - Mobile responsive layout
+         * 
+         * Dependencies: main.js (loaded before this script)
+         * Uses: displayCartItems(), updateCartTotalsDisplay(), 
+         *       updateCartCountDisplay(), refreshCart()
+         */
+
+        // Cache DOM references for performance
+        var $cartLayout = null;
+        var $emptyCart = null;
+        var $cartItemCount = null;
+        var $checkoutBtn = null;
+        var $continueBtn = null;
+        var $browseBtn = null;
+
+        // Store cart data for quick access
         var initialCartData = {
             items: <?php echo json_encode($cart_items); ?>,
             subtotal: <?php echo json_encode($cart_totals['subtotal']); ?>,
@@ -575,55 +598,110 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             total: <?php echo json_encode($cart_totals['total']); ?>
         };
 
-        function loadCart() {
-            var $cartLayout = $('#cart-layout');
-            var $emptyCart = $('#empty-cart');
-            var $cartItemCount = $('#cart-item-count');
+        /**
+         * Cache DOM elements to avoid repeated jQuery lookups
+         * This improves performance on cart updates
+         */
+        function cacheCartElements() {
+            if (!$cartLayout) {
+                $cartLayout = $('#cart-layout');
+            }
+            if (!$emptyCart) {
+                $emptyCart = $('#empty-cart');
+            }
+            if (!$cartItemCount) {
+                $cartItemCount = $('#cart-item-count');
+            }
+            if (!$checkoutBtn) {
+                $checkoutBtn = $('#checkoutBtn');
+            }
+            if (!$continueBtn) {
+                $continueBtn = $('#continueBtn');
+            }
+            if (!$browseBtn) {
+                $browseBtn = $('#browseBtn');
+            }
+        }
 
+        /**
+         * Loads the cart with initial data from PHP
+         * Uses cached DOM elements for better performance
+         */
+        function loadCart() {
+            // Cache elements first
+            cacheCartElements();
+
+            // Check if cart has items
             if (initialCartData.items && initialCartData.items.length > 0) {
-                if (typeof displayCartItems === 'function') displayCartItems(initialCartData);
-                if (typeof updateCartTotalsDisplay === 'function') updateCartTotalsDisplay(initialCartData);
+                // Display cart items using the function from main.js
+                if (typeof displayCartItems === 'function') {
+                    displayCartItems(initialCartData);
+                }
+
+                // Update totals using function from main.js
+                if (typeof updateCartTotalsDisplay === 'function') {
+                    updateCartTotalsDisplay(initialCartData);
+                }
+
+                // Show cart layout, hide empty state
                 $cartLayout.css('display', 'flex');
                 $emptyCart.css('display', 'none');
                 $cartItemCount.text(<?php echo $total_quantity; ?>);
             } else {
+                // Show empty state, hide cart
                 $cartLayout.css('display', 'none');
                 $emptyCart.css('display', 'flex');
                 $cartItemCount.text('0');
             }
         }
 
+        /**
+         * Handles the checkout button click
+         * Creates orders and redirects to checkout page
+         * Shows loading state to prevent double-click
+         */
+        function handleCheckout() {
+            $checkoutBtn.prop('disabled', true).text('Processing...');
+
+            $.ajax({
+                url: baseUrl + 'php/endpoints/checkout/place-order.php',
+                type: 'POST',
+                dataType: 'json',
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = baseUrl + 'checkout.php';
+                    } else {
+                        alert(response.message || 'Unable to proceed to checkout');
+                        $checkoutBtn.prop('disabled', false).text('Proceed to Checkout');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Checkout Error:', xhr);
+                    alert('An error occurred. Please try again.');
+                    $checkoutBtn.prop('disabled', false).text('Proceed to Checkout');
+                }
+            });
+        }
+
+        /**
+         * Initialize all event handlers and load cart
+         */
         $(document).ready(function() {
+            // Load the cart with initial data
             loadCart();
 
-            $('#checkoutBtn').on('click', function() {
-                var $btn = $(this);
-                $btn.prop('disabled', true).text('Processing...');
+            // Checkout button handler
+            $checkoutBtn.on('click', handleCheckout);
 
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/place-order.php',
-                    type: 'POST',
-                    dataType: 'json',
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            window.location.href = baseUrl + 'checkout.php';
-                        } else {
-                            alert(response.message || 'Unable to proceed to checkout');
-                            $btn.prop('disabled', false).text('Proceed to Checkout');
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error('AJAX Error:', xhr);
-                        alert('An error occurred. Please try again.');
-                        $btn.prop('disabled', false).text('Proceed to Checkout');
-                    }
-                });
+            // Continue shopping / browse buttons
+            $continueBtn.on('click', function() {
+                window.location.href = baseUrl + 'product-listings.php';
             });
 
-            $('#continueBtn, #browseBtn').on('click', function() {
+            $browseBtn.on('click', function() {
                 window.location.href = baseUrl + 'product-listings.php';
             });
         });

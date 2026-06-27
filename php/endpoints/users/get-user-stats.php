@@ -17,15 +17,7 @@ $response = ['success' => false, 'message' => ''];
 if ($auth->isAdmin() && !isset($_GET['seller_id']) && !isset($_GET['user_id'])) {
     $stats = $userService->getAdminStats();
 
-    $admin = new Admin([]);
-    $dashboardData = $admin->calculateDashboardStats(
-        $stats,  // userStats
-        $stats,  // orderStats (same array)
-        $stats,  // productStats (same array)
-        $stats   // reportStats (same array)
-    );
-
-    $response = ['success' => true] + $dashboardData;
+    $response = ['success' => true] + $stats;
     echo json_encode($response);
     exit;
 }

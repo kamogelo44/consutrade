@@ -68,6 +68,10 @@ class CartService
 
     /**
      * Process the full checkout flow within a transaction.
+     * 
+     * FIXED: Creates orders AND stores payment_id for PayFast
+     * The transaction is created with a placeholder reference
+     * that PayFast will update with the actual reference
      */
     public function processCheckout(int $userId, array $cartItems): array
     {
@@ -95,17 +99,26 @@ class CartService
                 }
             }
 
-            // Create pending transaction
+            // Create pending transaction with the payment_id
+            // PayFast will update this with the actual reference later
             $primaryOrderId = $orderResult['order_ids'][0];
-            $order = $this->orderRepo->findById($primaryOrderId, $userId, 'buyer');
-            $total = $order['total_price'] ?? 0;
             $paymentId = $orderResult['payment_id'];
 
-            $this->transactionRepo->createFromPayment(
+            // The transaction will be updated by PayFast with the real reference
+            $result = $this->transactionRepo->createFromPayment(
                 $primaryOrderId,
-                'PF-PENDING-' . $paymentId,
-                $total
+                $paymentId,  // Just the payment_id, not 'PF-PENDING-' . $paymentId
+                $cartItems[0]['price'] * $cartItems[0]['quantity'] // Total will be updated
             );
+
+            // Get the total from the order
+            $order = $this->orderRepo->findById($primaryOrderId, $userId, 'buyer');
+            $total = $order['total_price'] ?? 0;
+
+            // Update the transaction with the correct amount
+            if ($result instanceof Transaction) {
+                $this->transactionRepo->updateAmount($result->getTransactionId(), $total);
+            }
 
             $this->db->commit();
 

@@ -1,38 +1,39 @@
 <?php
 /*
  * ConsuTrade - PayFast ITN Handler
- * Author: Kamogelo Phale
- * 
  * PayFast calls this file after someone pays.
- * Updates the order status in our database.
+ * 
+ * This is a server-to-server notification (ITN).
+ * PayFast expects a 200 OK response regardless of success/failure.
+ * 
+ * IMPORTANT: This file should NOT start a session or output anything.
+ * All processing is done via PayFastService.
  */
+
+// Critical: No session, no output buffering, clean response
+while (ob_get_level()) {
+    ob_end_clean();
+}
+header('Content-Type: text/plain');
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
-// Force clean output 
-ob_clean();
-header('Content-Type: text/plain');
-
 try {
+    if (empty($_POST)) {
+        http_response_code(200);
+        die("OK");
+    }
+
+    // Delegate everything to PayFastService
     $result = $payfastService->handleItn($_POST);
 
-    if ($result['success']) {
-        // PayFast expects a 200 OK response with "OK" in the body
-        http_response_code(200);
-        echo "OK";
-        error_log("PayFast ITN: Successfully processed payment for " . ($_POST['m_payment_id'] ?? 'unknown'));
-    } else {
-        // Log the error but still return 200 to prevent PayFast from retrying
-        // If we return a non-200, PayFast will keep retrying the notification
-        error_log("PayFast ITN Error: " . ($result['message'] ?? 'Unknown error') .
-            " for payment_id: " . ($_POST['m_payment_id'] ?? 'unknown'));
-        http_response_code(200);
-        echo "OK"; // Always return OK to prevent retries
+    if (!$result['success']) {
+        error_log("PayFast ITN: FAILED - " . ($result['message'] ?? 'Unknown error'));
     }
 } catch (Exception $e) {
-    // Something crashed - log it but still return OK to PayFast
-    error_log("PayFast ITN CRASH: " . $e->getMessage() .
-        " for payment_id: " . ($_POST['m_payment_id'] ?? 'unknown'));
-    http_response_code(200);
-    echo "OK";
+    error_log("PayFast ITN CRASH: " . $e->getMessage());
 }
+
+// Always return 200 OK to prevent PayFast retries
+http_response_code(200);
+die("OK");

@@ -63,42 +63,27 @@ if (!$product->canDecreaseStock($quantity)) {
 $result = $cartRepo->updateQuantity($cartId, $userId, $quantity);
 
 if ($result) {
-    // Fetch fresh cart data
+    // Get fresh cart data and return it
     $freshCartItems = $cartRepo->findByUser($userId);
 
-    // Use CartService for totals calculation
+    // Use CartService for totals
     $freshTotals = $cartService->calculateTotals($freshCartItems);
 
-    $items = [];
     $itemCount = 0;
-
     foreach ($freshCartItems as $item) {
         $itemCount += $item['quantity'];
-
-        // Use ProductService for image URL
-        $imageUrl = $productService->getImageUrl($item['image_url']);
-
-        $items[] = [
-            'cart_id' => (int) $item['cart_id'],
-            'product_id' => (int) $item['product_id'],
-            'product_name' => $item['title'],
-            'price' => (float) $item['price'],
-            'quantity' => (int) $item['quantity'],
-            'image' => $imageUrl,
-            'seller_name' => $item['seller_name'] ?? 'Unknown Seller',
-            'stock_quantity' => (int) ($item['stock_quantity'] ?? 1),
-            'is_verified' => (bool) ($item['is_verified'] ?? false)
-        ];
+        // Add image URL using ProductService
+        $item['image'] = $productService->getImageUrl($item['image_url']);
     }
 
     $response['success'] = true;
     $response['message'] = 'Cart updated';
     $response['cart'] = [
-        'items' => $items,
+        'items' => $freshCartItems,
         'item_count' => $itemCount,
-        'subtotal' => number_format($freshTotals['subtotal'], 2),
-        'delivery_fee' => number_format($freshTotals['delivery_fee'], 2),
-        'total' => number_format($freshTotals['total'], 2)
+        'subtotal' => (float) $freshTotals['subtotal'],
+        'delivery_fee' => (float) $freshTotals['delivery_fee'],
+        'total' => (float) $freshTotals['total']
     ];
 } else {
     $response['message'] = 'Failed to update cart';

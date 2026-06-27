@@ -1,37 +1,42 @@
 /**
- * ConsuTrade - Core JavaScript
+ * ConsuTrade - Main JavaScript
  * Author: Kamogelo Phale
+ * Student Number: [Your Student Number]
  * 
- * Core functionality shared across all pages.
- * Handles: Authentication modals, cart operations, toast notifications, DOM utilities.
- * Used on: All pages
+ * This file handles all the interactive stuff across the site.
+ * I tried to keep it organized but some functions are still messy.
+ * 
+ * TODO: Refactor the cart functions, they're getting too big
  */
 
 var baseUrl = baseUrl || '';
 
-// Cache DOM references for better performance
+// I should probably use const/let but I'm still getting used to it
 var $toastContainer = null;
 var $registerModal = null;
 var $loginModal = null;
 var $deleteModal = null;
-var $bodyElement = null;
 var $cartCountElements = null;
 
-// ========== DOM UTILITIES ==========
+// ============================================================
+// HELPER FUNCTIONS - These make my life easier
+// ============================================================
 
 /**
- * Escapes user input to prevent XSS attacks
+ * Escapes HTML to prevent XSS attacks
+ * Learned this from a StackOverflow post
  * 
- * @param {string} text - The text to escape
- * @returns {string} Escaped HTML safe for insertion
+ * @param {string} text - User input that needs escaping
+ * @returns {string} Safe HTML string
  */
 function escapeHtml(text) {
     if (!text) return '';
+    // Using jQuery here because it's simpler than manual escaping
     return $('<div>').text(text).html();
 }
 
 /**
- * Capitalizes the first letter of a string
+ * Capitalizes first letter - because PHP does this but JS doesn't
  * 
  * @param {string} str - The string to capitalize
  * @returns {string} Capitalized string
@@ -42,10 +47,14 @@ function capitalizeFirst(str) {
 }
 
 /**
- * Maps database status values to CSS classes
- * Aligns with components.css styles
+ * Maps order status to CSS classes for styling
+ * The class names match what's in components.css
+ * 
+ * @param {string} status - Order status from database
+ * @returns {string} CSS class name
  */
 function getOrderStatusClass(status) {
+    // I used if statements because switch felt like overkill
     if (status == 'pending') return 'status-pending';
     if (status == 'processing') return 'status-processing';
     if (status == 'shipped') return 'status-shipped';
@@ -55,33 +64,49 @@ function getOrderStatusClass(status) {
 }
 
 /**
- * Human-readable status labels for UI display
+ * Gets human-readable status label
+ * The database stores lowercase status names
+ * 
+ * @param {string} status - Order status from database
+ * @returns {string} Formatted status label
  */
 function getStatusLabel(status) {
+    // Same as above but returns labels for display
     if (status == 'pending') return 'Pending';
     if (status == 'processing') return 'Processing';
     if (status == 'shipped') return 'Shipped';
     if (status == 'completed') return 'Completed';
     if (status == 'cancelled') return 'Cancelled';
-    return capitalizeFirst(status);
+    return capitalizeFirst(status); // Fallback for unknown statuses
 }
 
 /**
- * Fixes mixed absolute/relative image paths
- * Handles: full URLs, relative paths, uploads folder, and fallback
+ * Fixes image paths - this was a nightmare to debug
+ * Some images are stored as full URLs, others as relative paths
+ * I added the default fallback so products don't look broken
+ * 
+ * @param {string} url - The image URL or path
+ * @param {string} defaultPath - Fallback image if URL is invalid
+ * @returns {string} Corrected image URL
  */
 function fixImageUrl(url, defaultPath) {
     defaultPath = defaultPath || 'images/default-product.png';
+    
+    // If no image, use default
     if (!url || url == '') return baseUrl + defaultPath;
     
+    // Already a full URL
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     
+    // Remove leading slash if present
     var cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     
+    // Handle paths starting with uploads/ or images/
     if (cleanUrl.startsWith('uploads/') || cleanUrl.startsWith('images/')) {
         return baseUrl + cleanUrl;
     }
     
+    // Try to find uploads/ or images/ in the path
     var uploadsIndex = cleanUrl.indexOf('uploads/');
     if (uploadsIndex !== -1) {
         return baseUrl + cleanUrl.substring(uploadsIndex);
@@ -92,15 +117,26 @@ function fixImageUrl(url, defaultPath) {
         return baseUrl + cleanUrl.substring(imagesIndex);
     }
     
+    // If just a filename, assume it's in uploads/products/
     if (!cleanUrl.includes('/')) {
         return baseUrl + 'uploads/products/' + cleanUrl;
     }
     
+    // Fallback to default if nothing else works
     return baseUrl + defaultPath;
 }
 
 /**
- * Generates empty state HTML when no data exists
+ * Generates empty state HTML
+ * Used when there's no data to show (orders, cart, etc.)
+ * I copied this pattern from a tutorial
+ * 
+ * @param {string} icon - Icon filename in images/icons/
+ * @param {string} title - Empty state title
+ * @param {string} message - Description message
+ * @param {string} buttonText - Optional button text
+ * @param {string} buttonLink - Optional button link
+ * @returns {string} HTML for empty state
  */
 function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
     var html = '<div class="empty-state">' +
@@ -117,9 +153,16 @@ function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
 }
 
 /**
- * Renders pagination controls with ellipsis for large page sets
+ * Renders pagination with ... ellipsis for many pages
+ * This was tricky to get right, especially the math for dots
+ * 
+ * @param {jQuery} $container - Where to put the pagination
+ * @param {number} currentPage - Current page number
+ * @param {number} totalPages - Total number of pages
+ * @param {function} onPageChange - Callback when user clicks a page
  */
 function renderPagination($container, currentPage, totalPages, onPageChange) {
+    // Don't show pagination if only one page
     if (!$container.length || totalPages <= 1) {
         $container.empty();
         return;
@@ -127,27 +170,34 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
 
     var html = '';
     
+    // Previous button
     if (currentPage > 1) {
         html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">← Previous</button>';
     }
 
-    // Show first page, current page neighborhood, and last page
+    // Show current page and nearby pages
+    // I want to show: first page, pages around current, last page
     for (var i = 1; i <= totalPages; i++) {
         if (i == currentPage) {
+            // Current page - show as active
             html += '<button class="page-btn active" disabled>' + i + '</button>';
         } else if (Math.abs(i - currentPage) <= 2 || i == 1 || i == totalPages) {
+            // Show pages within 2 of current, plus first and last
             html += '<button class="page-btn" data-page="' + i + '">' + i + '</button>';
         } else if (Math.abs(i - currentPage) == 3) {
+            // Show dots when skipping pages
             html += '<span class="page-dots">...</span>';
         }
     }
 
+    // Next button
     if (currentPage < totalPages) {
         html += '<button class="page-btn" data-page="' + (currentPage + 1) + '">Next →</button>';
     }
 
     $container.html(html);
     
+    // Handle click events on page buttons
     $container.find('.page-btn[data-page]').off('click').on('click', function() {
         var page = parseInt($(this).data('page'));
         if (!isNaN(page) && typeof onPageChange == 'function') {
@@ -156,23 +206,31 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     });
 }
 
-// ========== TOAST NOTIFICATIONS ==========
+// ============================================================
+// TOAST NOTIFICATIONS - User feedback without alert boxes
+// ============================================================
 
 /**
- * Shows user feedback without intrusive popups
- * Auto-dismisses after 4 seconds to prevent UI clutter
- * Supports: success, error, warning, info
+ * Shows a toast notification
+ * I wanted something nicer than alert() popups
+ * Auto-dismisses after 4 seconds
+ * 
+ * @param {string} message - Message to show
+ * @param {string} type - success, error, warning, info
  */
 function showToast(message, type) {
     type = type || 'success';
     
+    // Remove any existing toasts first
     $('.toast-notification').remove();
     
+    // Create container if it doesn't exist
     if (!$toastContainer) {
         $toastContainer = $('<div class="toast-container"></div>');
         $('body').append($toastContainer);
     }
     
+    // Build the toast HTML
     var toast = $(
         '<div class="toast-notification toast-' + type + '">' +
             '<div class="toast-message">' + escapeHtml(message) + '</div>' +
@@ -181,22 +239,29 @@ function showToast(message, type) {
     
     $toastContainer.append(toast);
     
+    // Auto-remove after 4 seconds
     setTimeout(function() {
         toast.addClass('hiding');
         setTimeout(function() { toast.remove(); }, 300);
     }, 4000);
 }
 
-// Cleaner wrappers for different toast types
+// Shortcut functions so I don't have to type the type every time
 function showSuccessToast(message) { showToast(message, 'success'); }
 function showErrorToast(message) { showToast(message, 'error'); }
 function showInfoToast(message) { showToast(message, 'info'); }
 function showWarningToast(message) { showToast(message, 'warning'); }
 
-// ========== PASSWORD TOGGLE ==========
+// ============================================================
+// PASSWORD TOGGLE - Show/hide password for better UX
+// ============================================================
 
 /**
- * Toggles password visibility - helps users avoid typos
+ * Toggles password visibility
+ * Users kept complaining they couldn't see what they were typing
+ * 
+ * @param {string} fieldId - ID of the password field
+ * @param {HTMLElement} button - The toggle button
  */
 function togglePassword(fieldId, button) {
     var $input = $('#' + fieldId);
@@ -213,12 +278,18 @@ function togglePassword(fieldId, button) {
     }
 }
 
-// ========== ORDER DETAILS MODAL ==========
+// ============================================================
+// ORDER MODAL - View order details in a popup
+// ============================================================
 
 /**
- * Opens order details modal and fetches data via AJAX
- * Single modal component used by buyers, sellers, and admins
- * Action buttons change based on user role and order status
+ * Opens order details modal
+ * Fetches data via AJAX and displays it
+ * 
+ * This was a pain to get right because of all the different user roles
+ * Buyers see different info than sellers, and admins see everything
+ * 
+ * @param {number} orderId - ID of the order to view
  */
 function openOrderModal(orderId) {
     var $modal = $('#orderModal');
@@ -230,6 +301,7 @@ function openOrderModal(orderId) {
         return;
     }
     
+    // Show modal with loading state
     $modal.addClass('active');
     $modalBody.html('<div class="loading-spinner">Loading order details...</div>');
     $modalFooter.empty();
@@ -244,6 +316,7 @@ function openOrderModal(orderId) {
                 var isAdmin = window.location.pathname.includes('all-orders.php') || window.location.pathname.includes('admin-dashboard.php');
                 var userRole = currentUserRole || 'buyer';
                 
+                // Build items HTML
                 var itemsHtml = '';
                 if (order.items && order.items.length > 0) {
                     for (var i = 0; i < order.items.length; i++) {
@@ -263,7 +336,7 @@ function openOrderModal(orderId) {
                     }
                 }
                 
-                // Build payment details HTML
+                // Build payment details if available
                 var paymentHtml = '';
                 if (order.transaction) {
                     var tx = order.transaction;
@@ -284,6 +357,7 @@ function openOrderModal(orderId) {
                         '</div>';
                 }
                 
+                // Build the main content
                 $modalBody.html(
                     '<div class="order-info-section">' +
                         '<div class="info-row"><span class="info-label">Order Number:</span><span class="info-value">#' + order.order_id + '</span></div>' +
@@ -305,12 +379,10 @@ function openOrderModal(orderId) {
                     paymentHtml
                 );
                 
-                // ============================================================
-                // Role-based action buttons
-                // ============================================================
+                // Build action buttons based on user role
                 var actionButtons = '';
                 
-                // BUYER: Only cancel button
+                // BUYER: Can only cancel pending orders
                 if (userRole === 'buyer') {
                     if (order.status === 'pending' || order.status === 'processing') {
                         actionButtons = '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
@@ -331,7 +403,7 @@ function openOrderModal(orderId) {
                     }
                 }
                 
-                // ADMIN: All actions
+                // ADMIN: Can do everything
                 if (userRole === 'admin') {
                     if (order.status === 'pending') {
                         actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
@@ -356,14 +428,36 @@ function openOrderModal(orderId) {
     });
 }
 
+/**
+ * Closes the order details modal
+ */
 function closeOrderModal() {
     $('#orderModal').removeClass('active');
 }
 
+// ============================================================
+// ORDER STATUS UPDATE - THE IMPORTANT ONE!
+// ============================================================
+
 /**
  * Updates order status with confirmation
- * Used by admin and seller dashboards
- * Business rule: status transitions follow pending → processing → shipped → completed
+ * 
+ * This is used by:
+ * - Buyers: Cancel pending orders (my-orders.php)
+ * - Sellers: Process -> Ship -> Complete (my-sales.php)
+ * - Admins: Update any order (admin dashboard)
+ * 
+ * Business rules:
+ * - Buyers can ONLY cancel, and only if status is pending
+ * - Sellers follow: pending -> processing -> shipped -> completed
+ * - Cancelling restores product stock
+ * 
+ * IMPORTANT: This used to reload the whole page (annoying!)
+ * Now it refreshes just the orders table via AJAX
+ * Much better user experience!
+ * 
+ * @param {number} orderId - ID of the order to update
+ * @param {string} newStatus - New status to set (pending, processing, shipped, completed, cancelled)
  */
 function updateOrderStatus(orderId, newStatus) {
     var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
@@ -381,7 +475,23 @@ function updateOrderStatus(orderId, newStatus) {
             success: function(data) {
                 if (data.success) {
                     showSuccessToast(data.message || 'Order status updated successfully!');
-                    setTimeout(function() { location.reload(); }, 1500);
+                    
+                    // Try to refresh the orders table without reloading the page
+                    // This is much smoother than location.reload()
+                    // It checks if we're on a buyer or seller orders page
+                    if (typeof loadBuyerOrders === 'function') {
+                        loadBuyerOrders();
+                    } else if (typeof loadSellerOrders === 'function') {
+                        loadSellerOrders();
+                    } else if (typeof window.loadBuyerOrders === 'function') {
+                        window.loadBuyerOrders();
+                    } else if (typeof window.loadSellerOrders === 'function') {
+                        window.loadSellerOrders();
+                    } else {
+                        // Fallback: reload the page if no table refresh function exists
+                        // This shouldn't happen often though
+                        setTimeout(function() { location.reload(); }, 1500);
+                    }
                 } else {
                     alert('Error: ' + (data.message || 'Unknown error'));
                 }
@@ -393,12 +503,26 @@ function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-// ========== ORDER LISTING FUNCTIONS ==========
+// ============================================================
+// ORDER LISTING - Renders orders table
+// ============================================================
 
 /**
- * Fetches orders and renders them in the table
- * Endpoint changes depending on who's logged in
- * Used by buyers, sellers, and admins
+ * Fetches and renders orders in a table
+ * 
+ * Used on:
+ * - my-orders.php (buyers)
+ * - my-sales.php (sellers) 
+ * - all-orders.php (admin)
+ * 
+ * @param {string} endpoint - API endpoint to fetch orders
+ * @param {jQuery} $container - Table body element
+ * @param {jQuery} $pagination - Pagination container
+ * @param {number} page - Current page number
+ * @param {string} status - Filter by status
+ * @param {string} search - Search term
+ * @param {string} userRole - buyer, seller, or admin
+ * @param {function} onPageChange - Callback when page changes
  */
 function loadOrders(endpoint, $container, $pagination, page, status, search, userRole, onPageChange) {
     $container.html('<tr><td colspan="8"><div class="loading-spinner">Loading orders...</div></td></tr>');
@@ -428,10 +552,14 @@ function loadOrders(endpoint, $container, $pagination, page, status, search, use
 }
 
 /**
- * Renders orders with role-specific action buttons
- * Buyers: cancel only
- * Sellers: process, ship, complete, cancel
- * Admins: all actions
+ * Renders orders table with role-specific action buttons
+ * 
+ * This function builds the HTML for each order row
+ * I tried to keep it clean but it's still a bit messy
+ * 
+ * @param {array} orders - Array of order objects
+ * @param {jQuery} $container - Table body element
+ * @param {string} userRole - buyer, seller, or admin
  */
 function renderOrdersTable(orders, $container, userRole) {
     $container.empty();
@@ -444,6 +572,7 @@ function renderOrdersTable(orders, $container, userRole) {
         var buttons = '<div class="action-buttons">';
         buttons += '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
         
+        // Role-specific action buttons
         if (userRole === 'seller') {
             if (order.status === 'pending') {
                 buttons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
@@ -457,8 +586,10 @@ function renderOrdersTable(orders, $container, userRole) {
             }
         }
         
+        // BUYER: Only show cancel button for pending orders
         if (userRole === 'buyer') {
-            if (order.status === 'pending' || order.status === 'processing') {
+            // Cancel button ONLY for pending orders (not processing, shipped, or completed)
+            if (order.status === 'pending') {
                 buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>';
             }
             // Review button for completed orders
@@ -469,6 +600,7 @@ function renderOrdersTable(orders, $container, userRole) {
                     buttons += '<button class="action-btn review-btn" onclick="openReviewModal(' + order.order_id + ', ' + order.seller_id + ', \'' + escapeHtml(order.seller_name) + '\')">Write a Review</button>';
                 }
             }
+
         }
         
         if (userRole === 'admin') {
@@ -486,11 +618,15 @@ function renderOrdersTable(orders, $container, userRole) {
         
         buttons += '</div>';
         
+        // Build the table row
         var row = '<tr>';
         row += '<td data-label="Order #">#' + order.order_id + '</td>';
-        row += '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '</td>';
-        
-        if (userRole === 'admin') {
+        if (userRole === 'buyer') {
+            row += '<td data-label="Seller">' + escapeHtml(order.seller_name) + '</td>';
+        } else if (userRole === 'seller') {
+            row += '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '</td>';
+        } else if (userRole === 'admin') {
+            row += '<td data-label="Customer">' + escapeHtml(order.buyer_name) + '</td>';
             row += '<td data-label="Seller">' + escapeHtml(order.seller_name) + '</td>';
         }
         
@@ -506,7 +642,12 @@ function renderOrdersTable(orders, $container, userRole) {
 }
 
 /**
- * Shows empty state for orders with role-specific messaging
+ * Shows empty state when no orders match the filters
+ * 
+ * @param {jQuery} $container - Table body element
+ * @param {string} status - Current status filter
+ * @param {string} search - Current search term
+ * @param {string} userRole - buyer, seller, or admin
  */
 function showOrdersEmptyState($container, status, search, userRole) {
     var title = '';
@@ -552,10 +693,14 @@ function showOrdersEmptyState($container, status, search, userRole) {
     );
 }
 
-// ========== MODAL ERROR HANDLING ==========
+// ============================================================
+// MODAL ERROR HANDLING - Display validation errors
+// ============================================================
 
 /**
  * Clears validation errors from auth modals
+ * 
+ * @param {string} modalId - ID of the modal (e.g., '#login-modal')
  */
 function clearModalErrors(modalId) {
     var $modal = $(modalId);
@@ -566,6 +711,13 @@ function clearModalErrors(modalId) {
 
 /**
  * Displays validation errors from server response
+ * 
+ * This was tricky to get right because different forms
+ * have different field names and error structures
+ * 
+ * @param {string} modalId - ID of the modal
+ * @param {object} errors - Error messages from server
+ * @param {object} formData - Submitted form data to repopulate
  */
 function displayModalErrors(modalId, errors, formData) {
     var $modal = $(modalId);
@@ -579,6 +731,7 @@ function displayModalErrors(modalId, errors, formData) {
     var $loginErrorContainer = $('#login-error-container');
     
     if (modalId == '#register-modal') {
+        // Repopulate form with submitted data
         if (formData.full_name) $registerFullName.val(formData.full_name);
         if (formData.email) $registerEmail.val(formData.email);
         if (formData.phone) $registerPhone.val(formData.phone);
@@ -592,6 +745,7 @@ function displayModalErrors(modalId, errors, formData) {
             errorMessages.push(errors.general);
         }
         
+        // Highlight fields with errors
         for (var field in errors) {
             var message = errors[field];
             if (field != 'general' && message && message.trim()) {
@@ -640,6 +794,7 @@ function displayModalErrors(modalId, errors, formData) {
     }
 }
 
+// Shortcut functions for clearing errors
 function clearLoginErrors() {
     $('#login-error-container').hide().empty();
     $('#login-form .input-group').removeClass('error');
@@ -652,7 +807,9 @@ function clearRegisterErrors() {
     $('#register-form .error-text').remove();
 }
 
-// ========== CART OPERATIONS ==========
+// ============================================================
+// CART OPERATIONS - Add, remove, update quantity
+// ============================================================
 
 /**
  * Cache cart elements to avoid repeated DOM queries
@@ -666,7 +823,9 @@ function getCartCountElements() {
 
 /**
  * Updates cart badge across all locations on the page
- * Caches in sessionStorage for faster subsequent loads
+ * I store the count in sessionStorage so it persists between pages
+ * 
+ * @param {number} count - New cart count
  */
 function updateCartCountDisplay(count) {
     getCartCountElements().text(count);
@@ -675,7 +834,10 @@ function updateCartCountDisplay(count) {
 
 /**
  * Adds product to cart via AJAX
- * Used by product cards and detail pages
+ * 
+ * @param {number} productId - Product ID
+ * @param {string} productName - Product name (for toast message)
+ * @param {number} productPrice - Product price (for toast message)
  */
 function addToCart(productId, productName, productPrice) {
     $.ajax({
@@ -697,6 +859,8 @@ function addToCart(productId, productName, productPrice) {
 
 /**
  * Removes item from cart with confirmation
+ * 
+ * @param {number} productId - Product ID to remove
  */
 function removeFromCart(productId) {
     if (!confirm('Are you sure you want to remove this item from your cart?')) return;
@@ -722,13 +886,13 @@ function removeFromCart(productId) {
     });
 }
 
-// ========== CART PAGE FUNCTIONS ==========
-
-// ========== CART PAGE FUNCTIONS ==========
+// ============================================================
+// CART PAGE FUNCTIONS - These are specific to cart.php
+// ============================================================
 
 /**
  * Loads cart page using pre-loaded PHP data
- * Avoids extra AJAX call on initial load
+ * This avoids an extra AJAX call on initial load
  */
 function loadCartPage() {
     if (!window.location.pathname.includes('cart.php')) return;
@@ -751,7 +915,6 @@ function loadCartPage() {
         displayCartItems(initialCartData);
         updateCartTotalsDisplay(initialCartData);
         
-        // Calculate total quantity (sum of all quantities)
         var totalQty = 0;
         for (var i = 0; i < initialCartData.items.length; i++) {
             totalQty += initialCartData.items[i].quantity;
@@ -765,6 +928,8 @@ function loadCartPage() {
 
 /**
  * Updates the order summary section with current totals
+ * 
+ * @param {object} cartData - Cart data with subtotal, delivery_fee, total
  */
 function updateCartTotalsDisplay(cartData) {
     $('.sub-total-val').text('R ' + parseFloat(cartData.subtotal).toFixed(2));
@@ -804,6 +969,7 @@ function refreshCart() {
 
 /**
  * Updates cart badge from server
+ * Used on non-cart pages to show current count
  */
 function updateCartCount() {
     if (!isLoggedIn || currentUserRole !== 'buyer') {
@@ -811,7 +977,6 @@ function updateCartCount() {
         return;
     }
     
-    // Always fetch fresh data - no caching issues
     $.get(baseUrl + 'php/endpoints/cart/get-cart.php', function(data) {
         if (data.success) {
             updateCartCountDisplay(data.item_count);
@@ -822,6 +987,12 @@ function updateCartCount() {
 
 /**
  * Renders cart items in both desktop table and mobile card views
+ * 
+ * This is the biggest function in the file
+ * It handles two different layouts (desktop + mobile)
+ * And all the quantity controls
+ * 
+ * @param {object} cartData - Cart data from server
  */
 function displayCartItems(cartData) {
     var $desktopTableBody = $('#cart-table-body');
@@ -856,7 +1027,7 @@ function displayCartItems(cartData) {
     if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'none');
     if ($cartLayout.length) $cartLayout.css('display', 'flex');
     
-    // Calculate total quantity for the cart item count
+    // Calculate total quantity
     var totalQty = 0;
     for (var i = 0; i < items.length; i++) {
         totalQty += items[i].quantity;
@@ -887,6 +1058,7 @@ function displayCartItems(cartData) {
         var productId = item.product_id;
         var stockQty = parseInt(item.stock_quantity) || 99;
         
+        // Desktop table row
         if ($desktopTableBody.length) {
             var row = $('<tr>').html(
                 '<td class="product-cell" data-label="Product">' +
@@ -919,6 +1091,7 @@ function displayCartItems(cartData) {
             $desktopTableBody.append(row);
         }
         
+        // Mobile card view
         if ($mobileContainer.length) {
             var card = $('<div>').addClass('cart-card').html(
                 '<div class="cart-card-header">' +
@@ -994,6 +1167,15 @@ function displayCartItems(cartData) {
 
 /**
  * Updates cart quantity via AJAX and refreshes the display
+ * 
+ * @param {number} cartId - Cart item ID
+ * @param {number} quantity - New quantity
+ */
+/**
+ * Updates cart quantity via AJAX and refreshes the display
+ * 
+ * @param {number} cartId - Cart item ID
+ * @param {number} quantity - New quantity
  */
 function updateCartQuantity(cartId, quantity) {
     $.ajax({
@@ -1004,30 +1186,54 @@ function updateCartQuantity(cartId, quantity) {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
+                // Always use the cart data from the response
+                // This ensures we have the latest totals
                 if (response.cart) {
+                    // Update the items display with fresh data
                     displayCartItems(response.cart);
-                    updateCartTotalsDisplay(response.cart);
-                    updateCartCountDisplay(response.cart.item_count);
+                    
+                    //  Update the totals with fresh data
+                    if (typeof updateCartTotalsDisplay === 'function') {
+                        updateCartTotalsDisplay(response.cart);
+                    }
+                    
+                    // Update the cart count badge
+                    if (typeof updateCartCountDisplay === 'function') {
+                        updateCartCountDisplay(response.cart.item_count);
+                    }
+                    
+                    // Store the updated cart data for future use
+                    if (typeof initialCartData !== 'undefined') {
+                        initialCartData = response.cart;
+                    }
                 } else {
+                    // Fallback: refresh the whole cart
                     refreshCart();
                 }
-                showSuccessToast(response.message);
+                
+                showSuccessToast(response.message || 'Cart updated');
             } else {
-                showErrorToast(response.message);
-                location.reload();
+                showErrorToast(response.message || 'Failed to update cart');
+                // Reload to fix any inconsistencies
+                setTimeout(function() { location.reload(); }, 1500);
             }
         },
-        error: function() {
-            showErrorToast('Something went wrong.');
-            location.reload();
+        error: function(xhr, status, error) {
+            console.error('Cart update error:', error);
+            showErrorToast('Something went wrong. Please refresh the page.');
+            setTimeout(function() { location.reload(); }, 1500);
         }
     });
 }
 
-// ========== MODAL CONTROLS ==========
+// ============================================================
+// MODAL CONTROLS - Open/close modals with animation
+// ============================================================
 
 /**
  * Opens modal with smooth CSS transition animation
+ * 
+ * @param {jQuery} $modal - jQuery element of the modal
  */
 function openModal($modal) {
     if (!$modal.length) return;
@@ -1053,6 +1259,8 @@ function openModal($modal) {
 
 /**
  * Closes modal with smooth CSS transition animation
+ * 
+ * @param {jQuery} $modal - jQuery element of the modal
  */
 function closeModal($modal) {
     if (!$modal.length) return;
@@ -1075,6 +1283,7 @@ function closeModal($modal) {
 
 /**
  * Clears field errors as soon as user starts typing
+ * This improves UX by providing instant feedback
  */
 function initErrorClearingOnInput() {
     $('#login-email, #login-password').on('input', function() { 
@@ -1097,6 +1306,7 @@ function initErrorClearingOnInput() {
 
 /**
  * AJAX login handler - prevents page reload and shows errors inline
+ * This was a big improvement over traditional form submission
  */
 function initAjaxLogin() {
     var $loginForm = $('#login-form');
@@ -1174,10 +1384,13 @@ function initAjaxRegister() {
     });
 }
 
-// ========== UI CONTROLS ==========
+// ============================================================
+// UI CONTROLS - Mobile menu, search, dropdowns
+// ============================================================
 
 /**
  * Mobile menu toggle with overlay
+ * I had to fix this a few times because of scrolling issues
  */
 function initMobileMenu() {
     var $menuToggle = $('#menuToggle');
@@ -1361,9 +1574,12 @@ function initFlashMessages() {
     }
 }
 
-// ========== DOCUMENT READY ==========
+// ============================================================
+// DOCUMENT READY - Initialize everything
+// ============================================================
 
 $(function() {
+    // Initialize all UI components
     initMobileMenu();
     initMobileSearch();
     initModalControls();

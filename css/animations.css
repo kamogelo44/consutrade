@@ -65,28 +65,47 @@
   }
 }
 
-/* Toast Animations */
-@keyframes toastSlideInRight {
+/* ============================================================
+   TOAST ANIMATIONS - Slide from top (Updated)
+   ============================================================ */
+
+/* Toast appears by sliding down from the top */
+@keyframes toastSlideDown {
   from {
-    transform: translateX(100%);
+    transform: translateY(-30px);
     opacity: 0;
   }
   to {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
-@keyframes toastSlideOutRight {
+/* Toast disappears by sliding up to the top */
+@keyframes toastSlideUp {
   from {
-    transform: translateX(0);
+    transform: translateY(0);
     opacity: 1;
   }
   to {
-    transform: translateX(100%);
+    transform: translateY(-30px);
     opacity: 0;
   }
 }
+
+/* Toast Animation Classes */
+.toast-notification {
+  animation: toastSlideDown 0.4s ease forwards;
+}
+
+.toast-notification.hiding {
+  animation: toastSlideUp 0.3s ease forwards;
+}
+r
+
+/* ============================================================
+   SIDEBAR / MOBILE MENU ANIMATIONS
+   ============================================================ */
 
 /* Sidebar Slide Animations */
 @keyframes slideInRight {
@@ -107,7 +126,10 @@
   }
 }
 
-/* Fade Animations */
+/* ============================================================
+   FADE ANIMATIONS
+   ============================================================ */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -126,7 +148,10 @@
   }
 }
 
-/* Modal Animation Classes */
+/* ============================================================
+   MODAL ANIMATION CLASSES
+   ============================================================ */
+
 .modal.active .modal-content.animate-in {
   animation: modalFadeIn 0.3s ease forwards;
 }
@@ -143,21 +168,18 @@
   animation: modalSlideInRight 0.3s ease forwards;
 }
 
-/* Toast Animation Classes */
-.toast-notification {
-  animation: toastSlideInRight 0.3s ease forwards;
-}
+/* ============================================================
+   DROPDOWN MENU ANIMATION
+   ============================================================ */
 
-.toast-notification.hiding {
-  animation: toastSlideOutRight 0.3s ease forwards;
-}
-
-/* Dropdown Menu Animation */
 .dropdown-menu.active {
   animation: fadeIn 0.2s ease forwards;
 }
 
-/* Loading Spinner Animation (applies to elements with .loading-spinner) */
+/* ============================================================
+   LOADING SPINNER
+   ============================================================ */
+
 .loading-spinner::before {
   animation: spin 0.8s linear infinite;
 }

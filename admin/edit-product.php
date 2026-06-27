@@ -329,7 +329,7 @@ unset($_SESSION['error'], $_SESSION['success']);
             <?php include dirname(__DIR__) . '/includes/flash-message.php'; ?>
 
             <div class="form-container">
-                <form id="edit-product-form" action="<?php echo $baseUrl; ?>php/endpoints/edit-product.php" method="post" enctype="multipart/form-data">
+                <form id="edit-product-form" action="<?php echo $baseUrl; ?>php/endpoints/products/edit-product.php" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="product_id" value="<?php echo $product->getProductId(); ?>">
 
                     <div class="form-group">

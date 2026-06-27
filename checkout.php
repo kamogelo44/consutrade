@@ -17,27 +17,33 @@ if (!isset($_SESSION['checkout_data'])) {
     exit;
 }
 
-$data        = $_SESSION['checkout_data'];
-$cart_items  = $data['cart_items'];
-$subtotal    = $data['subtotal'];
+$data = $_SESSION['checkout_data'];
+$cart_items = $data['cart_items'];
+$subtotal = $data['subtotal'];
 $delivery_fee = $data['delivery_fee'];
-$total       = $data['total'];
+$total = $data['total'];
+$paymentId = $data['payment_id'];
 
 // Split buyer name for PayFast
 $name_parts = explode(' ', $data['buyer_name'], 2);
 $first_name = $name_parts[0];
 $last_name = isset($name_parts[1]) ? $name_parts[1] : '';
 
-// Use CartService for PayFast data preparation
-$payfast_data = $cartService->preparePayFastData([
-    'payment_id' => $data['payment_id'],
-    'primary_order_id' => $data['primary_order_id'],
-    'total' => $total,
-    'buyer_name' => $data['buyer_name'],
-    'buyer_email' => $data['buyer_email'],
-], $baseUrl);
-
-unset($_SESSION['checkout_data']);
+// Prepare PayFast data (no order creation yet)
+$payfast_data = [
+    'merchant_id' => PAYFAST_MERCHANT_ID,
+    'merchant_key' => PAYFAST_MERCHANT_KEY,
+    'return_url' => rtrim($baseUrl, '/') . '/order-confirmation.php',
+    'cancel_url' => rtrim($baseUrl, '/') . '/cart.php',
+    'notify_url' => rtrim($baseUrl, '/') . '/php/endpoints/checkout/payfast-notify.php',
+    'm_payment_id' => $paymentId,
+    'amount' => number_format($total, 2, '.', ''),
+    'item_name' => 'ConsuTrade Order',
+    'item_description' => 'Purchase from ConsuTrade',
+    'name_first' => $first_name,
+    'name_last' => $last_name,
+    'email_address' => $data['buyer_email']
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">

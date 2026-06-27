@@ -14,14 +14,27 @@ if (defined('PHPUNIT_TESTING') && PHPUNIT_TESTING === true) {
 function getBaseUrl(): string
 {
     global $env;
-    // When running tests via terminal, $_SERVER['HTTP_HOST'] does not exist.
-    // This fallback prevents undefined index errors during test execution.
+
+    // If BASE_URL is set in .env, use it
     if (isset($env['BASE_URL']) && !empty($env['BASE_URL'])) {
         return rtrim($env['BASE_URL'], '/') . '/';
     }
 
+    // Otherwise, detect from server
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    // Get the directory path from the current script
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    $dir = dirname($scriptName);
+
+    // If we're in a subdirectory, include it
+    if ($dir !== '/' && $dir !== '\\') {
+        // Remove any duplicate slashes and convert backslashes
+        $dir = str_replace('\\', '/', $dir);
+        return $protocol . '://' . $host . $dir . '/';
+    }
+
     return $protocol . '://' . $host . '/';
 }
 

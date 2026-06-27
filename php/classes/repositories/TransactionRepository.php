@@ -253,6 +253,40 @@ class TransactionRepository
         return $result;
     }
 
+    /**
+     * Updates the amount of a transaction.
+     * Used when the final total is known after order creation.
+     *
+     * @param int $transactionId The transaction ID
+     * @param float $amount The correct amount
+     * @return bool True on success, false on failure
+     */
+    public function updateAmount(int $transactionId, float $amount): bool
+    {
+        $stmt = $this->db->prepare("UPDATE transactions SET amount = ? WHERE transaction_id = ?");
+        $stmt->bind_param('di', $amount, $transactionId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Updates a transaction with the actual PayFast reference after payment.
+     *
+     * @param int $transactionId The transaction ID
+     * @param string $payfastRef The actual PayFast payment reference
+     * @param string $status New status ('completed')
+     * @return bool True on success, false on failure
+     */
+    public function updatePayFastRef(int $transactionId, string $payfastRef, string $status = 'completed'): bool
+    {
+        $stmt = $this->db->prepare("UPDATE transactions SET payfast_ref = ?, status = ?, paid_at = NOW() WHERE transaction_id = ?");
+        $stmt->bind_param('ssi', $payfastRef, $status, $transactionId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
     // ============================================================
     // DELETE
     // ============================================================

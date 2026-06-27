@@ -26,27 +26,7 @@ if (!$auth->isAdmin()) {
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <style>
-        .admin-main-content {
-            margin-left: 280px;
-            padding: var(--spacing-xl);
-            min-height: 100vh;
-            background: var(--gray-bg);
-            transition: margin-left var(--transition-normal);
-        }
-
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .page-header {
-            margin-bottom: var(--spacing-xl);
-        }
-
         .page-header h1 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xs);
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
@@ -55,10 +35,6 @@ if (!$auth->isAdmin()) {
         .page-header h1 img {
             width: 28px;
             height: 28px;
-        }
-
-        .page-header p {
-            color: var(--gray-medium);
         }
 
         .pending-count {
@@ -71,7 +47,6 @@ if (!$auth->isAdmin()) {
             margin-left: var(--spacing-md);
         }
 
-        /* Report Card */
         .report-card {
             background: var(--white);
             border: 1px solid var(--border-light);
@@ -84,6 +59,10 @@ if (!$auth->isAdmin()) {
         .report-card:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
+        }
+
+        .report-card.product-unavailable {
+            border-left: 4px solid var(--error);
         }
 
         .report-card-header {
@@ -138,6 +117,18 @@ if (!$auth->isAdmin()) {
             font-size: var(--font-sm);
             color: var(--primary-color);
             font-weight: var(--font-medium);
+        }
+
+        .product-unavailable-warning {
+            background: var(--error-light);
+            color: var(--error);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-xs);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
         }
 
         .report-badge {
@@ -211,6 +202,11 @@ if (!$auth->isAdmin()) {
             margin-top: var(--spacing-sm);
         }
 
+        .product-unavailable-actions {
+            border-top: none;
+            padding-top: 0;
+        }
+
         .btn-dismiss,
         .btn-suspend,
         .btn-view-product {
@@ -261,7 +257,6 @@ if (!$auth->isAdmin()) {
             transform: translateY(-2px);
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -345,7 +340,6 @@ if (!$auth->isAdmin()) {
             justify-content: flex-end;
         }
 
-        /* Empty state */
         .empty-products {
             text-align: center;
             padding: 60px;
@@ -371,57 +365,10 @@ if (!$auth->isAdmin()) {
             color: var(--gray-medium);
         }
 
-        /* Loading */
         .loading-spinner {
             text-align: center;
             padding: 60px;
             color: var(--gray-medium);
-        }
-
-        /* Pagination */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            padding: 8px 14px;
-            border: 1px solid var(--border-light);
-            background: var(--white);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: var(--font-sm);
-        }
-
-        .page-btn:hover {
-            background: var(--primary-fade);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .page-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-            cursor: default;
-        }
-
-        .page-dots {
-            padding: 8px 4px;
-            color: var(--gray-light);
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .admin-main-content {
-                margin-left: 0;
-                padding: var(--spacing-md);
-                padding-top: 70px;
-            }
         }
 
         @media (max-width: 768px) {
@@ -446,11 +393,6 @@ if (!$auth->isAdmin()) {
         }
 
         @media (max-width: 480px) {
-            .admin-main-content {
-                padding: var(--spacing-sm);
-                padding-top: 60px;
-            }
-
             .page-header h1 {
                 font-size: var(--font-xl);
             }
@@ -485,7 +427,6 @@ if (!$auth->isAdmin()) {
         </div>
     </main>
 
-    <!-- Admin Notes Modal -->
     <div id="adminNotesModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -538,7 +479,7 @@ if (!$auth->isAdmin()) {
             $reportsContainer.html('<div class="loading-spinner">Loading flagged listings...</div>');
 
             $.ajax({
-                url: baseUrl + 'php/endpoints/get-flagged-listings.php',
+                url: baseUrl + 'php/endpoints/products/get-flagged-listings.php',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -580,10 +521,8 @@ if (!$auth->isAdmin()) {
             for (var i = 0; i < reports.length; i++) {
                 var report = reports[i];
                 var productUrl = baseUrl + 'product-details.php?id=' + report.product_id;
-                // Using fixImageUrl from main.js
                 var imagePath = fixImageUrl(report.product_image);
 
-                // product status warning if product is not available
                 var productStatusHtml = '';
                 if (!report.product_available) {
                     productStatusHtml = '<div class="product-unavailable-warning">' +
@@ -642,7 +581,6 @@ if (!$auth->isAdmin()) {
                     );
                 }
 
-                // Only show action buttons if product is still available
                 var actionButtons = '';
                 if (report.product_available) {
                     actionButtons = '<div class="report-actions">' +
@@ -669,7 +607,6 @@ if (!$auth->isAdmin()) {
             }
         }
 
-        // Using main.js renderPagination function instead of custom one
         function displayPagination() {
             if (typeof renderPagination === 'function') {
                 renderPagination($paginationContainer, currentPage, totalPages, function(page) {
@@ -680,7 +617,6 @@ if (!$auth->isAdmin()) {
                     }, 'smooth');
                 });
             } else {
-                // Fallback if renderPagination doesn't exist
                 if (totalPages <= 1) {
                     $paginationContainer.empty();
                     return;
@@ -709,7 +645,6 @@ if (!$auth->isAdmin()) {
             }
         }
 
-        // Keep goToPage as fallback for inline onclick handlers
         function goToPage(page) {
             currentPage = page;
             loadFlaggedListings();
@@ -758,7 +693,7 @@ if (!$auth->isAdmin()) {
             $modalConfirmBtn.prop('disabled', true).text('Processing...');
 
             $.ajax({
-                url: baseUrl + 'php/endpoints/update-report-status.php',
+                url: baseUrl + 'php/endpoints/reports/update-report-status.php',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -769,7 +704,6 @@ if (!$auth->isAdmin()) {
                 dataType: 'json',
                 success: function(data) {
                     if (data.success) {
-                        // Using global toast functions from main.js
                         if (typeof showSuccessToast === 'function') {
                             showSuccessToast(data.message);
                         } else {

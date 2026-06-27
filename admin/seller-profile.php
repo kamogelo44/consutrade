@@ -715,7 +715,7 @@ if ($verificationObj) {
         $(function() {
             function loadProfileStats() {
                 $.ajax({
-                    url: baseUrl + 'php/endpoints/get-user-stats.php?seller_id=' + currentUserId,
+                    url: baseUrl + 'php/endpoints/users/get-user-stats.php?seller_id=' + currentUserId,
                     type: 'GET',
                     dataType: 'json',
                     success: function(data) {
@@ -751,7 +751,7 @@ if ($verificationObj) {
                     formData.append('profile_image', file);
 
                     $.ajax({
-                        url: baseUrl + 'php/endpoints/update-profile.php',
+                        url: baseUrl + 'php/endpoints/users/update-profile.php',
                         type: 'POST',
                         data: formData,
                         processData: false,
@@ -786,7 +786,7 @@ if ($verificationObj) {
                 formData.append('action', 'update_profile');
 
                 $.ajax({
-                    url: baseUrl + 'php/endpoints/update-profile.php',
+                    url: baseUrl + 'php/endpoints/users/update-profile.php',
                     type: 'POST',
                     data: formData,
                     processData: false,
@@ -811,7 +811,7 @@ if ($verificationObj) {
                 var formData = new FormData(this);
 
                 $.ajax({
-                    url: baseUrl + 'php/endpoints/upload-verification.php',
+                    url: baseUrl + 'php/endpoints/users/upload-verification.php',
                     type: 'POST',
                     data: formData,
                     processData: false,

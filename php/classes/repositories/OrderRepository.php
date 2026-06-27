@@ -5,15 +5,24 @@
  *
  * Handles all order and order item database operations ONLY.
  * Business logic moved to OrderService.
+ * 
+ * All methods are documented with parameter types, return types,
+ * and descriptions of what they do.
  *
  * @author Kamogelo Phale
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 class OrderRepository
 {
+    /** @var mysqli Database connection */
     private $db;
 
+    /**
+     * Constructor
+     *
+     * @param mysqli $db Database connection
+     */
     public function __construct($db)
     {
         $this->db = $db;
@@ -25,11 +34,13 @@ class OrderRepository
 
     /**
      * Create orders from cart items.
+     * Creates one order per seller in the cart.
+     * All orders share the same payment_id for tracking.
      *
      * @param int $buyerId Buyer user ID
-     * @param array $items Cart items
+     * @param array $items Cart items (each with product_id, quantity, price, seller_id)
      * @param array $sellers Unique seller IDs
-     * @return array|null
+     * @return array|null Returns ['order_ids' => [...], 'payment_id' => '...'] or null on failure
      */
     public function createFromCart(int $buyerId, array $items, array $sellers): ?array
     {
@@ -37,6 +48,7 @@ class OrderRepository
         $paymentId = time() . '_' . $buyerId;
 
         foreach ($sellers as $sellerId) {
+            // Calculate subtotal for this seller
             $sellerSubtotal = 0;
             foreach ($items as $item) {
                 if ($item['seller_id'] == $sellerId) {
@@ -44,9 +56,11 @@ class OrderRepository
                 }
             }
 
+            // Delivery fee: R50 if subtotal is between R1 and R499, free if R500+
             $sellerDelivery = ($sellerSubtotal > 0 && $sellerSubtotal < 500) ? 50 : 0;
             $sellerTotal = $sellerSubtotal + $sellerDelivery;
 
+            // Insert order
             $orderSql = "INSERT INTO orders (buyer_id, seller_id, total_price, status, payment_id, created_at)
                          VALUES (?, ?, ?, 'pending', ?, NOW())";
             $orderStmt = $this->db->prepare($orderSql);
@@ -60,6 +74,7 @@ class OrderRepository
             $orderIds[] = $orderId;
             $orderStmt->close();
 
+            // Insert order items for this seller
             foreach ($items as $item) {
                 if ($item['seller_id'] == $sellerId) {
                     $itemSql = "INSERT INTO order_items (order_id, product_id, quantity, price)
@@ -81,6 +96,10 @@ class OrderRepository
 
     /**
      * Check if an order exists by ID and return basic data.
+     * Lightweight check for existence and ownership verification.
+     *
+     * @param int $orderId Order ID
+     * @return array|null Returns order data or null if not found
      */
     public function existsById(int $orderId): ?array
     {
@@ -95,7 +114,30 @@ class OrderRepository
     }
 
     /**
+     * Find order by payment ID.
+     * Used to look up orders when PayFast redirects with m_payment_id.
+     *
+     * @param string $paymentId Payment ID
+     * @return array|null Returns order data or null if not found
+     */
+    public function findByPaymentId(string $paymentId): ?array
+    {
+        $sql = "SELECT * FROM orders WHERE payment_id = ? LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('s', $paymentId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $order = $result->fetch_assoc();
+        $stmt->close();
+        return $order ?: null;
+    }
+
+    /**
      * Get order items by order ID.
+     * Returns only product_id and quantity for stock operations.
+     *
+     * @param int $orderId Order ID
+     * @return array List of items ['product_id' => int, 'quantity' => int]
      */
     public function getOrderItems(int $orderId): array
     {
@@ -114,9 +156,16 @@ class OrderRepository
 
     /**
      * Get single order details with items.
+     * Role-based access control - returns different data based on user role.
+     *
+     * @param int $orderId Order ID
+     * @param int $userId User ID (buyer, seller, or admin)
+     * @param string $role User role ('buyer', 'seller', or 'admin')
+     * @return array|null Returns order with items and other party name, or null if not found
      */
     public function findById(int $orderId, int $userId, string $role): ?array
     {
+        // Admin can view any order
         if ($role === 'admin') {
             $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
                        buyer.full_name as buyer_name, seller.full_name as seller_name
@@ -156,6 +205,7 @@ class OrderRepository
             return null;
         }
 
+        // Buyers and sellers can only view their own orders
         $idColumn = ($role === 'buyer') ? 'buyer_id' : 'seller_id';
 
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
@@ -173,7 +223,8 @@ class OrderRepository
             $itemsSql = "SELECT oi.quantity, oi.price,
                             p.title as product_name, p.image_url
                      FROM order_items oi
-                     JOIN products p ON oi.product_id = p.product_id                     WHERE oi.order_id = ?";
+                     JOIN products p ON oi.product_id = p.product_id
+                     WHERE oi.order_id = ?";
             $itemsStmt = $this->db->prepare($itemsSql);
             $itemsStmt->bind_param('i', $orderId);
             $itemsStmt->execute();
@@ -196,6 +247,14 @@ class OrderRepository
 
     /**
      * Get buyer orders with optional filters and pagination.
+     * Used for the "My Orders" page for buyers.
+     *
+     * @param int $id Buyer user ID
+     * @param string $filter Status filter ('all', 'pending', 'processing', etc.)
+     * @param string $search Search term for order ID
+     * @param int $limit Results per page (0 = no limit)
+     * @param int $offset Pagination offset
+     * @return array List of orders with seller info and item count
      */
     public function findByBuyer(int $id, string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
@@ -247,6 +306,14 @@ class OrderRepository
 
     /**
      * Get seller orders with optional filters and pagination.
+     * Used for the "My Sales" page for sellers.
+     *
+     * @param int $id Seller user ID
+     * @param string $filter Status filter ('all', 'pending', 'processing', etc.)
+     * @param string $search Search term for order ID or buyer name
+     * @param int $limit Results per page (0 = no limit)
+     * @param int $offset Pagination offset
+     * @return array List of orders with buyer info and item count
      */
     public function findBySeller(int $id, string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
@@ -299,6 +366,9 @@ class OrderRepository
 
     /**
      * Get all orders for admin.
+     * Shows both buyer and seller names for each order.
+     *
+     * @return array List of all orders with buyer and seller info
      */
     public function findAll(): array
     {
@@ -326,6 +396,9 @@ class OrderRepository
 
     /**
      * Get recent orders for admin dashboard.
+     *
+     * @param int $limit Number of orders to return (default 5)
+     * @return array List of recent orders with formatted dates
      */
     public function findRecent(int $limit = 5): array
     {
@@ -367,6 +440,10 @@ class OrderRepository
 
     /**
      * Get seller recent orders for dashboard.
+     *
+     * @param int $sellerId Seller user ID
+     * @param int $limit Number of orders to return (default 5)
+     * @return array List of recent orders with product names
      */
     public function findRecentBySeller(int $sellerId, int $limit = 5): array
     {
@@ -400,6 +477,10 @@ class OrderRepository
 
     /**
      * Get buyer statistics.
+     * Used for buyer dashboard to show order counts and spending.
+     *
+     * @param int $buyerId Buyer user ID
+     * @return array ['total_orders', 'total_spent', 'pending_orders', 'completed_orders']
      */
     public function findBuyerStats(int $buyerId): array
     {
@@ -430,7 +511,13 @@ class OrderRepository
     // ============================================================
 
     /**
-     * Update order status.
+     * Update order status with seller verification.
+     * Sellers can only update orders they own.
+     *
+     * @param int $orderId Order ID
+     * @param int $sellerId Seller user ID (must match order.seller_id)
+     * @param string $status New status
+     * @return array ['success' => bool, 'message' => string]
      */
     public function updateStatus(int $orderId, int $sellerId, string $status): array
     {
@@ -448,24 +535,62 @@ class OrderRepository
     }
 
     /**
-     * Update order status directly (for PayFast).
+     * Update order status directly (for PayFast ITN).
+     * 
+     * This method is used by PayFastService to update order status
+     * after successful payment confirmation.
+     * 
+     * Features:
+     * - Validates the status is allowed
+     * - Only updates if the status is different (prevents unnecessary updates)
+     * - Returns true only if a row was actually affected
+     * - Logs all operations for debugging
+     *
+     * @param int $orderId The order ID
+     * @param string $status The new status ('pending', 'processing', 'shipped', 'completed', 'cancelled')
+     * @return bool True if the status was updated, false otherwise
      */
     public function updateStatusDirect(int $orderId, string $status): bool
     {
         $validStatuses = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
+
+        // Validate status
         if (!in_array($status, $validStatuses)) {
+            error_log("updateStatusDirect: Invalid status '$status' for order_id: $orderId");
             return false;
         }
 
-        $stmt = $this->db->prepare("UPDATE orders SET status = ? WHERE order_id = ?");
-        $stmt->bind_param('si', $status, $orderId);
+        // Prepare statement - only update if status is different
+        $stmt = $this->db->prepare("UPDATE orders SET status = ? WHERE order_id = ? AND status != ?");
+        if (!$stmt) {
+            error_log("updateStatusDirect: Prepare failed - " . $this->db->error);
+            return false;
+        }
+
+        $stmt->bind_param('sis', $status, $orderId, $status);
         $result = $stmt->execute();
+
+        if ($result) {
+            $affectedRows = $stmt->affected_rows;
+            error_log("updateStatusDirect: order_id=$orderId, status=$status, affected_rows=$affectedRows");
+            // Return true only if a row was actually updated
+            $success = $affectedRows > 0;
+            $stmt->close();
+            return $success;
+        }
+
+        error_log("updateStatusDirect: Execute failed - " . $stmt->error);
         $stmt->close();
-        return $result;
+        return false;
     }
 
     /**
-     * Cancel buyer order (database only - stock restoration handled in OrderService).
+     * Cancel buyer order (database only).
+     * Stock restoration is handled in OrderService.
+     *
+     * @param int $orderId Order ID
+     * @param int $buyerId Buyer user ID (must match order.buyer_id)
+     * @return bool True if cancelled successfully
      */
     public function cancelByBuyer(int $orderId, int $buyerId): bool
     {
@@ -481,6 +606,12 @@ class OrderRepository
     // DELETE (D)
     // ============================================================
 
+    /**
+     * Delete all orders for a buyer (soft delete).
+     *
+     * @param int $buyerId Buyer user ID
+     * @return bool True on success
+     */
     public function deleteByBuyer(int $buyerId): bool
     {
         $stmt = $this->db->prepare("DELETE FROM orders WHERE buyer_id = ?");
@@ -490,6 +621,12 @@ class OrderRepository
         return $result;
     }
 
+    /**
+     * Delete all orders for a seller (soft delete).
+     *
+     * @param int $sellerId Seller user ID
+     * @return bool True on success
+     */
     public function deleteBySeller(int $sellerId): bool
     {
         $stmt = $this->db->prepare("DELETE FROM orders WHERE seller_id = ?");
@@ -503,6 +640,11 @@ class OrderRepository
     // COUNTS / STATISTICS
     // ============================================================
 
+    /**
+     * Count all orders in the system.
+     *
+     * @return int Total number of orders
+     */
     public function countAll(): int
     {
         $result = $this->db->query("SELECT COUNT(*) as count FROM orders");
@@ -510,6 +652,12 @@ class OrderRepository
         return (int)($row['count'] ?? 0);
     }
 
+    /**
+     * Count orders by status.
+     *
+     * @param string $status Order status
+     * @return int Number of orders with that status
+     */
     public function countByStatus(string $status): int
     {
         $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM orders WHERE status = ?");
@@ -521,6 +669,14 @@ class OrderRepository
         return (int)($row['count'] ?? 0);
     }
 
+    /**
+     * Count buyer orders with filters.
+     *
+     * @param int $id Buyer user ID
+     * @param string $filter Status filter ('all', 'pending', etc.)
+     * @param string $search Search term for order ID
+     * @return int Number of orders matching the filters
+     */
     public function countByBuyer(int $id, string $filter = 'all', string $search = ''): int
     {
         $sql = "SELECT COUNT(*) as total FROM orders o WHERE o.buyer_id = ?";
@@ -550,6 +706,14 @@ class OrderRepository
         return (int)($row['total'] ?? 0);
     }
 
+    /**
+     * Count seller orders with filters.
+     *
+     * @param int $id Seller user ID
+     * @param string $filter Status filter ('all', 'pending', etc.)
+     * @param string $search Search term for order ID
+     * @return int Number of orders matching the filters
+     */
     public function countBySeller(int $id, string $filter = 'all', string $search = ''): int
     {
         $sql = "SELECT COUNT(*) as total FROM orders o WHERE o.seller_id = ?";
@@ -579,6 +743,13 @@ class OrderRepository
         return (int)($row['total'] ?? 0);
     }
 
+    /**
+     * Count completed orders for a seller.
+     * Used for seller statistics.
+     *
+     * @param int $sellerId Seller user ID
+     * @return int Number of completed orders
+     */
     public function countCompletedBySeller(int $sellerId): int
     {
         $sql = "SELECT COUNT(DISTINCT o.order_id) as total 
@@ -595,6 +766,13 @@ class OrderRepository
         return $total;
     }
 
+    /**
+     * Count orders by seller and status.
+     *
+     * @param int $sellerId Seller user ID
+     * @param string $status Order status
+     * @return int Number of orders matching the criteria
+     */
     public function countBySellerAndStatus(int $sellerId, string $status): int
     {
         $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM orders WHERE seller_id = ? AND status = ?");
@@ -606,6 +784,11 @@ class OrderRepository
         return (int)($row['count'] ?? 0);
     }
 
+    /**
+     * Get total revenue from all completed transactions.
+     *
+     * @return float Total revenue
+     */
     public function getTotalRevenue(): float
     {
         $result = $this->db->query(
@@ -617,6 +800,12 @@ class OrderRepository
         return (float)($row['total_revenue'] ?? 0);
     }
 
+    /**
+     * Get total revenue for a seller from completed orders.
+     *
+     * @param int $sellerId Seller user ID
+     * @return float Total revenue for the seller
+     */
     public function getSellerTotalRevenue(int $sellerId): float
     {
         $sql = "SELECT SUM(total_price) as total FROM orders WHERE seller_id = ? AND status = 'completed'";
@@ -629,6 +818,12 @@ class OrderRepository
         return (float)($row['total'] ?? 0);
     }
 
+    /**
+     * Get total number of completed orders for a seller.
+     *
+     * @param int $sellerId Seller user ID
+     * @return int Number of completed orders
+     */
     public function getSellerTotalOrders(int $sellerId): int
     {
         $sql = "SELECT COUNT(*) as total 
@@ -645,6 +840,12 @@ class OrderRepository
         return (int)($row['total'] ?? 0);
     }
 
+    /**
+     * Count active orders for a seller (not cancelled).
+     *
+     * @param int $sellerId Seller user ID
+     * @return int Number of active orders
+     */
     public function countActiveBySeller(int $sellerId): int
     {
         $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM orders WHERE seller_id = ? AND status != 'cancelled'");

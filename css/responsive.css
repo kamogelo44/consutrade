@@ -121,16 +121,6 @@
   }
 }
 
-@media (max-width: 768px) {
-  .toast-notification {
-    top: 70px !important;
-    right: 16px !important;
-    max-width: calc(100% - 32px);
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: var(--font-sm);
-  }
-}
-
 @media (max-width: 480px) {
   .toast-notification {
     top: 60px !important;

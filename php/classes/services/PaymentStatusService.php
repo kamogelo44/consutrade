@@ -29,8 +29,8 @@ class PaymentStatusService
     {
         // Extract order_id from m_payment_id if needed
         if ($orderId === 0 && !empty($paymentId)) {
-            $parts = explode('_', $paymentId);
-            $orderId = (int)($parts[0] ?? 0);
+            $order = $this->orderRepo->findByPaymentId($paymentId);
+            if ($order) $orderId = (int)$order['order_id'];
         }
 
         // No payment data - redirect to cart
