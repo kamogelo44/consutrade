@@ -50,7 +50,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
         <!-- Center Section: Search Bar -->
         <div class="header-center">
             <div class="search-wrapper">
-                <form action="<?php echo $baseUrl; ?>product-listings.php" method="GET">
+                <form action="<?php echo $baseUrl; ?>search-results.php" method="GET">
                     <input type="search" name="search" placeholder="Search products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit" class="search-btn">
                         <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">

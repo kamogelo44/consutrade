@@ -26,7 +26,7 @@ $profile_image = $currentUser->getProfileImageUrl();
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <style>
-        /* Seller Dashboard Specific Styles */
+        /* ========== SELLER DASHBOARD SPECIFIC STYLES ========== */
 
         /* Stats Grid - Seller (3 columns) */
         .stats-grid-seller {
@@ -538,6 +538,108 @@ $profile_image = $currentUser->getProfileImageUrl();
             </div>
         </div>
     </main>
+
+    <script>
+        // ============================================================
+        // DOM CACHE - Store all jQuery selectors for performance
+        // ============================================================
+
+        /**
+         * DOM element references for seller dashboard.
+         * All elements are cached once and reused throughout the page.
+         */
+        var $statEarnings = null,
+            $statProducts = null,
+            $statPending = null,
+            $listingsGrid = null,
+            $recentOrdersList = null,
+            $sellerSideMenu = null,
+            $sellerMenuOverlay = null;
+
+        /**
+         * Caches all DOM elements used on the seller dashboard.
+         * Called once on page load to store jQuery references.
+         */
+        function cacheElements() {
+            $statEarnings = $('#stat-earnings');
+            $statProducts = $('#stat-products');
+            $statPending = $('#stat-pending');
+            $listingsGrid = $('#listings-grid');
+            $recentOrdersList = $('#recent-orders-list');
+            $sellerSideMenu = $('#sellerSideMenu');
+            $sellerMenuOverlay = $('#sellerMenuOverlay');
+        }
+
+        // ============================================================
+        // LOAD SELLER DASHBOARD
+        // ============================================================
+
+        /**
+         * Loads all seller dashboard data.
+         * Uses functions from dashboard.js with cached elements.
+         */
+        function loadSellerDashboardData() {
+            // Set loading states
+            if ($statEarnings && $statEarnings.length) $statEarnings.text('Loading...');
+            if ($statProducts && $statProducts.length) $statProducts.text('Loading...');
+            if ($statPending && $statPending.length) $statPending.text('Loading...');
+
+            // Use the functions from dashboard.js
+            if (typeof loadSellerStats === 'function') {
+                loadSellerStats();
+            }
+
+            if (typeof window.loadSellerProducts === 'function') {
+                window.loadSellerProducts(4);
+            }
+
+            if (typeof loadSellerRecentOrders === 'function') {
+                loadSellerRecentOrders(5);
+            } else if (typeof window.loadSellerRecentOrders === 'function') {
+                window.loadSellerRecentOrders(5);
+            }
+        }
+
+        // ============================================================
+        // SIDEBAR HANDLING - Using Cached Elements
+        // ============================================================
+
+        /**
+         * Closes the sidebar when interacting with modals or action buttons.
+         * Preserves the sidebar state so it can be reopened.
+         */
+        $(document).on('click', '[data-modal-open], .view-details-btn, .process-btn, .ship-btn, .complete-btn, .cancel-btn, .delete-btn, .edit-btn', function() {
+            if ($sellerSideMenu && $sellerSideMenu.length && $sellerSideMenu.hasClass('active')) {
+                $sellerSideMenu.data('was-open', true);
+                $sellerSideMenu.removeClass('active');
+                if ($sellerMenuOverlay && $sellerMenuOverlay.length) {
+                    $sellerMenuOverlay.removeClass('active');
+                }
+            }
+        });
+
+        /**
+         * Reopens the sidebar after a modal closes if it was open before.
+         */
+        $(document).on('click', '.modal-close, .btn-close, .order-modal-close', function() {
+            if ($sellerSideMenu && $sellerSideMenu.length && $sellerSideMenu.data('was-open') === true) {
+                $sellerSideMenu.addClass('active');
+                if ($sellerMenuOverlay && $sellerMenuOverlay.length) {
+                    $sellerMenuOverlay.addClass('active');
+                }
+                $sellerSideMenu.removeData('was-open');
+            }
+        });
+
+        // ============================================================
+        // DOCUMENT READY - Initialize Everything
+        // ============================================================
+
+        $(document).ready(function() {
+            cacheElements();
+            loadSellerDashboardData();
+        });
+    </script>
 
 </body>
 

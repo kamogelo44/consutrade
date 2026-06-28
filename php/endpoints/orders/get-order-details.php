@@ -51,16 +51,26 @@ if (!$order) {
 // Get transaction for this order
 $transaction = $transactionRepo->findByOrderId($order_id);
 
+// Prepare items for calculation
+$items = [];
 $subtotal = 0;
 foreach ($order['items'] as &$item) {
     $item['image_url'] = $productService->getImageUrl($item['image_url'] ?? '');
     $item['total'] = $item['price'] * $item['quantity'];
     $subtotal += $item['total'];
+
+    // Build items array for CartService
+    $items[] = [
+        'price' => $item['price'],
+        'quantity' => $item['quantity']
+    ];
 }
 unset($item);
 
-$delivery_fee = ($subtotal > 0 && $subtotal < 500) ? 50 : 0;
-$total = $subtotal + $delivery_fee;
+// Use CartService to calculate delivery fee
+$cartTotals = $cartService->calculateTotals($items);
+$delivery_fee = $cartTotals['delivery_fee'];
+$total = $cartTotals['total'];
 
 $shipping_address = isset($order['shipping_address']) && !empty($order['shipping_address'])
     ? $order['shipping_address']

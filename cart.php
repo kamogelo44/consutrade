@@ -582,7 +582,14 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
          *       updateCartCountDisplay(), refreshCart()
          */
 
-        // Cache DOM references for performance
+        // ============================================================
+        // DOM CACHE - Store all jQuery selectors for performance
+        // ============================================================
+
+        /**
+         * DOM element references for cart page.
+         * All elements are cached once and reused throughout the page.
+         */
         var $cartLayout = null;
         var $emptyCart = null;
         var $cartItemCount = null;
@@ -590,7 +597,10 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         var $continueBtn = null;
         var $browseBtn = null;
 
-        // Store cart data for quick access
+        /**
+         * Cart data from PHP for initial load.
+         * Used to populate the cart without an extra AJAX call.
+         */
         var initialCartData = {
             items: <?php echo json_encode($cart_items); ?>,
             subtotal: <?php echo json_encode($cart_totals['subtotal']); ?>,
@@ -599,8 +609,8 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
         };
 
         /**
-         * Cache DOM elements to avoid repeated jQuery lookups
-         * This improves performance on cart updates
+         * Caches all DOM elements used on the cart page.
+         * Called once on page load to store jQuery references.
          */
         function cacheCartElements() {
             if (!$cartLayout) {
@@ -623,9 +633,13 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             }
         }
 
+        // ============================================================
+        // LOAD CART
+        // ============================================================
+
         /**
-         * Loads the cart with initial data from PHP
-         * Uses cached DOM elements for better performance
+         * Loads the cart with initial data from PHP.
+         * Uses cached DOM elements for better performance.
          */
         function loadCart() {
             // Cache elements first
@@ -655,12 +669,18 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
             }
         }
 
+        // ============================================================
+        // CHECKOUT HANDLER
+        // ============================================================
+
         /**
-         * Handles the checkout button click
-         * Creates orders and redirects to checkout page
-         * Shows loading state to prevent double-click
+         * Handles the checkout button click.
+         * Creates orders and redirects to checkout page.
+         * Shows loading state to prevent double-click.
          */
         function handleCheckout() {
+            if (!$checkoutBtn || !$checkoutBtn.length) return;
+
             $checkoutBtn.prop('disabled', true).text('Processing...');
 
             $.ajax({
@@ -674,36 +694,51 @@ if ($isLoggedIn && $currentUser instanceof Buyer) {
                     if (response.success) {
                         window.location.href = baseUrl + 'checkout.php';
                     } else {
-                        alert(response.message || 'Unable to proceed to checkout');
+                        if (typeof showErrorToast === 'function') {
+                            showErrorToast(response.message || 'Unable to proceed to checkout');
+                        } else {
+                            alert(response.message || 'Unable to proceed to checkout');
+                        }
                         $checkoutBtn.prop('disabled', false).text('Proceed to Checkout');
                     }
                 },
                 error: function(xhr) {
                     console.error('Checkout Error:', xhr);
-                    alert('An error occurred. Please try again.');
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('An error occurred. Please try again.');
+                    } else {
+                        alert('An error occurred. Please try again.');
+                    }
                     $checkoutBtn.prop('disabled', false).text('Proceed to Checkout');
                 }
             });
         }
 
-        /**
-         * Initialize all event handlers and load cart
-         */
+        // ============================================================
+        // DOCUMENT READY - Initialize Everything
+        // ============================================================
+
         $(document).ready(function() {
             // Load the cart with initial data
             loadCart();
 
             // Checkout button handler
-            $checkoutBtn.on('click', handleCheckout);
+            if ($checkoutBtn && $checkoutBtn.length) {
+                $checkoutBtn.on('click', handleCheckout);
+            }
 
             // Continue shopping / browse buttons
-            $continueBtn.on('click', function() {
-                window.location.href = baseUrl + 'product-listings.php';
-            });
+            if ($continueBtn && $continueBtn.length) {
+                $continueBtn.on('click', function() {
+                    window.location.href = baseUrl + 'product-listings.php';
+                });
+            }
 
-            $browseBtn.on('click', function() {
-                window.location.href = baseUrl + 'product-listings.php';
-            });
+            if ($browseBtn && $browseBtn.length) {
+                $browseBtn.on('click', function() {
+                    window.location.href = baseUrl + 'product-listings.php';
+                });
+            }
         });
     </script>
 </body>

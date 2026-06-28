@@ -280,6 +280,98 @@
   color: white;
 }
 
+/* ========== VERIFICATION ACTION BUTTONS ========== */
+.verify-btn {
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.verify-btn:hover {
+  background: var(--success);
+  color: white;
+}
+
+.unverify-btn {
+  background: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+.unverify-btn:hover {
+  background: var(--warning);
+  color: white;
+}
+
+.delete-btn {
+  background: var(--error-light);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.delete-btn:hover {
+  background: var(--error);
+  color: white;
+}
+
+/* ========== MODAL ACTION BUTTONS ========== */
+.btn-verify {
+  background: var(--success);
+  color: white;
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-bold);
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-verify:hover {
+  background: var(--success-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-reject {
+  background: var(--error);
+  color: white;
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-bold);
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-reject:hover {
+  background: var(--error-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--gray-bg);
+  color: var(--gray-dark);
+  padding: 10px 24px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background: var(--gray-lighter);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
 /* ========== ADMIN FORM STYLES ========== */
 .form-container {
   max-width: 800px;

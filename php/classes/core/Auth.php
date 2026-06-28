@@ -126,6 +126,7 @@ class Auth
 
     /**
      * Get current logged in user as User object.
+     * ALWAYS fetches fresh data from database to ensure verification status is up to date.
      * 
      * @return User|null User object or null if not logged in
      */
@@ -137,15 +138,14 @@ class Auth
             return null;
         }
 
-        if (isset($_SESSION['user_object'])) {
-            return unserialize($_SESSION['user_object']);
-        }
-
         $userId = $_SESSION['user_id'] ?? 0;
         if ($userId > 0) {
             $user = $this->userRepo->findById($userId);
             if ($user) {
+                // Update session with fresh data
                 $_SESSION['user_object'] = serialize($user);
+                $_SESSION['full_name'] = $user->getFullName();
+                $_SESSION['role'] = $user->getRole();
             }
             return $user;
         }

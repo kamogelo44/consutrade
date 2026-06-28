@@ -1,42 +1,41 @@
 /**
- * ConsuTrade - Main JavaScript
+ * ConsuTrade - Core JavaScript
  * Author: Kamogelo Phale
- * Student Number: [Your Student Number]
  * 
- * This file handles all the interactive stuff across the site.
- * I tried to keep it organized but some functions are still messy.
+ * Core functionality shared across all pages.
+ * Handles: Authentication modals, cart operations, toast notifications, DOM utilities.
+ * Used on: All pages
  * 
- * TODO: Refactor the cart functions, they're getting too big
+ * @version 2.3.0
  */
 
 var baseUrl = baseUrl || '';
 
-// I should probably use const/let but I'm still getting used to it
+// Cache DOM references for better performance
 var $toastContainer = null;
 var $registerModal = null;
 var $loginModal = null;
 var $deleteModal = null;
+var $bodyElement = null;
 var $cartCountElements = null;
 
 // ============================================================
-// HELPER FUNCTIONS - These make my life easier
+// DOM UTILITIES
 // ============================================================
 
 /**
- * Escapes HTML to prevent XSS attacks
- * Learned this from a StackOverflow post
+ * Escapes user input to prevent XSS attacks
  * 
- * @param {string} text - User input that needs escaping
- * @returns {string} Safe HTML string
+ * @param {string} text - The text to escape
+ * @returns {string} Escaped HTML safe for insertion
  */
 function escapeHtml(text) {
     if (!text) return '';
-    // Using jQuery here because it's simpler than manual escaping
     return $('<div>').text(text).html();
 }
 
 /**
- * Capitalizes first letter - because PHP does this but JS doesn't
+ * Capitalizes the first letter of a string
  * 
  * @param {string} str - The string to capitalize
  * @returns {string} Capitalized string
@@ -47,14 +46,13 @@ function capitalizeFirst(str) {
 }
 
 /**
- * Maps order status to CSS classes for styling
- * The class names match what's in components.css
+ * Maps database status values to CSS classes
+ * Aligns with components.css styles
  * 
  * @param {string} status - Order status from database
  * @returns {string} CSS class name
  */
 function getOrderStatusClass(status) {
-    // I used if statements because switch felt like overkill
     if (status == 'pending') return 'status-pending';
     if (status == 'processing') return 'status-processing';
     if (status == 'shipped') return 'status-shipped';
@@ -64,49 +62,40 @@ function getOrderStatusClass(status) {
 }
 
 /**
- * Gets human-readable status label
- * The database stores lowercase status names
+ * Human-readable status labels for UI display
  * 
  * @param {string} status - Order status from database
- * @returns {string} Formatted status label
+ * @returns {string} Human-readable status label
  */
 function getStatusLabel(status) {
-    // Same as above but returns labels for display
     if (status == 'pending') return 'Pending';
     if (status == 'processing') return 'Processing';
     if (status == 'shipped') return 'Shipped';
     if (status == 'completed') return 'Completed';
     if (status == 'cancelled') return 'Cancelled';
-    return capitalizeFirst(status); // Fallback for unknown statuses
+    return capitalizeFirst(status);
 }
 
 /**
- * Fixes image paths - this was a nightmare to debug
- * Some images are stored as full URLs, others as relative paths
- * I added the default fallback so products don't look broken
+ * Fixes mixed absolute/relative image paths
+ * Handles: full URLs, relative paths, uploads folder, and fallback
  * 
- * @param {string} url - The image URL or path
- * @param {string} defaultPath - Fallback image if URL is invalid
- * @returns {string} Corrected image URL
+ * @param {string} url - Image URL or path
+ * @param {string} defaultPath - Fallback image path
+ * @returns {string} Fixed image URL
  */
 function fixImageUrl(url, defaultPath) {
     defaultPath = defaultPath || 'images/default-product.png';
-    
-    // If no image, use default
     if (!url || url == '') return baseUrl + defaultPath;
     
-    // Already a full URL
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     
-    // Remove leading slash if present
     var cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     
-    // Handle paths starting with uploads/ or images/
     if (cleanUrl.startsWith('uploads/') || cleanUrl.startsWith('images/')) {
         return baseUrl + cleanUrl;
     }
     
-    // Try to find uploads/ or images/ in the path
     var uploadsIndex = cleanUrl.indexOf('uploads/');
     if (uploadsIndex !== -1) {
         return baseUrl + cleanUrl.substring(uploadsIndex);
@@ -117,23 +106,19 @@ function fixImageUrl(url, defaultPath) {
         return baseUrl + cleanUrl.substring(imagesIndex);
     }
     
-    // If just a filename, assume it's in uploads/products/
     if (!cleanUrl.includes('/')) {
         return baseUrl + 'uploads/products/' + cleanUrl;
     }
     
-    // Fallback to default if nothing else works
     return baseUrl + defaultPath;
 }
 
 /**
- * Generates empty state HTML
- * Used when there's no data to show (orders, cart, etc.)
- * I copied this pattern from a tutorial
+ * Generates empty state HTML when no data exists
  * 
  * @param {string} icon - Icon filename in images/icons/
  * @param {string} title - Empty state title
- * @param {string} message - Description message
+ * @param {string} message - Empty state message
  * @param {string} buttonText - Optional button text
  * @param {string} buttonLink - Optional button link
  * @returns {string} HTML for empty state
@@ -153,16 +138,14 @@ function getEmptyStateHTML(icon, title, message, buttonText, buttonLink) {
 }
 
 /**
- * Renders pagination with ... ellipsis for many pages
- * This was tricky to get right, especially the math for dots
+ * Renders pagination controls with ellipsis for large page sets
  * 
- * @param {jQuery} $container - Where to put the pagination
+ * @param {jQuery} $container - jQuery element to render pagination in
  * @param {number} currentPage - Current page number
  * @param {number} totalPages - Total number of pages
- * @param {function} onPageChange - Callback when user clicks a page
+ * @param {function} onPageChange - Callback when page changes
  */
 function renderPagination($container, currentPage, totalPages, onPageChange) {
-    // Don't show pagination if only one page
     if (!$container.length || totalPages <= 1) {
         $container.empty();
         return;
@@ -170,34 +153,26 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
 
     var html = '';
     
-    // Previous button
     if (currentPage > 1) {
         html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">← Previous</button>';
     }
 
-    // Show current page and nearby pages
-    // I want to show: first page, pages around current, last page
     for (var i = 1; i <= totalPages; i++) {
         if (i == currentPage) {
-            // Current page - show as active
             html += '<button class="page-btn active" disabled>' + i + '</button>';
         } else if (Math.abs(i - currentPage) <= 2 || i == 1 || i == totalPages) {
-            // Show pages within 2 of current, plus first and last
             html += '<button class="page-btn" data-page="' + i + '">' + i + '</button>';
         } else if (Math.abs(i - currentPage) == 3) {
-            // Show dots when skipping pages
             html += '<span class="page-dots">...</span>';
         }
     }
 
-    // Next button
     if (currentPage < totalPages) {
         html += '<button class="page-btn" data-page="' + (currentPage + 1) + '">Next →</button>';
     }
 
     $container.html(html);
     
-    // Handle click events on page buttons
     $container.find('.page-btn[data-page]').off('click').on('click', function() {
         var page = parseInt($(this).data('page'));
         if (!isNaN(page) && typeof onPageChange == 'function') {
@@ -207,13 +182,12 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
 }
 
 // ============================================================
-// TOAST NOTIFICATIONS - User feedback without alert boxes
+// TOAST NOTIFICATIONS
 // ============================================================
 
 /**
- * Shows a toast notification
- * I wanted something nicer than alert() popups
- * Auto-dismisses after 4 seconds
+ * Shows a toast notification at the top of the page
+ * Auto-dismisses after 4 seconds, but users can click to dismiss
  * 
  * @param {string} message - Message to show
  * @param {string} type - success, error, warning, info
@@ -221,47 +195,77 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
 function showToast(message, type) {
     type = type || 'success';
     
-    // Remove any existing toasts first
     $('.toast-notification').remove();
     
-    // Create container if it doesn't exist
     if (!$toastContainer) {
         $toastContainer = $('<div class="toast-container"></div>');
         $('body').append($toastContainer);
     }
     
-    // Build the toast HTML
+    var iconMap = {
+        'success': 'verified-svgrepo-com.svg',
+        'error': 'not-verified-svgrepo-com.svg',
+        'warning': 'warning-svgrepo-com.svg',
+        'info': 'info-svgrepo-com.svg'
+    };
+    var iconFile = iconMap[type] || 'info-svgrepo-com.svg';
+    var iconPath = baseUrl + 'images/icons/' + iconFile;
+    
     var toast = $(
         '<div class="toast-notification toast-' + type + '">' +
-            '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+            '<span class="toast-icon"><img src="' + iconPath + '" alt="' + type + '"></span>' +
+            '<span class="toast-message">' + escapeHtml(message) + '</span>' +
         '</div>'
     );
     
     $toastContainer.append(toast);
     
-    // Auto-remove after 4 seconds
-    setTimeout(function() {
-        toast.addClass('hiding');
-        setTimeout(function() { toast.remove(); }, 300);
+    toast.on('click', function() {
+        dismissToast(toast);
+    });
+    
+    var timeoutId = setTimeout(function() {
+        dismissToast(toast);
     }, 4000);
+    
+    toast.data('timeoutId', timeoutId);
 }
 
-// Shortcut functions so I don't have to type the type every time
+/**
+ * Dismisses a toast with animation
+ * 
+ * @param {jQuery} toast - The toast element to dismiss
+ */
+function dismissToast(toast) {
+    var timeoutId = toast.data('timeoutId');
+    if (timeoutId) {
+        clearTimeout(timeoutId);
+    }
+    
+    toast.addClass('hiding');
+    setTimeout(function() {
+        toast.remove();
+        if ($toastContainer && $toastContainer.children().length === 0) {
+            $toastContainer.remove();
+            $toastContainer = null;
+        }
+    }, 300);
+}
+
 function showSuccessToast(message) { showToast(message, 'success'); }
 function showErrorToast(message) { showToast(message, 'error'); }
 function showInfoToast(message) { showToast(message, 'info'); }
 function showWarningToast(message) { showToast(message, 'warning'); }
 
 // ============================================================
-// PASSWORD TOGGLE - Show/hide password for better UX
+// PASSWORD TOGGLE
 // ============================================================
 
 /**
- * Toggles password visibility
- * Users kept complaining they couldn't see what they were typing
+ * Toggles password visibility - helps users avoid typos
  * 
- * @param {string} fieldId - ID of the password field
- * @param {HTMLElement} button - The toggle button
+ * @param {string} fieldId - ID of password input field
+ * @param {HTMLElement} button - Button element that triggered toggle
  */
 function togglePassword(fieldId, button) {
     var $input = $('#' + fieldId);
@@ -279,15 +283,248 @@ function togglePassword(fieldId, button) {
 }
 
 // ============================================================
-// ORDER MODAL - View order details in a popup
+// DOCUMENT REVIEW MODAL (for Admin Users Page)
+// ============================================================
+
+var currentReviewUserId = null;
+
+/**
+ * Opens the document review modal for a seller
+ * 
+ * @param {number} userId - The seller's user ID
+ */
+function reviewDocuments(userId) {
+    currentReviewUserId = userId;
+    
+    $('#docPreview').html('<div class="loading-spinner">Loading document...</div>');
+    $('#docModal').addClass('active');
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/users/get-verification-document.php',
+        type: 'GET',
+        data: { user_id: userId },
+        dataType: 'json',
+        success: function(data) {
+            if (data.success && data.has_document) {
+                var ext = data.document_path.split('.').pop().toLowerCase();
+                var docUrl = baseUrl + data.document_path;
+                var docType = data.document_type || 'Document';
+                var uploadedAt = data.uploaded_at || 'Unknown date';
+                
+                var html = '<div class="doc-preview-container">';
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    html += '<img src="' + docUrl + '" alt="Verification Document">';
+                } else {
+                    html += '<iframe src="' + docUrl + '"></iframe>';
+                }
+                html += '</div>';
+                html += '<div class="doc-info">';
+                html += '<p><strong>Document Type:</strong> ' + capitalizeFirst(docType.replace(/_/g, ' ')) + '</p>';
+                html += '<p><strong>Uploaded:</strong> ' + uploadedAt + '</p>';
+                html += '</div>';
+                
+                $('#docPreview').html(html);
+                $('#docModalFooter').show();
+            } else {
+                $('#docPreview').html('<p style="text-align:center; color: var(--warning);">No document uploaded by this seller.</p>');
+                $('#docModalFooter').hide();
+            }
+        },
+        error: function() {
+            $('#docPreview').html('<p style="text-align:center; color: var(--error);">Error loading document.</p>');
+            $('#docModalFooter').hide();
+        }
+    });
+}
+
+/**
+ * Closes the document review modal
+ */
+function closeDocModal() {
+    $('#docModal').removeClass('active');
+    currentReviewUserId = null;
+}
+
+/**
+ * Opens the verification modal for a seller with no document.
+ * Allows admin to manually verify the seller.
+ * 
+ * @param {number} userId - The seller's user ID
+ */
+function openVerifyModal(userId) {
+    currentReviewUserId = userId;
+    
+    var $docModal = $('#docModal');
+    var $docModalTitle = $('#docModalTitle');
+    var $docPreview = $('#docPreview');
+    var $docModalFooter = $('#docModalFooter');
+    
+    $docModalTitle.text('Verify Seller');
+    $docPreview.html(
+        '<div style="text-align: center; padding: 40px 20px;">' +
+            '<img src="' + baseUrl + 'images/icons/document-svgrepo-com.svg" width="64" height="64" style="opacity: 0.3; margin-bottom: 16px;">' +
+            '<h3 style="font-size: 18px; margin-bottom: 8px;">No Document Uploaded</h3>' +
+            '<p style="color: var(--gray-medium);">This seller has not uploaded any verification document.</p>' +
+            '<p style="color: var(--gray-medium); font-size: var(--font-sm);">You can manually verify them below.</p>' +
+        '</div>'
+    );
+    $docModalFooter.html(
+        '<button class="btn-verify" onclick="verifySeller()">' +
+            '<img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="16" height="16" style="filter: brightness(0) invert(1); vertical-align: middle; margin-right: 6px;">' +
+            'Verify Seller' +
+        '</button>'
+    );
+    $docModal.addClass('active');
+}
+
+/**
+ * Rejects the current seller's verification document
+ */
+function rejectSeller() {
+    if (!currentReviewUserId) return;
+    if (confirm('Reject this seller\'s verification document?')) {
+        $.ajax({
+            url: baseUrl + 'php/endpoints/users/update-user-verification.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ user_id: currentReviewUserId, verify: false }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    showSuccessToast('Document rejected.');
+                    closeDocModal();
+                    if (typeof loadUsers === 'function') {
+                        loadUsers();
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    showErrorToast(data.message);
+                }
+            }
+        });
+    }
+}
+
+/**
+ * Opens the verification modal for a seller with no document.
+ * Allows admin to manually verify the seller.
+ * 
+ * @param {number} userId - The seller's user ID
+ */
+function openVerifyModal(userId) {
+    currentReviewUserId = userId;
+    
+    var $docModal = $('#docModal');
+    var $docModalTitle = $('#docModalTitle');
+    var $docPreview = $('#docPreview');
+    var $docModalFooter = $('#docModalFooter');
+    
+    $docModalTitle.text('Verify Seller');
+    $docPreview.html(
+        '<div style="text-align: center; padding: 40px 20px;">' +
+            '<img src="' + baseUrl + 'images/icons/document-svgrepo-com.svg" width="64" height="64" style="opacity: 0.3; margin-bottom: 16px;">' +
+            '<h3 style="font-size: 18px; margin-bottom: 8px;">No Document Uploaded</h3>' +
+            '<p style="color: var(--gray-medium);">This seller has not uploaded any verification document.</p>' +
+            '<p style="color: var(--gray-medium); font-size: var(--font-sm);">You can manually verify them below.</p>' +
+        '</div>'
+    );
+    $docModalFooter.html(
+        '<button class="btn-verify" onclick="verifySeller()">' +
+            '<img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="16" height="16" style="filter: brightness(0) invert(1); vertical-align: middle; margin-right: 6px;">' +
+            'Verify Seller' +
+        '</button>'
+    );
+    $docModal.addClass('active');
+}
+
+/**
+ * Opens the document review modal for a seller with existing document.
+ * 
+ * @param {number} userId - The seller's user ID
+ */
+function openReviewModal(userId) {
+    currentReviewUserId = userId;
+    
+    var $docModal = $('#docModal');
+    var $docModalTitle = $('#docModalTitle');
+    var $docPreview = $('#docPreview');
+    var $docModalFooter = $('#docModalFooter');
+    
+    $docModalTitle.text('Review Verification Documents');
+    $docPreview.html('<div class="loading-spinner">Loading document...</div>');
+    $docModal.addClass('active');
+    
+    $.ajax({
+        url: baseUrl + 'php/endpoints/users/get-verification-document.php',
+        type: 'GET',
+        data: { user_id: userId },
+        dataType: 'json',
+        success: function(data) {
+            if (data.success && data.has_document) {
+                var ext = data.document_path.split('.').pop().toLowerCase();
+                var docUrl = baseUrl + data.document_path;
+                var docType = data.document_type || 'Document';
+                var uploadedAt = data.uploaded_at || 'Unknown date';
+                
+                var html = '<div class="doc-preview-container">';
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    html += '<img src="' + docUrl + '" alt="Verification Document" onerror="this.onerror=null; showDocumentNotFound()">';
+                } else {
+                    html += '<iframe src="' + docUrl + '" onerror="this.style.display=\'none\'; showDocumentNotFound()"></iframe>';
+                }
+                html += '</div>';
+                html += '<div class="doc-info">';
+                html += '<p><strong>Document Type:</strong> ' + capitalizeFirst(docType.replace(/_/g, ' ')) + '</p>';
+                html += '<p><strong>Uploaded:</strong> ' + uploadedAt + '</p>';
+                html += '</div>';
+                
+                $docPreview.html(html);
+                $docModalFooter.html(
+                    '<button class="btn-verify" onclick="verifySeller()">' +
+                        '<img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="16" height="16" style="filter: brightness(0) invert(1); vertical-align: middle; margin-right: 6px;">' +
+                        'Verify Seller' +
+                    '</button>' +
+                    '<button class="btn-reject" onclick="rejectSeller()">' +
+                        '<img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="16" height="16" style="filter: brightness(0) invert(1); vertical-align: middle; margin-right: 6px;">' +
+                        'Reject' +
+                    '</button>'
+                );
+            } else {
+                showDocumentNotFound();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', status, error);
+            showDocumentNotFound();
+        }
+    });
+}
+
+/**
+ * Shows document not found message in the modal.
+ */
+function showDocumentNotFound() {
+    var $docPreview = $('#docPreview');
+    var $docModalFooter = $('#docModalFooter');
+    
+    $docPreview.html(
+        '<div style="text-align: center; padding: 40px 20px;">' +
+            '<img src="' + baseUrl + 'images/icons/document-svgrepo-com.svg" width="64" height="64" style="opacity: 0.3; margin-bottom: 16px;">' +
+            '<h3 style="font-size: 18px; margin-bottom: 8px;">Document Not Found</h3>' +
+            '<p style="color: var(--gray-medium);">No document found for this seller.</p>' +
+            '<p style="color: var(--gray-medium); font-size: var(--font-sm);">You can verify them manually using the "Verify Seller" button.</p>' +
+        '</div>'
+    );
+    $docModalFooter.empty();
+}
+
+// ============================================================
+// ORDER DETAILS MODAL
 // ============================================================
 
 /**
- * Opens order details modal
- * Fetches data via AJAX and displays it
- * 
- * This was a pain to get right because of all the different user roles
- * Buyers see different info than sellers, and admins see everything
+ * Opens order details modal and fetches data via AJAX
  * 
  * @param {number} orderId - ID of the order to view
  */
@@ -301,7 +538,6 @@ function openOrderModal(orderId) {
         return;
     }
     
-    // Show modal with loading state
     $modal.addClass('active');
     $modalBody.html('<div class="loading-spinner">Loading order details...</div>');
     $modalFooter.empty();
@@ -313,10 +549,8 @@ function openOrderModal(orderId) {
         success: function(data) {
             if (data.success && data.order) {
                 var order = data.order;
-                var isAdmin = window.location.pathname.includes('all-orders.php') || window.location.pathname.includes('admin-dashboard.php');
                 var userRole = currentUserRole || 'buyer';
                 
-                // Build items HTML
                 var itemsHtml = '';
                 if (order.items && order.items.length > 0) {
                     for (var i = 0; i < order.items.length; i++) {
@@ -336,7 +570,6 @@ function openOrderModal(orderId) {
                     }
                 }
                 
-                // Build payment details if available
                 var paymentHtml = '';
                 if (order.transaction) {
                     var tx = order.transaction;
@@ -357,16 +590,12 @@ function openOrderModal(orderId) {
                         '</div>';
                 }
                 
-                // Build the main content
                 $modalBody.html(
                     '<div class="order-info-section">' +
                         '<div class="info-row"><span class="info-label">Order Number:</span><span class="info-value">#' + order.order_id + '</span></div>' +
                         '<div class="info-row"><span class="info-label">Order Date:</span><span class="info-value">' + order.created_at + '</span></div>' +
-                        '<div class="info-row"><span class="info-label">Order Status:</span><span class="info-value status-' + order.status + '">' + (order.status ? order.status.toUpperCase() : 'UNKNOWN') + '</span></div>' +
-                        (isAdmin ? 
-                            '<div class="info-row"><span class="info-label">Customer:</span><span class="info-value">' + escapeHtml(order.buyer_name || order.other_party_name || 'N/A') + '</span></div>' +
-                            '<div class="info-row"><span class="info-label">Seller:</span><span class="info-value">' + escapeHtml(order.seller_name || order.other_party_name || 'N/A') + '</span></div>' : 
-                            '<div class="info-row"><span class="info-label">' + (order.buyer_name ? 'Seller' : 'Customer') + ':</span><span class="info-value">' + escapeHtml(order.other_party_name) + '</span></div>') +
+                        '<div class="info-row"><span class="info-label">Order Status:</span><span class="info-value"><span class="order-status-badge status-' + order.status + '">' + getStatusLabel(order.status) + '</span></span></div>' +
+                        '<div class="info-row"><span class="info-label">' + (order.buyer_name ? 'Seller' : 'Customer') + ':</span><span class="info-value">' + escapeHtml(order.other_party_name) + '</span></div>' +
                         (order.shipping_address ? '<div class="info-row"><span class="info-label">Shipping Address:</span><span class="info-value">' + escapeHtml(order.shipping_address) + '</span></div>' : '') +
                     '</div>' +
                     '<h4>Order Items</h4>' +
@@ -378,32 +607,26 @@ function openOrderModal(orderId) {
                     '</div>' +
                     paymentHtml
                 );
-                
-                // Build action buttons based on user role
+                                
                 var actionButtons = '';
                 
-                // BUYER: Can only cancel pending orders
                 if (userRole === 'buyer') {
                     if (order.status === 'pending' || order.status === 'processing') {
                         actionButtons = '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
                     }
                 }
                 
-                // SELLER: Process, Ship, Complete, Cancel
                 if (userRole === 'seller') {
                     if (order.status === 'pending') {
                         actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
+                        actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
                     } else if (order.status === 'processing') {
                         actionButtons = '<button class="ship-btn" onclick="updateOrderStatus(' + order.order_id + ', \'shipped\'); closeOrderModal();">Mark as Shipped</button>';
                     } else if (order.status === 'shipped') {
                         actionButtons = '<button class="complete-btn" onclick="updateOrderStatus(' + order.order_id + ', \'completed\'); closeOrderModal();">Mark as Completed</button>';
                     }
-                    if (order.status === 'pending' || order.status === 'processing') {
-                        actionButtons += '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
-                    }
                 }
                 
-                // ADMIN: Can do everything
                 if (userRole === 'admin') {
                     if (order.status === 'pending') {
                         actionButtons = '<button class="process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\'); closeOrderModal();">Process Order</button>';
@@ -428,36 +651,21 @@ function openOrderModal(orderId) {
     });
 }
 
-/**
- * Closes the order details modal
- */
 function closeOrderModal() {
     $('#orderModal').removeClass('active');
 }
 
 // ============================================================
-// ORDER STATUS UPDATE - THE IMPORTANT ONE!
+// ORDER STATUS UPDATE
 // ============================================================
 
 /**
  * Updates order status with confirmation
- * 
- * This is used by:
- * - Buyers: Cancel pending orders (my-orders.php)
- * - Sellers: Process -> Ship -> Complete (my-sales.php)
- * - Admins: Update any order (admin dashboard)
- * 
- * Business rules:
- * - Buyers can ONLY cancel, and only if status is pending
- * - Sellers follow: pending -> processing -> shipped -> completed
- * - Cancelling restores product stock
- * 
- * IMPORTANT: This used to reload the whole page (annoying!)
- * Now it refreshes just the orders table via AJAX
- * Much better user experience!
+ * Used by admin and seller dashboards
+ * Business rule: status transitions follow pending → processing → shipped → completed
  * 
  * @param {number} orderId - ID of the order to update
- * @param {string} newStatus - New status to set (pending, processing, shipped, completed, cancelled)
+ * @param {string} newStatus - New status to set
  */
 function updateOrderStatus(orderId, newStatus) {
     var confirmMsg = 'Are you sure you want to ' + newStatus + ' this order?';
@@ -475,10 +683,6 @@ function updateOrderStatus(orderId, newStatus) {
             success: function(data) {
                 if (data.success) {
                     showSuccessToast(data.message || 'Order status updated successfully!');
-                    
-                    // Try to refresh the orders table without reloading the page
-                    // This is much smoother than location.reload()
-                    // It checks if we're on a buyer or seller orders page
                     if (typeof loadBuyerOrders === 'function') {
                         loadBuyerOrders();
                     } else if (typeof loadSellerOrders === 'function') {
@@ -488,8 +692,6 @@ function updateOrderStatus(orderId, newStatus) {
                     } else if (typeof window.loadSellerOrders === 'function') {
                         window.loadSellerOrders();
                     } else {
-                        // Fallback: reload the page if no table refresh function exists
-                        // This shouldn't happen often though
                         setTimeout(function() { location.reload(); }, 1500);
                     }
                 } else {
@@ -504,16 +706,11 @@ function updateOrderStatus(orderId, newStatus) {
 }
 
 // ============================================================
-// ORDER LISTING - Renders orders table
+// ORDER LISTING FUNCTIONS
 // ============================================================
 
 /**
- * Fetches and renders orders in a table
- * 
- * Used on:
- * - my-orders.php (buyers)
- * - my-sales.php (sellers) 
- * - all-orders.php (admin)
+ * Fetches orders and renders them in the table
  * 
  * @param {string} endpoint - API endpoint to fetch orders
  * @param {jQuery} $container - Table body element
@@ -554,9 +751,6 @@ function loadOrders(endpoint, $container, $pagination, page, status, search, use
 /**
  * Renders orders table with role-specific action buttons
  * 
- * This function builds the HTML for each order row
- * I tried to keep it clean but it's still a bit messy
- * 
  * @param {array} orders - Array of order objects
  * @param {jQuery} $container - Table body element
  * @param {string} userRole - buyer, seller, or admin
@@ -572,7 +766,6 @@ function renderOrdersTable(orders, $container, userRole) {
         var buttons = '<div class="action-buttons">';
         buttons += '<button class="action-btn view-btn" onclick="openOrderModal(' + order.order_id + ')">View</button>';
         
-        // Role-specific action buttons
         if (userRole === 'seller') {
             if (order.status === 'pending') {
                 buttons += '<button class="action-btn process-btn" onclick="updateOrderStatus(' + order.order_id + ', \'processing\')">Process</button>';
@@ -586,13 +779,10 @@ function renderOrdersTable(orders, $container, userRole) {
             }
         }
         
-        // BUYER: Only show cancel button for pending orders
         if (userRole === 'buyer') {
-            // Cancel button ONLY for pending orders (not processing, shipped, or completed)
-            if (order.status === 'pending') {
+            if (order.status === 'pending' || order.status === 'processing') {
                 buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>';
             }
-            // Review button for completed orders
             if (order.status === 'completed') {
                 if (order.has_review) {
                     buttons += '<button class="action-btn edit-review-btn" onclick="openEditReviewModal(' + order.order_id + ', ' + order.seller_id + ', \'' + escapeHtml(order.seller_name) + '\', ' + order.review_rating + ', \'' + escapeHtml(order.review_comment).replace(/'/g, "\\'") + '\')">Edit Review</button>';
@@ -600,7 +790,6 @@ function renderOrdersTable(orders, $container, userRole) {
                     buttons += '<button class="action-btn review-btn" onclick="openReviewModal(' + order.order_id + ', ' + order.seller_id + ', \'' + escapeHtml(order.seller_name) + '\')">Write a Review</button>';
                 }
             }
-
         }
         
         if (userRole === 'admin') {
@@ -618,9 +807,9 @@ function renderOrdersTable(orders, $container, userRole) {
         
         buttons += '</div>';
         
-        // Build the table row
         var row = '<tr>';
         row += '<td data-label="Order #">#' + order.order_id + '</td>';
+        
         if (userRole === 'buyer') {
             row += '<td data-label="Seller">' + escapeHtml(order.seller_name) + '</td>';
         } else if (userRole === 'seller') {
@@ -642,7 +831,7 @@ function renderOrdersTable(orders, $container, userRole) {
 }
 
 /**
- * Shows empty state when no orders match the filters
+ * Shows empty state for orders with role-specific messaging
  * 
  * @param {jQuery} $container - Table body element
  * @param {string} status - Current status filter
@@ -694,7 +883,7 @@ function showOrdersEmptyState($container, status, search, userRole) {
 }
 
 // ============================================================
-// MODAL ERROR HANDLING - Display validation errors
+// MODAL ERROR HANDLING
 // ============================================================
 
 /**
@@ -712,9 +901,6 @@ function clearModalErrors(modalId) {
 /**
  * Displays validation errors from server response
  * 
- * This was tricky to get right because different forms
- * have different field names and error structures
- * 
  * @param {string} modalId - ID of the modal
  * @param {object} errors - Error messages from server
  * @param {object} formData - Submitted form data to repopulate
@@ -731,7 +917,6 @@ function displayModalErrors(modalId, errors, formData) {
     var $loginErrorContainer = $('#login-error-container');
     
     if (modalId == '#register-modal') {
-        // Repopulate form with submitted data
         if (formData.full_name) $registerFullName.val(formData.full_name);
         if (formData.email) $registerEmail.val(formData.email);
         if (formData.phone) $registerPhone.val(formData.phone);
@@ -745,7 +930,6 @@ function displayModalErrors(modalId, errors, formData) {
             errorMessages.push(errors.general);
         }
         
-        // Highlight fields with errors
         for (var field in errors) {
             var message = errors[field];
             if (field != 'general' && message && message.trim()) {
@@ -794,7 +978,6 @@ function displayModalErrors(modalId, errors, formData) {
     }
 }
 
-// Shortcut functions for clearing errors
 function clearLoginErrors() {
     $('#login-error-container').hide().empty();
     $('#login-form .input-group').removeClass('error');
@@ -808,12 +991,9 @@ function clearRegisterErrors() {
 }
 
 // ============================================================
-// CART OPERATIONS - Add, remove, update quantity
+// CART OPERATIONS
 // ============================================================
 
-/**
- * Cache cart elements to avoid repeated DOM queries
- */
 function getCartCountElements() {
     if (!$cartCountElements) {
         $cartCountElements = $('.cart-count, .item-num, .cart-badge, .mobile-cart-count');
@@ -821,24 +1001,11 @@ function getCartCountElements() {
     return $cartCountElements;
 }
 
-/**
- * Updates cart badge across all locations on the page
- * I store the count in sessionStorage so it persists between pages
- * 
- * @param {number} count - New cart count
- */
 function updateCartCountDisplay(count) {
     getCartCountElements().text(count);
     if (window.sessionStorage) sessionStorage.setItem('cart_count', count);
 }
 
-/**
- * Adds product to cart via AJAX
- * 
- * @param {number} productId - Product ID
- * @param {string} productName - Product name (for toast message)
- * @param {number} productPrice - Product price (for toast message)
- */
 function addToCart(productId, productName, productPrice) {
     $.ajax({
         url: baseUrl + 'php/endpoints/cart/add-to-cart.php',
@@ -857,11 +1024,6 @@ function addToCart(productId, productName, productPrice) {
     });
 }
 
-/**
- * Removes item from cart with confirmation
- * 
- * @param {number} productId - Product ID to remove
- */
 function removeFromCart(productId) {
     if (!confirm('Are you sure you want to remove this item from your cart?')) return;
     
@@ -887,25 +1049,20 @@ function removeFromCart(productId) {
 }
 
 // ============================================================
-// CART PAGE FUNCTIONS - These are specific to cart.php
+// CART PAGE FUNCTIONS
 // ============================================================
 
-/**
- * Loads cart page using pre-loaded PHP data
- * This avoids an extra AJAX call on initial load
- */
 function loadCartPage() {
     if (!window.location.pathname.includes('cart.php')) return;
     
     if (typeof initialCartData === 'undefined') {
-        console.warn('initialCartData not defined - cart may not load properly');
+        console.warn('initialCartData not defined');
         $('#cart-layout').hide();
         $('#empty-cart').show();
         return;
     }
     
     if (!initialCartData.items) {
-        console.warn('initialCartData.items is missing');
         $('#cart-layout').hide();
         $('#empty-cart').show();
         return;
@@ -926,20 +1083,16 @@ function loadCartPage() {
     }
 }
 
-/**
- * Updates the order summary section with current totals
- * 
- * @param {object} cartData - Cart data with subtotal, delivery_fee, total
- */
 function updateCartTotalsDisplay(cartData) {
-    $('.sub-total-val').text('R ' + parseFloat(cartData.subtotal).toFixed(2));
-    $('.deliv-fee-val').text('R ' + parseFloat(cartData.delivery_fee).toFixed(2));
-    $('.total-val').text('R ' + parseFloat(cartData.total).toFixed(2));
+    var subtotal = parseFloat(cartData.subtotal) || 0;
+    var deliveryFee = parseFloat(cartData.delivery_fee) || 0;
+    var total = parseFloat(cartData.total) || 0;
+    
+    $('.sub-total-val').text('R ' + subtotal.toFixed(2));
+    $('.deliv-fee-val').text('R ' + deliveryFee.toFixed(2));
+    $('.total-val').text('R ' + total.toFixed(2));
 }
 
-/**
- * Refreshes cart via AJAX after quantity updates or removals
- */
 function refreshCart() {
     if (!window.location.pathname.includes('cart.php')) return;
     
@@ -967,10 +1120,6 @@ function refreshCart() {
     });
 }
 
-/**
- * Updates cart badge from server
- * Used on non-cart pages to show current count
- */
 function updateCartCount() {
     if (!isLoggedIn || currentUserRole !== 'buyer') {
         updateCartCountDisplay(0);
@@ -985,15 +1134,6 @@ function updateCartCount() {
     });
 }
 
-/**
- * Renders cart items in both desktop table and mobile card views
- * 
- * This is the biggest function in the file
- * It handles two different layouts (desktop + mobile)
- * And all the quantity controls
- * 
- * @param {object} cartData - Cart data from server
- */
 function displayCartItems(cartData) {
     var $desktopTableBody = $('#cart-table-body');
     var $mobileContainer = $('#mobile-cart-items');
@@ -1027,7 +1167,6 @@ function displayCartItems(cartData) {
     if ($emptyCartDiv.length) $emptyCartDiv.css('display', 'none');
     if ($cartLayout.length) $cartLayout.css('display', 'flex');
     
-    // Calculate total quantity
     var totalQty = 0;
     for (var i = 0; i < items.length; i++) {
         totalQty += items[i].quantity;
@@ -1045,6 +1184,10 @@ function displayCartItems(cartData) {
             continue;
         }
         
+        var price = parseFloat(item.price) || 0;
+        var quantity = parseInt(item.quantity) || 1;
+        var itemTotal = price * quantity;
+        
         var verifiedBadge = item.is_verified ? 
             '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' : 
             '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
@@ -1052,13 +1195,10 @@ function displayCartItems(cartData) {
         var imagePath = fixImageUrl(item.image || item.image_url);
         var productName = item.product_name || item.title || 'Product';
         var sellerName = item.seller_name || 'Unknown Seller';
-        var price = parseFloat(item.price) || 0;
-        var quantity = parseInt(item.quantity) || 1;
         var cartId = item.cart_id;
         var productId = item.product_id;
         var stockQty = parseInt(item.stock_quantity) || 99;
         
-        // Desktop table row
         if ($desktopTableBody.length) {
             var row = $('<tr>').html(
                 '<td class="product-cell" data-label="Product">' +
@@ -1082,16 +1222,16 @@ function displayCartItems(cartData) {
                     '</div>' +
                     (quantity >= stockQty && stockQty > 0 ? '<small class="stock-warning">Max ' + stockQty + ' available</small>' : '') +
                 '</td>' +
-                '<td class="actions-cell" data-label="Actions">' +
-                    '<button class="remove-btn" data-product-id="' + productId + '">' +
-                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove"> Remove' +
+                '<td class="actions-cell" data-label="Total">' +
+                    '<span style="font-weight: bold; color: var(--primary-color);">R ' + itemTotal.toFixed(2) + '</span>' +
+                    '<button class="remove-btn" data-product-id="' + productId + '" style="margin-left: 10px;">' +
+                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove">' +
                     '</button>' +
                 '</td>'
             );
             $desktopTableBody.append(row);
         }
         
-        // Mobile card view
         if ($mobileContainer.length) {
             var card = $('<div>').addClass('cart-card').html(
                 '<div class="cart-card-header">' +
@@ -1103,14 +1243,17 @@ function displayCartItems(cartData) {
                     '</div>' +
                 '</div>' +
                 '<div class="cart-card-body">' +
-                    '<div class="cart-card-price">R ' + price.toFixed(2) + '</div>' +
+                    '<div>' +
+                        '<div class="cart-card-price">R ' + price.toFixed(2) + ' each</div>' +
+                        '<div style="font-weight: bold; color: var(--primary-color);">Total: R ' + itemTotal.toFixed(2) + '</div>' +
+                    '</div>' +
                     '<div class="quantity-controls">' +
                         '<button class="qty-decrease" data-cart-id="' + cartId + '">-</button>' +
                         '<input type="number" class="qty-input" value="' + quantity + '" min="1" max="' + Math.min(99, stockQty) + '" data-cart-id="' + cartId + '" style="width: 50px; text-align: center;">' +
                         '<button class="qty-increase" data-cart-id="' + cartId + '">+</button>' +
                     '</div>' +
                     '<button class="remove-btn" data-product-id="' + productId + '">' +
-                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove"> Remove' +
+                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove">' +
                     '</button>' +
                 '</div>'
             );
@@ -1118,8 +1261,7 @@ function displayCartItems(cartData) {
         }
     }
     
-    // Quantity control event handlers
-    $('.qty-increase').off('click').on('click', function() {
+    $(document).off('click', '.qty-increase').on('click', '.qty-increase', function() {
         var $btn = $(this);
         var cartId = $btn.data('cart-id');
         var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
@@ -1131,7 +1273,7 @@ function displayCartItems(cartData) {
         }
     });
     
-    $('.qty-decrease').off('click').on('click', function() {
+    $(document).off('click', '.qty-decrease').on('click', '.qty-decrease', function() {
         var $btn = $(this);
         var cartId = $btn.data('cart-id');
         var $input = $('.qty-input[data-cart-id="' + cartId + '"]');
@@ -1142,7 +1284,7 @@ function displayCartItems(cartData) {
         }
     });
     
-    $('.qty-input').off('change').on('change', function() {
+    $(document).off('change', '.qty-input').on('change', '.qty-input', function() {
         var $input = $(this);
         var cartId = $input.data('cart-id');
         var quantity = parseInt($input.val());
@@ -1156,27 +1298,19 @@ function displayCartItems(cartData) {
         updateCartQuantity(cartId, quantity);
     });
     
-    $('.remove-btn').off('click').on('click', function() {
+    $(document).off('click', '.remove-btn').on('click', '.remove-btn', function() {
         var $btn = $(this);
         var productId = $btn.data('product-id');
         if (confirm('Remove this item from your cart?')) {
             removeFromCart(productId);
         }
     });
+    
+    if (typeof updateCartTotalsDisplay === 'function' && cartData.subtotal !== undefined) {
+        updateCartTotalsDisplay(cartData);
+    }
 }
 
-/**
- * Updates cart quantity via AJAX and refreshes the display
- * 
- * @param {number} cartId - Cart item ID
- * @param {number} quantity - New quantity
- */
-/**
- * Updates cart quantity via AJAX and refreshes the display
- * 
- * @param {number} cartId - Cart item ID
- * @param {number} quantity - New quantity
- */
 function updateCartQuantity(cartId, quantity) {
     $.ajax({
         url: baseUrl + 'php/endpoints/cart/update-cart.php',
@@ -1186,40 +1320,24 @@ function updateCartQuantity(cartId, quantity) {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                // Always use the cart data from the response
-                // This ensures we have the latest totals
                 if (response.cart) {
-                    // Update the items display with fresh data
                     displayCartItems(response.cart);
-                    
-                    //  Update the totals with fresh data
-                    if (typeof updateCartTotalsDisplay === 'function') {
-                        updateCartTotalsDisplay(response.cart);
-                    }
-                    
-                    // Update the cart count badge
-                    if (typeof updateCartCountDisplay === 'function') {
-                        updateCartCountDisplay(response.cart.item_count);
-                    }
-                    
-                    // Store the updated cart data for future use
+                    updateCartTotalsDisplay(response.cart);
+                    updateCartCountDisplay(response.cart.item_count);
                     if (typeof initialCartData !== 'undefined') {
                         initialCartData = response.cart;
                     }
+                    showSuccessToast(response.message || 'Cart updated');
                 } else {
-                    // Fallback: refresh the whole cart
                     refreshCart();
                 }
-                
-                showSuccessToast(response.message || 'Cart updated');
             } else {
                 showErrorToast(response.message || 'Failed to update cart');
-                // Reload to fix any inconsistencies
                 setTimeout(function() { location.reload(); }, 1500);
             }
         },
-        error: function(xhr, status, error) {
-            console.error('Cart update error:', error);
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error('Cart update error:', textStatus, errorThrown);
             showErrorToast('Something went wrong. Please refresh the page.');
             setTimeout(function() { location.reload(); }, 1500);
         }
@@ -1227,14 +1345,9 @@ function updateCartQuantity(cartId, quantity) {
 }
 
 // ============================================================
-// MODAL CONTROLS - Open/close modals with animation
+// MODAL CONTROLS
 // ============================================================
 
-/**
- * Opens modal with smooth CSS transition animation
- * 
- * @param {jQuery} $modal - jQuery element of the modal
- */
 function openModal($modal) {
     if (!$modal.length) return;
     
@@ -1249,7 +1362,6 @@ function openModal($modal) {
     $modal.css('visibility', 'visible');
     $modal.addClass('active');
     
-    // Force reflow for smooth animation
     $modal[0].offsetHeight;
     $content.addClass('animate-in');
     $('body').css('overflow', 'hidden');
@@ -1257,11 +1369,6 @@ function openModal($modal) {
     setTimeout(function() { $content.removeClass('animate-in'); }, 350);
 }
 
-/**
- * Closes modal with smooth CSS transition animation
- * 
- * @param {jQuery} $modal - jQuery element of the modal
- */
 function closeModal($modal) {
     if (!$modal.length) return;
     
@@ -1281,10 +1388,6 @@ function closeModal($modal) {
     }, 280);
 }
 
-/**
- * Clears field errors as soon as user starts typing
- * This improves UX by providing instant feedback
- */
 function initErrorClearingOnInput() {
     $('#login-email, #login-password').on('input', function() { 
         clearLoginErrors(); 
@@ -1304,10 +1407,6 @@ function initErrorClearingOnInput() {
     });
 }
 
-/**
- * AJAX login handler - prevents page reload and shows errors inline
- * This was a big improvement over traditional form submission
- */
 function initAjaxLogin() {
     var $loginForm = $('#login-form');
     if (!$loginForm.length) return;
@@ -1343,9 +1442,6 @@ function initAjaxLogin() {
     });
 }
 
-/**
- * AJAX registration handler - validates and creates account without page reload
- */
 function initAjaxRegister() {
     var $registerForm = $('#register-form');
     if (!$registerForm.length) return;
@@ -1385,13 +1481,9 @@ function initAjaxRegister() {
 }
 
 // ============================================================
-// UI CONTROLS - Mobile menu, search, dropdowns
+// UI CONTROLS
 // ============================================================
 
-/**
- * Mobile menu toggle with overlay
- * I had to fix this a few times because of scrolling issues
- */
 function initMobileMenu() {
     var $menuToggle = $('#menuToggle');
     var $closeMenu = $('#closeMenu');
@@ -1431,9 +1523,6 @@ function initMobileMenu() {
     });
 }
 
-/**
- * Mobile search bar toggle
- */
 function initMobileSearch() {
     var $mobileSearchIcon = $('#mobileSearchIcon');
     var $mobileSearchContainer = $('#mobileSearch');
@@ -1454,9 +1543,6 @@ function initMobileSearch() {
     }
 }
 
-/**
- * User dropdown menu for account settings
- */
 function initUserDropdown() {
     var $accountBtn = $('#accountBtn');
     var $accountDropdown = $('#accountDropdown');
@@ -1476,9 +1562,6 @@ function initUserDropdown() {
     }
 }
 
-/**
- * Modal open/close and switch between login/register
- */
 function initModalControls() {
     var $registerModal = $('#register-modal');
     var $loginModal = $('#login-modal');
@@ -1544,9 +1627,6 @@ function initModalControls() {
     }
 }
 
-/**
- * Highlights current page in navigation menu
- */
 function setActiveLink() {
     var path = window.location.pathname;
     var currentPage = path.substring(path.lastIndexOf('/') + 1) || 'index.php';
@@ -1564,9 +1644,6 @@ function setActiveLink() {
     });
 }
 
-/**
- * Auto-dismiss flash messages after a few seconds
- */
 function initFlashMessages() {
     var $flashMsg = $('.flash-message');
     if ($flashMsg.length) {
@@ -1575,11 +1652,10 @@ function initFlashMessages() {
 }
 
 // ============================================================
-// DOCUMENT READY - Initialize everything
+// DOCUMENT READY
 // ============================================================
 
 $(function() {
-    // Initialize all UI components
     initMobileMenu();
     initMobileSearch();
     initModalControls();
@@ -1590,7 +1666,6 @@ $(function() {
     initAjaxLogin();
     initAjaxRegister();
     
-    // Cart initialization - only for buyers
     if (isLoggedIn && currentUserRole === 'buyer') {
         if (window.location.pathname.includes('cart.php')) {
             loadCartPage();

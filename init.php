@@ -108,7 +108,8 @@ $userService = new UserService(
 // AdminService
 $adminService = new AdminService(
     $conn,
-    $userRepo
+    $userRepo,
+    $userService
 );
 
 $payfastService = new PayFastService(

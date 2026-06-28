@@ -50,14 +50,32 @@ try {
     // Use ProductService for search
     $result = $productService->search($search, $filters);
 
-    // Format product images with full URLs
-    foreach ($result['products'] as &$product) {
-        $product['image'] = $productService->getImageUrl($product['image'] ?? '');
+    $formattedProducts = [];
+    foreach ($result['products'] as $product) {
+        $formattedProducts[] = [
+            'id' => (int) $product['id'] ?? 0,
+            'name' => $product['product_name'] ?? $product['name'] ?? 'Product',
+            'product_name' => $product['product_name'] ?? $product['name'] ?? 'Product',
+            'price' => (float) $product['price'] ?? 0,
+            'image' => $productService->getImageUrl($product['image'] ?? ''),
+            'image_url' => $productService->getImageUrl($product['image'] ?? ''),
+            'display_image' => $productService->getImageUrl($product['image'] ?? ''),
+            'seller_name' => $product['seller_name'] ?? 'Unknown Seller',
+            'seller_id' => (int) $product['seller_id'] ?? 0,
+            'location' => $product['location'] ?? 'South Africa',
+            'condition' => $product['condition'] ?? 'Good',
+            'stock_quantity' => (int) ($product['stock_quantity'] ?? 0),
+            'is_verified' => (bool) ($product['is_verified'] ?? false),
+            'profile_image' => $product['profile_image'] ?? null,
+            'created_at' => $product['created_at'] ?? '',
+            'rating' => $product['rating'] ?? null,
+            'review_count' => $product['review_count'] ?? 0
+        ];
     }
 
     // Build response
     $response['success'] = true;
-    $response['products'] = $result['products'];
+    $response['products'] = $formattedProducts;
     $response['total_pages'] = ceil($result['total'] / $limit);
     $response['current_page'] = $page;
     $response['total_results'] = (int) $result['total'];

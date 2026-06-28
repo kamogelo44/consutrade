@@ -24,351 +24,133 @@ if (!$auth->isAdmin()) {
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <style>
-        /* Users Page Specific Styles */
+        /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
 
-        /* Filters Bar */
-        .filters-bar {
+        /* Document Review Modal */
+        #docModal .modal-content {
+            max-width: 700px;
+            border-radius: var(--radius-lg);
+        }
+
+        #docModal .modal-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
-            flex-wrap: wrap;
-            background: var(--white);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-light);
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-xs);
-        }
-
-        .filter-group label {
-            font-size: var(--font-sm);
-            font-weight: var(--font-semibold);
-            color: var(--gray-dark);
-        }
-
-        .filter-group select,
-        .filter-group input {
-            padding: 8px 12px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            font-size: var(--font-sm);
-            min-width: 150px;
-        }
-
-        .filter-group select:focus,
-        .filter-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        /* Search bar with icon */
-        .search-wrapper {
-            display: flex;
-            align-items: flex-end;
-            gap: var(--spacing-sm);
-        }
-
-        .search-group {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-xs);
-        }
-
-        .search-group label {
-            font-size: var(--font-sm);
-            font-weight: var(--font-semibold);
-            color: var(--gray-dark);
-        }
-
-        .search-input-wrapper {
-            display: flex;
-            gap: var(--spacing-sm);
             align-items: center;
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
         }
 
-        .search-input-wrapper input {
-            padding: 8px 12px;
-            border: 1px solid var(--border-light);
+        #docModal .modal-header h2 {
+            font-size: var(--font-xl);
+            font-weight: var(--font-bold);
+            margin: 0;
+        }
+
+        #docModal .modal-body {
+            padding: var(--spacing-lg);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        #docModal .modal-footer {
+            padding: var(--spacing-lg);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .doc-preview-container {
+            text-align: center;
+            background: var(--gray-bg-light);
             border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+        }
+
+        .doc-preview-container img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .doc-preview-container iframe {
+            width: 100%;
+            height: 400px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+        }
+
+        .doc-info {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-sm);
+            background: var(--white);
+            border-radius: var(--radius-sm);
             font-size: var(--font-sm);
-            width: 250px;
         }
 
-        .search-input-wrapper input:focus {
-            outline: none;
-            border-color: var(--primary-color);
+        .doc-info strong {
+            color: var(--dark-bg);
         }
 
-        .search-input-wrapper button {
-            padding: 8px 12px;
-            background: var(--primary-color);
+        .btn-verify {
+            background: var(--success);
+            color: white;
+            padding: 10px 24px;
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
+            font-weight: var(--font-bold);
             transition: all var(--transition-fast);
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 6px;
         }
 
-        .search-input-wrapper button img {
-            width: 16px;
-            height: 16px;
-            filter: brightness(0) invert(1);
+        .btn-verify:hover {
+            background: var(--success-dark);
+            transform: translateY(-2px);
         }
 
-        .search-input-wrapper button:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
+        .btn-reject {
+            background: var(--error);
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-bold);
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .reset-btn {
-            padding: 8px 16px;
+        .btn-reject:hover {
+            background: var(--error-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
             background: var(--gray-bg);
             color: var(--gray-dark);
+            padding: 10px 24px;
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
             cursor: pointer;
             font-weight: var(--font-medium);
             transition: all var(--transition-fast);
-            height: 38px;
-            align-self: flex-end;
         }
 
-        .reset-btn:hover {
+        .btn-secondary:hover {
             background: var(--gray-lighter);
-            transform: translateY(-1px);
         }
 
-        /* Role Badges */
-        .role-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .role-admin {
-            background: var(--error-light);
-            color: var(--error);
-        }
-
-        .role-seller {
-            background: var(--primary-fade);
-            color: var(--primary-color);
-        }
-
-        .role-buyer {
-            background: var(--info-light);
-            color: var(--info);
-        }
-
-        /* Verification Badges */
-        .verified-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .unverified-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        /* Status Badges */
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: var(--radius-round);
-            font-size: var(--font-xs);
-            font-weight: var(--font-medium);
-        }
-
-        .status-badge.active {
-            background: var(--success-light);
-            color: var(--success);
-        }
-
-        .status-badge.suspended {
-            background: var(--warning-light);
-            color: var(--warning);
-        }
-
-        .status-badge.banned {
-            background: var(--error-light);
-            color: var(--error);
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            font-size: var(--font-xs);
-            cursor: pointer;
-            border: none;
-            font-weight: var(--font-medium);
-            transition: all var(--transition-fast);
-        }
-
-        .verify-btn {
-            background: var(--success-light);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .verify-btn:hover {
-            background: var(--success);
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        .unverify-btn {
-            background: var(--warning-light);
-            color: var(--warning);
-            border: 1px solid var(--warning);
-        }
-
-        .unverify-btn:hover {
-            background: var(--warning);
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        .delete-btn {
-            background: var(--error-light);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        .delete-btn:hover {
-            background: var(--error);
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        .suspend-btn {
-            background: var(--warning-light);
-            color: var(--warning);
-            border: 1px solid var(--warning);
-        }
-
-        .suspend-btn:hover {
-            background: var(--warning);
-            color: white;
-        }
-
-        .ban-btn {
-            background: var(--error-light);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        .ban-btn:hover {
-            background: var(--error);
-            color: white;
-        }
-
-        .activate-btn {
-            background: var(--success-light);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .activate-btn:hover {
-            background: var(--success);
-            color: white;
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .filters-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .filter-group {
-                width: 100%;
-            }
-
-            .search-wrapper {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-input-wrapper input {
-                width: 100%;
-            }
-
-            .reset-btn {
-                align-self: stretch;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .action-btn {
-                width: 100%;
-                text-align: center;
-            }
-
-            /* Mobile table view */
-            .data-table,
-            .data-table tbody,
-            .data-table tr,
-            .data-table td {
-                display: block;
-            }
-
-            .data-table thead {
-                display: none;
-            }
-
-            .data-table tr {
-                border: 1px solid var(--border-light);
-                margin-bottom: var(--spacing-md);
-                border-radius: var(--radius-md);
-            }
-
-            .data-table td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: var(--spacing-sm);
-                border-bottom: 1px solid var(--border-light);
-            }
-
-            .data-table td:last-child {
-                border-bottom: none;
-            }
-
-            .data-table td:before {
-                content: attr(data-label);
-                font-weight: var(--font-bold);
-                color: var(--gray-dark);
-                min-width: 120px;
+            #docModal .modal-content {
+                max-width: 100%;
+                margin: 10px;
             }
         }
 
@@ -392,10 +174,10 @@ if (!$auth->isAdmin()) {
                 <p>View and manage all registered users on ConsuTrade.</p>
             </div>
 
+            <!-- ========== USING COMPONENTS.CSS FILTERS BAR ========== -->
             <div class="filters-bar">
-                <div class="filter-group">
-                    <label for="roleFilter">Filter by Role</label>
-                    <select id="roleFilter">
+                <div class="status-filters">
+                    <select id="roleFilter" class="filter-btn" style="appearance: auto; padding: 8px 16px;">
                         <option value="all">All Users</option>
                         <option value="buyer">Buyers</option>
                         <option value="seller">Sellers</option>
@@ -404,17 +186,14 @@ if (!$auth->isAdmin()) {
                     </select>
                 </div>
 
-                <div class="search-wrapper">
-                    <div class="search-group">
-                        <label for="searchInput">Search</label>
-                        <div class="search-input-wrapper">
-                            <input type="text" id="searchInput" placeholder="Name or email...">
-                            <button id="searchBtn">
-                                <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search">
-                            </button>
-                        </div>
-                    </div>
-                    <button id="resetBtn" class="reset-btn">Reset</button>
+                <div class="search-bar">
+                    <form id="searchForm" onsubmit="return false;">
+                        <input type="text" id="searchInput" placeholder="Name or email...">
+                        <button id="searchBtn" style="padding: 8px 12px; background: var(--primary-color); border: none; border-radius: var(--radius-md); cursor: pointer;">
+                            <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search" style="width: 16px; height: 16px; filter: brightness(0) invert(1);">
+                        </button>
+                        <button id="resetBtn" class="filter-btn" style="background: var(--gray-bg); color: var(--gray-dark);">Reset</button>
+                    </form>
                 </div>
             </div>
 
@@ -445,18 +224,52 @@ if (!$auth->isAdmin()) {
         </div>
     </main>
 
+    <!-- Document Review Modal -->
+    <div id="docModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="docModalTitle">Review Verification Documents</h2>
+                <button class="btn-close" onclick="closeDocModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="docModalBody">
+                <div id="docPreview">
+                    <p class="loading-spinner">Loading document...</p>
+                </div>
+            </div>
+            <div class="modal-footer" id="docModalFooter">
+                <!-- Footer buttons are dynamically added -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Page state variables
+        // ============================================================
+        // DOM CACHE - Store all jQuery selectors for performance
+        // ============================================================
+
+        /**
+         * DOM element references for the manage users page.
+         * All elements are cached once and reused throughout the page.
+         */
         var $usersTable = null,
             $pagination = null,
             $roleFilter = null,
             $searchBtn = null,
             $resetBtn = null,
             $searchInput = null,
+            $docModal = null,
+            $docModalTitle = null,
+            $docPreview = null,
+            $docModalFooter = null,
             currentPage = 1,
             currentRole = 'all',
-            currentSearch = '';
+            currentSearch = '',
+            currentReviewUserId = null;
 
+        /**
+         * Caches all DOM elements used on the manage users page.
+         * Called once on page load to store jQuery references.
+         */
         function cacheElements() {
             $usersTable = $('#usersTable');
             $pagination = $('#pagination');
@@ -464,7 +277,15 @@ if (!$auth->isAdmin()) {
             $searchBtn = $('#searchBtn');
             $resetBtn = $('#resetBtn');
             $searchInput = $('#searchInput');
+            $docModal = $('#docModal');
+            $docModalTitle = $('#docModalTitle');
+            $docPreview = $('#docPreview');
+            $docModalFooter = $('#docModalFooter');
         }
+
+        // ============================================================
+        // DOCUMENT READY
+        // ============================================================
 
         $(document).ready(function() {
             cacheElements();
@@ -498,8 +319,30 @@ if (!$auth->isAdmin()) {
                     loadUsers();
                 }
             });
+
+            // Close modal when clicking outside
+            $docModal.on('click', function(e) {
+                if ($(e.target).is($docModal)) {
+                    closeDocModal();
+                }
+            });
+
+            // Close modal with Escape key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' && $docModal.hasClass('active')) {
+                    closeDocModal();
+                }
+            });
         });
 
+        // ============================================================
+        // LOAD USERS
+        // ============================================================
+
+        /**
+         * Fetches users from the server with current filters and pagination.
+         * Updates the table with the response data.
+         */
         function loadUsers() {
             $usersTable.html('<tr><td colspan="9" class="loading-cell">Loading users...</td></tr>');
 
@@ -537,6 +380,98 @@ if (!$auth->isAdmin()) {
             });
         }
 
+        // ============================================================
+        // DISPLAY USERS
+        // ============================================================
+
+        /**
+         * Renders user data in the table with role-specific action buttons.
+         *
+         * @param {Array} users - Array of user objects from the server
+         */
+        function displayUsers(users) {
+            $usersTable.empty();
+
+            $.each(users, function(i, user) {
+                var roleClass = user.role === 'admin' ? 'role-admin' : (user.role === 'seller' ? 'role-seller' : 'role-buyer');
+                var verifiedBadge = '';
+                if (user.id_verified) {
+                    verifiedBadge = '<span class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"> Verified</span>';
+                } else if (user.has_document) {
+                    verifiedBadge = '<span class="unverified-badge-card" style="background: var(--info-light); color: var(--info); border-color: var(--info);"><img src="' + baseUrl + 'images/icons/clock-svgrepo-com.svg" width="14" height="14"> Pending</span>';
+                } else {
+                    verifiedBadge = '<span class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"> Not Verified</span>';
+                }
+
+                var statusBadge = '';
+                if (user.status === 'active') {
+                    statusBadge = '<span class="status-badge active">Active</span>';
+                } else if (user.status === 'suspended') {
+                    statusBadge = '<span class="status-badge suspended">Suspended</span>';
+                } else if (user.status === 'banned') {
+                    statusBadge = '<span class="status-badge banned">Banned</span>';
+                } else {
+                    statusBadge = '<span class="status-badge active">Active</span>';
+                }
+
+                var isCurrentAdmin = (user.role === 'admin' && user.user_id === currentUserId);
+
+                var actionButtons = '<div class="action-buttons">';
+
+                if (!isCurrentAdmin) {
+                    if (user.status === 'active') {
+                        actionButtons += '<button class="action-btn suspend-btn" onclick="updateUserStatus(' + user.user_id + ', \'suspended\')">Suspend</button>';
+                        actionButtons += '<button class="action-btn ban-btn" onclick="updateUserStatus(' + user.user_id + ', \'banned\')">Ban</button>';
+                    } else {
+                        actionButtons += '<button class="action-btn activate-btn" onclick="updateUserStatus(' + user.user_id + ', \'active\')">Activate</button>';
+                    }
+                }
+
+                // Seller verification actions based on state
+                if (user.role === 'seller') {
+                    if (user.has_document && !user.id_verified) {
+                        actionButtons += '<button class="action-btn verify-btn" onclick="openReviewModal(' + user.user_id + ')">Review Docs</button>';
+                    } else if (user.id_verified) {
+                        actionButtons += '<button class="action-btn unverify-btn" onclick="toggleUserVerification(' + user.user_id + ', false)">Unverify</button>';
+                    } else {
+                        actionButtons += '<button class="action-btn verify-btn" onclick="openVerifyModal(' + user.user_id + ')">Verify Seller</button>';
+                    }
+                }
+
+                if (user.role !== 'admin') {
+                    actionButtons += '<button class="action-btn delete-btn" onclick="deleteUser(' + user.user_id + ')">Delete</button>';
+                }
+
+                actionButtons += '</div>';
+
+                if (actionButtons === '<div class="action-buttons"></div>') {
+                    actionButtons = '<div class="action-buttons">-</div>';
+                }
+
+                $usersTable.append(
+                    '<tr>' +
+                    '<td data-label="ID">' + user.user_id + '</td>' +
+                    '<td data-label="Full Name">' + (typeof escapeHtml === 'function' ? escapeHtml(user.full_name) : user.full_name) + '</td>' +
+                    '<td data-label="Email">' + (typeof escapeHtml === 'function' ? escapeHtml(user.email) : user.email) + '</td>' +
+                    '<td data-label="Phone">' + (typeof escapeHtml === 'function' ? escapeHtml(user.phone || '-') : (user.phone || '-')) + '</td>' +
+                    '<td data-label="Role"><span class="role-badge ' + roleClass + '">' + user.role + '</span></td>' +
+                    '<td data-label="Verified">' + verifiedBadge + '</td>' +
+                    '<td data-label="Status">' + statusBadge + '</td>' +
+                    '<td data-label="Joined Date">' + user.created_at + '</td>' +
+                    '<td data-label="Actions">' + actionButtons + '</td>' +
+                    '</tr>'
+                );
+            });
+        }
+
+        // ============================================================
+        // EMPTY STATE
+        // ============================================================
+
+        /**
+         * Displays an empty state message when no users match the current filters.
+         * Shows different messages based on the current role filter.
+         */
         function showEmptyState() {
             var emptyTitle = '';
             var emptyMessage = '';
@@ -576,83 +511,187 @@ if (!$auth->isAdmin()) {
             );
         }
 
-        function displayUsers(users) {
-            $usersTable.empty();
+        // ============================================================
+        // DOCUMENT REVIEW MODAL FUNCTIONS
+        // ============================================================
 
-            $.each(users, function(i, user) {
-                var roleClass = user.role === 'admin' ? 'role-admin' : (user.role === 'seller' ? 'role-seller' : 'role-buyer');
-                var verifiedBadge = user.id_verified ? '<span class="verified-badge">Verified</span>' : '<span class="unverified-badge">Not Verified</span>';
+        /**
+         * Opens the document review modal for a seller with existing document.
+         *
+         * @param {number} userId - The seller's user ID
+         */
+        function openReviewModal(userId) {
+            currentReviewUserId = userId;
 
-                // Status Badge
-                var statusBadge = '';
-                if (user.status === 'active') {
-                    statusBadge = '<span class="status-badge active">Active</span>';
-                } else if (user.status === 'suspended') {
-                    statusBadge = '<span class="status-badge suspended">Suspended</span>';
-                } else if (user.status === 'banned') {
-                    statusBadge = '<span class="status-badge banned">Banned</span>';
-                } else {
-                    statusBadge = '<span class="status-badge active">Active</span>';
-                }
+            $docModalTitle.text('Review Verification Documents');
+            $docPreview.html('<div class="loading-spinner">Loading document...</div>');
+            $docModal.addClass('active');
 
-                // Check if this is the current admin
-                var isCurrentAdmin = (user.role === 'admin' && user.user_id === currentUserId);
+            $.ajax({
+                url: baseUrl + 'php/endpoints/users/get-verification-document.php',
+                type: 'GET',
+                data: {
+                    user_id: userId
+                },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.success && data.has_document) {
+                        var ext = data.document_path.split('.').pop().toLowerCase();
+                        var docUrl = baseUrl + data.document_path;
+                        var docType = data.document_type || 'Document';
+                        var uploadedAt = data.uploaded_at || 'Unknown date';
 
-                // Action Buttons
-                var actionButtons = '<div class="action-buttons">';
+                        var html = '<div class="doc-preview-container">';
+                        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                            html += '<img src="' + docUrl + '" alt="Verification Document" onerror="this.onerror=null; showDocumentNotFound()">';
+                        } else {
+                            html += '<iframe src="' + docUrl + '" onerror="this.style.display=\'none\'; showDocumentNotFound()"></iframe>';
+                        }
+                        html += '</div>';
+                        html += '<div class="doc-info">';
+                        html += '<p><strong>Document Type:</strong> ' + capitalizeFirst(docType.replace(/_/g, ' ')) + '</p>';
+                        html += '<p><strong>Uploaded:</strong> ' + uploadedAt + '</p>';
+                        html += '</div>';
 
-                // Status action buttons - HIDE for current admin
-                if (!isCurrentAdmin) {
-                    if (user.status === 'active') {
-                        actionButtons += '<button class="action-btn suspend-btn" onclick="updateUserStatus(' + user.user_id + ', \'suspended\')">Suspend</button>';
-                        actionButtons += '<button class="action-btn ban-btn" onclick="updateUserStatus(' + user.user_id + ', \'banned\')">Ban</button>';
+                        $docPreview.html(html);
+                        $docModalFooter.html(
+                            '<button class="btn-verify" onclick="verifySeller()">' +
+                            '<img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="16" height="16" style="filter: brightness(0) invert(1); vertical-align: middle; margin-right: 6px;">' +
+                            'Verify Seller' +
+                            '</button>' +
+                            '<button class="btn-reject" onclick="rejectSeller()">' +
+                            '<img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="16" height="16" style="filter: brightness(0) invert(1); vertical-align: middle; margin-right: 6px;">' +
+                            'Reject' +
+                            '</button>'
+                        );
                     } else {
-                        actionButtons += '<button class="action-btn activate-btn" onclick="updateUserStatus(' + user.user_id + ', \'active\')">Activate</button>';
+                        showDocumentNotFound();
                     }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', status, error);
+                    showDocumentNotFound();
                 }
-
-                // Seller verification actions (can still verify/unverify, but not for current admin if they're not a seller)
-                if (user.role === 'seller') {
-                    if (user.has_document && !user.id_verified) {
-                        actionButtons += '<button class="action-btn verify-btn" onclick="reviewDocuments(' + user.user_id + ')">Review Docs</button>';
-                    } else if (user.id_verified) {
-                        actionButtons += '<button class="action-btn unverify-btn" onclick="toggleUserVerification(' + user.user_id + ', false)">Unverify</button>';
-                    } else {
-                        actionButtons += '<button class="action-btn verify-btn" onclick="toggleUserVerification(' + user.user_id + ', true)">Verify</button>';
-                    }
-                }
-
-                // Delete button - HIDE for admins (including current admin)
-                if (user.role !== 'admin') {
-                    actionButtons += '<button class="action-btn delete-btn" onclick="deleteUser(' + user.user_id + ')">Delete</button>';
-                }
-
-                actionButtons += '</div>';
-
-                if (actionButtons === '<div class="action-buttons"></div>') {
-                    actionButtons = '<div class="action-buttons">-</div>';
-                }
-
-                $usersTable.append(
-                    '<tr>' +
-                    '<td data-label="ID">' + user.user_id + '</td>' +
-                    '<td data-label="Full Name">' + (typeof escapeHtml === 'function' ? escapeHtml(user.full_name) : user.full_name) + '</td>' +
-                    '<td data-label="Email">' + (typeof escapeHtml === 'function' ? escapeHtml(user.email) : user.email) + '</td>' +
-                    '<td data-label="Phone">' + (typeof escapeHtml === 'function' ? escapeHtml(user.phone || '-') : (user.phone || '-')) + '</td>' +
-                    '<td data-label="Role"><span class="role-badge ' + roleClass + '">' + user.role + '</span></td>' +
-                    '<td data-label="Verified">' + verifiedBadge + '</td>' +
-                    '<td data-label="Status">' + statusBadge + '</td>' +
-                    '<td data-label="Joined Date">' + user.created_at + '</td>' +
-                    '<td data-label="Actions">' + actionButtons + '</td>' +
-                    '</tr>'
-                );
             });
         }
 
-        function reviewDocuments(userId) {
-            window.location.href = baseUrl + 'admin/verify-seller.php?seller_id=' + userId;
+        /**
+         * Shows document not found message in the modal.
+         */
+        function showDocumentNotFound() {
+            $docPreview.html(
+                '<div style="text-align: center; padding: 40px 20px;">' +
+                '<img src="' + baseUrl + 'images/icons/document-svgrepo-com.svg" width="64" height="64" style="opacity: 0.3; margin-bottom: 16px;">' +
+                '<h3 style="font-size: 18px; margin-bottom: 8px;">Document Not Found</h3>' +
+                '<p style="color: var(--gray-medium);">No document found for this seller.</p>' +
+                '<p style="color: var(--gray-medium); font-size: var(--font-sm);">You can verify them manually using the "Verify Seller" button.</p>' +
+                '</div>'
+            );
+            $docModalFooter.html('');
         }
 
+        /**
+         * Opens the verification modal for a seller with no document.
+         * Allows admin to manually verify the seller.
+         *
+         * @param {number} userId - The seller's user ID
+         */
+        function openVerifyModal(userId) {
+            currentReviewUserId = userId;
+
+            $docModalTitle.text('Verify Seller');
+            $docPreview.html(
+                '<div style="text-align: center; padding: 40px 20px;">' +
+                '<img src="' + baseUrl + 'images/icons/document-svgrepo-com.svg" width="64" height="64" style="opacity: 0.3; margin-bottom: 16px;">' +
+                '<h3 style="font-size: 18px; margin-bottom: 8px;">No Document Uploaded</h3>' +
+                '<p style="color: var(--gray-medium);">This seller has not uploaded any verification document.</p>' +
+                '<p style="color: var(--gray-medium); font-size: var(--font-sm);">You can manually verify them below.</p>' +
+                '</div>'
+            );
+            $docModalFooter.html(
+                '<button class="btn-verify" onclick="verifySeller()">' +
+                '<img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="16" height="16" style="filter: brightness(0) invert(1); vertical-align: middle; margin-right: 6px;">' +
+                'Verify Seller' +
+                '</button>'
+            );
+            $docModal.addClass('active');
+        }
+
+        /**
+         * Closes the document review modal.
+         */
+        function closeDocModal() {
+            $docModal.removeClass('active');
+            currentReviewUserId = null;
+            $docModalFooter.empty();
+        }
+
+        /**
+         * Verifies the current seller.
+         */
+        function verifySeller() {
+            if (!currentReviewUserId) return;
+            if (confirm('Verify this seller?')) {
+                $.ajax({
+                    url: baseUrl + 'php/endpoints/users/update-user-verification.php',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        user_id: currentReviewUserId,
+                        verify: true
+                    }),
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success) {
+                            showSuccessToast('Seller verified successfully!');
+                            closeDocModal();
+                            loadUsers();
+                        } else {
+                            showErrorToast(data.message);
+                        }
+                    }
+                });
+            }
+        }
+
+        /**
+         * Rejects the current seller's verification document.
+         */
+        function rejectSeller() {
+            if (!currentReviewUserId) return;
+            if (confirm('Reject this seller\'s verification document?')) {
+                $.ajax({
+                    url: baseUrl + 'php/endpoints/users/update-user-verification.php',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        user_id: currentReviewUserId,
+                        verify: false
+                    }),
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success) {
+                            showSuccessToast('Document rejected.');
+                            closeDocModal();
+                            loadUsers();
+                        } else {
+                            showErrorToast(data.message);
+                        }
+                    }
+                });
+            }
+        }
+
+        // ============================================================
+        // USER ACTIONS (Page-specific)
+        // ============================================================
+
+        /**
+         * Toggles user verification status (verify/unverify).
+         *
+         * @param {number} userId - The user ID to update
+         * @param {boolean} verify - True to verify, false to unverify
+         */
         function toggleUserVerification(userId, verify) {
             var confirmMsg = verify ? 'Verify this seller?' : 'Remove verification from this seller?';
             if (confirm(confirmMsg)) {
@@ -692,6 +731,12 @@ if (!$auth->isAdmin()) {
             }
         }
 
+        /**
+         * Updates a user's account status (suspend, ban, activate).
+         *
+         * @param {number} userId - The user ID to update
+         * @param {string} status - The new status ('suspended', 'banned', 'active')
+         */
         function updateUserStatus(userId, status) {
             var confirmMsg = '';
             if (status === 'suspended') {
@@ -727,6 +772,11 @@ if (!$auth->isAdmin()) {
             }
         }
 
+        /**
+         * Deletes a user account permanently.
+         *
+         * @param {number} userId - The user ID to delete
+         */
         function deleteUser(userId) {
             if (confirm('Delete this user? This cannot be undone.')) {
                 $.ajax({

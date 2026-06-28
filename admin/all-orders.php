@@ -199,7 +199,7 @@ if (!$auth->isAdmin()) {
         <div class="order-modal-content">
             <div class="order-modal-header">
                 <h2>Order Details</h2>
-                <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
+                <button class="btn-close" onclick="closeOrderModal()">&times;</button>
             </div>
             <div class="order-details-content" id="orderModalBody">
                 <div class="loading-spinner">Loading order details...</div>

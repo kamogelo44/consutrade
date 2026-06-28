@@ -25,6 +25,111 @@ $user_name = $currentUser->getFullName();
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <style>
+        /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
+
+        /* Stats grid override for 6 columns */
+        .admin-stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        /* Notice banner styles */
+        .notice-banner {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .notice-banner.warning {
+            background: var(--warning-light);
+        }
+
+        .notice-banner.error {
+            background: var(--error-light);
+        }
+
+        .notice-banner.info {
+            background: var(--info-light);
+        }
+
+        .notice-banner .view-all-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: var(--font-sm);
+            font-weight: var(--font-medium);
+        }
+
+        .notice-banner .view-all-link:hover {
+            text-decoration: underline;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1200px) {
+            .admin-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--spacing-lg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .stat-card {
+                padding: var(--spacing-md);
+            }
+
+            .stat-number {
+                font-size: var(--font-lg);
+            }
+
+            .stat-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .stat-icon img {
+                width: 20px;
+                height: 20px;
+            }
+
+            .notice-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-lg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header h1 {
+                font-size: var(--font-xl);
+            }
+
+            .stat-number {
+                font-size: var(--font-base);
+            }
+
+            .stat-info h3 {
+                font-size: 10px;
+            }
+        }
+    </style>
 </head>
 
 <body class="admin-dashboard-page">
@@ -33,13 +138,13 @@ $user_name = $currentUser->getFullName();
 
     <main class="admin-main-content">
         <div class="dashboard-content">
-            <!-- Page Header with welcome section -->
+            <!-- Page Header -->
             <div class="page-header">
                 <h1>Welcome back, <?php echo htmlspecialchars($user_name); ?>!</h1>
                 <p>Here's what's happening with your marketplace today.</p>
             </div>
 
-            <!-- Stats Grid - Using admin-stats-grid for 6 columns -->
+            <!-- Stats Grid -->
             <div class="stats-grid admin-stats-grid">
                 <div class="stat-card">
                     <div class="stat-info">
@@ -97,7 +202,7 @@ $user_name = $currentUser->getFullName();
                 </div>
             </div>
 
-            <!-- Notice banners - Using notice-banner class -->
+            <!-- Notice Banners -->
             <div class="notice-banner warning" id="pendingNotice" style="display: none;">
                 <span id="pendingMessage"></span>
                 <a href="users.php?role=seller&filter=pending" class="view-all-link">Review Now →</a>
@@ -162,26 +267,52 @@ $user_name = $currentUser->getFullName();
     </main>
 
     <script>
+        // ============================================================
+        // DOM CACHE - For page-specific elements
+        // ============================================================
+
+        var $adminSideMenu = null,
+            $adminMenuOverlay = null;
+
+        function cacheSidebarElements() {
+            $adminSideMenu = $('#adminSideMenu');
+            $adminMenuOverlay = $('#adminMenuOverlay');
+        }
+
+        // ============================================================
+        // SIDEBAR HANDLING
+        // ============================================================
+
         $(document).on('click', '[data-modal-open], .view-details-btn, .process-btn, .ship-btn, .complete-btn, .cancel-btn, .delete-btn, .edit-btn', function() {
-            var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
-            var $sideMenu = $('#' + prefix + 'SideMenu');
-            if ($sideMenu.hasClass('active')) {
-                $sideMenu.data('was-open', true);
-                $sideMenu.removeClass('active');
-                $('#' + prefix + 'MenuOverlay').removeClass('active');
+            if ($adminSideMenu && $adminSideMenu.length && $adminSideMenu.hasClass('active')) {
+                $adminSideMenu.data('was-open', true);
+                $adminSideMenu.removeClass('active');
+                if ($adminMenuOverlay && $adminMenuOverlay.length) {
+                    $adminMenuOverlay.removeClass('active');
+                }
             }
         });
 
         $(document).on('click', '.modal-close, .btn-close, .order-modal-close', function() {
-            var prefix = $('body').hasClass('admin-dashboard-page') ? 'admin' : 'seller';
-            var $sideMenu = $('#' + prefix + 'SideMenu');
-            if ($sideMenu.data('was-open') === true) {
-                $sideMenu.addClass('active');
-                $('#' + prefix + 'MenuOverlay').addClass('active');
-                $sideMenu.removeData('was-open');
+            if ($adminSideMenu && $adminSideMenu.length && $adminSideMenu.data('was-open') === true) {
+                $adminSideMenu.addClass('active');
+                if ($adminMenuOverlay && $adminMenuOverlay.length) {
+                    $adminMenuOverlay.addClass('active');
+                }
+                $adminSideMenu.removeData('was-open');
             }
         });
+
+        // ============================================================
+        // DOCUMENT READY
+        // ============================================================
+
+        $(document).ready(function() {
+            cacheSidebarElements();
+            // dashboard.js handles the rest
+        });
     </script>
+
 </body>
 
 </html>

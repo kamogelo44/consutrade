@@ -1,4 +1,11 @@
 <?php
+/*
+ * ConsuTrade - Order Confirmation Page
+ * Author: Kamogelo Phale
+ * 
+ * Displays order confirmation or payment status after PayFast redirect.
+ */
+
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 
@@ -19,7 +26,6 @@ $pageTitle = 'Payment Status';
 // ============================================================
 if (!empty($_GET['m_payment_id'])) {
     $paymentId = $_GET['m_payment_id'];
-    error_log("order-confirmation: looking for payment_id: $paymentId");
     $orderByPayment = $orderRepo->findByPaymentId($paymentId);
     if ($orderByPayment) {
         $orderId = $orderByPayment['order_id'];
@@ -43,7 +49,6 @@ if (!$isSuccess && isset($_SESSION['checkout_data'])) {
     $userId = $currentUser->getUserId();
 
     if ($orderId > 0) {
-        error_log("order-confirmation: checking session order_id: $orderId");
         $order = $orderService->findById($orderId, $userId, 'buyer');
         if ($order && $order['status'] !== 'pending') {
             $isSuccess = true;
@@ -99,7 +104,6 @@ $breadcrumbItems = [['label' => $pageTitle]];
 $showRedirect = false;
 $redirectDelay = 10;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -372,7 +376,6 @@ $redirectDelay = 10;
 <body>
 
     <?php include 'includes/header.php'; ?>
-
     <?php include 'includes/breadcrumb.php'; ?>
 
     <main class="confirmation-wrapper">
@@ -380,7 +383,7 @@ $redirectDelay = 10;
             <?php if ($isSuccess): ?>
                 <!-- SUCCESS STATE -->
                 <div class="confirmation-icon success">
-                    <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo.svg" alt="Success">
+                    <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" alt="Success">
                 </div>
 
                 <h1 class="confirmation-title success">Order Confirmed!</h1>
@@ -425,7 +428,7 @@ $redirectDelay = 10;
             <?php else: ?>
                 <!-- ERROR/PENDING STATE -->
                 <div class="confirmation-icon error">
-                    <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo.svg" alt="Error">
+                    <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" alt="Error">
                 </div>
 
                 <h1 class="confirmation-title error">Payment Issue</h1>
@@ -462,15 +465,27 @@ $redirectDelay = 10;
 
     <?php if ($showRedirect): ?>
         <script>
+            /**
+             * Countdown timer for redirecting to cart.
+             * Only shown when there is a payment issue.
+             */
             (function() {
-                var delay = <?php echo $redirectDelay; ?>;
+                // ============================================================
+                // DOM CACHE
+                // ============================================================
                 var timerElement = document.getElementById('countdownTimer');
+                var redirectBtn = document.getElementById('redirectNowBtn');
                 var redirectUrl = '<?php echo $baseUrl; ?>cart.php';
+                var delay = <?php echo $redirectDelay; ?>;
 
+                /**
+                 * Redirects the user to the cart page.
+                 */
                 function redirectNow() {
                     window.location.href = redirectUrl;
                 }
 
+                // Start the countdown timer
                 var interval = setInterval(function() {
                     delay--;
                     if (timerElement) {
@@ -482,7 +497,7 @@ $redirectDelay = 10;
                     }
                 }, 1000);
 
-                var redirectBtn = document.getElementById('redirectNowBtn');
+                // Allow user to manually redirect by clicking the button
                 if (redirectBtn) {
                     redirectBtn.addEventListener('click', function(e) {
                         e.preventDefault();

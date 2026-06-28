@@ -7,20 +7,23 @@
  * seller verification, and dashboard operations.
  *
  * @author Kamogelo Phale
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 class AdminService
 {
+    private UserService $userService;
     private UserRepository $userRepo;
     private mysqli $db;
 
     public function __construct(
         mysqli $db,
-        UserRepository $userRepo
+        UserRepository $userRepo,
+        UserService $userService
     ) {
         $this->db = $db;
         $this->userRepo = $userRepo;
+        $this->userService = $userService;
     }
 
     /**
@@ -33,6 +36,7 @@ class AdminService
         if ($roleFilter === 'pending') {
             $total = $this->userRepo->getPendingVerificationsCount();
             $users = $this->userRepo->findPendingVerifications($limit, $offset);
+
             return [
                 'users' => $users,
                 'total' => $total,
@@ -58,7 +62,33 @@ class AdminService
     }
 
     /**
+     * Get a seller's verification document data for admin review.
+     *
+     * @param int $sellerId The seller's user ID
+     * @return array|null Returns document data or null if not found
+     */
+    public function getVerificationDocument(int $sellerId): ?array
+    {
+        $user = $this->userRepo->findById($sellerId);
+        if (!$user || $user->getRole() !== 'seller') {
+            return null;
+        }
+
+        $verification = $this->userRepo->findVerification($sellerId);
+        if (!$verification || empty($verification->getDocumentPath())) {
+            return null;
+        }
+
+        return [
+            'document_path' => $verification->getDocumentPath(),
+            'document_type' => $verification->getDocumentType(),
+            'submitted_at' => $verification->getSubmittedAt()
+        ];
+    }
+
+    /**
      * Verify seller with approval/rejection.
+     * Updates both seller_verification and users tables.
      */
     public function verifySeller(int $sellerId, string $decision): array
     {
@@ -66,106 +96,134 @@ class AdminService
             return ['success' => false, 'message' => 'Invalid decision'];
         }
 
-        if ($decision === 'approve') {
-            $sql = "UPDATE seller_verification
-                    SET document_verified = 1,
-                        verified_at = NOW(),
-                        verification_score = verification_score + 25
-                    WHERE seller_id = ?";
-        } else {
-            $sql = "UPDATE seller_verification
-                    SET document_verified = 0,
-                        document_path = NULL,
-                        document_type = NULL
-                    WHERE seller_id = ?";
-        }
+        try {
+            if ($decision === 'approve') {
+                // Use UserRepository - it now updates BOTH tables
+                $result = $this->userRepo->verifySeller($sellerId);
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('i', $sellerId);
+                if ($result) {
+                    return ['success' => true, 'message' => 'Seller approved and verified.'];
+                } else {
+                    return ['success' => false, 'message' => 'Failed to verify seller.'];
+                }
+            } else {
+                // Reject - clear verification from both tables
+                $result = $this->userRepo->unverifySeller($sellerId);
 
-        if (!$stmt->execute()) {
-            $stmt->close();
-            return ['success' => false, 'message' => 'Could not update verification'];
-        }
-        $stmt->close();
-
-        // Auto-verify if score >= 100
-        if ($decision === 'approve') {
-            $checkSql = "SELECT verification_score FROM seller_verification WHERE seller_id = ?";
-            $checkStmt = $this->db->prepare($checkSql);
-            $checkStmt->bind_param('i', $sellerId);
-            $checkStmt->execute();
-            $result = $checkStmt->get_result();
-            $row = $result->fetch_assoc();
-            $checkStmt->close();
-
-            if ($row && $row['verification_score'] >= 100) {
-                $this->userRepo->verifySeller($sellerId);
+                if ($result) {
+                    return ['success' => true, 'message' => 'Seller document rejected.'];
+                } else {
+                    return ['success' => false, 'message' => 'Failed to reject seller document.'];
+                }
             }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
         }
-
-        return [
-            'success' => true,
-            'message' => $decision === 'approve' ? 'Seller document approved' : 'Seller document rejected'
-        ];
     }
 
     /**
      * Upload verification document for seller.
+     * 
+     * @param int $sellerId The seller's user ID
+     * @param array $file The uploaded file from $_FILES
+     * @param string $docType The document type (id, proof_address, other)
+     * @return array ['success' => bool, 'message' => string]
      */
     public function uploadVerification(int $sellerId, array $file, string $docType): array
     {
+        // Validate file size (5MB max)
         $maxSize = 5 * 1024 * 1024;
-        $allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-
-        if (!in_array($file['type'], $allowed)) {
-            return ['success' => false, 'message' => 'Only JPG, PNG, or PDF files are allowed'];
-        }
-
         if ($file['size'] > $maxSize) {
-            return ['success' => false, 'message' => 'File must be less than 5MB'];
+            return ['success' => false, 'message' => 'File must be less than 5MB.'];
         }
 
-        $uploadDir = $this->getUploadDir();
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $filename = 'seller_' . $sellerId . '_' . time() . '.' . $ext;
-        $dest = $uploadDir . $filename;
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
 
-        if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            return ['success' => false, 'message' => 'Could not upload file'];
+        if (!in_array($mimeType, $allowedTypes)) {
+            return ['success' => false, 'message' => 'Only JPG, PNG, or PDF files are allowed.'];
         }
 
+        // Get upload directory
+        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/verifications/';
+
+        // Create directory if it doesn't exist
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0777, true)) {
+                error_log("Failed to create upload directory: $uploadDir");
+                return ['success' => false, 'message' => 'Could not create upload directory.'];
+            }
+        }
+
+        // Generate unique filename
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'seller_' . $sellerId . '_' . time() . '.' . $extension;
+        $destination = $uploadDir . $filename;
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            error_log("Failed to move uploaded file to: $destination");
+            return ['success' => false, 'message' => 'Could not save the uploaded file.'];
+        }
+
+        // Set file permissions
+        chmod($destination, 0644);
+
+        // Store relative path in database
         $docPath = 'uploads/verifications/' . $filename;
 
         // Check if verification record exists
         $checkSql = "SELECT verification_id FROM seller_verification WHERE seller_id = ?";
         $checkStmt = $this->db->prepare($checkSql);
+        if (!$checkStmt) {
+            return ['success' => false, 'message' => 'Database error.'];
+        }
         $checkStmt->bind_param('i', $sellerId);
         $checkStmt->execute();
         $result = $checkStmt->get_result();
+        $exists = $result->num_rows > 0;
+        $checkStmt->close();
 
-        if ($result->num_rows > 0) {
-            $sql = "UPDATE seller_verification
-                    SET document_path = ?, document_type = ?, document_verified = 0, last_check = NOW()
-                    WHERE seller_id = ?";
+        if ($exists) {
+            // Update existing record
+            $sql = "UPDATE seller_verification 
+                SET document_path = ?, 
+                    document_type = ?, 
+                    document_verified = 0, 
+                    submitted_at = NOW(),
+                    last_check = NOW()
+                WHERE seller_id = ?";
             $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                return ['success' => false, 'message' => 'Database error.'];
+            }
             $stmt->bind_param('ssi', $docPath, $docType, $sellerId);
         } else {
-            $sql = "INSERT INTO seller_verification (seller_id, document_path, document_type, last_check)
-                    VALUES (?, ?, ?, NOW())";
+            // Insert new record
+            $sql = "INSERT INTO seller_verification 
+                (seller_id, document_path, document_type, submitted_at, last_check) 
+                VALUES (?, ?, ?, NOW(), NOW())";
             $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                return ['success' => false, 'message' => 'Database error.'];
+            }
             $stmt->bind_param('iss', $sellerId, $docPath, $docType);
         }
-        $checkStmt->close();
 
         if ($stmt->execute()) {
             $stmt->close();
-            return ['success' => true, 'message' => 'Document uploaded. Awaiting verification.'];
+            return ['success' => true, 'message' => 'Document uploaded successfully. Awaiting verification.'];
         }
 
         $stmt->close();
-        unlink($dest);
-        return ['success' => false, 'message' => 'Could not save document'];
+        // Delete the file if database insert failed
+        if (file_exists($destination)) {
+            unlink($destination);
+        }
+        return ['success' => false, 'message' => 'Could not save document record.'];
     }
 
     /**

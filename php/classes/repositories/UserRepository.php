@@ -7,7 +7,7 @@
  * Returns domain models WITHOUT repositories inside them.
  *
  * @author Kamogelo Phale
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 class UserRepository
@@ -215,6 +215,7 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
+            $row['has_document'] = $this->userHasDocument($row);
             $users[] = $row;
         }
         $stmt->close();
@@ -259,6 +260,7 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
+            $row['has_document'] = $this->userHasDocument($row);
             $users[] = $row;
         }
         $stmt->close();
@@ -560,11 +562,35 @@ class UserRepository
      */
     public function verifySeller(int $sellerId): bool
     {
-        $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ? AND role = 'seller'");
-        $stmt->bind_param('i', $sellerId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
+        $this->db->begin_transaction();
+
+        try {
+            // 1. Update users table
+            $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ? AND role = 'seller'");
+            $stmt->bind_param('i', $sellerId);
+            if (!$stmt->execute()) {
+                throw new Exception('Failed to update users table');
+            }
+            $stmt->close();
+
+            // 2. Update seller_verification table
+            $stmt2 = $this->db->prepare("UPDATE seller_verification 
+                                     SET document_verified = 1, 
+                                         verified_at = NOW() 
+                                     WHERE seller_id = ?");
+            $stmt2->bind_param('i', $sellerId);
+            if (!$stmt2->execute()) {
+                throw new Exception('Failed to update seller_verification table');
+            }
+            $stmt2->close();
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            error_log("verifySeller error: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -575,11 +601,35 @@ class UserRepository
      */
     public function unverifySeller(int $sellerId): bool
     {
-        $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ? AND role = 'seller'");
-        $stmt->bind_param('i', $sellerId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
+        $this->db->begin_transaction();
+
+        try {
+            // 1. Update users table
+            $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ? AND role = 'seller'");
+            $stmt->bind_param('i', $sellerId);
+            if (!$stmt->execute()) {
+                throw new Exception('Failed to update users table');
+            }
+            $stmt->close();
+
+            // 2. Update seller_verification table
+            $stmt2 = $this->db->prepare("UPDATE seller_verification 
+                                     SET document_verified = 0, 
+                                         verified_at = NULL 
+                                     WHERE seller_id = ?");
+            $stmt2->bind_param('i', $sellerId);
+            if (!$stmt2->execute()) {
+                throw new Exception('Failed to update seller_verification table');
+            }
+            $stmt2->close();
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            error_log("unverifySeller error: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -816,6 +866,53 @@ class UserRepository
     // ============================================================
 
     /**
+     * Check if a user has a verification document.
+     * Only applies to sellers, returns false for other roles.
+     *
+     * @param array $row User row data
+     * @return bool True if the user is a seller with a document
+     */
+    private function userHasDocument(array $row): bool
+    {
+        if ($row['role'] !== 'seller') {
+            return false;
+        }
+
+        $stmt = $this->db->prepare("SELECT document_path FROM seller_verification WHERE seller_id = ?");
+        if (!$stmt) {
+            return false;
+        }
+
+        $stmt->bind_param('i', $row['user_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $doc = $result->fetch_assoc();
+        $stmt->close();
+
+        return $doc && !empty($doc['document_path']);
+    }
+
+    /**
+     * Get seller verification as domain object.
+     *
+     * @param int $sellerId The seller's user ID
+     * @return SellerVerification|null
+     */
+    public function findVerification(int $sellerId): ?SellerVerification
+    {
+        $stmt = $this->db->prepare("SELECT * FROM seller_verification WHERE seller_id = ?");
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('i', $sellerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return $row ? new SellerVerification($row) : null;
+    }
+
+    /**
      * Hydrate database row into appropriate User subclass.
      * NO repositories are injected into domain models!
      *
@@ -831,34 +928,12 @@ class UserRepository
                 return new Admin($data);
 
             case 'seller':
-                $verification = $this->getSellerVerification($data['user_id']);
+                $verification = $this->findVerification($data['user_id']);
                 return new Seller($data, $verification);
 
             case 'buyer':
             default:
                 return new Buyer($data);
         }
-    }
-
-    /**
-     * Get seller verification data as domain object.
-     *
-     * @param int $sellerId Seller ID
-     * @return SellerVerification|null
-     */
-    private function getSellerVerification(int $sellerId): ?SellerVerification
-    {
-        $stmt = $this->db->prepare("SELECT * FROM seller_verification WHERE seller_id = ?");
-        $stmt->bind_param('i', $sellerId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            return new SellerVerification($row);
-        }
-
-        $stmt->close();
-        return null;
     }
 }

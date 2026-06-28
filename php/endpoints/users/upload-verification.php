@@ -22,12 +22,18 @@ if (!$isLoggedIn || !$currentUser instanceof Seller) {
 $seller_id = $currentUser->getUserId();
 
 if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
-    $response['message'] = 'No document uploaded.';
+    $response['message'] = 'No document uploaded or upload error.';
     echo json_encode($response);
     exit;
 }
 
 $docType = $_POST['document_type'] ?? 'id';
+
+// ============================================================
+// DEBUG: Log the upload attempt
+// ============================================================
+error_log("Verification upload attempt - Seller ID: $seller_id, Document Type: $docType");
+error_log("File: " . print_r($_FILES['document'], true));
 
 // Use AdminService for document upload
 $result = $adminService->uploadVerification(
@@ -35,6 +41,11 @@ $result = $adminService->uploadVerification(
     $_FILES['document'],
     $docType
 );
+
+// ============================================================
+// DEBUG: Log the result
+// ============================================================
+error_log("Upload result: " . print_r($result, true));
 
 $response['success'] = $result['success'];
 $response['message'] = $result['message'];

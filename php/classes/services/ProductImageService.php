@@ -213,9 +213,11 @@ class ProductImageService
             return $imageUrl;
         }
 
-        $filename = basename($imageUrl);
-        if (file_exists($this->uploadPath . $filename)) {
-            return $baseUrl . ltrim($imageUrl, '/');
+        $cleanPath = ltrim($imageUrl, '/');
+        $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/' . $cleanPath;
+
+        if (file_exists($fullPath)) {
+            return $baseUrl . $cleanPath;
         }
 
         return $baseUrl . 'images/default-product.png';

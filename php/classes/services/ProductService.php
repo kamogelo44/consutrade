@@ -7,7 +7,7 @@
  * status updates, and search/filter operations.
  *
  * @author Kamogelo Phale
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 class ProductService
@@ -132,18 +132,84 @@ class ProductService
 
     /**
      * Update product status with business logic.
+     * 
+     * @param int $id Product ID
+     * @param int $sellerId Seller ID
+     * @param string $action Action to perform ('suspend', 'activate', 'delete')
+     * @param string $suspendedBy Who is performing the action ('admin' or 'seller')
+     * @param string $suspendedReason Reason for suspension (optional)
+     * @return array ['success' => bool, 'message' => string]
      */
     public function updateStatus(int $id, int $sellerId, string $action, string $suspendedBy = 'seller', string $suspendedReason = ''): array
     {
-        return $this->productRepo->updateStatus($id, $sellerId, $action, $suspendedBy, $suspendedReason);
+        // Map action to status
+        $newStatus = match ($action) {
+            'suspend' => 'suspended',
+            'activate' => 'active',
+            'delete' => 'deleted',
+            default => $action
+        };
+
+        // Delete action - use delete method instead
+        if ($action === 'delete') {
+            return $this->delete($id, $sellerId);
+        }
+
+        // Call repository method
+        $result = $this->productRepo->updateStatusDirect(
+            $id,
+            $sellerId,
+            $newStatus,
+            $suspendedBy,
+            $suspendedReason
+        );
+
+        if ($result) {
+            return [
+                'success' => true,
+                'message' => 'Product status updated to ' . ucfirst($newStatus) . '.'
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Failed to update product status.'
+        ];
     }
 
     /**
      * Delete product and its images.
+     * 
+     * @param int $id Product ID
+     * @param int $sellerId Seller ID
+     * @return array ['success' => bool, 'message' => string]
      */
     public function delete(int $id, int $sellerId): array
     {
-        return $this->productRepo->delete($id, $sellerId);
+        $result = $this->productRepo->delete($id, $sellerId);
+
+        if ($result) {
+            // Delete associated images
+            $product = $this->productRepo->findById($id);
+            if ($product) {
+                // Delete main image if exists
+                if ($product->getImageUrl()) {
+                    $this->productRepo->deleteImageFile($product->getImageUrl());
+                }
+                // Delete gallery images
+                // Gallery images are handled separately via ProductImageRepository
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Product deleted successfully.'
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Failed to delete product.'
+        ];
     }
 
     /**
