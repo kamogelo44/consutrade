@@ -381,11 +381,167 @@ function loadProductDetails(id) {
 }
 
 /**
- * Renders product details on the page.
+ * Renders product details on the page
  */
 function displayProductDetails(product) {
-    // ... existing displayProductDetails code ...
-    // (Keeping this as is since it's long and already works)
+    var mainImage = fixImageUrl(product.image_url);
+    var galleryImages = product.gallery_images || [];
+    
+    var thumbnails = [mainImage];
+    for (var i = 0; i < galleryImages.length && thumbnails.length < 4; i++) {
+        var galleryUrl = fixImageUrl(galleryImages[i]);
+        if (galleryUrl != mainImage) {
+            thumbnails.push(galleryUrl);
+        }
+    }
+    
+    while (thumbnails.length < 4) {
+        thumbnails.push(baseUrl + 'images/default-product.png');
+    }
+    
+    var galleryHtml = '';
+    for (var i = 0; i < thumbnails.length; i++) {
+        var isActive = (i === 0) ? 'active' : '';
+        galleryHtml += '<div class="small-img ' + isActive + '" data-image-path="' + thumbnails[i] + '">' +
+                            '<img src="' + thumbnails[i] + '" alt="Thumbnail ' + (i+1) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                        '</div>';
+    }
+    
+    var stockQty = parseInt(product.stock_quantity) || 0;
+    var isOutOfStock = stockQty <= 0;
+    var isLowStock = stockQty > 0 && stockQty <= 5;
+    var stockHtml = '';
+    
+    if (isOutOfStock) {
+        stockHtml = '<div class="stock-status out-of-stock"><span class="stock-icon">✕</span> Out of Stock</div>';
+    } else if (isLowStock) {
+        stockHtml = '<div class="stock-status low-stock"><span class="stock-icon">⚠</span> Only ' + stockQty + ' left in stock!</div>';
+    } else {
+        stockHtml = '<div class="stock-status in-stock"><span class="stock-icon">✓</span> In Stock (' + stockQty + ' available)</div>';
+    }
+    
+    var starsHtml = '';
+    var avgRating = parseFloat(product.avg_rating) || 0;
+    for (var i = 1; i <= 5; i++) {
+        starsHtml += (i <= avgRating) ? '<span class="star">★</span>' : '<span class="star empty">★</span>';
+    }
+    
+    var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
+    
+    var actionButtonsHtml = '';
+    
+    if (isOutOfStock) {
+        actionButtonsHtml = '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
+    } else {
+        actionButtonsHtml = '<button class="cart-btn" onclick="addToCart(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Add to Cart</button>' +
+                            '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
+    }
+    
+    var isLoggedInFlag = (typeof isLoggedIn !== 'undefined' && isLoggedIn === true);
+    var isBuyer = (typeof currentUserRole !== 'undefined' && currentUserRole == 'buyer');
+    var showReportButton = isLoggedInFlag && isBuyer;
+    
+    if (showReportButton) {
+        actionButtonsHtml += '<button class="report-btn" id="reportProductBtn">' +
+                                '<img src="' + baseUrl + 'images/icons/warning-svgrepo-com.svg" width="16" height="16" alt="Report" loading="lazy"> Report This Product</button>';
+    }
+    
+    var contactHtml = '';
+    var sellerPhone = product.seller_phone || '';
+    var sellerEmail = product.seller_email || '';
+    
+    var whatsappNumber = '';
+    if (sellerPhone) {
+        var digits = sellerPhone.replace(/\D/g, '');
+        if (digits.startsWith('0')) {
+            digits = digits.substring(1);
+        }
+        if (!digits.startsWith('27')) {
+            digits = '27' + digits;
+        }
+        whatsappNumber = digits;
+    }
+    
+    if (sellerPhone) {
+        contactHtml += '<a href="https://wa.me/' + whatsappNumber + '" target="_blank" class="contact-btn whatsapp-btn">' +
+                            '<img src="' + baseUrl + 'images/icons/whatsapp-svgrepo-com.svg" width="18" height="18" alt="WhatsApp" loading="lazy"> WhatsApp</a>';
+    }
+    if (sellerEmail) {
+        contactHtml += '<a href="mailto:' + sellerEmail + '" class="contact-btn email-btn">' +
+                            '<img src="' + baseUrl + 'images/icons/email-svgrepo-com.svg" width="16" height="16" alt="Email" loading="lazy"> Email Seller</a>';
+    }
+    
+    var sellerImage = fixImageUrl(product.seller_profile_image);
+    
+    $('#product-details-content').html(
+        '<div class="top-items">' +
+            '<div class="product-imgs">' +
+                '<div class="main-img">' +
+                    '<img src="' + mainImage + '" alt="' + escapeHtml(product.name) + '" id="main-product-image" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
+                '</div>' +
+                '<div class="smaller-imgs" id="gallery-container">' + galleryHtml + '</div>' +
+            '</div>' +
+            '<div class="product-info">' +
+                '<h1 class="details-prod-name">' + escapeHtml(product.name) + '</h1>' +
+                '<p class="details-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
+                '<div class="cat-badge"><span class="cat-name">' + escapeHtml(product.category_name || 'General') + '</span></div>' +
+                stockHtml +
+                '<div class="description">' +
+                    '<p class="sub-head">Description</p>' +
+                    '<p class="des">' + escapeHtml(product.description || 'No description available.') + '</p>' +
+                '</div>' +
+                '<div class="con-loc">' +
+                    (product.condition ? '<p><strong>Condition:</strong> ' + escapeHtml(product.condition) + '</p>' : '') +
+                    (product.location ? '<p><strong>Location:</strong> ' + escapeHtml(product.location) + '</p>' : '') +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        '<section class="review">' +
+            '<div class="rev-container">' +
+                '<div class="seller-profile">' +
+                    '<div class="profile-pic">' +
+                        '<img src="' + sellerImage + '" width="40" height="40" alt="' + escapeHtml(product.seller_name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
+                    '</div>' +
+                    '<p class="seller-name">' + escapeHtml(product.seller_name) + '</p>' +
+                '</div>' +
+                '<div class="verification">' +
+                    (product.is_verified ? 
+                        '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Verified Seller</p></div>' : 
+                        '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Not Verified</p></div>') +
+                '</div>' +
+                '<div class="contact-buttons">' + contactHtml + '</div>' +
+                '<div class="star-reviews">' +
+                    '<h1>Seller Reviews</h1>' +
+                    starsHtml +
+                    '<p>Rating: ' + avgRating.toFixed(1) + '/5 (' + (product.review_count || 0) + ' reviews)</p>' +
+                '</div>' +
+                '<button class="view-profile" onclick="window.location.href=\'' + baseUrl + 'seller-profile-public.php?seller_id=' + product.seller_id + '&product_id=' + product.id + '&product_name=' + encodeURIComponent(product.name) + '\'">View Seller Profile</button>' +
+            '</div>' +
+        '</section>' +
+        '<div class="actions">' +
+            '<div class="actions-card">' +
+                '<div class="action-btns">' + actionButtonsHtml + '</div>' +
+                '<div class="payfast-badge">' +
+                    '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast" loading="lazy">' +
+                    '<span>Secure payments by PayFast</span>' +
+                '</div>' +
+            '</div>' +
+        '</div>'
+    );
+    
+    $('.small-img').on('click', function() {
+        var newImagePath = $(this).data('image-path');
+        $('#main-product-image').attr('src', newImagePath);
+        $('.small-img').removeClass('active');
+        $(this).addClass('active');
+    });
+    
+    if (showReportButton) {
+        $('#reportProductBtn').off('click').on('click', function(e) {
+            e.stopPropagation();
+            openReportModal(product.id);
+        });
+    }
 }
 
 // ============================================================

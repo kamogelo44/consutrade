@@ -8,9 +8,9 @@ require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
-if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+// Check if user is logged in AND has buyer role (regardless of active role)
+if (!$isLoggedIn || !$currentUser->hasRole('buyer')) {
     header('Location: ' . $baseUrl . 'index.php');
-    exit;
 }
 
 $breadcrumbItems = [
@@ -263,7 +263,7 @@ $breadcrumbItems = [
         <div class="order-modal-content">
             <div class="order-modal-header">
                 <h2>Order Details</h2>
-                <button class="order-modal-close" onclick="closeOrderModal()">&times;</button>
+                <button class="btn-close" onclick="closeOrderModal()">&times;</button>
             </div>
             <div class="order-details-content" id="orderModalBody">
                 <div class="loading-spinner">Loading order details...</div>
@@ -277,7 +277,7 @@ $breadcrumbItems = [
         <div class="review-modal-content">
             <div class="review-modal-header">
                 <h2 id="reviewModalTitle">Review Seller</h2>
-                <button class="review-modal-close" onclick="closeReviewModal()">&times;</button>
+                <button class="btn-close" onclick="closeReviewModal()">&times;</button>
             </div>
             <div class="review-form-container">
                 <p class="review-info">Rate your experience with <strong id="reviewSellerName"></strong></p>

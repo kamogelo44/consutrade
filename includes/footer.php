@@ -46,7 +46,7 @@
             </div>
             <div class="contact-item">
                 <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" alt="Location" width="16" height="16">
-                <span>Johannesburg, South Africa</span>
+                <span>Limpopo, South Africa</span>
             </div>
         </div>
     </div>

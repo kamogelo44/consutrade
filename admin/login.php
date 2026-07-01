@@ -7,13 +7,23 @@
 require_once dirname(__DIR__) . '/init.php';
 
 // Redirect if already logged in
-if ($auth->isAdmin()) {
-    header('Location: admin-dashboard.php');
-    exit;
-}
-if ($auth->isSeller()) {
-    header('Location: seller-dashboard.php');
-    exit;
+if ($auth->isLoggedIn()) {
+    $roles = $auth->getAvailableRoles();
+    $adminRoles = array_intersect($roles, ['admin', 'seller']);
+
+    if (count($adminRoles) > 1) {
+        header('Location: role-select.php');
+        exit;
+    } elseif (in_array('admin', $adminRoles)) {
+        header('Location: admin-dashboard.php');
+        exit;
+    } elseif (in_array('seller', $adminRoles)) {
+        header('Location: seller-dashboard.php');
+        exit;
+    } else {
+        header('Location: ' . $baseUrl . 'index.php');
+        exit;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -23,7 +33,6 @@ if ($auth->isSeller()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Login - ConsuTrade</title>
-    <!-- Use main.css which imports all component styles -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
     <script>
@@ -31,7 +40,6 @@ if ($auth->isSeller()) {
     </script>
     <script src="<?php echo $baseUrl; ?>js/main.js"></script>
     <style>
-        /* Page-specific layout - not in components */
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, var(--dark-bg) 0%, #2d2d2d 100%);
@@ -113,13 +121,6 @@ if ($auth->isSeller()) {
             <div id="login-error-container" class="error-container" style="display: none;"></div>
             <form id="login-form" class="login-form">
                 <div class="input-group">
-                    <label for="login-role">Login As</label>
-                    <select id="login-role" name="role_type" required>
-                        <option value="admin">Administrator</option>
-                        <option value="seller">Seller</option>
-                    </select>
-                </div>
-                <div class="input-group">
                     <label for="login-email">Email Address</label>
                     <input type="email" id="login-email" name="email" placeholder="Enter your email" required autocomplete="email" autofocus>
                 </div>
@@ -139,6 +140,37 @@ if ($auth->isSeller()) {
             </div>
         </div>
     </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#login-form').on('submit', function(e) {
+                e.preventDefault();
+
+                var formData = {
+                    email: $('#login-email').val(),
+                    password: $('#login-password').val(),
+                    context: 'admin'
+                };
+
+                $.ajax({
+                    url: baseUrl + 'php/endpoints/auth/login.php',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            window.location.href = response.redirect;
+                        } else {
+                            $('#login-error-container').show().html('<p style="color: #dc3545;">' + response.message + '</p>');
+                        }
+                    },
+                    error: function() {
+                        $('#login-error-container').show().html('<p style="color: #dc3545;">An error occurred. Please try again.</p>');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

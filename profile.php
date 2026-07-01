@@ -1,7 +1,13 @@
 <?php
 /*
- * ConsuTrade - User Profile Page (Buyer)
+ * ConsuTrade - Unified User Profile
  * Author: Kamogelo Phale
+ * 
+ * Single profile page that adapts to user's roles
+ * - Buyers see order history, reviews
+ * - Sellers see products, sales stats
+ * - Admins see system stats
+ * - Users with multiple roles see tabs to switch between views
  */
 
 require_once __DIR__ . '/init.php';
@@ -17,17 +23,6 @@ if (!$isLoggedIn) {
     exit;
 }
 
-// Redirect if not a buyer
-if (!$currentUser instanceof Buyer) {
-    if ($currentUser instanceof Seller) {
-        header('Location: ' . $baseUrl . 'admin/seller-profile.php');
-    } else {
-        header('Location: ' . $baseUrl . 'index.php');
-    }
-    exit;
-}
-
-// Get user data from User object
 $user_id = $currentUser->getUserId();
 $full_name = $currentUser->getFullName();
 $email = $currentUser->getEmail();
@@ -35,6 +30,32 @@ $phone = $currentUser->getPhone();
 $location = $currentUser->getLocation();
 $created_at = $currentUser->getCreatedAt();
 $profile_image = $currentUser->getProfileImageUrl();
+
+// Determine which roles the user has
+$hasBuyerRole = $currentUser->hasRole('buyer');
+$hasSellerRole = $currentUser->hasRole('seller');
+$hasAdminRole = $currentUser->hasRole('admin');
+
+// Get the active role for default tab
+$activeRole = $auth->getActiveRole();
+
+// Count how many roles the user has
+$roleCount = 0;
+if ($hasBuyerRole) $roleCount++;
+if ($hasSellerRole) $roleCount++;
+if ($hasAdminRole) $roleCount++;
+
+// If user only has one role, use that as default tab
+if ($roleCount === 1) {
+    if ($hasBuyerRole) $defaultTab = 'buyer';
+    elseif ($hasSellerRole) $defaultTab = 'seller';
+    elseif ($hasAdminRole) $defaultTab = 'admin';
+} else {
+    // Use active role as default tab
+    $defaultTab = $activeRole ?? 'buyer';
+}
+
+$defaultTab = $defaultTab ?? 'buyer';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,14 +64,10 @@ $profile_image = $currentUser->getProfileImageUrl();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - ConsuTrade</title>
-    <meta name="author" content="Kamogelo Phale">
-
-    <!-- Master Stylesheet -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-
     <style>
-        /* ========== PROFILE PAGE SPECIFIC STYLES ========== */
+        /* ========== PROFILE PAGE STYLES ========== */
         .profile-container {
             width: 100%;
             padding: var(--spacing-xl);
@@ -140,8 +157,18 @@ $profile_image = $currentUser->getProfileImageUrl();
             font-weight: var(--font-medium);
         }
 
-        .role-buyer {
+        .role-badge-buyer {
             background: rgba(76, 175, 80, 0.9);
+            color: var(--white);
+        }
+
+        .role-badge-seller {
+            background: rgba(255, 107, 0, 0.9);
+            color: var(--white);
+        }
+
+        .role-badge-admin {
+            background: rgba(156, 39, 176, 0.9);
             color: var(--white);
         }
 
@@ -150,6 +177,63 @@ $profile_image = $currentUser->getProfileImageUrl();
             padding: 4px 12px;
             border-radius: var(--radius-round);
             font-size: var(--font-sm);
+        }
+
+        /* Role Tabs */
+        .profile-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .profile-tab {
+            padding: 10px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: var(--font-medium);
+            color: var(--gray-medium);
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            transition: all var(--transition-fast);
+            font-size: var(--font-md);
+        }
+
+        .profile-tab:hover {
+            color: var(--dark-bg);
+            background: var(--gray-bg-light);
+        }
+
+        .profile-tab.active {
+            color: var(--primary-color);
+            background: var(--primary-fade);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .profile-tab .tab-badge {
+            display: inline-block;
+            background: var(--gray-bg);
+            color: var(--gray-dark);
+            border-radius: var(--radius-round);
+            padding: 1px 8px;
+            font-size: var(--font-xs);
+            margin-left: 6px;
+        }
+
+        .profile-tab.active .tab-badge {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         /* Messages */
@@ -182,9 +266,8 @@ $profile_image = $currentUser->getProfileImageUrl();
             margin-bottom: var(--spacing-xl);
         }
 
-        /* Stats Card */
-        .profile-stats-card,
-        .profile-edit-card {
+        /* Cards */
+        .profile-card {
             background: var(--white);
             border-radius: var(--radius-lg);
             padding: var(--spacing-xl);
@@ -192,8 +275,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             border: 1px solid var(--border-light);
         }
 
-        .profile-stats-card h3,
-        .profile-edit-card h3 {
+        .profile-card h3 {
             font-size: var(--font-xl);
             font-weight: var(--font-bold);
             margin-bottom: var(--spacing-lg);
@@ -202,6 +284,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             border-bottom: 2px solid var(--primary-color);
         }
 
+        /* Stats List */
         .stats-list {
             display: flex;
             flex-direction: column;
@@ -256,7 +339,8 @@ $profile_image = $currentUser->getProfileImageUrl();
             font-size: var(--font-sm);
         }
 
-        .form-group input {
+        .form-group input,
+        .form-group select {
             padding: 10px 12px;
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
@@ -264,7 +348,8 @@ $profile_image = $currentUser->getProfileImageUrl();
             transition: all var(--transition-fast);
         }
 
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
@@ -285,6 +370,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             display: flex;
             gap: var(--spacing-md);
             margin-top: var(--spacing-md);
+            flex-wrap: wrap;
         }
 
         .save-btn {
@@ -297,6 +383,7 @@ $profile_image = $currentUser->getProfileImageUrl();
             font-weight: var(--font-bold);
             cursor: pointer;
             transition: all var(--transition-fast);
+            min-width: 120px;
         }
 
         .save-btn:hover {
@@ -316,11 +403,66 @@ $profile_image = $currentUser->getProfileImageUrl();
             text-decoration: none;
             transition: all var(--transition-fast);
             display: inline-block;
+            min-width: 120px;
         }
 
         .change-password-btn:hover {
             background: var(--primary-fade);
             transform: translateY(-2px);
+        }
+
+        /* Quick Actions Grid */
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .quick-action-card {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--gray-bg-light);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            border: 1px solid transparent;
+        }
+
+        .quick-action-card:hover {
+            background: var(--primary-fade);
+            border-color: var(--primary-light);
+            transform: translateX(4px);
+        }
+
+        .quick-action-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quick-action-icon img {
+            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
+            width: 20px;
+            height: 20px;
+        }
+
+        .quick-action-info h4 {
+            font-size: var(--font-sm);
+            font-weight: var(--font-semibold);
+            color: var(--dark-bg);
+            margin: 0;
+        }
+
+        .quick-action-info p {
+            font-size: var(--font-xs);
+            color: var(--gray-medium);
+            margin: 0;
         }
 
         /* Danger Zone */
@@ -449,31 +591,6 @@ $profile_image = $currentUser->getProfileImageUrl();
             margin-top: var(--spacing-sm);
         }
 
-        .delete-cancel-btn {
-            padding: 10px 20px;
-            background: var(--gray-bg);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-        }
-
-        .delete-confirm-btn {
-            padding: 10px 20px;
-            background: var(--error);
-            color: var(--white);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-        }
-
-        .delete-cancel-btn:hover {
-            background: var(--gray-light);
-        }
-
-        .delete-confirm-btn:hover {
-            background: var(--error-dark);
-        }
-
         /* Responsive */
         @media (max-width: 992px) {
             .profile-content {
@@ -485,6 +602,7 @@ $profile_image = $currentUser->getProfileImageUrl();
         @media (max-width: 768px) {
             .profile-container {
                 padding: var(--spacing-lg);
+                margin-top: 60px;
             }
 
             .profile-user-header {
@@ -497,6 +615,10 @@ $profile_image = $currentUser->getProfileImageUrl();
                 justify-content: center;
             }
 
+            .profile-tabs {
+                justify-content: center;
+            }
+
             .danger-card {
                 flex-direction: column;
                 text-align: center;
@@ -504,6 +626,15 @@ $profile_image = $currentUser->getProfileImageUrl();
 
             .form-actions {
                 flex-direction: column;
+            }
+
+            .save-btn,
+            .change-password-btn {
+                width: 100%;
+            }
+
+            .quick-actions-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -523,6 +654,15 @@ $profile_image = $currentUser->getProfileImageUrl();
 
             .stat-value.highlight {
                 font-size: var(--font-lg);
+            }
+
+            .profile-tabs {
+                gap: var(--spacing-xs);
+            }
+
+            .profile-tab {
+                padding: 8px 14px;
+                font-size: var(--font-sm);
             }
         }
     </style>
@@ -547,7 +687,15 @@ $profile_image = $currentUser->getProfileImageUrl();
             <div class="profile-user-info">
                 <h1><?php echo htmlspecialchars($full_name); ?></h1>
                 <div class="profile-user-meta">
-                    <span class="role-badge role-buyer">Buyer</span>
+                    <?php if ($hasBuyerRole): ?>
+                        <span class="role-badge role-badge-buyer">Buyer</span>
+                    <?php endif; ?>
+                    <?php if ($hasSellerRole): ?>
+                        <span class="role-badge role-badge-seller">Seller</span>
+                    <?php endif; ?>
+                    <?php if ($hasAdminRole): ?>
+                        <span class="role-badge role-badge-admin">Admin</span>
+                    <?php endif; ?>
                     <span class="member-since">Member since <?php echo date('d M Y', strtotime($created_at)); ?></span>
                 </div>
             </div>
@@ -558,57 +706,231 @@ $profile_image = $currentUser->getProfileImageUrl();
             <input type="file" name="profile_image" id="profile-image-upload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
         </form>
 
-        <!-- Flash Messages -->
-        <div id="flash-message" class="success-message"></div>
-        <div id="error-message" class="error-message"></div>
+        <!-- Role Tabs (only show if user has multiple roles) -->
+        <?php if ($roleCount > 1): ?>
+            <div class="profile-tabs">
+                <?php if ($hasBuyerRole): ?>
+                    <button class="profile-tab <?php echo $defaultTab === 'buyer' ? 'active' : ''; ?>" data-tab="buyer">
+                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="16" height="16" style="vertical-align:middle;margin-right:4px;filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);">
+                        Buyer
+                        <span class="tab-badge">Orders</span>
+                    </button>
+                <?php endif; ?>
+                <?php if ($hasSellerRole): ?>
+                    <button class="profile-tab <?php echo $defaultTab === 'seller' ? 'active' : ''; ?>" data-tab="seller">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="16" height="16" style="vertical-align:middle;margin-right:4px;filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);">
+                        Seller
+                        <span class="tab-badge">Store</span>
+                    </button>
+                <?php endif; ?>
+                <?php if ($hasAdminRole): ?>
+                    <button class="profile-tab <?php echo $defaultTab === 'admin' ? 'active' : ''; ?>" data-tab="admin">
+                        <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" width="16" height="16" style="vertical-align:middle;margin-right:4px;filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);">
+                        Admin
+                        <span class="tab-badge">System</span>
+                    </button>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
-        <!-- Profile Content -->
-        <div class="profile-content">
-            <!-- Left Column - Profile Stats -->
-            <div class="profile-stats-card">
-                <h3>Buyer Statistics</h3>
-                <div class="stats-list">
-                    <div class="stat-row">
-                        <span class="stat-label">Email Address</span>
-                        <span class="stat-value"><?php echo htmlspecialchars($email); ?></span>
-                    </div>
+        <!-- ============================================================
+        TAB: BUYER CONTENT
+        ============================================================ -->
+        <div id="tab-buyer" class="tab-content <?php echo $defaultTab === 'buyer' ? 'active' : ''; ?>">
 
-                    <?php if (!empty($location)): ?>
+            <!-- Stats Card -->
+            <div class="profile-content">
+                <div class="profile-card">
+                    <h3>Buyer Statistics</h3>
+                    <div class="stats-list">
                         <div class="stat-row">
-                            <span class="stat-label">Location</span>
-                            <span class="stat-value"><?php echo htmlspecialchars($location); ?></span>
+                            <span class="stat-label">Email Address</span>
+                            <span class="stat-value"><?php echo htmlspecialchars($email); ?></span>
                         </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($phone)): ?>
+                        <?php if (!empty($location)): ?>
+                            <div class="stat-row">
+                                <span class="stat-label">Location</span>
+                                <span class="stat-value"><?php echo htmlspecialchars($location); ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (!empty($phone)): ?>
+                            <div class="stat-row">
+                                <span class="stat-label">Phone Number</span>
+                                <span class="stat-value"><?php echo htmlspecialchars($phone); ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <div class="stat-divider"></div>
                         <div class="stat-row">
-                            <span class="stat-label">Phone Number</span>
-                            <span class="stat-value"><?php echo htmlspecialchars($phone); ?></span>
+                            <span class="stat-label">Orders Placed</span>
+                            <span class="stat-value highlight" id="stat-orders">-</span>
                         </div>
-                    <?php endif; ?>
+                        <div class="stat-row">
+                            <span class="stat-label">Total Spent</span>
+                            <span class="stat-value highlight" id="stat-spent">-</span>
+                        </div>
+                        <div class="stat-row" id="pending-row" style="display: none;">
+                            <span class="stat-label">Pending Orders</span>
+                            <span class="stat-value highlight" style="color: var(--warning);" id="stat-pending">-</span>
+                        </div>
+                        <div class="stat-row" id="reviews-row" style="display: none;">
+                            <span class="stat-label">Reviews Written</span>
+                            <span class="stat-value" id="stat-reviews">-</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="stat-divider"></div>
-                    <div class="stat-row">
-                        <span class="stat-label">Orders Placed</span>
-                        <span class="stat-value highlight" id="stat-orders">-</span>
+                <!-- Quick Actions for Buyers -->
+                <div class="profile-card">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions-grid">
+                        <a href="<?php echo $baseUrl; ?>my-orders.php" class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <img src="<?php echo $baseUrl; ?>images/icons/document-svgrepo-com.svg" alt="Orders">
+                            </div>
+                            <div class="quick-action-info">
+                                <h4>My Orders</h4>
+                                <p>View order history</p>
+                            </div>
+                        </a>
+                        <a href="<?php echo $baseUrl; ?>cart.php" class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Cart">
+                            </div>
+                            <div class="quick-action-info">
+                                <h4>My Cart</h4>
+                                <p>View items in cart</p>
+                            </div>
+                        </a>
                     </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Total Spent</span>
-                        <span class="stat-value highlight" id="stat-spent">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+        TAB: SELLER CONTENT
+        ============================================================ -->
+        <div id="tab-seller" class="tab-content <?php echo $defaultTab === 'seller' ? 'active' : ''; ?>">
+
+            <!-- Top Row: Stats and Quick Actions -->
+            <div class="profile-content">
+                <div class="profile-card">
+                    <h3>Seller Statistics</h3>
+                    <div class="stats-list">
+                        <div class="stat-row">
+                            <span class="stat-label">Products Listed</span>
+                            <span class="stat-value highlight" id="stat-products">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Completed Sales</span>
+                            <span class="stat-value highlight" id="stat-sales">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Total Revenue</span>
+                            <span class="stat-value highlight" id="stat-revenue">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Seller Rating</span>
+                            <span class="stat-value highlight" id="stat-rating">-</span>
+                        </div>
                     </div>
-                    <div class="stat-row" id="pending-row" style="display: none;">
-                        <span class="stat-label">Pending Orders</span>
-                        <span class="stat-value highlight" style="color: var(--warning);" id="stat-pending">-</span>
-                    </div>
-                    <div class="stat-row" id="reviews-row" style="display: none;">
-                        <span class="stat-label">Reviews Written</span>
-                        <span class="stat-value" id="stat-reviews">-</span>
+                </div>
+
+                <div class="profile-card">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions-grid">
+                        <a href="<?php echo $baseUrl; ?>admin/add-product.php" class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <img src="<?php echo $baseUrl; ?>images/icons/add-svgrepo-com.svg" alt="Add Product">
+                            </div>
+                            <div class="quick-action-info">
+                                <h4>Add Product</h4>
+                                <p>List a new product</p>
+                            </div>
+                        </a>
+                        <a href="<?php echo $baseUrl; ?>admin/my-products.php" class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" alt="Products">
+                            </div>
+                            <div class="quick-action-info">
+                                <h4>My Products</h4>
+                                <p>Manage listings</p>
+                            </div>
+                        </a>
+                        <a href="<?php echo $baseUrl; ?>admin/seller-orders.php" class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <img src="<?php echo $baseUrl; ?>images/icons/clipboard-svgrepo-com.svg" alt="Orders">
+                            </div>
+                            <div class="quick-action-info">
+                                <h4>Manage Orders</h4>
+                                <p>Process and ship orders</p>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column - Edit Form -->
-            <div class="profile-edit-card">
+            <!-- Bottom Row: Verification Component (Full Width) -->
+            <?php include 'includes/verification-component.php'; ?>
+
+        </div>
+
+        <!-- ============================================================
+        TAB: ADMIN CONTENT
+        ============================================================ -->
+        <?php if ($hasAdminRole): ?>
+            <div id="tab-admin" class="tab-content <?php echo $defaultTab === 'admin' ? 'active' : ''; ?>">
+
+                <div class="profile-content">
+                    <div class="profile-card">
+                        <h3>Admin Dashboard Quick Links</h3>
+                        <div class="quick-actions-grid">
+                            <a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php" class="quick-action-card">
+                                <div class="quick-action-icon">
+                                    <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" alt="Dashboard">
+                                </div>
+                                <div class="quick-action-info">
+                                    <h4>Dashboard</h4>
+                                    <p>View system overview</p>
+                                </div>
+                            </a>
+                            <a href="<?php echo $baseUrl; ?>admin/users.php" class="quick-action-card">
+                                <div class="quick-action-icon">
+                                    <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" alt="Users">
+                                </div>
+                                <div class="quick-action-info">
+                                    <h4>Manage Users</h4>
+                                    <p>View and manage all users</p>
+                                </div>
+                            </a>
+                            <a href="<?php echo $baseUrl; ?>admin/all-orders.php" class="quick-action-card">
+                                <div class="quick-action-icon">
+                                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" alt="Orders">
+                                </div>
+                                <div class="quick-action-info">
+                                    <h4>All Orders</h4>
+                                    <p>View platform orders</p>
+                                </div>
+                            </a>
+                            <a href="<?php echo $baseUrl; ?>admin/flagged-listings.php" class="quick-action-card">
+                                <div class="quick-action-icon">
+                                    <img src="<?php echo $baseUrl; ?>images/icons/warning-svgrepo-com.svg" alt="Reports">
+                                </div>
+                                <div class="quick-action-info">
+                                    <h4>Flagged Reports</h4>
+                                    <p>Review reported content</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- ============================================================
+        COMMON: EDIT PROFILE (Appears on all tabs)
+        ============================================================ -->
+        <div class="profile-content">
+            <div class="profile-card">
                 <h3>Edit Profile</h3>
                 <form id="profile-edit-form" class="profile-edit-form">
                     <div class="form-group">
@@ -639,6 +961,32 @@ $profile_image = $currentUser->getProfileImageUrl();
                         <button type="button" class="change-password-btn" onclick="openChangePasswordModal()">Change Password</button>
                     </div>
                 </form>
+            </div>
+
+            <div class="profile-card">
+                <h3>Account Information</h3>
+                <div class="stats-list">
+                    <div class="stat-row">
+                        <span class="stat-label">Member Since</span>
+                        <span class="stat-value"><?php echo date('d M Y', strtotime($created_at)); ?></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Account Status</span>
+                        <span class="stat-value" style="color: var(--success);">Active</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Roles</span>
+                        <span class="stat-value">
+                            <?php
+                            $roleLabels = [];
+                            if ($hasBuyerRole) $roleLabels[] = 'Buyer';
+                            if ($hasSellerRole) $roleLabels[] = 'Seller';
+                            if ($hasAdminRole) $roleLabels[] = 'Admin';
+                            echo implode(' • ', $roleLabels);
+                            ?>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -731,11 +1079,13 @@ $profile_image = $currentUser->getProfileImageUrl();
     <?php include 'includes/modal-errors.php'; ?>
 
     <script>
-        /*
-         * ConsuTrade - Profile Page Functionality
-         */
         var baseUrl = '<?php echo $baseUrl; ?>';
         var currentUserId = <?php echo $user_id; ?>;
+        var currentUser = <?php echo isset($currentUser) ? json_encode([
+                                'hasRole' => function ($role) use ($currentUser) {
+                                    return $currentUser->hasRole($role);
+                                }
+                            ]) : 'null'; ?>;
 
         // ============================================================
         // DOM CACHE
@@ -752,17 +1102,9 @@ $profile_image = $currentUser->getProfileImageUrl();
         var $fullName = $('#full_name');
         var $phone = $('#phone');
         var $location = $('#location');
-        var $statOrders = $('#stat-orders');
-        var $statSpent = $('#stat-spent');
-        var $statPending = $('#stat-pending');
-        var $statReviews = $('#stat-reviews');
-        var $pendingRow = $('#pending-row');
-        var $reviewsRow = $('#reviews-row');
-        var $flashMessage = $('#flash-message');
-        var $errorMessage = $('#error-message');
 
         // ============================================================
-        // MODAL CONTROLS 
+        // MODAL CONTROLS
         // ============================================================
 
         window.showDeleteModal = function() {
@@ -786,21 +1128,7 @@ $profile_image = $currentUser->getProfileImageUrl();
         };
 
         // ============================================================
-        // TOAST / MESSAGE HELPER
-        // ============================================================
-
-        function showMessage(message, isError) {
-            var $msg = isError ? $errorMessage : $flashMessage;
-            $msg.text(message).show();
-            setTimeout(function() {
-                $msg.fadeOut(500, function() {
-                    $msg.hide().text('');
-                });
-            }, 5000);
-        }
-
-        // ============================================================
-        // PASSWORD TOGGLE (MUST BE GLOBAL FOR ONCLICK)
+        // PASSWORD TOGGLE (GLOBAL FOR ONCLICK)
         // ============================================================
 
         window.togglePassword = function(fieldId, button) {
@@ -819,12 +1147,118 @@ $profile_image = $currentUser->getProfileImageUrl();
         };
 
         // ============================================================
-        // LOAD USER STATS
+        // TOAST HELPER
+        // ============================================================
+
+        function showMessage(message, isError) {
+            var $msg = isError ? $('#error-message') : $('#flash-message');
+            if (!$msg.length) {
+                if (typeof showToast === 'function') {
+                    showToast(message, isError ? 'error' : 'success');
+                }
+                return;
+            }
+            $msg.text(message).show();
+            setTimeout(function() {
+                $msg.fadeOut(500);
+            }, 5000);
+        }
+
+        // ============================================================
+        // TAB SWITCHING
+        // ============================================================
+
+        function switchTab(tab) {
+            // Update URL hash
+            if (history.pushState) {
+                history.pushState(null, null, '#' + tab);
+            }
+            // Save to session storage
+            sessionStorage.setItem('activeProfileTab', tab);
+
+            // Update tab buttons
+            $('.profile-tab').removeClass('active');
+            $('.profile-tab[data-tab="' + tab + '"]').addClass('active');
+
+            // Update tab content
+            $('.tab-content').removeClass('active');
+            $('#tab-' + tab).addClass('active');
+        }
+
+        function activateTab() {
+            var tab = null;
+            var validTabs = ['buyer', 'seller', 'admin'];
+
+            // 1. Check URL hash first (highest priority)
+            var hash = window.location.hash.replace('#', '');
+            if (hash && validTabs.includes(hash)) {
+                tab = hash;
+            }
+
+            // 2. Check session storage if no hash
+            if (!tab) {
+                var saved = sessionStorage.getItem('activeProfileTab');
+                if (saved && validTabs.includes(saved)) {
+                    tab = saved;
+                }
+            }
+
+            // 3. Check if tab exists in DOM
+            if (tab && $('.profile-tab[data-tab="' + tab + '"]').length) {
+                switchTab(tab);
+                return;
+            }
+
+            // 4. Default to PHP default
+            var defaultTab = '<?php echo $defaultTab; ?>';
+            if ($('.profile-tab[data-tab="' + defaultTab + '"]').length) {
+                switchTab(defaultTab);
+            }
+        }
+
+        $(document).on('click', '.profile-tab', function() {
+            var tab = $(this).data('tab');
+            switchTab(tab);
+        });
+
+        $(window).on('hashchange', function() {
+            var hash = window.location.hash.replace('#', '');
+            if (hash) {
+                switchTab(hash);
+            }
+        });
+
+        $(function() {
+            activateTab();
+        });
+        // ============================================================
+        // LOAD STATS FOR EACH ROLE
         // ============================================================
 
         function loadUserStats() {
-            $statOrders.text('Loading...');
-            $statSpent.text('Loading...');
+            // Buyer stats
+            var $statOrders = $('#stat-orders');
+            var $statSpent = $('#stat-spent');
+            var $statPending = $('#stat-pending');
+            var $statReviews = $('#stat-reviews');
+
+            if ($statOrders.length) {
+                $statOrders.text('Loading...');
+                $statSpent.text('Loading...');
+            }
+
+            // Seller stats
+            var $statProducts = $('#stat-products');
+            var $statSales = $('#stat-sales');
+            var $statRevenue = $('#stat-revenue');
+            var $statRating = $('#stat-rating');
+
+            if ($statProducts.length) {
+                $statProducts.text('Loading...');
+                $statSales.text('Loading...');
+                $statRevenue.text('Loading...');
+                $statRating.text('Loading...');
+            }
 
             $.ajax({
                 url: baseUrl + 'php/endpoints/users/get-user-stats.php?user_id=' + currentUserId,
@@ -833,37 +1267,54 @@ $profile_image = $currentUser->getProfileImageUrl();
                 timeout: 10000,
                 success: function(data) {
                     if (data.success) {
-                        $statOrders.text(data.total_orders || 0);
-                        $statSpent.text('R ' + (data.total_spent || 0).toFixed(2));
-
-                        if (data.pending_orders && data.pending_orders > 0) {
-                            $statPending.text(data.pending_orders);
-                            $pendingRow.show();
-                        } else {
-                            $pendingRow.hide();
+                        // Buyer stats
+                        if ($statOrders.length) {
+                            $statOrders.text(data.total_orders || 0);
+                            $statSpent.text('R ' + (data.total_spent || 0).toFixed(2));
+                            if (data.pending_orders && data.pending_orders > 0) {
+                                $statPending.text(data.pending_orders);
+                                $('#pending-row').show();
+                            } else {
+                                $('#pending-row').hide();
+                            }
+                            if (data.reviews_written && data.reviews_written > 0) {
+                                $statReviews.text(data.reviews_written);
+                                $('#reviews-row').show();
+                            } else {
+                                $('#reviews-row').hide();
+                            }
                         }
 
-                        if (data.reviews_written && data.reviews_written > 0) {
-                            $statReviews.text(data.reviews_written);
-                            $reviewsRow.show();
-                        } else {
-                            $reviewsRow.hide();
+                        // Seller stats
+                        if ($statProducts.length) {
+                            $statProducts.text(data.total_products || 0);
+                            $statSales.text(data.completed_orders || 0);
+                            $statRevenue.text('R ' + (data.total_revenue || 0).toFixed(2));
+                            $statRating.text(data.avg_rating ? data.avg_rating.toFixed(1) + '/5' : 'No reviews yet');
                         }
-                    } else {
-                        showMessage('Could not load your statistics. Please refresh the page.', true);
-                        $statOrders.text('-');
-                        $statSpent.text('-');
+
+                        // Verification status
+                        var $verificationStatus = $('#verification-status-text');
+                        if ($verificationStatus.length) {
+                            var statusText = data.is_verified ? '✅ Verified Seller' :
+                                (data.has_document ? '⏳ Pending Review' : '❌ Not Verified');
+                            var statusColor = data.is_verified ? 'var(--success)' :
+                                (data.has_document ? 'var(--info)' : 'var(--warning)');
+                            $verificationStatus.html('<span style="color: ' + statusColor + ';">' + statusText + '</span>');
+                        }
                     }
                 },
-                error: function(xhr, status) {
-                    console.warn('Failed to load user stats:', status);
-                    if (status === 'timeout') {
-                        showMessage('Request timed out. Please refresh the page.', true);
-                    } else {
-                        showMessage('Could not load your statistics. Please refresh the page.', true);
+                error: function() {
+                    if ($('#stat-orders').length) {
+                        $('#stat-orders').text('-');
+                        $('#stat-spent').text('-');
                     }
-                    $statOrders.text('Error');
-                    $statSpent.text('Error');
+                    if ($('#stat-products').length) {
+                        $('#stat-products').text('-');
+                        $('#stat-sales').text('-');
+                        $('#stat-revenue').text('-');
+                        $('#stat-rating').text('No reviews yet');
+                    }
                 }
             });
         }
@@ -917,20 +1368,12 @@ $profile_image = $currentUser->getProfileImageUrl();
                         showMessage(data.message || 'Failed to upload image.', true);
                     }
                 },
-                error: function(xhr, status) {
+                error: function() {
                     $avatarUploadBtn.html('<img src="' + baseUrl + 'images/icons/camera-svgrepo-com.svg" alt="Upload">');
-                    if (status === 'timeout') {
-                        showMessage('Upload timed out. Please try again.', true);
-                    } else {
-                        showMessage('Error uploading image. Please try again.', true);
-                    }
+                    showMessage('Error uploading image. Please try again.', true);
                 }
             });
         });
-
-        // ============================================================
-        // AVATAR UPLOAD BUTTON
-        // ============================================================
 
         $avatarUploadBtn.on('click', function(e) {
             e.preventDefault();
@@ -938,7 +1381,7 @@ $profile_image = $currentUser->getProfileImageUrl();
         });
 
         // ============================================================
-        // PROFILE UPDATE
+        // PROFILE EDIT FORM
         // ============================================================
 
         $('#profile-edit-form').on('submit', function(e) {
@@ -968,13 +1411,9 @@ $profile_image = $currentUser->getProfileImageUrl();
                         showMessage(data.message || 'Failed to update profile.', true);
                     }
                 },
-                error: function(xhr, status) {
+                error: function() {
                     $submitBtn.prop('disabled', false).text(originalText);
-                    if (status === 'timeout') {
-                        showMessage('Request timed out. Please try again.', true);
-                    } else {
-                        showMessage('Error updating profile. Please try again.', true);
-                    }
+                    showMessage('Error updating profile. Please try again.', true);
                 }
             });
         });
@@ -1027,11 +1466,9 @@ $profile_image = $currentUser->getProfileImageUrl();
                         showMessage(data.message || 'Failed to change password.', true);
                     }
                 },
-                error: function(xhr, status) {
+                error: function(xhr) {
                     $submitBtn.prop('disabled', false).text(originalText);
-                    if (status === 'timeout') {
-                        showMessage('Request timed out. Please try again.', true);
-                    } else if (status === 'error' && xhr.status === 401) {
+                    if (xhr.status === 401) {
                         showMessage('Current password is incorrect.', true);
                     } else {
                         showMessage('Error changing password. Please try again.', true);
@@ -1078,11 +1515,9 @@ $profile_image = $currentUser->getProfileImageUrl();
                         showMessage(data.message || 'Failed to delete account.', true);
                     }
                 },
-                error: function(xhr, status) {
+                error: function(xhr) {
                     $submitBtn.prop('disabled', false).text(originalText);
-                    if (status === 'timeout') {
-                        showMessage('Request timed out. Please try again.', true);
-                    } else if (status === 'error' && xhr.status === 401) {
+                    if (xhr.status === 401) {
                         showMessage('Invalid password. Please try again.', true);
                     } else {
                         showMessage('Error deleting account. Please try again.', true);

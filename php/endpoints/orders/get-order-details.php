@@ -29,21 +29,31 @@ if ($order_id <= 0) {
 }
 
 $user_id = $currentUser->getUserId();
-$role = $currentUser->getRole();
 
-// Use OrderService for order lookup
-$orderExists = $orderService->findById($order_id, $user_id, $role);
+// Determine user's access level based on roles (not just active role)
+$isBuyer = $currentUser->hasRole('buyer');
+$isSeller = $currentUser->hasRole('seller');
+$isAdmin = $currentUser->hasRole('admin');
 
-if (!$orderExists) {
-    $response['error'] = 'Order not found';
-    echo json_encode($response);
-    exit;
+$order = null;
+
+// Try as buyer first (if user has buyer role)
+if ($isBuyer) {
+    $order = $orderService->findByIdForBuyer($order_id, $user_id);
 }
 
-$order = $orderService->findById($order_id, $user_id, $role);
+// If not found and user has seller role, try as seller
+if (!$order && $isSeller) {
+    $order = $orderService->findByIdForSeller($order_id, $user_id);
+}
+
+// If still not found and user has admin role, try as admin
+if (!$order && $isAdmin) {
+    $order = $orderService->findByIdForAdmin($order_id);
+}
 
 if (!$order) {
-    $response['error'] = 'Order details not found';
+    $response['error'] = 'Order not found or you do not have permission to view it';
     echo json_encode($response);
     exit;
 }
@@ -59,7 +69,6 @@ foreach ($order['items'] as &$item) {
     $item['total'] = $item['price'] * $item['quantity'];
     $subtotal += $item['total'];
 
-    // Build items array for CartService
     $items[] = [
         'price' => $item['price'],
         'quantity' => $item['quantity']
@@ -67,7 +76,7 @@ foreach ($order['items'] as &$item) {
 }
 unset($item);
 
-// Use CartService to calculate delivery fee
+// Calculate delivery fee and total
 $cartTotals = $cartService->calculateTotals($items);
 $delivery_fee = $cartTotals['delivery_fee'];
 $total = $cartTotals['total'];

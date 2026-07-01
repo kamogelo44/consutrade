@@ -72,10 +72,7 @@ class SellerVerification
     {
         $labels = [
             'id' => 'ID Document',
-            'passport' => 'Passport',
-            'business_license' => 'Business License',
-            'tax_certificate' => 'Tax Certificate',
-            'other' => 'Other Document'
+            'proof_address' => 'Proof of Address'
         ];
         return $labels[$this->documentType] ?? ucfirst(str_replace('_', ' ', $this->documentType));
     }

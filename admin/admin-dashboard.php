@@ -11,7 +11,7 @@ if (!$auth->isAdmin()) {
     exit;
 }
 
-$user_id = $currentUser->getUserId();
+$user_id = $currentUser->getUserId();s
 $user_name = $currentUser->getFullName();
 ?>
 <!DOCTYPE html>

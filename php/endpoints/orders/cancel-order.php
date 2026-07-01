@@ -11,7 +11,8 @@ header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+// Check if user has buyer role (not just active role)
+if (!$isLoggedIn || !$currentUser->hasRole('buyer')) {
     $response['message'] = 'Unauthorized. Only buyers can cancel orders.';
     echo json_encode($response);
     exit;
@@ -26,11 +27,13 @@ if ($orderId <= 0) {
     exit;
 }
 
-// Use OrderService for order lookup
-$orderData = $orderService->findById($orderId, $currentUser->getUserId(), 'buyer');
+$userId = $currentUser->getUserId();
+
+// Use OrderService for order lookup - use buyer-specific method
+$orderData = $orderService->findByIdForBuyer($orderId, $userId);
 
 if (!$orderData) {
-    $response['message'] = 'Order not found';
+    $response['message'] = 'Order not found or you do not have permission.';
     echo json_encode($response);
     exit;
 }
@@ -47,7 +50,7 @@ $conn->begin_transaction();
 
 try {
     // Use OrderService for cancellation with stock restoration
-    $result = $orderService->cancelByBuyer($orderId, $currentUser->getUserId());
+    $result = $orderService->cancelByBuyer($orderId, $userId);
 
     if (!$result) {
         throw new Exception('Failed to cancel order');

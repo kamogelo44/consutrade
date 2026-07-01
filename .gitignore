@@ -29,6 +29,15 @@ desktop.ini
 !.env.testing.example
 
 # ============================================================
+# HTPASSWD FILES - IGNORE THESE! (Contains passwords)
+# ============================================================
+*.htpasswd
+.htpasswd
+.htpasswd-*
+.htpasswd-admin
+.htpasswd-seller
+
+# ============================================================
 # UPLOADED FILES
 # ============================================================
 uploads/products/*.webp

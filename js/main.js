@@ -612,7 +612,7 @@ function openOrderModal(orderId) {
                 
                 if (userRole === 'buyer') {
                     if (order.status === 'pending' || order.status === 'processing') {
-                        actionButtons = '<button class="cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\'); closeOrderModal();">Cancel Order</button>';
+                        // Can't cancel pending orders.
                     }
                 }
                 
@@ -781,7 +781,6 @@ function renderOrdersTable(orders, $container, userRole) {
         
         if (userRole === 'buyer') {
             if (order.status === 'pending' || order.status === 'processing') {
-                buttons += '<button class="action-btn cancel-btn" onclick="updateOrderStatus(' + order.order_id + ', \'cancelled\')">Cancel Order</button>';
             }
             if (order.status === 'completed') {
                 if (order.has_review) {
@@ -1055,6 +1054,17 @@ function removeFromCart(productId) {
 function loadCartPage() {
     if (!window.location.pathname.includes('cart.php')) return;
     
+    // Check if user has buyer role
+    var hasBuyerRole = (typeof currentUser !== 'undefined' && currentUser && currentUser.hasRole) ? currentUser.hasRole('buyer') : false;
+    
+    if (!isLoggedIn || !hasBuyerRole) {
+        $('#cart-layout').hide();
+        $('#empty-cart').show();
+        $('#empty-cart h3').text('Buyer Access Required');
+        $('#empty-cart p').text('Please log in with a buyer account to view your cart.');
+        return;
+    }
+    
     if (typeof initialCartData === 'undefined') {
         console.warn('initialCartData not defined');
         $('#cart-layout').hide();
@@ -1121,7 +1131,10 @@ function refreshCart() {
 }
 
 function updateCartCount() {
-    if (!isLoggedIn || currentUserRole !== 'buyer') {
+    // Check if user has buyer role (not just active role)
+    var hasBuyerRole = (typeof currentUser !== 'undefined' && currentUser && currentUser.hasRole) ? currentUser.hasRole('buyer') : false;
+    
+    if (!isLoggedIn || !hasBuyerRole) {
         updateCartCountDisplay(0);
         return;
     }
@@ -1666,7 +1679,10 @@ $(function() {
     initAjaxLogin();
     initAjaxRegister();
     
-    if (isLoggedIn && currentUserRole === 'buyer') {
+    // Check if user has buyer role (not just active role)
+    var hasBuyerRole = (typeof currentUser !== 'undefined' && currentUser && currentUser.hasRole) ? currentUser.hasRole('buyer') : false;
+    
+    if (isLoggedIn && hasBuyerRole) {
         if (window.location.pathname.includes('cart.php')) {
             loadCartPage();
         } else {

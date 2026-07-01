@@ -265,7 +265,7 @@ include __DIR__ . '/includes/session-vars.php';
             <!-- Our Story -->
             <div class="about-section">
                 <h2>Our Story</h2>
-                <p>ConsuTrade is a peer-to-peer (C2C) marketplace designed specifically for South Africa's informal traders. The platform connects informal economy participants — from township street sellers to home-based entrepreneurs — with buyers across the country.</p>
+                <p>ConsuTrade is a peer-to-peer (C2C) marketplace designed specifically for South Africa's informal traders. The platform connects informal economy participants from township street sellers to home-based entrepreneurs with buyers across the country.</p>
                 <p>According to Statistics South Africa, the informal economy is valued at nearly R900 billion annually and employs almost 20% of the working population. Yet most informal traders still sell through WhatsApp and Facebook because no proper e-commerce platform was built for them. ConsuTrade changes that.</p>
             </div>
 
@@ -308,8 +308,8 @@ include __DIR__ . '/includes/session-vars.php';
                     <li>Low-data design for affordable access</li>
                     <li>Seller verification and trusted badges</li>
                     <li>Secure payments via PayFast</li>
-                    <li>Nationwide delivery across South Africa</li>
-                    <li>Real-time order tracking</li>
+                    <li>Seller dashboard to manage products and orders</li>
+                    <li>Order status tracking (processing → shipped → completed)</li>
                     <li>Product reporting system for fraud prevention</li>
                     <li>Seller reviews to build trust</li>
                 </ul>
@@ -330,9 +330,9 @@ include __DIR__ . '/includes/session-vars.php';
                         <p>PayFast integration ensures your transactions are protected by a trusted South African payment gateway.</p>
                     </div>
                     <div class="feature">
-                        <img src="<?php echo $baseUrl; ?>images/icons/delivery-svgrepo-com.svg" width="32" height="32" alt="Delivery">
-                        <h3>Nationwide Delivery</h3>
-                        <p>Reliable delivery across South Africa. Free delivery for orders over R500.</p>
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="32" height="32" alt="Dashboard">
+                        <h3>Seller Dashboard</h3>
+                        <p>Manage your products, track orders, and monitor your sales performance in one place.</p>
                     </div>
                     <div class="feature">
                         <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="32" height="32" alt="C2C">
@@ -349,10 +349,6 @@ include __DIR__ . '/includes/session-vars.php';
                     <div class="contact-item">
                         <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" width="20" height="20" alt="Email">
                         <p>support@consutrade.co.za</p>
-                    </div>
-                    <div class="contact-item">
-                        <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" width="20" height="20" alt="Phone">
-                        <p>+27 12 345 6789</p>
                     </div>
                     <div class="contact-item">
                         <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="20" height="20" alt="Location">

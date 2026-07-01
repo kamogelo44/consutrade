@@ -11,7 +11,8 @@ header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'orders' => [], 'message' => ''];
 
-if (!$auth->isSeller()) {
+// Check if user has seller role (not just active role)
+if (!$currentUser->hasRole('seller')) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
@@ -20,7 +21,7 @@ if (!$auth->isSeller()) {
 $seller_id = $currentUser->getUserId();
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
 
-// Use OrderService for seller recent orders
+// Use OrderRepository for seller recent orders
 $orders = $orderRepo->findRecentBySeller($seller_id, $limit);
 
 $response['success'] = true;

@@ -6,8 +6,17 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!$auth->isSeller()) {
+// Use hasRole() instead of isSeller() - checks ALL roles, not just active
+if (!$auth->hasRole('seller')) {
     header('Location: ' . $baseUrl . 'admin/login.php');
+    exit;
+}
+
+// If user is logged in but active role is not seller, switch to seller
+if (!$auth->isSeller()) {
+    $auth->switchRole('seller');
+    // Refresh the page to load with seller context
+    header('Location: ' . $_SERVER['PHP_SELF']);
     exit;
 }
 

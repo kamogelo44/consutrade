@@ -32,12 +32,24 @@ if ($orderId <= 0 || empty($newStatus)) {
 }
 
 $userId = $currentUser->getUserId();
-$userRole = $currentUserRole;
+
+// Check user roles (not just active role)
+$isBuyer = $currentUser->hasRole('buyer');
+$isSeller = $currentUser->hasRole('seller');
+$isAdmin = $currentUser->hasRole('admin');
 
 // ========== BUYER CANCELLATION ==========
-if ($userRole === 'buyer') {
+if ($isBuyer) {
     if ($newStatus !== 'cancelled') {
         $response['message'] = 'Buyers can only cancel orders.';
+        echo json_encode($response);
+        exit;
+    }
+
+    // Check if order belongs to this buyer
+    $orderCheck = $orderService->findByIdForBuyer($orderId, $userId);
+    if (!$orderCheck) {
+        $response['message'] = 'Order not found or you do not have permission.';
         echo json_encode($response);
         exit;
     }
@@ -57,12 +69,12 @@ if ($userRole === 'buyer') {
 }
 
 // ========== SELLER UPDATE ==========
-if ($userRole === 'seller') {
-    // Use OrderService for order lookup
-    $orderData = $orderService->findById($orderId, $userId, 'seller');
+if ($isSeller) {
+    // Use OrderService for order lookup - use seller-specific method
+    $orderData = $orderService->findByIdForSeller($orderId, $userId);
 
     if (!$orderData) {
-        $response['message'] = 'Order not found.';
+        $response['message'] = 'Order not found or you do not have permission.';
         echo json_encode($response);
         exit;
     }
@@ -116,24 +128,17 @@ if ($userRole === 'seller') {
 }
 
 // ========== ADMIN UPDATE ==========
-if ($userRole === 'admin') {
-    $allOrders = $orderService->findAll();
-    $targetOrder = null;
+if ($isAdmin) {
+    // Admin can view any order - use admin method
+    $orderData = $orderService->findByIdForAdmin($orderId);
 
-    foreach ($allOrders as $ord) {
-        if ($ord['order_id'] == $orderId) {
-            $targetOrder = $ord;
-            break;
-        }
-    }
-
-    if (!$targetOrder) {
+    if (!$orderData) {
         $response['message'] = 'Order not found.';
         echo json_encode($response);
         exit;
     }
 
-    $orderObj = new Order($targetOrder);
+    $orderObj = new Order($orderData);
 
     if (!$orderObj->canTransitionTo($newStatus)) {
         $allowed = implode(', ', $orderObj->getAllowedNextStatuses());

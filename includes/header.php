@@ -9,10 +9,10 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 $is_logged_in = $auth->isLoggedIn();
 
-if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
+if ($is_logged_in && isset($currentUser)) {
     $user_name = $currentUser->getDisplayName();
     $user_profile_image = $currentUser->getProfileImageUrl();
-    $is_buyer = true;
+    $is_buyer = $currentUser->hasRole('buyer');
 } else {
     $user_name = 'Account';
     $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
@@ -21,7 +21,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
 
 $show_sell_link = !$is_logged_in;
 
-if ($is_logged_in && isset($currentUser) && $currentUser instanceof Buyer) {
+if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     $cart_count = $cartRepo->countItems($currentUser->getUserId());
 } else {
     $cart_count = 0;

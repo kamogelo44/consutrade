@@ -10,7 +10,8 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'orders' => [], 'message' => ''];
 
-if (!$auth->isAdmin()) {
+// Check if user has admin role (not just active role)
+if (!$currentUser->hasRole('admin')) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;

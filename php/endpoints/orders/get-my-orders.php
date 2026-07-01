@@ -1,7 +1,7 @@
 <?php
 /*
  * ConsuTrade - Get My Orders (AJAX)
- * Works for both buyers and sellers
+ * Works for both buyers and sellers based on context
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
@@ -24,12 +24,29 @@ $offset = ($page - 1) * $limit;
 
 $userId = $currentUser->getUserId();
 
-if ($currentUserRole === 'seller') {
-    // Use OrderService for seller orders
+// Check context - what type of orders to load
+$orderType = $_GET['type'] ?? 'buyer'; // 'buyer' or 'seller'
+
+if ($orderType === 'seller') {
+    // Load seller orders (orders where user is the seller)
+    // Only if user has seller role
+    if (!$currentUser->hasRole('seller')) {
+        $response['error'] = 'You do not have seller access';
+        echo json_encode($response);
+        exit;
+    }
+
     $orders = $orderService->findBySeller($userId, $status, $search, $limit, $offset);
     $totalOrders = $orderService->countBySeller($userId, $status, $search);
 } else {
-    // Use OrderService for buyer orders
+    // Load buyer orders (orders where user is the buyer)
+    // Only if user has buyer role
+    if (!$currentUser->hasRole('buyer')) {
+        $response['error'] = 'You do not have buyer access';
+        echo json_encode($response);
+        exit;
+    }
+
     $orders = $orderService->findByBuyer($userId, $status, $search, $limit, $offset);
     $totalOrders = $orderService->countByBuyer($userId, $status, $search);
 

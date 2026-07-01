@@ -30,6 +30,16 @@ if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_O
 $docType = $_POST['document_type'] ?? 'id';
 
 // ============================================================
+// VALIDATE DOCUMENT TYPE
+// ============================================================
+$validTypes = ['id', 'proof_address'];
+if (!in_array($docType, $validTypes)) {
+    $response['message'] = 'Invalid document type. Only ID and Proof of Address are accepted.';
+    echo json_encode($response);
+    exit;
+}
+
+// ============================================================
 // DEBUG: Log the upload attempt
 // ============================================================
 error_log("Verification upload attempt - Seller ID: $seller_id, Document Type: $docType");

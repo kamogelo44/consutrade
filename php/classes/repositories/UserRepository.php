@@ -7,7 +7,7 @@
  * Returns domain models WITHOUT repositories inside them.
  *
  * @author Kamogelo Phale
- * @version 2.2.0
+ * @version 3.0.0
  */
 
 class UserRepository
@@ -31,28 +31,88 @@ class UserRepository
      */
     public function create(array $userData): int|false
     {
+        // Only insert into users table (role column removed)
         $stmt = $this->db->prepare(
-            "INSERT INTO users (full_name, email, phone, password, role, status, created_at) 
-             VALUES (?, ?, ?, ?, ?, 'active', NOW())"
+            "INSERT INTO users (full_name, email, phone, password, status, created_at) 
+             VALUES (?, ?, ?, ?, 'active', NOW())"
         );
 
         $stmt->bind_param(
-            'sssss',
+            'ssss',
             $userData['full_name'],
             $userData['email'],
             $userData['phone'],
-            $userData['password'],
-            $userData['role']
+            $userData['password']
         );
 
         if ($stmt->execute()) {
             $userId = $stmt->insert_id;
             $stmt->close();
+
+            // Add role to user_roles table
+            if (isset($userData['role'])) {
+                $this->addRole($userId, $userData['role']);
+            }
+
             return $userId;
         }
 
         $stmt->close();
         return false;
+    }
+
+    /**
+     * Add a role to a user.
+     *
+     * @param int $userId User ID
+     * @param string $role Role (admin, seller, buyer)
+     * @return bool
+     */
+    public function addRole(int $userId, string $role): bool
+    {
+        $stmt = $this->db->prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)");
+        $stmt->bind_param('is', $userId, $role);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Remove a role from a user.
+     *
+     * @param int $userId User ID
+     * @param string $role Role to remove
+     * @return bool
+     */
+    public function removeRole(int $userId, string $role): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM user_roles WHERE user_id = ? AND role = ?");
+        $stmt->bind_param('is', $userId, $role);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Get all roles for a user.
+     *
+     * @param int $userId User ID
+     * @return array
+     */
+    public function getUserRoles(int $userId): array
+    {
+        $stmt = $this->db->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $roles = [];
+        while ($row = $result->fetch_assoc()) {
+            $roles[] = $row['role'];
+        }
+        $stmt->close();
+
+        return $roles;
     }
 
     // ============================================================
@@ -74,6 +134,8 @@ class UserRepository
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
+            // Get roles
+            $row['roles'] = $this->getUserRoles($id);
             return $this->hydrate($row);
         }
 
@@ -96,6 +158,7 @@ class UserRepository
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
+            $row['roles'] = $this->getUserRoles($row['user_id']);
             return $this->hydrate($row);
         }
 
@@ -118,11 +181,39 @@ class UserRepository
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
+            $row['roles'] = $this->getUserRoles($row['user_id']);
             return $this->hydrate($row);
         }
 
         $stmt->close();
         return null;
+    }
+
+    /**
+     * Find users by role.
+     *
+     * @param string $role User role (buyer, seller, admin)
+     * @return array Array of User objects
+     */
+    public function findByRole(string $role): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT u.* FROM users u 
+             INNER JOIN user_roles ur ON u.user_id = ur.user_id 
+             WHERE ur.role = ?"
+        );
+        $stmt->bind_param('s', $role);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $users = [];
+        while ($row = $result->fetch_assoc()) {
+            $row['roles'] = $this->getUserRoles($row['user_id']);
+            $users[] = $this->hydrate($row);
+        }
+        $stmt->close();
+
+        return $users;
     }
 
     /**
@@ -145,28 +236,6 @@ class UserRepository
     }
 
     /**
-     * Find users by role.
-     *
-     * @param string $role User role (buyer, seller, admin)
-     * @return array Array of User objects
-     */
-    public function findByRole(string $role): array
-    {
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE role = ?");
-        $stmt->bind_param('s', $role);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = $this->hydrate($row);
-        }
-        $stmt->close();
-
-        return $users;
-    }
-
-    /**
      * Get all users as array (for admin listing).
      *
      * @param string $filter Role filter
@@ -177,27 +246,29 @@ class UserRepository
      */
     public function findAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
-                FROM users 
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.profile_image, u.location, u.id_verified, u.status, u.created_at,
+                       GROUP_CONCAT(ur.role) as roles
+                FROM users u
+                LEFT JOIN user_roles ur ON u.user_id = ur.user_id
                 WHERE 1=1";
         $params = [];
         $types = "";
 
         if ($filter !== 'all') {
-            $sql .= " AND role = ?";
+            $sql .= " AND ur.role = ?";
             $params[] = $filter;
             $types .= "s";
         }
 
         if (!empty($search)) {
-            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+            $sql .= " AND (u.full_name LIKE ? OR u.email LIKE ?)";
             $searchParam = "%$search%";
             $params[] = $searchParam;
             $params[] = $searchParam;
             $types .= "ss";
         }
 
-        $sql .= " ORDER BY created_at DESC";
+        $sql .= " GROUP BY u.user_id ORDER BY u.created_at DESC";
 
         if ($limit > 0) {
             $sql .= " LIMIT ? OFFSET ?";
@@ -215,6 +286,7 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
+            $row['roles'] = $row['roles'] ? explode(',', $row['roles']) : ['buyer'];
             $row['has_document'] = $this->userHasDocument($row);
             $users[] = $row;
         }
@@ -234,21 +306,23 @@ class UserRepository
      */
     public function findByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, profile_image, role, location, id_verified, status, created_at
-                FROM users 
-                WHERE role = ?";
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.profile_image, u.location, u.id_verified, u.status, u.created_at,
+                       GROUP_CONCAT(ur.role) as roles
+                FROM users u
+                INNER JOIN user_roles ur ON u.user_id = ur.user_id
+                WHERE ur.role = ?";
         $params = [$role];
         $types = "s";
 
         if (!empty($search)) {
-            $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+            $sql .= " AND (u.full_name LIKE ? OR u.email LIKE ?)";
             $searchParam = "%$search%";
             $params[] = $searchParam;
             $params[] = $searchParam;
             $types .= "ss";
         }
 
-        $sql .= " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        $sql .= " GROUP BY u.user_id ORDER BY u.created_at DESC LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
         $types .= "ii";
@@ -260,6 +334,7 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
+            $row['roles'] = $row['roles'] ? explode(',', $row['roles']) : ['buyer'];
             $row['has_document'] = $this->userHasDocument($row);
             $users[] = $row;
         }
@@ -277,14 +352,17 @@ class UserRepository
      */
     public function findPendingVerifications(int $limit = 10, int $offset = 0): array
     {
-        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.role, u.id_verified, u.status,
-                   DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
-                   sv.document_path, sv.document_type
-            FROM users u
-            INNER JOIN seller_verification sv ON u.user_id = sv.seller_id
-            WHERE u.role = 'seller' AND sv.document_verified = 0
-            ORDER BY u.created_at ASC
-            LIMIT ? OFFSET ?";
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.id_verified, u.status,
+                       DATE_FORMAT(u.created_at, '%d %b %Y') as created_at,
+                       sv.document_path, sv.document_type,
+                       GROUP_CONCAT(ur.role) as roles
+                FROM users u
+                INNER JOIN user_roles ur ON u.user_id = ur.user_id
+                INNER JOIN seller_verification sv ON u.user_id = sv.seller_id
+                WHERE ur.role = 'seller' AND sv.document_verified = 0
+                GROUP BY u.user_id
+                ORDER BY u.created_at ASC
+                LIMIT ? OFFSET ?";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('ii', $limit, $offset);
@@ -293,12 +371,13 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
+            $row['roles'] = $row['roles'] ? explode(',', $row['roles']) : ['buyer'];
             $users[] = [
                 'user_id' => (int) $row['user_id'],
                 'full_name' => $row['full_name'],
                 'email' => $row['email'],
                 'phone' => $row['phone'] ?? '-',
-                'role' => $row['role'],
+                'roles' => $row['roles'],
                 'is_verified' => false,
                 'status' => $row['status'] ?? 'active',
                 'created_at' => $row['created_at'],
@@ -319,9 +398,12 @@ class UserRepository
      */
     public function findRecent(int $limit = 5): array
     {
-        $sql = "SELECT user_id, full_name, email, role, id_verified, status, created_at 
-                FROM users 
-                ORDER BY created_at DESC 
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.id_verified, u.status, u.created_at,
+                       GROUP_CONCAT(ur.role) as roles
+                FROM users u
+                LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+                GROUP BY u.user_id
+                ORDER BY u.created_at DESC 
                 LIMIT ?";
 
         $stmt = $this->db->prepare($sql);
@@ -331,7 +413,9 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
-            $roleClass = match ($row['role']) {
+            $roles = $row['roles'] ? explode(',', $row['roles']) : ['buyer'];
+            $primaryRole = $roles[0];
+            $roleClass = match ($primaryRole) {
                 'admin' => 'role-admin',
                 'seller' => 'role-seller',
                 default => 'role-buyer'
@@ -341,7 +425,8 @@ class UserRepository
                 'user_id' => (int) $row['user_id'],
                 'full_name' => $row['full_name'],
                 'email' => $row['email'],
-                'role' => $row['role'],
+                'roles' => $roles,
+                'role' => $primaryRole,
                 'role_class' => $roleClass,
                 'is_verified' => (bool) $row['id_verified'],
                 'status' => $row['status'] ?? 'active',
@@ -361,9 +446,12 @@ class UserRepository
      */
     public function getSellerPublicProfile(int $sellerId): ?array
     {
-        $sql = "SELECT user_id, full_name, profile_image, location, id_verified, status, created_at 
-                FROM users 
-                WHERE user_id = ? AND role = 'seller'";
+        $sql = "SELECT u.user_id, u.full_name, u.profile_image, u.location, u.id_verified, u.status, u.created_at,
+                       GROUP_CONCAT(ur.role) as roles
+                FROM users u
+                INNER JOIN user_roles ur ON u.user_id = ur.user_id
+                WHERE u.user_id = ? AND ur.role = 'seller'
+                GROUP BY u.user_id";
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $sellerId);
         $stmt->execute();
@@ -371,6 +459,7 @@ class UserRepository
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
+            $row['roles'] = $row['roles'] ? explode(',', $row['roles']) : ['buyer'];
             return $row;
         }
 
@@ -386,10 +475,13 @@ class UserRepository
      */
     public function search(string $query): array
     {
-        $sql = "SELECT user_id, full_name, email, phone, role, id_verified, status, created_at 
-                FROM users 
-                WHERE full_name LIKE ? OR email LIKE ? 
-                ORDER BY full_name ASC 
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.id_verified, u.status, u.created_at,
+                       GROUP_CONCAT(ur.role) as roles
+                FROM users u
+                LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+                WHERE u.full_name LIKE ? OR u.email LIKE ? 
+                GROUP BY u.user_id
+                ORDER BY u.full_name ASC 
                 LIMIT 20";
         $searchParam = "%$query%";
         $stmt = $this->db->prepare($sql);
@@ -399,6 +491,7 @@ class UserRepository
 
         $users = [];
         while ($row = $result->fetch_assoc()) {
+            $row['roles'] = $row['roles'] ? explode(',', $row['roles']) : ['buyer'];
             $users[] = $row;
         }
         $stmt->close();
@@ -566,7 +659,7 @@ class UserRepository
 
         try {
             // 1. Update users table
-            $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ? AND role = 'seller'");
+            $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ?");
             $stmt->bind_param('i', $sellerId);
             if (!$stmt->execute()) {
                 throw new Exception('Failed to update users table');
@@ -605,7 +698,7 @@ class UserRepository
 
         try {
             // 1. Update users table
-            $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ? AND role = 'seller'");
+            $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ?");
             $stmt->bind_param('i', $sellerId);
             if (!$stmt->execute()) {
                 throw new Exception('Failed to update users table');
@@ -633,18 +726,19 @@ class UserRepository
     }
 
     /**
-     * Upgrade a buyer to seller.
+     * Upgrade a buyer to seller (adds seller role).
      *
      * @param int $userId User ID
      * @return bool
      */
     public function upgradeToSeller(int $userId): bool
     {
-        $stmt = $this->db->prepare("UPDATE users SET role = 'seller' WHERE user_id = ? AND role = 'buyer'");
-        $stmt->bind_param('i', $userId);
-        $result = $stmt->execute();
-        $stmt->close();
-        return $result;
+        // Check if user already has seller role
+        $roles = $this->getUserRoles($userId);
+        if (in_array('seller', $roles)) {
+            return true;
+        }
+        return $this->addRole($userId, 'seller');
     }
 
     // ============================================================
@@ -727,7 +821,12 @@ class UserRepository
     public function count(?string $role = null): int
     {
         if ($role) {
-            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users WHERE role = ?");
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(DISTINCT u.user_id) as total 
+                 FROM users u 
+                 INNER JOIN user_roles ur ON u.user_id = ur.user_id 
+                 WHERE ur.role = ?"
+            );
             $stmt->bind_param('s', $role);
         } else {
             $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users");
@@ -749,7 +848,12 @@ class UserRepository
      */
     public function countByRole(string $role): int
     {
-        $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM users WHERE role = ? AND status = 'active'");
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(DISTINCT u.user_id) as count 
+             FROM users u 
+             INNER JOIN user_roles ur ON u.user_id = ur.user_id 
+             WHERE ur.role = ? AND u.status = 'active'"
+        );
         $stmt->bind_param('s', $role);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -768,24 +872,27 @@ class UserRepository
     public function countUsersByRole(string $role, string $search = ''): int
     {
         if ($role === 'all') {
-            $sql = "SELECT COUNT(*) as total FROM users WHERE 1=1";
+            $sql = "SELECT COUNT(DISTINCT u.user_id) as total FROM users u WHERE 1=1";
             $params = [];
             $types = "";
 
             if (!empty($search)) {
-                $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+                $sql .= " AND (u.full_name LIKE ? OR u.email LIKE ?)";
                 $searchParam = "%$search%";
                 $params[] = $searchParam;
                 $params[] = $searchParam;
                 $types .= "ss";
             }
         } else {
-            $sql = "SELECT COUNT(*) as total FROM users WHERE role = ?";
+            $sql = "SELECT COUNT(DISTINCT u.user_id) as total 
+                    FROM users u 
+                    INNER JOIN user_roles ur ON u.user_id = ur.user_id 
+                    WHERE ur.role = ?";
             $params = [$role];
             $types = "s";
 
             if (!empty($search)) {
-                $sql .= " AND (full_name LIKE ? OR email LIKE ?)";
+                $sql .= " AND (u.full_name LIKE ? OR u.email LIKE ?)";
                 $searchParam = "%$search%";
                 $params[] = $searchParam;
                 $params[] = $searchParam;
@@ -812,9 +919,11 @@ class UserRepository
      */
     public function getPendingVerificationsCount(): int
     {
-        $sql = "SELECT COUNT(*) as total FROM users u 
+        $sql = "SELECT COUNT(DISTINCT u.user_id) as total 
+                FROM users u 
+                INNER JOIN user_roles ur ON u.user_id = ur.user_id 
                 INNER JOIN seller_verification sv ON u.user_id = sv.seller_id 
-                WHERE u.role = 'seller' AND sv.document_verified = 0";
+                WHERE ur.role = 'seller' AND sv.document_verified = 0";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
@@ -874,7 +983,8 @@ class UserRepository
      */
     private function userHasDocument(array $row): bool
     {
-        if ($row['role'] !== 'seller') {
+        $roles = $row['roles'] ?? [];
+        if (!in_array('seller', $roles)) {
             return false;
         }
 
@@ -916,14 +1026,15 @@ class UserRepository
      * Hydrate database row into appropriate User subclass.
      * NO repositories are injected into domain models!
      *
-     * @param array $data Database row
+     * @param array $data Database row with roles included
      * @return User
      */
     private function hydrate(array $data): User
     {
-        $role = $data['role'] ?? 'buyer';
+        $roles = $data['roles'] ?? ['buyer'];
+        $primaryRole = $this->getPrimaryRole($roles);
 
-        switch ($role) {
+        switch ($primaryRole) {
             case 'admin':
                 return new Admin($data);
 
@@ -935,5 +1046,23 @@ class UserRepository
             default:
                 return new Buyer($data);
         }
+    }
+
+    /**
+     * Get primary role from roles array.
+     * Priority: admin > seller > buyer
+     *
+     * @param array $roles
+     * @return string
+     */
+    private function getPrimaryRole(array $roles): string
+    {
+        $priority = ['admin', 'seller', 'buyer'];
+        foreach ($priority as $role) {
+            if (in_array($role, $roles)) {
+                return $role;
+            }
+        }
+        return 'buyer';
     }
 }

@@ -126,11 +126,16 @@ class AdminService
      * 
      * @param int $sellerId The seller's user ID
      * @param array $file The uploaded file from $_FILES
-     * @param string $docType The document type (id, proof_address, other)
+     * @param string $docType The document type (id, proof_address)
      * @return array ['success' => bool, 'message' => string]
      */
     public function uploadVerification(int $sellerId, array $file, string $docType): array
     {
+        // Validate document type - only allow id and proof_address
+        $validTypes = ['id', 'proof_address'];
+        if (!in_array($docType, $validTypes)) {
+            return ['success' => false, 'message' => 'Invalid document type. Only ID and Proof of Address are accepted.'];
+        }
         // Validate file size (5MB max)
         $maxSize = 5 * 1024 * 1024;
         if ($file['size'] > $maxSize) {

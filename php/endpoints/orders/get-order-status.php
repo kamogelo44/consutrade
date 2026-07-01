@@ -28,14 +28,32 @@ if ($orderId <= 0) {
     exit;
 }
 
-$role = $currentUser->getRole();
 $userId = $currentUser->getUserId();
 
-// Use OrderService for order lookup
-$order = $orderService->findById($orderId, $userId, $role);
+// Determine user's access level based on roles (not just active role)
+$isBuyer = $currentUser->hasRole('buyer');
+$isSeller = $currentUser->hasRole('seller');
+$isAdmin = $currentUser->hasRole('admin');
+
+$order = null;
+
+// Try as buyer first (if user has buyer role)
+if ($isBuyer) {
+    $order = $orderService->findByIdForBuyer($orderId, $userId);
+}
+
+// If not found and user has seller role, try as seller
+if (!$order && $isSeller) {
+    $order = $orderService->findByIdForSeller($orderId, $userId);
+}
+
+// If still not found and user has admin role, try as admin
+if (!$order && $isAdmin) {
+    $order = $orderService->findByIdForAdmin($orderId);
+}
 
 if (!$order) {
-    $response['message'] = 'Order not found';
+    $response['message'] = 'Order not found or you do not have permission to view it';
     echo json_encode($response);
     exit;
 }

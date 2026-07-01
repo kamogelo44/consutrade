@@ -7,7 +7,7 @@
  * Contains ONLY business logic, no database operations.
  *
  * @author Kamogelo Phale
- * @version 2.1.0
+ * @version 3.0.0
  */
 
 class Buyer extends User
@@ -20,7 +20,6 @@ class Buyer extends User
     public function __construct(array $data)
     {
         parent::__construct($data);
-        // No repositories here!
     }
 
     /**

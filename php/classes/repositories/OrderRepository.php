@@ -10,7 +10,7 @@
  * and descriptions of what they do.
  *
  * @author Kamogelo Phale
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 class OrderRepository
@@ -237,6 +237,148 @@ class OrderRepository
             $itemsStmt->close();
 
             $row['items'] = $items;
+            $stmt->close();
+            return $row;
+        }
+
+        $stmt->close();
+        return null;
+    }
+
+    /**
+     * Find order by ID for buyer (buyer_id check only).
+     * Used when user has multiple roles and we need to check buyer access specifically.
+     *
+     * @param int $orderId Order ID
+     * @param int $userId Buyer user ID
+     * @return array|null Returns order with items and seller name, or null if not found
+     */
+    public function findByIdForBuyer(int $orderId, int $userId): ?array
+    {
+        $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
+                       u.full_name as other_party_name
+                FROM orders o
+                JOIN users u ON o.seller_id = u.user_id
+                WHERE o.order_id = ? AND o.buyer_id = ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $orderId, $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $itemsSql = "SELECT oi.quantity, oi.price,
+                                p.title as product_name, p.image_url
+                         FROM order_items oi
+                         JOIN products p ON oi.product_id = p.product_id
+                         WHERE oi.order_id = ?";
+            $itemsStmt = $this->db->prepare($itemsSql);
+            $itemsStmt->bind_param('i', $orderId);
+            $itemsStmt->execute();
+            $itemsResult = $itemsStmt->get_result();
+
+            $items = [];
+            while ($item = $itemsResult->fetch_assoc()) {
+                $items[] = $item;
+            }
+            $itemsStmt->close();
+
+            $row['items'] = $items;
+            $stmt->close();
+            return $row;
+        }
+
+        $stmt->close();
+        return null;
+    }
+
+    /**
+     * Find order by ID for seller (seller_id check only).
+     * Used when user has multiple roles and we need to check seller access specifically.
+     *
+     * @param int $orderId Order ID
+     * @param int $userId Seller user ID
+     * @return array|null Returns order with items and buyer name, or null if not found
+     */
+    public function findByIdForSeller(int $orderId, int $userId): ?array
+    {
+        $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
+                       u.full_name as other_party_name
+                FROM orders o
+                JOIN users u ON o.buyer_id = u.user_id
+                WHERE o.order_id = ? AND o.seller_id = ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('ii', $orderId, $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $itemsSql = "SELECT oi.quantity, oi.price,
+                                p.title as product_name, p.image_url
+                         FROM order_items oi
+                         JOIN products p ON oi.product_id = p.product_id
+                         WHERE oi.order_id = ?";
+            $itemsStmt = $this->db->prepare($itemsSql);
+            $itemsStmt->bind_param('i', $orderId);
+            $itemsStmt->execute();
+            $itemsResult = $itemsStmt->get_result();
+
+            $items = [];
+            while ($item = $itemsResult->fetch_assoc()) {
+                $items[] = $item;
+            }
+            $itemsStmt->close();
+
+            $row['items'] = $items;
+            $stmt->close();
+            return $row;
+        }
+
+        $stmt->close();
+        return null;
+    }
+
+    /**
+     * Find order by ID for admin (no user restriction).
+     * Used when user has admin role and can view any order.
+     *
+     * @param int $orderId Order ID
+     * @return array|null Returns order with items and both buyer/seller names, or null if not found
+     */
+    public function findByIdForAdmin(int $orderId): ?array
+    {
+        $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at, o.payment_id,
+                       buyer.full_name as buyer_name, seller.full_name as seller_name
+                FROM orders o
+                JOIN users buyer ON o.buyer_id = buyer.user_id
+                JOIN users seller ON o.seller_id = seller.user_id
+                WHERE o.order_id = ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param('i', $orderId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+            $itemsSql = "SELECT oi.quantity, oi.price,
+                                p.title as product_name, p.image_url
+                         FROM order_items oi
+                         JOIN products p ON oi.product_id = p.product_id
+                         WHERE oi.order_id = ?";
+            $itemsStmt = $this->db->prepare($itemsSql);
+            $itemsStmt->bind_param('i', $orderId);
+            $itemsStmt->execute();
+            $itemsResult = $itemsStmt->get_result();
+
+            $items = [];
+            while ($item = $itemsResult->fetch_assoc()) {
+                $items[] = $item;
+            }
+            $itemsStmt->close();
+
+            $row['items'] = $items;
+            $row['other_party_name'] = $row['buyer_name']; // For consistency with other methods
             $stmt->close();
             return $row;
         }
@@ -808,7 +950,11 @@ class OrderRepository
      */
     public function getSellerTotalRevenue(int $sellerId): float
     {
-        $sql = "SELECT SUM(total_price) as total FROM orders WHERE seller_id = ? AND status = 'completed'";
+        $sql = "SELECT COALESCE(SUM(t.amount), 0) as total 
+            FROM transactions t
+            INNER JOIN orders o ON t.order_id = o.order_id
+            WHERE o.seller_id = ? 
+            AND t.status = 'completed'";
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param('i', $sellerId);
         $stmt->execute();

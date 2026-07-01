@@ -1,0 +1,27 @@
+# ConsuTrade Main .htaccess
+# Author: Kamogelo Phale
+
+RewriteEngine On
+
+# Redirect to HTTPS (if not already)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# Block access to sensitive files
+<Files ".env*">
+    Require all denied
+</Files>
+<Files "*.log">
+    Require all denied
+</Files>
+
+# Block directory listing
+Options -Indexes
+
+# Protect config and data files
+<FilesMatch "\.(json|yml|yaml|ini|xml)$">
+    Require all denied
+</FilesMatch>
+
+# Prevent access to .git
+RedirectMatch 404 /\.git

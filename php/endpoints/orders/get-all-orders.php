@@ -12,7 +12,8 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'orders' => [], 'total_pages' => 1, 'current_page' => 1];
 
-if (!$auth->isAdmin()) {
+// Check if user has admin role (not just active role)
+if (!$currentUser->hasRole('admin')) {
     echo json_encode($response);
     exit;
 }

@@ -11,7 +11,7 @@ include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
 // If user is already a seller, redirect to seller dashboard
-if ($isLoggedIn && $currentUser instanceof Seller) {
+if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
     header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
     exit;
 }
@@ -288,6 +288,45 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
             box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
         }
 
+        /* Upgrade Banner for Logged-in Buyers */
+        .upgrade-banner {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .upgrade-banner h3 {
+            color: var(--white);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .upgrade-banner p {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .upgrade-banner .upgrade-btn {
+            background-color: var(--white);
+            color: var(--primary-color);
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: var(--font-bold);
+            transition: all var(--transition-normal);
+        }
+
+        .upgrade-banner .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .seller-hero {
@@ -365,10 +404,30 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
             <div class="seller-hero-container">
                 <h1 class="seller-hero-title">Start Selling Today</h1>
                 <p class="seller-hero-subtitle">Join thousands of South African entrepreneurs selling on ConsuTrade</p>
-                <div class="seller-hero-buttons">
-                    <button class="register-now-btn" id="sellerRegisterBtn">Create Seller Account</button>
-                    <a href="<?php echo $baseUrl; ?>admin/login.php" class="login-now-btn">Login to Seller Account</a>
-                </div>
+
+                <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
+                    <!-- Logged in as BUYER ONLY - Show upgrade option -->
+                    <div class="upgrade-banner">
+                        <h3>👋 Welcome back, <?php echo htmlspecialchars($currentUser->getDisplayName()); ?>!</h3>
+                        <p>You're currently a buyer. Would you like to start selling too?</p>
+                        <button class="upgrade-btn" id="upgradeToSellerBtn">Add Seller Access</button>
+                    </div>
+                    <div class="seller-hero-buttons">
+                        <button class="register-now-btn" id="sellerRegisterBtn">Add Seller Access</button>
+                        <button class="login-now-btn" onclick="openModal($('#login-modal'))">Login</button>
+                    </div>
+                <?php elseif ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')): ?>
+                    <!-- Logged in as SELLER - Shouldn't be here (redirected above), but just in case -->
+                    <div class="seller-hero-buttons">
+                        <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="register-now-btn">Go to Dashboard</a>
+                    </div>
+                <?php else: ?>
+                    <!-- Not logged in - Show registration options -->
+                    <div class="seller-hero-buttons">
+                        <button class="register-now-btn" id="sellerRegisterBtn">Create Seller Account</button>
+                        <button class="login-now-btn" onclick="openModal($('#login-modal'))">Login</button>
+                    </div>
+                <?php endif; ?>
             </div>
         </section>
 
@@ -378,8 +437,8 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
             <div class="why-sell-container">
                 <div class="why-sell-card">
                     <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" width="48" height="48" alt="Reach customers" class="icon">
-                    <h3>Reach More Customers</h3>
-                    <p>Connect with thousands of buyers across South Africa</p>
+                    <h3>Seller Tools</h3>
+                    <p>Dashboard to manage products, orders, and track sales</p>
                 </div>
                 <div class="why-sell-card">
                     <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" width="48" height="48" alt="Secure payments" class="icon">
@@ -406,14 +465,14 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
                     </div>
                     <div class="requirement-item">
                         <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" class="requirement-icon" alt="Email">
-                        <p>Active Email Address</p>
+                        <p>Email Address</p>
                     </div>
                     <div class="requirement-item">
                         <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" class="requirement-icon" alt="Phone">
-                        <p>Valid Phone Number</p>
+                        <p>Phone Number</p>
                     </div>
                 </div>
-                <p class="requirement-note">All sellers must be verified before they can start selling on ConsuTrade.</p>
+                <p class="requirement-note">Seller verification helps build trust with buyers. You can upload products while your verification is pending.</p>
             </div>
         </section>
 
@@ -422,7 +481,11 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
             <div class="ready-container">
                 <h2 class="ready-title">Ready to Grow Your Business?</h2>
                 <p class="ready-subtitle">Create your seller account today and start reaching more customers.</p>
-                <button class="create-seller-btn" id="createSellerBtn">Create Seller Account</button>
+                <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
+                    <button class="create-seller-btn" id="upgradeToSellerBtn2">Add Seller Access</button>
+                <?php else: ?>
+                    <button class="create-seller-btn" id="createSellerBtn">Create Seller Account</button>
+                <?php endif; ?>
             </div>
         </section>
     </main>
@@ -434,6 +497,8 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
         // ========== CACHED DOM ELEMENTS ==========
         var $sellerRegisterBtn = null;
         var $createSellerBtn = null;
+        var $upgradeBtn = null;
+        var $upgradeBtn2 = null;
         var $registerModal = null;
         var $sellerRadio = null;
 
@@ -441,6 +506,8 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
         function cacheSellPageElements() {
             $sellerRegisterBtn = $('#sellerRegisterBtn');
             $createSellerBtn = $('#createSellerBtn');
+            $upgradeBtn = $('#upgradeToSellerBtn');
+            $upgradeBtn2 = $('#upgradeToSellerBtn2');
             $registerModal = $('#register-modal');
             $sellerRadio = $('#seller');
         }
@@ -454,15 +521,66 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
                 $sellerRadio.prop('checked', true);
             }
 
-            // Open the register modal using the shared function from main.js
+            // Check if user is logged in
+            var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
+            var hasSellerRole = <?php echo isset($currentUser) ? json_encode($currentUser->hasRole('seller')) : 'false'; ?>;
+
+            if (isLoggedIn && hasSellerRole) {
+                // Already a seller - redirect to dashboard
+                window.location.href = baseUrl + 'admin/seller-dashboard.php';
+                return;
+            }
+
+            if (isLoggedIn) {
+                // Logged in buyer - upgrade flow
+                var userData = <?php echo isset($currentUser) ? json_encode([
+                                    'full_name' => $currentUser->getFullName(),
+                                    'email' => $currentUser->getEmail(),
+                                    'phone' => $currentUser->getPhone()
+                                ]) : 'null'; ?>;
+
+                if (userData) {
+                    $('#register-full-name').val(userData.full_name);
+                    $('#register-email').val(userData.email);
+                    $('#register-phone').val(userData.phone);
+                    // Make email and phone readonly since they already exist
+                    $('#register-email').prop('readonly', true);
+                    $('#register-phone').prop('readonly', true);
+                    // Update modal title
+                    $('#register-modal .modal-header p').text('Add seller access to your existing account');
+                }
+            } else {
+                // New user - clear any previous values
+                $('#register-full-name').val('');
+                $('#register-email').val('');
+                $('#register-phone').val('');
+                $('#register-email').prop('readonly', false);
+                $('#register-phone').prop('readonly', false);
+                $('#register-modal .modal-header p').text('Create your account to start selling');
+            }
+
+            // Open the register modal
             if (typeof openModal === 'function') {
                 openModal($registerModal);
             } else {
-                // Fallback if openModal is not available
                 $registerModal.addClass('active');
                 $registerModal.css('visibility', 'visible');
                 $('body').css('overflow', 'hidden');
             }
+        }
+
+        // ========== HANDLE UPGRADE BUTTONS ==========
+        function handleUpgrade() {
+            var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
+
+            if (!isLoggedIn) {
+                // Not logged in - open registration modal
+                openSellerRegisterModal();
+                return;
+            }
+
+            // Logged in - show modal with pre-filled data
+            openSellerRegisterModal();
         }
 
         // ========== INITIALIZE ==========
@@ -476,6 +594,14 @@ if ($isLoggedIn && $currentUser instanceof Seller) {
 
             if ($createSellerBtn.length) {
                 $createSellerBtn.on('click', openSellerRegisterModal);
+            }
+
+            if ($upgradeBtn.length) {
+                $upgradeBtn.on('click', handleUpgrade);
+            }
+
+            if ($upgradeBtn2.length) {
+                $upgradeBtn2.on('click', handleUpgrade);
             }
         });
     </script>

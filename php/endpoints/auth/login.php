@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
-$role_type = $_POST['role_type'] ?? 'buyer';
+$context = $_POST['context'] ?? 'main';
 
 // Validate input
 if (empty($email) || empty($password)) {
@@ -37,8 +37,8 @@ if (empty($email) || empty($password)) {
     exit;
 }
 
-// Auth class handles everything
-$result = $auth->login($email, $password, $role_type);
+// Auth class handles everything with context
+$result = $auth->login($email, $password, $context);
 
 // Handle login failure
 if (!$result['success']) {

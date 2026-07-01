@@ -7,7 +7,7 @@
  * cancellations, and revenue calculations.
  *
  * @author Kamogelo Phale
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 class OrderService
@@ -95,6 +95,30 @@ class OrderService
     public function findById(int $orderId, int $userId, string $role): ?array
     {
         return $this->orderRepo->findById($orderId, $userId, $role);
+    }
+
+    /**
+     * Get order by ID for buyer (no role parameter).
+     */
+    public function findByIdForBuyer(int $orderId, int $userId): ?array
+    {
+        return $this->orderRepo->findByIdForBuyer($orderId, $userId);
+    }
+
+    /**
+     * Get order by ID for seller (no role parameter).
+     */
+    public function findByIdForSeller(int $orderId, int $userId): ?array
+    {
+        return $this->orderRepo->findByIdForSeller($orderId, $userId);
+    }
+
+    /**
+     * Get order by ID for admin (no user restriction).
+     */
+    public function findByIdForAdmin(int $orderId): ?array
+    {
+        return $this->orderRepo->findByIdForAdmin($orderId);
     }
 
     /**

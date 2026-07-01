@@ -1,0 +1,23 @@
+# Admin Dashboard .htaccess
+# Provides BASIC AUTH as an extra security layer
+
+AuthType Basic
+AuthName "ConsuTrade Dashboard"
+AuthUserFile /home/site/wwwroot/.htpasswd-admin
+Require valid-user
+
+# Allow access to login and role-select pages without basic auth
+<Files "login.php">
+    Require all granted
+</Files>
+<Files "role-select.php">
+    Require all granted
+</Files>
+
+# Block access to .htpasswd files
+<Files ".ht*">
+    Require all denied
+</Files>
+
+# Prevent directory listing
+Options -Indexes

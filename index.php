@@ -179,30 +179,22 @@ $load_products_js = true;
             );
         }
 
-        // Empty state for featured products (only used here)
-        function showFeaturedEmptyState() {
-            $('#featured-products-grid').html(
-                '<div class="empty-state">' +
-                '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">' +
-                '<h3>No products yet</h3>' +
-                '<p>Be the first to list a product on ConsuTrade!</p>' +
-                '<a href="' + baseUrl + 'sell.php" class="view-all-btn" style="display: inline-block;">Start Selling</a>' +
-                '</div>'
-            );
-        }
-
         // Handle Start Selling button
         $('#primary-btn').on('click', function() {
             var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
-            var currentUserRole = <?php echo isset($currentUser) ? json_encode($currentUser->getRole()) : 'null'; ?>;
+            var hasSellerRole = <?php echo isset($currentUser) ? json_encode($currentUser->hasRole('seller')) : 'false'; ?>;
 
-            if (isLoggedIn && currentUserRole === 'seller') {
+            if (isLoggedIn && hasSellerRole) {
+                // User has seller role - go to dashboard
                 window.location.href = baseUrl + 'admin/seller-dashboard.php';
-            } else if (isLoggedIn && currentUserRole === 'buyer') {
+            } else if (isLoggedIn) {
+                // Logged in but no seller role (pure buyer) - go to sell.php info page
                 window.location.href = baseUrl + 'sell.php';
             } else {
+                // Not logged in - open registration modal with seller selected
                 openModal($('#register-modal'));
                 $('#seller').prop('checked', true);
+                $('#register-modal .modal-header p').text('Create your account to start selling');
             }
         });
 

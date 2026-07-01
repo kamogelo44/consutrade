@@ -72,21 +72,68 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['confirm_password'] = 'Passwords do not match';
     }
 
+    // Check if user exists
+    $existing_user = null;
     if (empty($errors)) {
         $existing_user = $userRepo->findByEmail($email);
-        if ($existing_user) {
-            $errors['email'] = 'Unable to register with this email. Please contact support if you believe this is an error.';
+    }
+
+    // If user exists and is trying to become a seller
+    if ($existing_user && $role === 'seller' && empty($errors)) {
+        // Check if user already has seller role
+        if ($existing_user->hasRole('seller')) {
+            // User already has seller account - just log them in
+            $auth->login($email, $password, 'admin');
+            $_SESSION['flash'] = 'Welcome back! You already have a seller account.';
+
+            $redirect_url = $baseUrl . 'admin/seller-dashboard.php';
+
+            if ($is_ajax) {
+                echo json_encode(['success' => true, 'redirect' => $redirect_url]);
+                exit;
+            }
+            header('Location: ' . $redirect_url);
+            exit;
+        } else {
+            // User exists but doesn't have seller role - add it
+            $userId = $existing_user->getUserId();
+            $result = $userRepo->addRole($userId, 'seller');
+
+            if ($result) {
+                $auth->login($email, $password, 'admin');
+                $_SESSION['flash'] = 'Seller access added to your account! Welcome to the seller dashboard.';
+
+                $redirect_url = $baseUrl . 'admin/seller-dashboard.php';
+
+                if ($is_ajax) {
+                    echo json_encode(['success' => true, 'redirect' => $redirect_url]);
+                    exit;
+                }
+                header('Location: ' . $redirect_url);
+                exit;
+            } else {
+                $errors['general'] = 'Failed to add seller access. Please try again.';
+            }
         }
     }
 
-    if (empty($errors) && !empty($clean_phone)) {
-        $existing_phone = $userRepo->findByPhone($clean_phone);
-        if ($existing_phone) {
-            $errors['phone'] = 'Unable to register with this phone number. Please contact support.';
+    // If user exists and trying to register as buyer
+    if ($existing_user && $role === 'buyer' && empty($errors)) {
+        $errors['email'] = 'An account with this email already exists. Please login instead.';
+    }
+
+    // If user doesn't exist, check phone
+    if (!$existing_user && empty($errors)) {
+        if (!empty($clean_phone)) {
+            $existing_phone = $userRepo->findByPhone($clean_phone);
+            if ($existing_phone) {
+                $errors['phone'] = 'Unable to register with this phone number. Please contact support.';
+            }
         }
     }
 
-    if (empty($errors)) {
+    // If no errors and no existing user, create new user
+    if (empty($errors) && !$existing_user) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
         $userData = [
@@ -100,12 +147,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $userId = $userRepo->create($userData);
 
         if ($userId) {
-            $auth->login($email, $password, $role);
-            $_SESSION['flash'] = 'Welcome to ConsuTrade, ' . $full_name . '!';
+            $context = ($role === 'seller') ? 'admin' : 'main';
+            $auth->login($email, $password, $context);
 
             if ($role === 'seller') {
+                $_SESSION['flash'] = 'Welcome to ConsuTrade! Your seller account has been created.';
                 $redirect_url = $baseUrl . 'admin/seller-dashboard.php';
             } else {
+                $_SESSION['flash'] = 'Welcome to ConsuTrade, ' . $full_name . '!';
                 $redirect_url = $baseUrl . 'index.php';
             }
 
@@ -120,6 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // If we still have errors, return them
     if (!empty($errors)) {
         if ($is_ajax) {
             echo json_encode([

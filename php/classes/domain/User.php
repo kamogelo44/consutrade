@@ -7,7 +7,7 @@
  * Contains shared properties and methods common to every user.
  *
  * @author Kamogelo Phale
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 abstract class User
@@ -30,8 +30,8 @@ abstract class User
     /** @var string */
     protected $location;
 
-    /** @var string */
-    protected $role;
+    /** @var array */
+    protected $roles = [];
 
     /** @var bool */
     protected $idVerified;
@@ -58,7 +58,7 @@ abstract class User
         $this->password     = (string) ($data['password']    ?? '');
         $this->phone        = (string) ($data['phone']       ?? '');
         $this->location     = (string) ($data['location']    ?? '');
-        $this->role         = (string) ($data['role']        ?? 'buyer');
+        $this->roles        = (array)  ($data['roles']       ?? ['buyer']);
         $this->idVerified   = (bool) ($data['id_verified']   ?? false);
         $this->profileImage = (string) ($data['profile_image'] ?? '');
         $this->createdAt    = (string) ($data['created_at']   ?? '');
@@ -106,13 +106,52 @@ abstract class User
     }
 
     /**
-     * Returns the user's role.
+     * Returns the user's roles as array.
+     *
+     * @return array
+     */
+    public function getRoles()
+    {
+        return $this->roles;
+    }
+
+    /**
+     * Check if user has a specific role.
+     *
+     * @param string $role Role to check (admin, seller, buyer)
+     * @return bool
+     */
+    public function hasRole(string $role): bool
+    {
+        return in_array($role, $this->roles);
+    }
+
+    /**
+     * Get primary role (first in priority order).
+     * Priority: admin > seller > buyer
+     *
+     * @return string
+     */
+    public function getPrimaryRole(): string
+    {
+        $priority = ['admin', 'seller', 'buyer'];
+        foreach ($priority as $role) {
+            if (in_array($role, $this->roles)) {
+                return $role;
+            }
+        }
+        return 'buyer';
+    }
+
+    /**
+     * Get the user's role (legacy compatibility).
+     * Returns primary role.
      *
      * @return string
      */
     public function getRole()
     {
-        return $this->role;
+        return $this->getPrimaryRole();
     }
 
     /**
@@ -142,7 +181,7 @@ abstract class User
      */
     public function canLogin()
     {
-        return $this->status === 'active';
+        return $this->status === 'active' && !empty($this->roles);
     }
 
     /**
@@ -155,7 +194,6 @@ abstract class User
         $baseUrl = getBaseUrl();
 
         if (!empty($this->profileImage)) {
-            // Check if file exists using dynamic path detection
             $fullPath = $this->getFullPath($this->profileImage);
             if (file_exists($fullPath)) {
                 return $baseUrl . $this->profileImage;
@@ -243,7 +281,7 @@ abstract class User
             'email' => $this->email,
             'phone' => $this->phone,
             'location' => $this->location,
-            'role' => $this->role,
+            'roles' => $this->roles,
             'id_verified' => $this->idVerified,
             'profile_image' => $this->profileImage,
             'created_at' => $this->createdAt,
@@ -264,7 +302,7 @@ abstract class User
         $this->email = $data['email'];
         $this->phone = $data['phone'];
         $this->location = $data['location'];
-        $this->role = $data['role'];
+        $this->roles = $data['roles'] ?? ['buyer'];
         $this->idVerified = $data['id_verified'];
         $this->profileImage = $data['profile_image'];
         $this->createdAt = $data['created_at'];

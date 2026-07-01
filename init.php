@@ -93,6 +93,17 @@ $reportRepo = new ReportRepository($conn, $productRepo);
 // ============================================================
 $auth = new Auth($conn, $userRepo);
 
+// Auto-login from .htaccess authentication
+if (isset($_SERVER['PHP_AUTH_USER']) && !$auth->isLoggedIn()) {
+    $email = $_SERVER['PHP_AUTH_USER'];
+    $user = $userRepo->findByEmail($email);
+
+    if ($user && $user->canLogin()) {
+        $auth->loginWithHtaccessUser($user);
+        $currentUser = $user;
+    }
+}
+
 // UserService
 $userService = new UserService(
     $conn,

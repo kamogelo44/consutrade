@@ -7,7 +7,7 @@
  * Contains ONLY business logic, no database operations.
  *
  * @author Kamogelo Phale
- * @version 2.1.0
+ * @version 3.0.0
  */
 
 class Admin extends User
@@ -20,7 +20,6 @@ class Admin extends User
     public function __construct(array $data)
     {
         parent::__construct($data);
-        // No database connection here!
     }
 
     /**
@@ -42,7 +41,6 @@ class Admin extends User
      */
     public function canManageUser(string $targetRole): bool
     {
-        // Admin cannot modify other admins (business rule)
         return $targetRole !== 'admin';
     }
 
@@ -103,7 +101,6 @@ class Admin extends User
             ];
         }
 
-        // Sort by date (most recent first)
         usort($activity, function ($a, $b) {
             return strtotime($b['created_at']) - strtotime($a['created_at']);
         });

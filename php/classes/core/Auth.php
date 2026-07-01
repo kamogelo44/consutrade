@@ -6,7 +6,7 @@
  * Handles ALL authentication and session management.
  * 
  * @author Kamogelo Phale
- * @version 2.1.0
+ * @version 3.0.0
  */
 
 class Auth
@@ -26,7 +26,6 @@ class Auth
     public function __construct(mysqli $db, ?UserRepository $userRepo = null)
     {
         $this->db = $db;
-        // Use provided repository
         $this->userRepo = $userRepo;
     }
 
@@ -41,7 +40,6 @@ class Auth
             return;
         }
 
-        // SINGLE session name for everything
         session_name('CONSUTRADE_SESSION');
         session_start([
             'cookie_httponly' => true,
@@ -51,14 +49,14 @@ class Auth
     }
 
     /**
-     * Authenticate user.
+     * Authenticate user with context.
      * 
      * @param string $email User's email address
      * @param string $password User's password
-     * @param string $roleType Expected user role (admin, seller, buyer)
+     * @param string $context Where login is happening (main, admin, seller)
      * @return array Associative array with 'success' and 'redirect' or 'message'
      */
-    public function login(string $email, string $password, string $roleType): array
+    public function login(string $email, string $password, string $context = 'main'): array
     {
         $user = $this->userRepo->findByEmail($email);
 
@@ -78,7 +76,15 @@ class Auth
             return ['success' => false, 'message' => $message];
         }
 
-        if ($roleType !== $user->getRole()) {
+        $roles = $user->getRoles();
+
+        // Determine which role to use based on context
+        $activeRole = $this->determineRole($roles, $context);
+
+        if ($activeRole === null) {
+            if ($context === 'admin') {
+                return ['success' => false, 'message' => 'You do not have admin or seller access.'];
+            }
             return ['success' => false, 'message' => 'Invalid email or password.'];
         }
 
@@ -89,22 +95,135 @@ class Auth
         $_SESSION['user_id'] = $user->getUserId();
         $_SESSION['full_name'] = $user->getFullName();
         $_SESSION['email'] = $user->getEmail();
-        $_SESSION['role'] = $user->getRole();
-        $_SESSION['profile_image'] = $user->getProfileImage();
+        $_SESSION['roles'] = $roles;
         $_SESSION['logged_in'] = true;
         $_SESSION['user_object'] = serialize($user);
+        $_SESSION['active_role'] = $activeRole;
+        $_SESSION['role'] = $activeRole;
 
-        if ($user->getRole() === 'buyer') {
+        // Update cart count if buyer role exists
+        if (in_array('buyer', $roles)) {
             $this->updateCartCount($user->getUserId());
         }
 
-        $redirect = match ($user->getRole()) {
-            'admin' => getBaseUrl() . 'admin/admin-dashboard.php',
-            'seller' => getBaseUrl() . 'admin/seller-dashboard.php',
-            default => getBaseUrl() . 'index.php'
-        };
+        $redirect = $this->getRedirectByRole($activeRole, $context);
 
         return ['success' => true, 'redirect' => $redirect];
+    }
+
+    /**
+     * Determine which role to use based on context.
+     *
+     * @param array $roles User's roles
+     * @param string $context Login context (main, admin, seller)
+     * @return string|null
+     */
+    private function determineRole(array $roles, string $context): ?string
+    {
+        if ($context === 'main') {
+            if (in_array('buyer', $roles)) {
+                return 'buyer';
+            }
+            return $roles[0] ?? null;
+        }
+
+        if ($context === 'admin') {
+            if (in_array('admin', $roles)) {
+                return 'admin';
+            }
+            if (in_array('seller', $roles)) {
+                return 'seller';
+            }
+            return null;
+        }
+
+        if ($context === 'seller') {
+            if (in_array('seller', $roles)) {
+                return 'seller';
+            }
+            return null;
+        }
+
+        return $roles[0] ?? null;
+    }
+
+    /**
+     * Get redirect URL based on role and context.
+     *
+     * @param string $role Active role
+     * @param string $context Login context
+     * @return string
+     */
+    private function getRedirectByRole(string $role, string $context): string
+    {
+        if ($context === 'admin') {
+            if ($role === 'admin') {
+                return getBaseUrl() . 'admin/admin-dashboard.php';
+            }
+            if ($role === 'seller') {
+                return getBaseUrl() . 'admin/seller-dashboard.php';
+            }
+        }
+
+        if ($role === 'admin') {
+            return getBaseUrl() . 'admin/admin-dashboard.php';
+        }
+        if ($role === 'seller') {
+            return getBaseUrl() . 'admin/seller-dashboard.php';
+        }
+        return getBaseUrl() . 'index.php';
+    }
+
+    /**
+     * Switch user role for current session.
+     *
+     * @param string $role Role to switch to (admin, seller, buyer)
+     * @return bool
+     */
+    public function switchRole(string $role): bool
+    {
+        $this->startSession();
+
+        if (!$this->isLoggedIn()) {
+            return false;
+        }
+
+        $user = $this->getCurrentUser();
+        if (!$user || !$user->hasRole($role)) {
+            return false;
+        }
+
+        $_SESSION['active_role'] = $role;
+        $_SESSION['role'] = $role;
+
+        return true;
+    }
+
+    /**
+     * Get current active role.
+     *
+     * @return string|null
+     */
+    public function getActiveRole(): ?string
+    {
+        $this->startSession();
+        return $_SESSION['active_role'] ?? $_SESSION['roles'][0] ?? null;
+    }
+
+    /**
+     * Get available roles for current user.
+     *
+     * @return array
+     */
+    public function getAvailableRoles(): array
+    {
+        $this->startSession();
+
+        if (!$this->isLoggedIn()) {
+            return [];
+        }
+
+        return $_SESSION['roles'] ?? [];
     }
 
     /**
@@ -142,10 +261,9 @@ class Auth
         if ($userId > 0) {
             $user = $this->userRepo->findById($userId);
             if ($user) {
-                // Update session with fresh data
                 $_SESSION['user_object'] = serialize($user);
                 $_SESSION['full_name'] = $user->getFullName();
-                $_SESSION['role'] = $user->getRole();
+                $_SESSION['roles'] = $user->getRoles();
             }
             return $user;
         }
@@ -165,14 +283,15 @@ class Auth
     }
 
     /**
-     * Get current user role.
+     * Get current user role (legacy compatibility).
+     * Returns active role.
      * 
      * @return string|null User role or null if not logged in
      */
     public function getCurrentUserRole(): ?string
     {
         $this->startSession();
-        return $_SESSION['role'] ?? null;
+        return $this->getActiveRole();
     }
 
     /**
@@ -187,33 +306,74 @@ class Auth
     }
 
     /**
-     * Check if admin is logged in.
+     * Check if admin is logged in (checks active role).
      * 
      * @return bool True if admin is logged in, false otherwise
      */
     public function isAdmin()
     {
-        return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'admin';
+        return $this->isLoggedIn() && $this->getActiveRole() === 'admin';
     }
 
     /**
-     * Check if seller is logged in.
+     * Check if seller is logged in (checks active role).
      * 
      * @return bool True if seller is logged in, false otherwise
      */
     public function isSeller()
     {
-        return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'seller';
+        return $this->isLoggedIn() && $this->getActiveRole() === 'seller';
     }
 
     /**
-     * Check if buyer is logged in.
+     * Check if buyer is logged in (checks active role).
      * 
      * @return bool True if buyer is logged in, false otherwise
      */
     public function isBuyer()
     {
-        return $this->isLoggedIn() && ($_SESSION['role'] ?? '') === 'buyer';
+        return $this->isLoggedIn() && $this->getActiveRole() === 'buyer';
+    }
+
+    /**
+     * Check if user has a specific role (checks all roles).
+     *
+     * @param string $role Role to check
+     * @return bool
+     */
+    public function hasRole(string $role): bool
+    {
+        if (!$this->isLoggedIn()) {
+            return false;
+        }
+        $roles = $this->getAvailableRoles();
+        return in_array($role, $roles);
+    }
+
+    /**
+     * Login user authenticated via .htaccess
+     * 
+     * @param User $user User object
+     * @return bool
+     */
+    public function loginWithHtaccessUser(User $user): bool
+    {
+        $this->startSession();
+        session_regenerate_id(true);
+
+        $roles = $user->getRoles();
+
+        $_SESSION['user_id'] = $user->getUserId();
+        $_SESSION['full_name'] = $user->getFullName();
+        $_SESSION['email'] = $user->getEmail();
+        $_SESSION['roles'] = $roles;
+        $_SESSION['logged_in'] = true;
+        $_SESSION['user_object'] = serialize($user);
+        $_SESSION['active_role'] = $user->getPrimaryRole();
+        $_SESSION['role'] = $user->getPrimaryRole();
+        $_SESSION['auth_method'] = 'htaccess';
+
+        return true;
     }
 
     /**
