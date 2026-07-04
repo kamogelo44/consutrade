@@ -1,8 +1,5 @@
 // dashboard.js - admin and seller dashboard specific functions
 // Author: Kamogelo Phale
-// Note: main.js is already loaded on all pages, so utility functions like 
-// escapeHtml, fixImageUrl, showSuccessToast, renderPagination, etc. are already available.
-// This file only contains dashboard-specific functionality.
 
 var baseUrl = baseUrl || '';
 
@@ -28,10 +25,6 @@ var $totalRevenue = null,
     $listingsGrid = null,
     $recentOrdersList = null;
 
-/**
- * Caches all dashboard DOM elements.
- * Called once on page load.
- */
 function cacheDashboardElements() {
     $totalRevenue = $('#totalRevenue');
     $totalUsers = $('#totalUsers');
@@ -52,7 +45,6 @@ function cacheDashboardElements() {
     $recentOrdersList = $('#recent-orders-list');
 }
 
-/* ========== Helpers for dashboard ========== */
 function getUserRoleClass(role) {
     switch(role) {
         case 'admin': return 'role-admin';
@@ -64,7 +56,6 @@ function getUserRoleClass(role) {
 
 // ========== PRODUCT MANAGEMENT ==========
 
-// Toggle product status (suspend/activate)
 window.toggleProductStatus = function(productId, currentStatus, callback) {
     var newStatus = currentStatus == 'active' ? 'suspended' : 'active';
     var action = newStatus == 'active' ? 'activate' : 'suspend';
@@ -107,7 +98,6 @@ window.toggleProductStatus = function(productId, currentStatus, callback) {
     });
 };
 
-// Delete a product
 window.deleteProduct = function(productId, productName, callback) {
     var confirmMsg = productName 
         ? 'Delete "' + productName + '"? This action cannot be undone.'
@@ -139,7 +129,6 @@ window.deleteProduct = function(productId, productName, callback) {
     }
 };
 
-// Order action wrappers - these call updateOrderStatus from main.js
 window.processOrder = function(orderId) { 
     updateOrderStatus(orderId, 'processing');
 };
@@ -175,7 +164,6 @@ window.viewOrder = function(orderId) {
 
 // ========== SELLER PRODUCTS ==========
 
-// Load seller's products (for seller dashboard)
 window.loadSellerProducts = function(limit) {
     if (!$listingsGrid || !$listingsGrid.length) return;
     
@@ -228,7 +216,6 @@ window.loadSellerProducts = function(limit) {
 // ========== ADMIN DASHBOARD ==========
 
 function loadAdminDashboard() {
-    // Set loading states using cached elements
     if ($totalRevenue && $totalRevenue.length) $totalRevenue.text('Loading...');
     if ($totalUsers && $totalUsers.length) $totalUsers.text('Loading...');
     if ($totalProducts && $totalProducts.length) $totalProducts.text('Loading...');
@@ -253,7 +240,6 @@ function loadAdminDashboard() {
         }
     });
     
-    // Load recent data in parallel
     loadRecentUsers();
     loadRecentOrders(5);
 }
@@ -268,7 +254,6 @@ function updateStats(data) {
 }
 
 function updateNotices(data) {
-    // Pending verifications notice
     if (data.pending_verifications > 0) {
         if ($pendingNotice && $pendingNotice.length) {
             $pendingNotice.show();
@@ -282,7 +267,6 @@ function updateNotices(data) {
         if ($pendingNotice && $pendingNotice.length) $pendingNotice.hide();
     }
     
-    // Flagged reports notice
     if (data.pending_reports > 0) {
         if ($flaggedReportsNotice && $flaggedReportsNotice.length) {
             $flaggedReportsNotice.show();
@@ -487,7 +471,9 @@ function initMobileSidebar(prefix) {
     });
 }
 
-// ========== GALLERY FUNCTIONS ==========
+// ============================================================
+// GALLERY FUNCTIONS
+// ============================================================
 
 var selectedFiles = [];
 var existingImages = [];
@@ -514,23 +500,62 @@ function initImageGalleryFromInput(input) {
         return;
     }
     
-    for (var i = 0; i < files.length; i++) {
-        var previewUrl = URL.createObjectURL(files[i]);
-        newImagePreviews.push(previewUrl);
-        newImageFiles.push(files[i]);
-        
-        allDisplayImages.push({
-            file: files[i],
-            previewUrl: previewUrl,
-            is_primary: (i === 0),
-            is_existing: false,
-            source: 'new'
-        });
-    }
+    var compressor = new ImageCompressor({
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        format: 'image/webp'
+    });
     
-    buildGalleryThumbnails();
-    displayMainImage(0);
-    $('#image-gallery-container').show();
+    // Show compression progress
+    $('#compression-progress').show();
+    $('#compression-progress-text').text('Compressing ' + files.length + ' images...');
+    $('#compression-progress-bar').css('width', '30%');
+    
+    compressor.compressMultiple(files).then(function(compressedFiles) {
+        $('#compression-progress').hide();
+        
+        // Check if all files are WebP
+        var allWebP = true;
+        for (var i = 0; i < compressedFiles.length; i++) {
+            if (compressedFiles[i].type !== 'image/webp') {
+                allWebP = false;
+                break;
+            }
+        }
+        
+        if (!allWebP) {
+            showWarningToast('Some images could not be converted to WebP. Using original format.');
+        }
+        
+        for (var i = 0; i < compressedFiles.length; i++) {
+            var file = compressedFiles[i];
+            var previewUrl = URL.createObjectURL(file);
+            
+            newImageFiles.push(file);
+            newImagePreviews.push(previewUrl);
+            
+            allDisplayImages.push({
+                file: file,
+                previewUrl: previewUrl,
+                is_primary: (i === 0),
+                is_existing: false,
+                source: 'new',
+                url: previewUrl
+            });
+        }
+        
+        buildGalleryThumbnails();
+        displayMainImage(0);
+        $('#image-gallery-container').show();
+        updateImageCounter();
+        
+        showSuccessToast(compressedFiles.length + ' image(s) ready!');
+    }).catch(function(error) {
+        console.error('Compression error:', error);
+        $('#compression-progress').hide();
+        showErrorToast('Failed to compress images. Please try again.');
+    });
 }
 
 function initImageGalleryFromExisting(images) {
@@ -569,6 +594,7 @@ function initImageGalleryFromExisting(images) {
     }
     displayMainImage(primaryIndex);
     $('#image-gallery-container').show();
+    updateImageCounter();
 }
 
 function buildGalleryThumbnails() {
@@ -585,11 +611,19 @@ function buildGalleryThumbnails() {
             var textColor = isPrimary ? 'var(--primary-color)' : 'var(--gray-medium)';
             var label = isPrimary ? 'Main' : 'Gallery';
             
-            var imgSrc = img.source === 'existing' ? img.url : (img.previewUrl || '');
+            var imgSrc = baseUrl + 'images/default-product.png';
+            if (img.source === 'existing') {
+                imgSrc = img.url || baseUrl + 'images/default-product.png';
+            } else if (img.previewUrl) {
+                imgSrc = img.previewUrl;
+            } else if (img.url) {
+                imgSrc = img.url;
+            }
             
             var $thumbnail = $(
                 '<div class="gallery-thumb" data-image-index="' + index + '" style="cursor: pointer; width: 80px; text-align: center; position: relative;">' +
-                    '<img src="' + imgSrc + '" style="width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-md); border: 2px solid ' + borderColor + ';">' +
+                    '<img src="' + imgSrc + '" style="width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-md); border: 2px solid ' + borderColor + ';" ' +
+                    'onerror="this.onerror=null; this.src=\'' + baseUrl + 'images/default-product.png\'">' +
                     '<div style="font-size: 10px; margin-top: 4px; color: ' + textColor + ';">' + label + '</div>' +
                     '<div class="remove-image-btn" onclick="event.stopPropagation(); removeImageFromGallery(' + index + ')">×</div>' +
                 '</div>'
@@ -602,7 +636,10 @@ function buildGalleryThumbnails() {
 }
 
 function attachThumbnailClickHandlers() {
-    $('#gallery-thumbnails').off('click', '.gallery-thumb').on('click', '.gallery-thumb', function(e) {
+    var $container = $('#gallery-thumbnails');
+    if (!$container.length) return;
+    
+    $container.off('click', '.gallery-thumb').on('click', '.gallery-thumb', function(e) {
         if ($(e.target).hasClass('remove-image-btn') || $(e.target).parent().hasClass('remove-image-btn')) {
             return;
         }
@@ -615,18 +652,38 @@ function attachThumbnailClickHandlers() {
         
         buildGalleryThumbnails();
         displayMainImage(index);
+        updateImageCounter();
     });
 }
 
 function displayMainImage(index) {
-    var img = allDisplayImages[index];
-    if (!img) return;
+    var $mainPreview = $('#gallery-main-preview');
+    if (!$mainPreview.length) return;
     
-    if (img.source === 'existing') {
-        $('#gallery-main-preview').attr('src', img.url);
-    } else if (img.previewUrl) {
-        $('#gallery-main-preview').attr('src', img.previewUrl);
+    if (allDisplayImages.length === 0) {
+        $mainPreview.attr('src', baseUrl + 'images/default-product.png');
+        $mainPreview.attr('alt', 'No images uploaded');
+        return;
     }
+    
+    var img = allDisplayImages[index];
+    if (!img) {
+        $mainPreview.attr('src', baseUrl + 'images/default-product.png');
+        $mainPreview.attr('alt', 'No images uploaded');
+        return;
+    }
+    
+    var imgSrc = baseUrl + 'images/default-product.png';
+    if (img.source === 'existing') {
+        imgSrc = img.url || baseUrl + 'images/default-product.png';
+    } else if (img.previewUrl) {
+        imgSrc = img.previewUrl;
+    } else if (img.url) {
+        imgSrc = img.url;
+    }
+    
+    $mainPreview.attr('src', imgSrc);
+    $mainPreview.attr('alt', 'Product image');
 }
 
 function removeImageFromGallery(index) {
@@ -638,7 +695,13 @@ function removeImageFromGallery(index) {
             window.imagesToDelete.push(img.image_id);
         }
     } else {
-        var fileIndex = newImageFiles.indexOf(img.file);
+        var fileIndex = -1;
+        for (var j = 0; j < newImageFiles.length; j++) {
+            if (newImageFiles[j] === img.file) {
+                fileIndex = j;
+                break;
+            }
+        }
         if (fileIndex !== -1) {
             newImageFiles.splice(fileIndex, 1);
             newImagePreviews.splice(fileIndex, 1);
@@ -649,8 +712,9 @@ function removeImageFromGallery(index) {
     
     if (allDisplayImages.length === 0) {
         $('#gallery-thumbnails').empty();
-        $('#gallery-main-preview').attr('src', '');
+        $('#gallery-main-preview').attr('src', baseUrl + 'images/default-product.png');
         $('#image-gallery-container').hide();
+        updateImageCounter();
         return;
     }
     
@@ -675,60 +739,123 @@ function removeImageFromGallery(index) {
         }
     }
     displayMainImage(primaryIndex);
+    updateImageCounter();
 }
 
 function addNewImagesToGallery(input) {
     var files = Array.from(input.files);
     var currentCount = allDisplayImages.length;
-    var availableSlots = 4 - currentCount;
+    var maxAllowed = 4;
+    var availableSlots = maxAllowed - currentCount;
+    
+    if (availableSlots <= 0) {
+        var replaceConfirm = confirm('You already have 4 images. Do you want to replace existing images with new ones?');
+        if (!replaceConfirm) {
+            return;
+        }
+        
+        if (files.length > maxAllowed) {
+            alert('You can only upload up to ' + maxAllowed + ' images.');
+            files = files.slice(0, maxAllowed);
+        }
+        
+        for (var i = 0; i < allDisplayImages.length; i++) {
+            if (allDisplayImages[i].source === 'existing' && allDisplayImages[i].image_id > 0) {
+                if (!window.imagesToDelete) window.imagesToDelete = [];
+                if (window.imagesToDelete.indexOf(allDisplayImages[i].image_id) === -1) {
+                    window.imagesToDelete.push(allDisplayImages[i].image_id);
+                }
+            }
+        }
+        
+        allDisplayImages = [];
+        compressAndAddImages(files);
+        return;
+    }
     
     if (files.length > availableSlots) {
         alert('You can only add up to ' + availableSlots + ' more images (max 4 total).');
         files = files.slice(0, availableSlots);
     }
     
-    for (var i = 0; i < files.length; i++) {
-        var previewUrl = URL.createObjectURL(files[i]);
-        
-        newImageFiles.push(files[i]);
-        newImagePreviews.push(previewUrl);
-        
-        allDisplayImages.push({
-            file: files[i],
-            previewUrl: previewUrl,
-            is_primary: false,
-            is_existing: false,
-            source: 'new'
-        });
+    compressAndAddImages(files);
+}
+
+function compressAndAddImages(files) {
+    if (!files || files.length === 0) {
+        return;
     }
     
-    var hasPrimary = false;
-    for (var i = 0; i < allDisplayImages.length; i++) {
-        if (allDisplayImages[i].is_primary) {
-            hasPrimary = true;
-            break;
+    var compressor = new ImageCompressor({
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        format: 'image/webp'
+    });
+    
+    compressor.compressMultiple(files).then(function(compressedFiles) {
+        for (var i = 0; i < compressedFiles.length; i++) {
+            var file = compressedFiles[i];
+            var previewUrl = URL.createObjectURL(file);
+            
+            newImageFiles.push(file);
+            newImagePreviews.push(previewUrl);
+            
+            allDisplayImages.push({
+                file: file,
+                previewUrl: previewUrl,
+                is_primary: (allDisplayImages.length === 0),
+                is_existing: false,
+                source: 'new',
+                url: previewUrl
+            });
         }
-    }
-    if (!hasPrimary && allDisplayImages.length > 0) {
-        allDisplayImages[0].is_primary = true;
-    }
-    
-    buildGalleryThumbnails();
-    
-    var primaryIndex = 0;
-    for (var i = 0; i < allDisplayImages.length; i++) {
-        if (allDisplayImages[i].is_primary) {
-            primaryIndex = i;
-            break;
+        
+        var hasPrimary = false;
+        for (var i = 0; i < allDisplayImages.length; i++) {
+            if (allDisplayImages[i].is_primary) {
+                hasPrimary = true;
+                break;
+            }
         }
-    }
-    displayMainImage(primaryIndex);
+        if (!hasPrimary && allDisplayImages.length > 0) {
+            allDisplayImages[0].is_primary = true;
+        }
+        
+        buildGalleryThumbnails();
+        
+        var primaryIndex = 0;
+        for (var i = 0; i < allDisplayImages.length; i++) {
+            if (allDisplayImages[i].is_primary) {
+                primaryIndex = i;
+                break;
+            }
+        }
+        displayMainImage(primaryIndex);
+        updateImageCounter();
+    });
+}
+
+function updateImageCounter() {
+    var $counter = $('#image-counter');
+    if (!$counter.length) return;
     
-    input.value = '';
+    var currentCount = allDisplayImages.length;
+    var maxAllowed = 4;
+    var availableSlots = maxAllowed - currentCount;
+    
+    if (availableSlots > 0) {
+        $counter.text('You can add up to ' + availableSlots + ' new images.');
+    } else {
+        $counter.text('Maximum 4 images reached. You can replace existing images.');
+    }
 }
 
 function prepareEditFormData() {
     var imageOrderData = [];
+    
+    $('#edit-product-form input[name="image_order"]').remove();
+    $('#edit-product-form input[name="delete_images"]').remove();
     
     for (var i = 0; i < allDisplayImages.length; i++) {
         var img = allDisplayImages[i];
@@ -741,7 +868,16 @@ function prepareEditFormData() {
             item.is_existing = true;
         } else {
             item.is_new = true;
-            var fileIndex = newImageFiles.indexOf(img.file);
+            var fileIndex = -1;
+            for (var j = 0; j < newImageFiles.length; j++) {
+                if (newImageFiles[j] === img.file) {
+                    fileIndex = j;
+                    break;
+                }
+            }
+            if (fileIndex === -1) {
+                fileIndex = i;
+            }
             item.file_index = fileIndex;
         }
         
@@ -759,7 +895,13 @@ function prepareEditFormData() {
     return true;
 }
 
-// ========== DOCUMENT READY ==========
+// ============================================================
+// INITIALIZATION
+// ============================================================
+
+// ============================================================
+// DOCUMENT READY & FORM INTERCEPTION
+// ============================================================
 
 $(function() {
     // Cache dashboard elements
@@ -769,20 +911,108 @@ $(function() {
     initMobileSidebar('admin');
     initMobileSidebar('seller');
     
-    // Load admin dashboard if on admin page
+    // Load dashboards based on present fields
     if ($totalUsers && $totalUsers.length || ($recentUsersTable && $recentUsersTable.length)) {
         loadAdminDashboard();
     }
-    
-    // Load seller dashboard if on seller page
     if ($statProducts && $statProducts.length || ($listingsGrid && $listingsGrid.length)) {
         loadSellerDashboard();
     }
     
-    // Handle edit product form submission
+    // ============================================================
+    // INTERCEPT EDIT PRODUCT FORM SUBMISSION FOR COMPRESSION
+    // ============================================================
     if ($('#edit-product-form').length) {
-        $('#edit-product-form').on('submit', function() {
-            return prepareEditFormData();
+        $('#edit-product-form').on('submit', async function(e) {
+            const fileInput = $('input[name="new_product_images[]"]')[0];
+            
+            // 1. If no files are chosen, append order/deletion arrays and submit normally
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                return prepareEditFormData();
+            }
+
+            // 2. Prevent infinite loops once compression has successfully completed
+            if ($(this).data('compressed') === true) {
+                return prepareEditFormData(); 
+            }
+
+            // 3. Stop the immediate synchronous form upload
+            e.preventDefault();
+
+            // 4. Provide visual feedback during processing
+            const $submitBtn = $(this).find('button[type="submit"]');
+            const originalBtnText = $submitBtn.text();
+            $submitBtn.prop('disabled', true).text('Compressing Images (WebP)...');
+
+            try {
+                // 5. Instantiate your fixed compression utility
+                const compressor = new ImageCompressor({
+                    maxWidth: 1200,
+                    maxHeight: 1200,
+                    quality: 0.8
+                });
+
+                // Convert FileList to a manageable array
+                const originalFiles = Array.from(fileInput.files);
+                
+                // 6. Await the compression pipeline loop
+                const compressedFiles = await compressor.compressMultiple(originalFiles);
+
+                // 7. Use DataTransfer to swap the raw files with compressed WebP binaries
+                const dataTransfer = new DataTransfer();
+                compressedFiles.forEach(file => {
+                    dataTransfer.items.add(file);
+                });
+
+                // Seamlessly overwrite the input's native file list
+                fileInput.files = dataTransfer.files;
+
+                // Mark form state tracking as ready
+                $(this).data('compressed', true);
+
+                // 8. Run your existing sorting index allocations
+                prepareEditFormData();
+
+                // 9. Call the native DOM submit method to bypass jQuery event listeners
+                this.submit();
+
+            } catch (error) {
+                console.error('Client-side compression pipeline encountered a failure:', error);
+                $submitBtn.prop('disabled', false).text(originalBtnText);
+                alert('An error occurred while converting your images. Please try uploading again.');
+            }
+        });
+    }
+
+    // ============================================================
+    // INTERCEPT ADD PRODUCT FORM SUBMISSION (IF APPLICABLE)
+    // ============================================================
+    if ($('#add-product-form').length) {
+        $('#add-product-form').on('submit', async function(e) {
+            const fileInput = $('input[name="product_images[]"]')[0];
+            
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return true;
+            if ($(this).data('compressed') === true) return true;
+
+            e.preventDefault();
+            const $submitBtn = $(this).find('button[type="submit"]');
+            const originalBtnText = $submitBtn.text();
+            $submitBtn.prop('disabled', true).text('Processing Images...');
+
+            try {
+                const compressor = new ImageCompressor({ maxWidth: 1200, maxHeight: 1200, quality: 0.8 });
+                const compressedFiles = await compressor.compressMultiple(Array.from(fileInput.files));
+
+                const dataTransfer = new DataTransfer();
+                compressedFiles.forEach(file => dataTransfer.items.add(file));
+                fileInput.files = dataTransfer.files;
+
+                $(this).data('compressed', true);
+                this.submit();
+            } catch (error) {
+                console.error('Compression pipeline failed:', error);
+                $submitBtn.prop('disabled', false).text(originalBtnText);
+            }
         });
     }
 });

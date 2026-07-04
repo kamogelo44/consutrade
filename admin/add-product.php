@@ -10,9 +10,15 @@
 require_once dirname(__DIR__) . '/init.php';
 include dirname(__DIR__) . '/includes/session-vars.php';
 
-if (!$auth->isSeller()) {
-    header('Location: login.php');
+// Use hasRole() instead of isSeller() for multi-role support
+if (!$auth->hasRole('seller')) {
+    header('Location: ' . $baseUrl . 'index.php');
     exit;
+}
+
+// If user is logged in but active role is not seller, switch to seller
+if (!$auth->isSeller()) {
+    $auth->switchRole('seller');
 }
 
 $seller_id = $currentUser->getUserId();
@@ -44,6 +50,7 @@ unset($_SESSION['error'], $_SESSION['success']);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/image-compressor.js"></script>
     <style>
         /* Tiny page-specific override - only if needed */
         .gallery-thumb {
@@ -52,6 +59,32 @@ unset($_SESSION['error'], $_SESSION['success']);
 
         .gallery-thumb:hover {
             transform: translateY(-2px);
+        }
+
+        /* Compression Progress */
+        #compression-progress {
+            margin-top: var(--spacing-md);
+        }
+
+        #compression-progress .progress-bar {
+            background: var(--gray-bg);
+            border-radius: var(--radius-md);
+            height: 20px;
+            overflow: hidden;
+        }
+
+        #compression-progress .progress-bar .progress-fill {
+            background: var(--primary-color);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: var(--radius-md);
+        }
+
+        #compression-progress .progress-text {
+            font-size: var(--font-sm);
+            color: var(--gray-medium);
+            margin-top: var(--spacing-xs);
         }
     </style>
 </head>
@@ -139,6 +172,14 @@ unset($_SESSION['error'], $_SESSION['success']);
                             <div id="gallery-thumbnails" style="display: flex; gap: var(--spacing-md); flex-wrap: wrap; margin-top: var(--spacing-md); justify-content: center;">
                             </div>
                         </div>
+
+                        <!-- Compression Progress -->
+                        <div id="compression-progress" style="display: none; margin-top: var(--spacing-md);">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="compression-progress-bar"></div>
+                            </div>
+                            <p class="progress-text" id="compression-progress-text">Compressing images...</p>
+                        </div>
                     </div>
 
                     <div class="form-actions">
@@ -149,6 +190,23 @@ unset($_SESSION['error'], $_SESSION['success']);
             </div>
         </div>
     </main>
+
+    <script>
+        var baseUrl = '<?php echo $baseUrl; ?>';
+
+        $(document).ready(function() {
+            $('#product-form').on('submit', function() {
+                // Show progress if there are images selected
+                var fileInput = $('input[name="product_images[]"]')[0];
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    $('#compression-progress').show();
+                    $('#compression-progress-text').text('Compressing ' + fileInput.files.length + ' images...');
+                    $('#compression-progress-bar').css('width', '50%');
+                }
+                return true;
+            });
+        });
+    </script>
 
 </body>
 

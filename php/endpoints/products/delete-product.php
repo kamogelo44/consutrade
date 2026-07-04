@@ -25,12 +25,16 @@ if ($productId <= 0) {
     exit;
 }
 
-if ($currentUser instanceof Seller) {
+// Check roles using hasRole() instead of instanceof
+$isSeller = $currentUser->hasRole('seller');
+$isAdmin = $currentUser->hasRole('admin');
+
+if ($isSeller) {
     // Use ProductService for deletion
     $result = $productService->delete($productId, $currentUser->getUserId());
     $response['success'] = $result['success'];
     $response['message'] = $result['message'];
-} elseif ($currentUser instanceof Admin) {
+} elseif ($isAdmin) {
     $product = $productService->findById($productId);
 
     if (!$product) {

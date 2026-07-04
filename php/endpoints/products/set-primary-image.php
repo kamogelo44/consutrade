@@ -12,10 +12,16 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-if (!$auth->isSeller()) {
+// Use hasRole() instead of isSeller() for multi-role support
+if (!$currentUser->hasRole('seller')) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
     exit;
+}
+
+// If user is logged in but active role is not seller, switch to seller
+if (!$auth->isSeller()) {
+    $auth->switchRole('seller');
 }
 
 $data = json_decode(file_get_contents('php://input'), true);

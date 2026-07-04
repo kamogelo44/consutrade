@@ -48,13 +48,17 @@ if (!$product) {
 $action = ($newStatus === 'active') ? 'activate' : 'suspend';
 $currentUserId = $currentUser->getUserId();
 
+// Use hasRole() instead of isAdmin()/isSeller() for multi-role support
+$isAdmin = $currentUser->hasRole('admin');
+$isSeller = $currentUser->hasRole('seller');
+
 $hasPermission = false;
 $suspendedBy = 'seller';
 
-if ($auth->isAdmin()) {
+if ($isAdmin) {
     $hasPermission = true;
     $suspendedBy = 'admin';
-} elseif ($auth->isSeller() && $product->getSellerId() === $currentUserId) {
+} elseif ($isSeller && $product->getSellerId() === $currentUserId) {
     if ($action === 'activate' && $product->isAdminSuspended()) {
         $response['message'] = 'This product was suspended by an admin. Only an admin can reactivate it.';
         echo json_encode($response);

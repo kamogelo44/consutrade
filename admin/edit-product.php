@@ -9,16 +9,26 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
-if (!$auth->isSeller()) {
-    header('Location: login.php');
+// Use hasRole() instead of isSeller() for multi-role support
+if (!$auth->hasRole('seller')) {
+    header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
 $seller_id = $currentUser->getUserId();
+
+// Get the product ID from URL
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($product_id <= 0) {
     header('Location: my-products.php');
+    exit;
+}
+
+// If user is logged in but active role is not seller, switch to seller
+if (!$auth->isSeller()) {
+    $auth->switchRole('seller');
+    header('Location: ' . $_SERVER['PHP_SELF'] . '?id=' . $product_id);
     exit;
 }
 
@@ -34,19 +44,18 @@ $categories = $categoryRepo->findAll();
 
 // Prepare existing images for JavaScript gallery
 $existingImagesForJs = [];
+$defaultImageUrl = $baseUrl . 'images/default-product.png';
 
-// First, add the main image from product table
-$mainImageUrl = $productRepo->getImageUrl($product->getImageUrl());
-$existingImagesForJs[] = [
-    'url' => $mainImageUrl,
-    'is_primary' => true,
-    'image_id' => 0
-];
+// Check if product has a real main image
+$mainImageUrl = $product->getImageUrl();
+$isDefaultImage = strpos($mainImageUrl, 'default-product.png') !== false;
 
-// Then add gallery images (avoid duplicate if main image is also in gallery)
+// Add real gallery images (skip duplicates and default)
 foreach ($gallery_images as $img) {
     $imgUrl = $productRepo->getImageUrl($img['image_url']);
-    if ($imgUrl !== $mainImageUrl) {
+    $isDefault = strpos($imgUrl, 'default-product.png') !== false;
+
+    if (!$isDefault && $imgUrl !== $mainImageUrl && $imgUrl !== $defaultImageUrl) {
         $existingImagesForJs[] = [
             'url' => $imgUrl,
             'is_primary' => (bool)$img['is_primary'],
@@ -54,6 +63,23 @@ foreach ($gallery_images as $img) {
         ];
     }
 }
+
+// Set the main image to the first image if none is marked primary
+$hasPrimary = false;
+foreach ($existingImagesForJs as $img) {
+    if ($img['is_primary']) {
+        $hasPrimary = true;
+        break;
+    }
+}
+if (!$hasPrimary && !empty($existingImagesForJs)) {
+    $existingImagesForJs[0]['is_primary'] = true;
+}
+
+// Calculate available slots for new images
+$realImageCount = count($existingImagesForJs);
+$availableSlots = 4 - $realImageCount;
+if ($availableSlots < 0) $availableSlots = 0;
 
 // Breadcrumb
 $breadcrumbItems = [
@@ -76,6 +102,7 @@ unset($_SESSION['error'], $_SESSION['success']);
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/sidebar.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>admin/css/dashboard-layout.css">
     <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/image-compressor.js"></script>
     <style>
         .form-container {
             max-width: 800px;
@@ -253,6 +280,32 @@ unset($_SESSION['error'], $_SESSION['success']);
             font-weight: var(--font-bold);
         }
 
+        /* Compression Progress */
+        #compression-progress {
+            margin-top: var(--spacing-md);
+        }
+
+        #compression-progress .progress-bar {
+            background: var(--gray-bg);
+            border-radius: var(--radius-md);
+            height: 20px;
+            overflow: hidden;
+        }
+
+        #compression-progress .progress-bar .progress-fill {
+            background: var(--primary-color);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: var(--radius-md);
+        }
+
+        #compression-progress .progress-text {
+            font-size: var(--font-sm);
+            color: var(--gray-medium);
+            margin-top: var(--spacing-xs);
+        }
+
         @media (max-width: 768px) {
             .form-container {
                 padding: var(--spacing-md);
@@ -385,13 +438,21 @@ unset($_SESSION['error'], $_SESSION['success']);
                     <div class="form-group">
                         <label>Product Images (Max 4 total)</label>
                         <input type="file" name="new_product_images[]" accept="image/*" multiple onchange="addNewImagesToGallery(this)">
-                        <small>Click on any image to set it as the main product photo. Click × to delete. You can add up to <?php echo 4 - count($existingImagesForJs); ?> new images.</small>
+                        <small>Click on any image to set it as the main product photo. Click × to delete. <span id="image-counter">You can add up to <?php echo $availableSlots; ?> new images.</span></small>
 
                         <div id="image-gallery-container" style="margin-top: var(--spacing-lg);">
                             <div class="main-image-container">
                                 <img id="gallery-main-preview" src="" alt="Main preview">
                             </div>
                             <div id="gallery-thumbnails"></div>
+                        </div>
+
+                        <!-- Compression Progress -->
+                        <div id="compression-progress" style="display: none; margin-top: var(--spacing-md);">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="compression-progress-bar"></div>
+                            </div>
+                            <p class="progress-text" id="compression-progress-text">Compressing images...</p>
                         </div>
                     </div>
 
@@ -412,6 +473,12 @@ unset($_SESSION['error'], $_SESSION['success']);
             initImageGalleryFromExisting(existingImages);
 
             $('#edit-product-form').on('submit', function() {
+                // Show progress if there are new images
+                if (newImageFiles && newImageFiles.length > 0) {
+                    $('#compression-progress').show();
+                    $('#compression-progress-text').text('Uploading ' + newImageFiles.length + ' images...');
+                    $('#compression-progress-bar').css('width', '50%');
+                }
                 return prepareEditFormData();
             });
         });

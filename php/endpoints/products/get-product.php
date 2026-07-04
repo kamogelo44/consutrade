@@ -32,8 +32,27 @@ if (!$product || $product->getStatus() === 'deleted') {
 
 $gallery = $productImageRepo->findByProductId($productId);
 $galleryUrls = [];
+$baseUrl = getBaseUrl();
+$defaultImageUrl = $baseUrl . 'images/default-product.png';
+$documentRoot = $_SERVER['DOCUMENT_ROOT'];
+
 foreach ($gallery as $img) {
-    $galleryUrls[] = $productService->getImageUrl($img['image_url']);
+    $imageUrl = $img['image_url'];
+
+    // Skip empty or default images
+    if (empty($imageUrl) || strpos($imageUrl, 'default-product.png') !== false) {
+        continue;
+    }
+
+    // Check if file exists
+    $cleanPath = ltrim($imageUrl, '/');
+    $fullPath = $documentRoot . '/' . $cleanPath;
+
+    if (file_exists($fullPath)) {
+        $galleryUrls[] = $baseUrl . $cleanPath;
+    } else {
+        error_log("[get-product] Gallery image missing: $fullPath");
+    }
 }
 
 $rating = $reviewRepo->getSellerRating($product->getSellerId());

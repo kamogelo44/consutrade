@@ -1,17 +1,36 @@
 <?php
 /*
- * ConsuTrade - Edit Product Handler
+ * ConsuTrade - Edit Product Handler (FIXED)
  * Author: Kamogelo Phale
  * 
- * Handles product updates using unified gallery system.
- * Supports: updating product info, adding new images, deleting images, setting primary image.
+ * FIXED: Correct slot math after deletions
+ * FIXED: Properly calculates remaining slots
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
-if (!$isLoggedIn || !$currentUser instanceof Seller) {
+function getUploadErrorMessage($errorCode)
+{
+    return match ($errorCode) {
+        UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'File too large (max 20MB)',
+        UPLOAD_ERR_PARTIAL => 'File only partially uploaded',
+        UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+        UPLOAD_ERR_EXTENSION => 'Upload stopped by extension',
+        default => 'Unknown upload error',
+    };
+}
+
+// Multi-role support
+if (!$isLoggedIn || !$currentUser->hasRole('seller')) {
+    $_SESSION['error'] = 'You must be logged in as a seller to edit products.';
     header('Location: ' . $baseUrl . 'admin/login.php');
     exit;
+}
+
+if (!$auth->isSeller()) {
+    $auth->switchRole('seller');
 }
 
 $sellerId = $currentUser->getUserId();
@@ -23,15 +42,15 @@ if ($productId <= 0) {
     exit;
 }
 
-// Use ProductService for product lookup
 $product = $productService->findById($productId);
 
 if (!$product || $product->getSellerId() !== $sellerId) {
-    $_SESSION['error'] = 'Product not found.';
+    $_SESSION['error'] = 'Product not found or access denied.';
     header('Location: ' . $baseUrl . 'admin/my-products.php');
     exit;
 }
 
+// Get form data
 $title = trim($_POST['title'] ?? '');
 $categoryId = isset($_POST['category_id']) ? (int) $_POST['category_id'] : 0;
 $price = isset($_POST['price']) ? (float) $_POST['price'] : 0;
@@ -40,6 +59,7 @@ $description = trim($_POST['description'] ?? '');
 $condition = $_POST['condition'] ?? '';
 $location = trim($_POST['location'] ?? '');
 
+// Validate
 $errors = [];
 if (empty($title)) $errors[] = 'Product title is required';
 if ($categoryId <= 0) $errors[] = 'Please select a category';
@@ -53,6 +73,7 @@ if (!empty($errors)) {
     exit;
 }
 
+// Update product object
 $product->setTitle($title);
 $product->setCategoryId($categoryId);
 $product->setPrice($price);
@@ -61,57 +82,94 @@ $product->setDescription($description);
 $product->setCondition($condition);
 $product->setLocation($location);
 
-// Use ProductImageService for image operations
 $imageService = new ProductImageService();
 
+// ============================================================
+// HANDLE IMAGE DELETIONS
+// ============================================================
 $deleteImages = isset($_POST['delete_images']) ? json_decode($_POST['delete_images'], true) : [];
+$deletedCount = 0;
+
 if (!empty($deleteImages)) {
     foreach ($deleteImages as $imageId) {
-        $productImageRepo->delete($imageId, $productId);
+        $imageRecord = $productImageRepo->findById($imageId);
+        if ($imageRecord) {
+            if (method_exists($imageService, 'deleteImageFile')) {
+                $imageService->deleteImageFile($imageRecord['image_url']);
+            }
+        }
+        if ($productImageRepo->delete($imageId, $productId)) {
+            $deletedCount++;
+        }
     }
 }
 
+// ============================================================
+// HANDLE NEW IMAGE UPLOADS - FIXED SLOT MATH
+// ============================================================
+
+// FIXED: Query fresh gallery data AFTER deletions are processed
+$currentGallery = $productImageRepo->findByProductId($productId);
+$realImageCount = 0;
+foreach ($currentGallery as $img) {
+    $imgUrl = $productService->getImageUrl($img['image_url']);
+    if (strpos($imgUrl, 'default-product.png') === false) {
+        $realImageCount++;
+    }
+}
+
+$maxAllowed = 4;
+//Direct calculation from current state (deletions already reflected)
+$remainingSlots = max(0, $maxAllowed - $realImageCount);
+
 $newImagePaths = [];
+$failedUploads = 0;
+
 if (isset($_FILES['new_product_images']) && !empty($_FILES['new_product_images']['name'][0])) {
     $files = $_FILES['new_product_images'];
     $totalNew = count($files['name']);
-
-    $currentGallery = $productImageRepo->findByProductId($productId);
-    $currentCount = count($currentGallery);
-    $maxAllowed = 4;
-    $remainingSlots = $maxAllowed - $currentCount;
     $uploadCount = min($totalNew, $remainingSlots);
 
-    for ($i = 0; $i < $uploadCount; $i++) {
-        if ($files['error'][$i] === UPLOAD_ERR_OK) {
-            $singleFile = [
-                'name' => $files['name'][$i],
-                'type' => $files['type'][$i],
-                'tmp_name' => $files['tmp_name'][$i],
-                'error' => $files['error'][$i],
-                'size' => $files['size'][$i]
-            ];
+    if ($uploadCount <= 0) {
+        $_SESSION['warning'] = 'Cannot add more images. Maximum 4 images per product.';
+    } else {
+        for ($i = 0; $i < $uploadCount; $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $singleFile = [
+                    'name' => $files['name'][$i],
+                    'type' => $files['type'][$i],
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'error' => $files['error'][$i],
+                    'size' => $files['size'][$i]
+                ];
 
-            // Use ProductImageService to upload
-            $imagePath = $imageService->uploadImage($singleFile, $sellerId, $title, 'gallery_' . ($i + time()));
-            if ($imagePath) {
-                $newImagePaths[] = $imagePath;
+                $imagePath = $imageService->uploadImage($singleFile, $sellerId, $title, 'gallery_' . ($i + time()));
+                if ($imagePath) {
+                    $newImagePaths[] = $imagePath;
+                } else {
+                    $failedUploads++;
+                }
+            } else {
+                $failedUploads++;
             }
         }
-    }
 
-    if (!empty($newImagePaths)) {
-        $productImageRepo->createMultiple($productId, $newImagePaths);
+        if (!empty($newImagePaths)) {
+            $productImageRepo->createMultiple($productId, $newImagePaths);
+        }
     }
 }
 
+// ============================================================
+// HANDLE IMAGE ORDER AND PRIMARY IMAGE
+// ============================================================
 $imageOrder = isset($_POST['image_order']) ? json_decode($_POST['image_order'], true) : [];
 
 if (!empty($imageOrder)) {
-    $currentGallery = $productImageRepo->findByProductId($productId);
+    $updatedGallery = $productImageRepo->findByProductId($productId);
 
     $galleryUrlToId = [];
-    foreach ($currentGallery as $galleryImg) {
+    foreach ($updatedGallery as $galleryImg) {
         $fullUrl = $productService->getImageUrl($galleryImg['image_url']);
         $galleryUrlToId[$fullUrl] = $galleryImg['image_id'];
     }
@@ -119,27 +177,38 @@ if (!empty($imageOrder)) {
     $primaryImageId = null;
     $primaryImageUrl = null;
 
-    foreach ($imageOrder as $imgData) {
-        if ($imgData['is_primary']) {
-            if (isset($imgData['image_id']) && $imgData['image_id'] > 0) {
-                $primaryImageId = $imgData['image_id'];
-                foreach ($currentGallery as $galleryImg) {
-                    if ($galleryImg['image_id'] == $primaryImageId) {
-                        $primaryImageUrl = $galleryImg['image_url'];
-                        break;
-                    }
-                }
-            } else if (isset($imgData['is_new']) && $imgData['is_new'] && isset($imgData['file_index'])) {
-                $fileIndex = $imgData['file_index'];
-                if (isset($newImagePaths[$fileIndex])) {
-                    $primaryImageUrl = $newImagePaths[$fileIndex];
-                    $fullUrl = $productService->getImageUrl($primaryImageUrl);
-                    if (isset($galleryUrlToId[$fullUrl])) {
-                        $primaryImageId = $galleryUrlToId[$fullUrl];
-                    }
+    foreach ($imageOrder as $index => $imgData) {
+        $targetImageId = null;
+
+        if (isset($imgData['image_id']) && $imgData['image_id'] > 0) {
+            $targetImageId = $imgData['image_id'];
+        } else if (!empty($imgData['is_new']) && !empty($newImagePaths)) {
+            $primaryImageUrl = $newImagePaths[0];
+            $fullUrl = $productService->getImageUrl($primaryImageUrl);
+            if (isset($galleryUrlToId[$fullUrl])) {
+                $targetImageId = $galleryUrlToId[$fullUrl];
+            }
+        }
+
+        if ($targetImageId && !empty($imgData['is_primary'])) {
+            $primaryImageId = $targetImageId;
+            foreach ($updatedGallery as $galleryImg) {
+                if ($galleryImg['image_id'] == $primaryImageId) {
+                    $primaryImageUrl = $galleryImg['image_url'];
+                    break;
                 }
             }
-            break;
+        }
+    }
+
+    if (!$primaryImageId && !$primaryImageUrl && !empty($updatedGallery)) {
+        foreach ($updatedGallery as $galleryImg) {
+            $imgUrl = $productService->getImageUrl($galleryImg['image_url']);
+            if (strpos($imgUrl, 'default-product.png') === false) {
+                $primaryImageId = $galleryImg['image_id'];
+                $primaryImageUrl = $galleryImg['image_url'];
+                break;
+            }
         }
     }
 
@@ -147,19 +216,26 @@ if (!empty($imageOrder)) {
         $productImageRepo->setPrimary($productId, $primaryImageId);
     }
 
-    if ($primaryImageUrl) {
+    if ($primaryImageUrl && strpos($primaryImageUrl, 'default-product.png') === false) {
         $product->setImageUrl($primaryImageUrl);
+    } else {
+        $product->setImageUrl('');
     }
 }
 
-// Use ProductService for update
+// ============================================================
+// SAVE PRODUCT
+// ============================================================
 $result = $productService->update($product);
 
 if ($result) {
     $_SESSION['success'] = 'Product updated successfully.';
+    if ($failedUploads > 0) {
+        $_SESSION['warning'] = 'Product saved, but ' . $failedUploads . ' image(s) failed to upload.';
+    }
 } else {
     $_SESSION['error'] = 'Could not update product.';
 }
 
-header('Location: ' . $baseUrl . 'admin/my-products.php?id=' . $productId);
+header('Location: ' . $baseUrl . 'admin/my-products.php');
 exit;
