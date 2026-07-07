@@ -307,30 +307,27 @@ function setupProductEventListeners() {
         });
     }
 
-    if ($filterForm && $filterForm.length) {
-        $filterForm.on('submit', function(e) {
-            e.preventDefault();
-            collectFilters();
-            currentPage = 1;
-            loadProducts();
-            if ($window.width() <= 768) {
-                $filterSidebar.removeClass('active');
-            }
-        });
-    }
+    // Apply Filters button (in header bar)
+    $('#applyFiltersBtn').on('click', function() {
+        collectFilters();
+        currentPage = 1;
+        loadProducts();
+        if ($window.width() <= 768) {
+            $filterSidebar.removeClass('active');
+        }
+    });
 
-    if ($resetFiltersBtn && $resetFiltersBtn.length) {
-        $resetFiltersBtn.on('click', function() {
-            $filterForm[0].reset();
-            currentFilters = {
-                categories: [],
-                price_range: '',
-                location: ''
-            };
-            currentPage = 1;
-            loadProducts();
-        });
-    }
+    // Clear Filters button (in header bar)
+    $('#clearFiltersBtn').on('click', function() {
+        $filterForm[0].reset();
+        currentFilters = {
+            categories: [],
+            price_range: '',
+            location: ''
+        };
+        currentPage = 1;
+        loadProducts();
+    });
 
     if ($sortBySelect && $sortBySelect.length) {
         $sortBySelect.on('change', function() {

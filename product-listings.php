@@ -4,16 +4,14 @@
  * Author: Kamogelo Phale
  * 
  * Displays all products with filtering and sorting options
- * Uses AJAX loading via products.js
+ * Uses AJAX loading via products.js (loaded in footer via $load_products_js flag)
  */
 
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
-$breadcrumbItems = [
-    ['label' => 'All Products']
-];
+$load_products_js = true;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -37,7 +35,6 @@ $breadcrumbItems = [
         <!-- Listings Banner -->
         <div class="listings-banner">
             <div class="listings-banner-content">
-                <?php include 'includes/breadcrumb.php'; ?>
                 <h1>Browse the Market</h1>
                 <p>Products from verified traders across South Africa</p>
             </div>
@@ -52,12 +49,6 @@ $breadcrumbItems = [
 
             <!-- Filter Sidebar -->
             <aside class="filter-sidebar" id="filterSidebar">
-                <div class="filter-sidebar-header">
-                    <h3>Filters</h3>
-                    <button type="button" class="filter-close-btn" id="filterCloseBtn">
-                        <img src="<?php echo $baseUrl; ?>images/icons/form-close-svgrepo-com.svg" width="16" height="16" alt="Close">
-                    </button>
-                </div>
                 <form id="filterForm">
                     <fieldset class="filter-fields">
                         <!-- Category Filter -->
@@ -118,12 +109,6 @@ $breadcrumbItems = [
                                 <input type="search" id="search-location" name="location" placeholder="City or province...">
                             </div>
                         </fieldset>
-
-                        <!-- Filter Actions -->
-                        <div class="filter-actions">
-                            <button type="submit" class="apply-filter-btn">Apply Filters</button>
-                            <button type="reset" class="reset-filter-btn" id="resetFilters">Clear All</button>
-                        </div>
                     </fieldset>
                 </form>
             </aside>
@@ -135,13 +120,17 @@ $breadcrumbItems = [
                         <h2>All Products</h2>
                         <p class="listings-count" id="listingsCount"></p>
                     </div>
-                    <div class="sort-options">
-                        <label for="sortBy">Sort by:</label>
-                        <select id="sortBy">
-                            <option value="newest">Newest First</option>
-                            <option value="price_low">Price: Low to High</option>
-                            <option value="price_high">Price: High to Low</option>
-                        </select>
+                    <div class="listings-actions">
+                        <button type="button" class="apply-filters-btn" id="applyFiltersBtn">Apply Filters</button>
+                        <button type="button" class="clear-filters-btn" id="clearFiltersBtn">Clear</button>
+                        <div class="sort-options">
+                            <label for="sortBy">Sort by:</label>
+                            <select id="sortBy">
+                                <option value="newest">Newest First</option>
+                                <option value="price_low">Price: Low to High</option>
+                                <option value="price_high">Price: High to Low</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -156,16 +145,6 @@ $breadcrumbItems = [
 
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
-
-    <!-- products.js handles all product loading, filtering, and pagination -->
-    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
-
-    <!-- Mobile filter close button handler -->
-    <script>
-        $('#filterCloseBtn').on('click', function() {
-            $('#filterSidebar').removeClass('active');
-        });
-    </script>
 
 </body>
 

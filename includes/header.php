@@ -122,6 +122,11 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                 </div>
             <?php endif; ?>
 
+            <!-- Mobile Search Toggle -->
+            <button class="mobile-search-toggle" id="mobileSearchIcon">
+                <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="20" height="20" alt="Search">
+            </button>
+
             <!-- Mobile Menu Toggle -->
             <button class="menu-toggle" id="menuToggle">
                 <span></span><span></span><span></span>

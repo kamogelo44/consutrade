@@ -23,375 +23,10 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sell on ConsuTrade - Start Selling Online</title>
-    <meta name="description" content="Start selling your products on ConsuTrade. Reach thousands of customers across South Africa.">
+    <meta name="description" content="Stop selling on WhatsApp and Facebook. Get your own storefront, verified badge, and secure PayFast payments on ConsuTrade.">
     <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
-    <style>
-        /* ========== SELLER PAGE STYLES ========== */
-
-        /* Make icons orange to match brand */
-        .why-sell-card .icon,
-        .requirement-icon {
-            filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg) brightness(102%) contrast(101%);
-        }
-
-        /* Hero Section */
-        .seller-hero {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #2a52be 100%);
-            padding: 80px var(--spacing-xl);
-            text-align: center;
-            color: var(--white);
-        }
-
-        .seller-hero-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .seller-hero-title {
-            font-size: 48px;
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .seller-hero-subtitle {
-            font-size: var(--font-lg);
-            margin-bottom: var(--spacing-xl);
-            opacity: 0.95;
-        }
-
-        .seller-hero-buttons {
-            display: flex;
-            gap: var(--spacing-md);
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .register-now-btn,
-        .login-now-btn {
-            text-decoration: none;
-            padding: 12px 32px;
-            font-size: var(--font-base);
-            font-weight: var(--font-bold);
-            border-radius: var(--radius-xl);
-            cursor: pointer;
-            transition: all var(--transition-normal);
-        }
-
-        .register-now-btn {
-            background-color: var(--white);
-            color: var(--primary-color);
-            border: none;
-        }
-
-        .register-now-btn:hover {
-            background-color: var(--white);
-            color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
-        }
-
-        .login-now-btn {
-            background-color: transparent;
-            color: var(--white);
-            border: 2px solid var(--white);
-        }
-
-        .login-now-btn:hover {
-            background-color: var(--white);
-            color: var(--primary-color);
-            transform: translateY(-2px);
-        }
-
-        /* Why Sell Section */
-        .why-sell {
-            padding: 60px var(--spacing-xl);
-            background-color: var(--white);
-        }
-
-        .section-heading {
-            font-size: 2.5rem;
-            margin-bottom: 50px;
-            color: var(--gray-dark);
-            text-align: center;
-            font-weight: var(--font-bold);
-        }
-
-        .why-sell-container {
-            display: flex;
-            gap: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .why-sell-card {
-            flex: 1;
-            min-width: 250px;
-            max-width: 350px;
-            background-color: var(--white);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            text-align: center;
-            transition: all var(--transition-normal);
-            padding: var(--spacing-lg);
-        }
-
-        .why-sell-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary-color);
-        }
-
-        .why-sell-card .icon {
-            margin-bottom: var(--spacing-md);
-            transition: transform var(--transition-normal);
-        }
-
-        .why-sell-card:hover .icon {
-            transform: scale(1.05);
-        }
-
-        .why-sell-card h3 {
-            font-size: 1.5rem;
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-            transition: color var(--transition-fast);
-        }
-
-        .why-sell-card:hover h3 {
-            color: var(--primary-color);
-        }
-
-        .why-sell-card p {
-            font-size: var(--font-md);
-            color: var(--gray-medium);
-            line-height: 1.5;
-        }
-
-        /* Requirements Section */
-        .requirements {
-            background-color: var(--gray-bg);
-            padding: 60px var(--spacing-xl);
-            border-top: 1px solid var(--border-light);
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .requirements-container {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .requirements-container h2 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .requirements-container>p {
-            color: var(--gray-medium);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .requirements-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-lg);
-            justify-content: center;
-            margin-top: var(--spacing-xl);
-        }
-
-        .requirement-item {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            background-color: var(--white);
-            padding: var(--spacing-md) var(--spacing-xl);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-sm);
-            min-width: 250px;
-            transition: all var(--transition-fast);
-        }
-
-        .requirement-item:hover {
-            transform: translateX(5px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .requirement-icon {
-            width: 32px;
-            height: 32px;
-            transition: transform var(--transition-fast);
-        }
-
-        .requirement-item:hover .requirement-icon {
-            transform: scale(1.1);
-        }
-
-        .requirement-item p {
-            font-size: var(--font-base);
-            color: var(--dark-bg);
-            font-weight: var(--font-medium);
-        }
-
-        .requirement-note {
-            font-size: var(--font-sm);
-            color: var(--gray-medium);
-            margin-top: var(--spacing-xl);
-            font-style: italic;
-        }
-
-        /* Ready to Start Section */
-        .ready-to-start {
-            padding: 60px var(--spacing-xl);
-            background: linear-gradient(135deg, var(--dark-bg) 0%, #2a2a2a 100%);
-            text-align: center;
-        }
-
-        .ready-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .ready-title {
-            font-size: 32px;
-            font-weight: var(--font-bold);
-            color: var(--white);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .ready-subtitle {
-            font-size: var(--font-lg);
-            color: var(--gray-light);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .create-seller-btn {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            padding: 14px 32px;
-            font-size: var(--font-base);
-            font-weight: var(--font-bold);
-            border-radius: var(--radius-xl);
-            cursor: pointer;
-            transition: all var(--transition-normal);
-        }
-
-        .create-seller-btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
-        }
-
-        /* Upgrade Banner for Logged-in Buyers */
-        .upgrade-banner {
-            background-color: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
-            text-align: left;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .upgrade-banner h3 {
-            color: var(--white);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .upgrade-banner p {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .upgrade-banner .upgrade-btn {
-            background-color: var(--white);
-            color: var(--primary-color);
-            border: none;
-            padding: 10px 24px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-weight: var(--font-bold);
-            transition: all var(--transition-normal);
-        }
-
-        .upgrade-banner .upgrade-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .seller-hero {
-                padding: 60px var(--spacing-md);
-            }
-
-            .seller-hero-title {
-                font-size: 32px;
-            }
-
-            .seller-hero-subtitle {
-                font-size: var(--font-base);
-            }
-
-            .seller-hero-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .register-now-btn,
-            .login-now-btn {
-                width: 220px;
-            }
-
-            .why-sell {
-                padding: 40px var(--spacing-md);
-            }
-
-            .section-heading {
-                font-size: 2rem;
-                margin-bottom: 30px;
-            }
-
-            .why-sell-card {
-                min-width: 100%;
-                max-width: 100%;
-            }
-
-            .requirements {
-                padding: 40px var(--spacing-md);
-            }
-
-            .requirement-item {
-                width: 100%;
-            }
-
-            .ready-title {
-                font-size: 24px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .seller-hero-title {
-                font-size: 24px;
-            }
-
-            .why-sell-card h3 {
-                font-size: 1.2rem;
-            }
-
-            .ready-title {
-                font-size: 20px;
-            }
-        }
-    </style>
+    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
@@ -400,91 +35,153 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
 
     <main>
         <!-- Hero Section -->
-        <section class="seller-hero">
-            <div class="seller-hero-container">
-                <h1 class="seller-hero-title">Start Selling Today</h1>
-                <p class="seller-hero-subtitle">Join thousands of South African entrepreneurs selling on ConsuTrade</p>
+        <section class="sell-hero">
+            <div class="sell-hero-grid">
+                <div class="sell-hero-content">
+                    <h1>Stop selling in WhatsApp groups</h1>
+                    <p class="sell-hero-subtitle">
+                        Get your own storefront, earn a verified badge, and get paid securely through PayFast.
+                        No more "payment proof" screenshots. No more ghosting.
+                    </p>
+                    <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
+                        <div class="sell-hero-actions">
+                            <button class="sell-hero-btn" id="upgradeToSellerBtn">Add Seller Access — It's Free</button>
+                        </div>
+                    <?php else: ?>
+                        <div class="sell-hero-actions">
+                            <button class="sell-hero-btn" id="sellerRegisterBtn">Create Seller Account — It's Free</button>
+                            <button class="sell-hero-btn-secondary" onclick="openModal($('#login-modal'))">Already have an account? Login</button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="sell-hero-visual">
+                    <div class="sell-hero-card">
+                        <div class="sell-hero-card-header">
+                            <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16" height="16" alt="Verified">
+                            <span>Verified Seller</span>
+                        </div>
+                        <div class="sell-hero-card-body">
+                            <div class="sell-hero-product">
+                                <div class="sell-hero-product-img"></div>
+                                <div>
+                                    <strong>Handmade Baskets</strong>
+                                    <span>R350</span>
+                                </div>
+                            </div>
+                            <div class="sell-hero-product">
+                                <div class="sell-hero-product-img"></div>
+                                <div>
+                                    <strong>Shweshwe Dress</strong>
+                                    <span>R580</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sell-hero-card-footer">
+                            <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast" width="55" height="auto">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
+        <!-- Problem vs Solution Section -->
+        <section class="sell-comparison">
+            <div class="section-header">
+                <h2 class="section-heading">There's a better way to sell</h2>
+                <p class="section-subtitle">WhatsApp and Facebook Marketplace weren't built for traders. ConsuTrade was.</p>
+            </div>
+            <div class="sell-comparison-grid">
+                <!-- The Old Way -->
+                <div class="sell-comparison-card sell-comparison-old">
+                    <h3>The Old Way</h3>
+                    <ul>
+                        <li>Customers ghost after asking "how much"</li>
+                        <li>Fake "payment proof" screenshots</li>
+                        <li>No way to prove you're legitimate</li>
+                        <li>Scrolling through endless chats to find orders</li>
+                        <li>Cash deposits and e-wallet risks</li>
+                    </ul>
+                </div>
+                <!-- The ConsuTrade Way -->
+                <div class="sell-comparison-card sell-comparison-new">
+                    <h3>The ConsuTrade Way</h3>
+                    <ul>
+                        <li>Your own storefront with all your products</li>
+                        <li>PayFast confirms every payment — no screenshots needed</li>
+                        <li>Verified seller badge shows buyers you're real</li>
+                        <li>Dashboard tracks every order from pending to completed</li>
+                        <li>Secure payments directly to your account</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="sell-steps">
+            <div class="section-header">
+                <h2 class="section-heading">Start selling in minutes</h2>
+                <p class="section-subtitle">No paperwork. No registration fees. Just your SA ID and your products.</p>
+            </div>
+            <div class="sell-steps-grid">
+                <div class="sell-step" data-step="01">
+                    <div class="sell-step-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/register-svgrepo-com.svg" width="40" height="40" alt="Register">
+                    </div>
+                    <h3>Create your account</h3>
+                    <p>Sign up as a seller. Verify with your SA ID to earn your trusted badge.</p>
+                </div>
+                <div class="sell-step" data-step="02">
+                    <div class="sell-step-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="40" height="40" alt="List">
+                    </div>
+                    <h3>List your products</h3>
+                    <p>Upload photos, set prices, and share your story. Your listings go live instantly.</p>
+                </div>
+                <div class="sell-step" data-step="03">
+                    <div class="sell-step-icon">
+                        <img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" width="40" height="40" alt="Get paid">
+                    </div>
+                    <h3>Get paid securely</h3>
+                    <p>Buyers pay through PayFast. You receive payment confirmation. No scams.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- What You Need -->
+        <section class="sell-requirements">
+            <div class="sell-requirements-container">
+                <h2>What you need to get started</h2>
+                <div class="sell-requirements-grid">
+                    <div class="sell-requirement">
+                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="24" height="24" alt="ID">
+                        <span>South African ID</span>
+                    </div>
+                    <div class="sell-requirement">
+                        <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" width="24" height="24" alt="Email">
+                        <span>Email address</span>
+                    </div>
+                    <div class="sell-requirement">
+                        <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" width="24" height="24" alt="Phone">
+                        <span>Phone number</span>
+                    </div>
+                    <div class="sell-requirement">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="24" height="24" alt="Products">
+                        <span>Products to sell</span>
+                    </div>
+                </div>
+                <p class="sell-requirements-note">You can start listing products while verification is pending. Verification helps build trust with buyers.</p>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="sell-cta">
+            <div class="sell-cta-container">
+                <h2>Your customers are waiting</h2>
+                <p>Join South African traders who've already made the switch from WhatsApp to ConsuTrade.</p>
                 <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
-                    <!-- Logged in as BUYER ONLY - Show upgrade option -->
-                    <div class="upgrade-banner">
-                        <h3>👋 Welcome back, <?php echo htmlspecialchars($currentUser->getDisplayName()); ?>!</h3>
-                        <p>You're currently a buyer. Would you like to start selling too?</p>
-                        <button class="upgrade-btn" id="upgradeToSellerBtn">Add Seller Access</button>
-                    </div>
-                    <div class="seller-hero-buttons">
-                        <button class="register-now-btn" id="sellerRegisterBtn">Add Seller Access</button>
-                        <button class="login-now-btn" onclick="openModal($('#login-modal'))">Login</button>
-                    </div>
-                <?php elseif ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')): ?>
-                    <!-- Logged in as SELLER - Shouldn't be here (redirected above), but just in case -->
-                    <div class="seller-hero-buttons">
-                        <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php" class="register-now-btn">Go to Dashboard</a>
-                    </div>
+                    <button class="sell-cta-btn" id="upgradeToSellerBtn2">Add Seller Access — It's Free</button>
                 <?php else: ?>
-                    <!-- Not logged in - Show registration options -->
-                    <div class="seller-hero-buttons">
-                        <button class="register-now-btn" id="sellerRegisterBtn">Create Seller Account</button>
-                        <button class="login-now-btn" onclick="openModal($('#login-modal'))">Login</button>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </section>
-
-        <!-- Why Sell Section -->
-        <section class="why-sell">
-            <h1 class="section-heading">Why Sell with Us</h1>
-            <div class="why-sell-container">
-                <div class="why-sell-card">
-                    <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" width="48" height="48" alt="Reach customers" class="icon">
-                    <h3>Seller Tools</h3>
-                    <p>Dashboard to manage products, orders, and track sales</p>
-                </div>
-                <div class="why-sell-card">
-                    <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" width="48" height="48" alt="Secure payments" class="icon">
-                    <h3>Secure Payments</h3>
-                    <p>Get paid securely through PayFast</p>
-                </div>
-                <div class="why-sell-card">
-                    <img src="<?php echo $baseUrl; ?>images/icons/delivery-svgrepo-com.svg" width="48" height="48" alt="Easy shipping" class="icon">
-                    <h3>Easy Shipping</h3>
-                    <p>Simple shipping with nationwide delivery</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Requirements Section -->
-        <section class="requirements">
-            <div class="requirements-container">
-                <h2>What You Need to Start Selling</h2>
-                <p>Getting started is easy. Just make sure you have:</p>
-                <div class="requirements-list">
-                    <div class="requirement-item">
-                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" class="requirement-icon" alt="Valid ID">
-                        <p>Valid South African ID</p>
-                    </div>
-                    <div class="requirement-item">
-                        <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" class="requirement-icon" alt="Email">
-                        <p>Email Address</p>
-                    </div>
-                    <div class="requirement-item">
-                        <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" class="requirement-icon" alt="Phone">
-                        <p>Phone Number</p>
-                    </div>
-                </div>
-                <p class="requirement-note">Seller verification helps build trust with buyers. You can upload products while your verification is pending.</p>
-            </div>
-        </section>
-
-        <!-- Ready to Start Section -->
-        <section class="ready-to-start">
-            <div class="ready-container">
-                <h2 class="ready-title">Ready to Grow Your Business?</h2>
-                <p class="ready-subtitle">Create your seller account today and start reaching more customers.</p>
-                <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
-                    <button class="create-seller-btn" id="upgradeToSellerBtn2">Add Seller Access</button>
-                <?php else: ?>
-                    <button class="create-seller-btn" id="createSellerBtn">Create Seller Account</button>
+                    <button class="sell-cta-btn" id="createSellerBtn">Create Seller Account — It's Free</button>
                 <?php endif; ?>
             </div>
         </section>
@@ -494,115 +191,64 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
     <?php include 'includes/modal-errors.php'; ?>
 
     <script>
-        // ========== CACHED DOM ELEMENTS ==========
-        var $sellerRegisterBtn = null;
-        var $createSellerBtn = null;
-        var $upgradeBtn = null;
-        var $upgradeBtn2 = null;
-        var $registerModal = null;
-        var $sellerRadio = null;
+        window.addEventListener('load', function() {
+            var $sellerRegisterBtn = $('#sellerRegisterBtn');
+            var $createSellerBtn = $('#createSellerBtn');
+            var $upgradeBtn = $('#upgradeToSellerBtn');
+            var $upgradeBtn2 = $('#upgradeToSellerBtn2');
+            var $registerModal = $('#register-modal');
+            var $sellerRadio = $('#seller');
 
-        // ========== CACHE FUNCTION ==========
-        function cacheSellPageElements() {
-            $sellerRegisterBtn = $('#sellerRegisterBtn');
-            $createSellerBtn = $('#createSellerBtn');
-            $upgradeBtn = $('#upgradeToSellerBtn');
-            $upgradeBtn2 = $('#upgradeToSellerBtn2');
-            $registerModal = $('#register-modal');
-            $sellerRadio = $('#seller');
-        }
-
-        // ========== OPEN SELLER REGISTER MODAL ==========
-        function openSellerRegisterModal() {
-            cacheSellPageElements();
-
-            // Select the seller radio button
-            if ($sellerRadio.length) {
-                $sellerRadio.prop('checked', true);
-            }
-
-            // Check if user is logged in
-            var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
-            var hasSellerRole = <?php echo isset($currentUser) ? json_encode($currentUser->hasRole('seller')) : 'false'; ?>;
-
-            if (isLoggedIn && hasSellerRole) {
-                // Already a seller - redirect to dashboard
-                window.location.href = baseUrl + 'admin/seller-dashboard.php';
-                return;
-            }
-
-            if (isLoggedIn) {
-                // Logged in buyer - upgrade flow
-                var userData = <?php echo isset($currentUser) ? json_encode([
-                                    'full_name' => $currentUser->getFullName(),
-                                    'email' => $currentUser->getEmail(),
-                                    'phone' => $currentUser->getPhone()
-                                ]) : 'null'; ?>;
-
-                if (userData) {
-                    $('#register-full-name').val(userData.full_name);
-                    $('#register-email').val(userData.email);
-                    $('#register-phone').val(userData.phone);
-                    // Make email and phone readonly since they already exist
-                    $('#register-email').prop('readonly', true);
-                    $('#register-phone').prop('readonly', true);
-                    // Update modal title
-                    $('#register-modal .modal-header p').text('Add seller access to your existing account');
+            function openSellerRegisterModal() {
+                if ($sellerRadio.length) {
+                    $sellerRadio.prop('checked', true);
                 }
-            } else {
-                // New user - clear any previous values
-                $('#register-full-name').val('');
-                $('#register-email').val('');
-                $('#register-phone').val('');
-                $('#register-email').prop('readonly', false);
-                $('#register-phone').prop('readonly', false);
-                $('#register-modal .modal-header p').text('Create your account to start selling');
+
+                var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
+                var hasSellerRole = <?php echo isset($currentUser) ? json_encode($currentUser->hasRole('seller')) : 'false'; ?>;
+
+                if (isLoggedIn && hasSellerRole) {
+                    window.location.href = baseUrl + 'admin/seller-dashboard.php';
+                    return;
+                }
+
+                if (isLoggedIn) {
+                    var userData = <?php echo isset($currentUser) ? json_encode([
+                                        'full_name' => $currentUser->getFullName(),
+                                        'email' => $currentUser->getEmail(),
+                                        'phone' => $currentUser->getPhone()
+                                    ]) : 'null'; ?>;
+
+                    if (userData) {
+                        $('#register-full-name').val(userData.full_name);
+                        $('#register-email').val(userData.email);
+                        $('#register-phone').val(userData.phone);
+                        $('#register-email').prop('readonly', true);
+                        $('#register-phone').prop('readonly', true);
+                        $('#register-modal .modal-header p').text('Add seller access to your existing account');
+                    }
+                } else {
+                    $('#register-full-name').val('');
+                    $('#register-email').val('');
+                    $('#register-phone').val('');
+                    $('#register-email').prop('readonly', false);
+                    $('#register-phone').prop('readonly', false);
+                    $('#register-modal .modal-header p').text('Create your account to start selling');
+                }
+
+                if (typeof openModal === 'function') {
+                    openModal($registerModal);
+                } else {
+                    $registerModal.addClass('active');
+                    $registerModal.css('visibility', 'visible');
+                    $('body').css('overflow', 'hidden');
+                }
             }
 
-            // Open the register modal
-            if (typeof openModal === 'function') {
-                openModal($registerModal);
-            } else {
-                $registerModal.addClass('active');
-                $registerModal.css('visibility', 'visible');
-                $('body').css('overflow', 'hidden');
-            }
-        }
-
-        // ========== HANDLE UPGRADE BUTTONS ==========
-        function handleUpgrade() {
-            var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
-
-            if (!isLoggedIn) {
-                // Not logged in - open registration modal
-                openSellerRegisterModal();
-                return;
-            }
-
-            // Logged in - show modal with pre-filled data
-            openSellerRegisterModal();
-        }
-
-        // ========== INITIALIZE ==========
-        $(document).ready(function() {
-            cacheSellPageElements();
-
-            // Attach click handlers to seller registration buttons
-            if ($sellerRegisterBtn.length) {
-                $sellerRegisterBtn.on('click', openSellerRegisterModal);
-            }
-
-            if ($createSellerBtn.length) {
-                $createSellerBtn.on('click', openSellerRegisterModal);
-            }
-
-            if ($upgradeBtn.length) {
-                $upgradeBtn.on('click', handleUpgrade);
-            }
-
-            if ($upgradeBtn2.length) {
-                $upgradeBtn2.on('click', handleUpgrade);
-            }
+            if ($sellerRegisterBtn.length) $sellerRegisterBtn.on('click', openSellerRegisterModal);
+            if ($createSellerBtn.length) $createSellerBtn.on('click', openSellerRegisterModal);
+            if ($upgradeBtn.length) $upgradeBtn.on('click', openSellerRegisterModal);
+            if ($upgradeBtn2.length) $upgradeBtn2.on('click', openSellerRegisterModal);
         });
     </script>
 

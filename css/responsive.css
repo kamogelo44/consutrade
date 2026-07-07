@@ -186,10 +186,10 @@
   .auth-buttons {
     display: none;
   }
-  .menu-toggle {
+  .mobile-search-toggle {
     display: block;
   }
-  .mobile-search {
+  .menu-toggle {
     display: block;
   }
   .hero {
@@ -279,11 +279,32 @@
     position: static;
     top: auto;
   }
+  .listings-body {
+    flex-direction: column;
+    padding: 20px;
+  }
   .mobile-filter-btn {
     display: flex;
+    width: fit-content;
   }
-  .filter-sidebar-header {
-    display: flex;
+  .filter-sidebar {
+    display: none;
+    width: 100%;
+    position: static;
+    margin-bottom: var(--spacing-xl);
+    max-height: none;
+  }
+  .filter-sidebar.active {
+    display: block;
+  }
+  .listings-products {
+    width: 100%;
+  }
+  .listings-products .listings-grid {
+    grid-template-columns: 1fr;
+  }
+  .featured .prod-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -422,6 +443,9 @@
   .listings-banner-content h1 {
     font-size: var(--font-2xl);
   }
+  .listings-header h2 {
+    font-size: var(--font-xl);
+  }
   .toast-container {
     top: 60px;
     max-width: calc(100% - 24px);
@@ -500,7 +524,6 @@
 }
 
 /* ========== PRODUCT LISTINGS ========== */
-
 @media (max-width: 1200px) {
   .featured .prod-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -516,40 +539,131 @@
   }
 }
 
-@media (max-width: 768px) {
-  .listings-body {
+/* ========== PRODUCT DETAILS ========== */
+@media (max-width: 992px) {
+  .top-items {
     flex-direction: column;
+    align-items: center;
+  }
+  .product-info {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-details-main {
+    padding: var(--spacing-lg);
+  }
+  .actions-card {
     padding: 20px;
   }
-  .filter-sidebar {
-    display: none;
-    width: 100%;
-    position: static;
-    margin-bottom: var(--spacing-xl);
-    max-height: none;
+}
+
+@media (max-width: 576px) {
+  .details-prod-name {
+    font-size: var(--font-xl);
   }
-  .filter-sidebar.active {
-    display: block;
+  .details-price {
+    font-size: var(--font-2xl);
   }
-  .listings-products {
-    width: 100%;
-  }
-  .listings-products .listings-grid {
-    grid-template-columns: 1fr;
-  }
-  .featured .prod-grid {
-    grid-template-columns: 1fr;
+  .action-btns button {
+    height: 44px;
+    font-size: var(--font-sm);
   }
 }
 
 @media (max-width: 480px) {
-  .listings-header h1 {
+  .contact-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  .contact-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ========== SELL PAGE ========== */
+
+@media (max-width: 992px) {
+  .sell-hero-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+  }
+  .sell-hero-visual {
+    display: none;
+  }
+  .sell-hero-content {
+    text-align: center;
+  }
+  .sell-hero-actions {
+    align-items: center;
+  }
+  .sell-hero-subtitle {
+    margin: 0 auto var(--spacing-xl);
+  }
+  .sell-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .sell-hero {
+    padding: 60px var(--spacing-md);
+  }
+  .sell-hero-content h1 {
+    font-size: 1.75rem;
+  }
+  .sell-steps {
+    padding: 60px var(--spacing-md);
+  }
+  .sell-steps-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+    max-width: 400px;
+  }
+  .sell-comparison {
+    padding: 60px var(--spacing-md);
+  }
+  .sell-requirements {
+    padding: 40px var(--spacing-md);
+  }
+  .sell-cta {
+    padding: 60px var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .sell-hero-content h1 {
+    font-size: 1.5rem;
+  }
+  .sell-hero-subtitle {
+    font-size: var(--font-md);
+  }
+  .sell-requirements-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+  .sell-cta-container h2 {
+    font-size: var(--font-2xl);
+  }
+}
+
+/* ========== ABOUT PAGE ========== */
+@media (max-width: 768px) {
+  .about-container {
+    padding: var(--spacing-md);
+  }
+  .about-header h1 {
+    font-size: var(--font-2xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .about-header h1 {
     font-size: var(--font-xl);
   }
-  .prod-card .prod-name {
-    font-size: var(--font-sm);
-  }
-  .prod-card .prod-price {
+  .about-section h2 {
     font-size: var(--font-lg);
   }
 }
