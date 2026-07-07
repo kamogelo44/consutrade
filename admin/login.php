@@ -5,6 +5,8 @@
  */
 
 require_once dirname(__DIR__) . '/init.php';
+// Redirect to maintenance page
+header('Location: ' . $baseUrl . 'maintenance.php');
 
 // Redirect if already logged in
 if ($auth->isLoggedIn()) {

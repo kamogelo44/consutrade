@@ -29,7 +29,6 @@ $orderType = $_GET['type'] ?? 'buyer'; // 'buyer' or 'seller'
 
 if ($orderType === 'seller') {
     // Load seller orders (orders where user is the seller)
-    // Only if user has seller role
     if (!$currentUser->hasRole('seller')) {
         $response['error'] = 'You do not have seller access';
         echo json_encode($response);
@@ -40,7 +39,6 @@ if ($orderType === 'seller') {
     $totalOrders = $orderService->countBySeller($userId, $status, $search);
 } else {
     // Load buyer orders (orders where user is the buyer)
-    // Only if user has buyer role
     if (!$currentUser->hasRole('buyer')) {
         $response['error'] = 'You do not have buyer access';
         echo json_encode($response);

@@ -8,6 +8,8 @@
  */
 
 require_once dirname(__DIR__) . '/init.php';
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
 
 if (!$auth->isSeller()) {
     header('Location: login.php');

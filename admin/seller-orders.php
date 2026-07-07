@@ -10,10 +10,14 @@ require_once dirname(__DIR__) . '/init.php';
 include dirname(__DIR__) . '/includes/session-vars.php';
 include dirname(__DIR__) . '/includes/functions.php';
 
+// Redirect to maintenance page
+header('Location: ' . $baseUrl . 'maintenance.php');
+
 if (!$auth->isSeller()) {
     header('Location: login.php');
     exit;
 }
+
 
 $sellerId = $currentUser->getUserId();
 $sellerName = $currentUser->getFullName();

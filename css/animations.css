@@ -9,6 +9,30 @@
   }
 }
 
+/* Pulse Animation (for hero badge dot) */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+  }
+}
+
+/* Float Animation (for hero product cards) */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(2deg);
+  }
+}
+
 /* Modal Animations */
 @keyframes modalFadeIn {
   from {
@@ -65,11 +89,7 @@
   }
 }
 
-/* ============================================================
-   TOAST ANIMATIONS - Slide from top (Updated)
-   ============================================================ */
-
-/* Toast appears by sliding down from the top */
+/* Toast Animations */
 @keyframes toastSlideDown {
   from {
     transform: translateY(-30px);
@@ -81,7 +101,6 @@
   }
 }
 
-/* Toast disappears by sliding up to the top */
 @keyframes toastSlideUp {
   from {
     transform: translateY(0);
@@ -93,21 +112,7 @@
   }
 }
 
-/* Toast Animation Classes */
-.toast-notification {
-  animation: toastSlideDown 0.4s ease forwards;
-}
-
-.toast-notification.hiding {
-  animation: toastSlideUp 0.3s ease forwards;
-}
-r
-
-/* ============================================================
-   SIDEBAR / MOBILE MENU ANIMATIONS
-   ============================================================ */
-
-/* Sidebar Slide Animations */
+/* Sidebar / Mobile Menu Animations */
 @keyframes slideInRight {
   from {
     right: -100%;
@@ -126,10 +131,7 @@ r
   }
 }
 
-/* ============================================================
-   FADE ANIMATIONS
-   ============================================================ */
-
+/* Fade Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -149,8 +151,16 @@ r
 }
 
 /* ============================================================
-   MODAL ANIMATION CLASSES
+   ANIMATION CLASSES
    ============================================================ */
+
+.toast-notification {
+  animation: toastSlideDown 0.4s ease forwards;
+}
+
+.toast-notification.hiding {
+  animation: toastSlideUp 0.3s ease forwards;
+}
 
 .modal.active .modal-content.animate-in {
   animation: modalFadeIn 0.3s ease forwards;
@@ -168,17 +178,9 @@ r
   animation: modalSlideInRight 0.3s ease forwards;
 }
 
-/* ============================================================
-   DROPDOWN MENU ANIMATION
-   ============================================================ */
-
 .dropdown-menu.active {
   animation: fadeIn 0.2s ease forwards;
 }
-
-/* ============================================================
-   LOADING SPINNER
-   ============================================================ */
 
 .loading-spinner::before {
   animation: spin 0.8s linear infinite;

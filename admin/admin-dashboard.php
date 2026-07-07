@@ -5,13 +5,15 @@
  */
 
 require_once dirname(__DIR__) . '/init.php';
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
 
 if (!$auth->isAdmin()) {
     header('Location: login.php');
     exit;
 }
 
-$user_id = $currentUser->getUserId();s
+$user_id = $currentUser->getUserId();
 $user_name = $currentUser->getFullName();
 ?>
 <!DOCTYPE html>

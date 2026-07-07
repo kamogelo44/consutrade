@@ -8,6 +8,9 @@ require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
+
 // Check if user is logged in AND has buyer role (regardless of active role)
 if (!$isLoggedIn || !$currentUser->hasRole('buyer')) {
     header('Location: ' . $baseUrl . 'index.php');

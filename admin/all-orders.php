@@ -9,6 +9,8 @@
 require_once dirname(__DIR__) . '/init.php';
 include dirname(__DIR__) . '/includes/session-vars.php';
 include dirname(__DIR__) . '/includes/functions.php';
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
 
 if (!$auth->isAdmin()) {
     header('Location: login.php');

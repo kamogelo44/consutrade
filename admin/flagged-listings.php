@@ -7,6 +7,8 @@
  */
 
 require_once dirname(__DIR__) . '/init.php';
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
 
 // Redirect if not admin
 if (!$auth->isAdmin()) {

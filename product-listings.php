@@ -34,27 +34,38 @@ $breadcrumbItems = [
     <?php include 'includes/header.php'; ?>
 
     <main>
-        <?php include 'includes/breadcrumb.php'; ?>
+        <!-- Listings Banner -->
+        <div class="listings-banner">
+            <div class="listings-banner-content">
+                <?php include 'includes/breadcrumb.php'; ?>
+                <h1>Browse the Market</h1>
+                <p>Products from verified traders across South Africa</p>
+            </div>
+        </div>
 
         <div class="listings-body">
             <!-- Mobile Filter Button -->
-            <button class="filter-btn" id="mobileFilterBtn">
+            <button class="mobile-filter-btn" id="mobileFilterBtn">
                 <img src="<?php echo $baseUrl; ?>images/icons/filter-svgrepo-com.svg" alt="filter" width="18" height="18">
-                Filter Products
+                Filters
             </button>
 
             <!-- Filter Sidebar -->
             <aside class="filter-sidebar" id="filterSidebar">
+                <div class="filter-sidebar-header">
+                    <h3>Filters</h3>
+                    <button type="button" class="filter-close-btn" id="filterCloseBtn">
+                        <img src="<?php echo $baseUrl; ?>images/icons/form-close-svgrepo-com.svg" width="16" height="16" alt="Close">
+                    </button>
+                </div>
                 <form id="filterForm">
                     <fieldset class="filter-fields">
-                        <legend class="filter-title">Filter Results</legend>
-
                         <!-- Category Filter -->
                         <fieldset class="filter-category">
                             <legend class="filter-heading">Category</legend>
                             <label class="checkbox-label">
                                 <input type="checkbox" name="category[]" value="clothing">
-                                <span>Clothing and Accessories</span>
+                                <span>Clothing & Accessories</span>
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" name="category[]" value="electronics">
@@ -62,7 +73,7 @@ $breadcrumbItems = [
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" name="category[]" value="food">
-                                <span>Food and Drinks</span>
+                                <span>Food & Drinks</span>
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" name="category[]" value="furniture">
@@ -70,7 +81,7 @@ $breadcrumbItems = [
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" name="category[]" value="beauty">
-                                <span>Beauty and Health</span>
+                                <span>Beauty & Health</span>
                             </label>
                             <label class="checkbox-label">
                                 <input type="checkbox" name="category[]" value="other">
@@ -87,15 +98,15 @@ $breadcrumbItems = [
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="price_range" value="100-500">
-                                <span>R100 - R500</span>
+                                <span>R100 – R500</span>
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="price_range" value="500-1000">
-                                <span>R500 - R1000</span>
+                                <span>R500 – R1,000</span>
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="price_range" value="over1000">
-                                <span>Over R1000</span>
+                                <span>Over R1,000</span>
                             </label>
                         </fieldset>
 
@@ -104,20 +115,14 @@ $breadcrumbItems = [
                             <legend class="filter-heading">Location</legend>
                             <div class="search-loc-wrapper">
                                 <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" alt="location" class="location-icon" width="16" height="16">
-                                <input type="search" id="search-location" name="location" placeholder="Enter city or province...">
+                                <input type="search" id="search-location" name="location" placeholder="City or province...">
                             </div>
                         </fieldset>
 
                         <!-- Filter Actions -->
                         <div class="filter-actions">
-                            <button type="submit" class="apply-filter-btn">
-                                <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" alt="apply" width="14" height="14">
-                                Apply Filters
-                            </button>
-                            <button type="reset" class="reset-filter-btn" id="resetFilters">
-                                <img src="<?php echo $baseUrl; ?>images/icons/form-close-svgrepo-com.svg" alt="reset" width="14" height="14">
-                                Reset
-                            </button>
+                            <button type="submit" class="apply-filter-btn">Apply Filters</button>
+                            <button type="reset" class="reset-filter-btn" id="resetFilters">Clear All</button>
                         </div>
                     </fieldset>
                 </form>
@@ -126,7 +131,10 @@ $breadcrumbItems = [
             <!-- Products Grid Section -->
             <section class="listings-products">
                 <div class="listings-header">
-                    <h1>All Products</h1>
+                    <div>
+                        <h2>All Products</h2>
+                        <p class="listings-count" id="listingsCount"></p>
+                    </div>
                     <div class="sort-options">
                         <label for="sortBy">Sort by:</label>
                         <select id="sortBy">
@@ -151,6 +159,13 @@ $breadcrumbItems = [
 
     <!-- products.js handles all product loading, filtering, and pagination -->
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
+
+    <!-- Mobile filter close button handler -->
+    <script>
+        $('#filterCloseBtn').on('click', function() {
+            $('#filterSidebar').removeClass('active');
+        });
+    </script>
 
 </body>
 

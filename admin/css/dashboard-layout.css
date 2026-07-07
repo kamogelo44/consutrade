@@ -12,11 +12,33 @@
   min-height: 100vh;
   background: var(--gray-bg);
   transition: margin-left var(--transition-normal);
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-content {
+  flex: 1;
   max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
+}
+
+/* Footer inside dashboard - full width below content */
+.dashboard-content .site-footer {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-content .site-footer .footer-container {
+  margin-bottom: 0;
+}
+
+.dashboard-content .site-footer .footer-bottom {
+  padding-top: var(--spacing-md);
 }
 
 /* ========== PAGE HEADER ========== */
@@ -843,13 +865,16 @@
   .data-table {
     min-width: 650px;
   }
+
+  .dashboard-content .site-footer {
+    padding: var(--spacing-md);
+  }
 }
 
 /* Small Tablet / Large Mobile: 768px and below */
 @media (max-width: 768px) {
   .admin-main-content,
   .seller-main-content {
-    margin-left: 0;
     padding: var(--spacing-md);
     padding-top: 70px;
   }
@@ -884,6 +909,10 @@
 
   .stat-number {
     font-size: var(--font-lg);
+  }
+
+  .dashboard-content .site-footer {
+    padding: var(--spacing-md);
   }
 
   /* ===== PRODUCTS TABLE RESPONSIVE ===== */
@@ -961,6 +990,15 @@
 
   .product-count {
     font-size: var(--font-xs);
+  }
+
+  .dashboard-content .site-footer {
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+  }
+
+  .dashboard-content .site-footer .footer-section {
+    min-width: auto;
   }
 }
 

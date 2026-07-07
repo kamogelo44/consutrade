@@ -9,6 +9,8 @@
 
 require_once dirname(__DIR__) . '/init.php';
 include dirname(__DIR__) . '/includes/session-vars.php';
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
 
 // Use hasRole() instead of isSeller() for multi-role support
 if (!$auth->hasRole('seller')) {

@@ -6,6 +6,9 @@
 
 require_once dirname(__DIR__) . '/init.php';
 
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
+
 // Use hasRole() instead of isSeller() - checks ALL roles, not just active
 if (!$auth->hasRole('seller')) {
     header('Location: ' . $baseUrl . 'admin/login.php');

@@ -7,6 +7,9 @@
 require_once dirname(__DIR__) . '/init.php';
 include dirname(__DIR__) . '/includes/session-vars.php';
 
+// Check maintenance mode (one line!)
+checkMaintenanceMode();
+
 if (!$auth->hasRole('seller')) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;

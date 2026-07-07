@@ -3,7 +3,7 @@
  * ConsuTrade - Site Header Component
  * Author: Kamogelo Phale
  * 
- * Uses modular components for consistent structure
+ * Simple text-only dropdown navigation for all users.
  */
 
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -12,11 +12,19 @@ $is_logged_in = $auth->isLoggedIn();
 if ($is_logged_in && isset($currentUser)) {
     $user_name = $currentUser->getDisplayName();
     $user_profile_image = $currentUser->getProfileImageUrl();
-    $is_buyer = $currentUser->hasRole('buyer');
+    $user_roles = $currentUser->getRoles();
+    $hasBuyerRole = in_array('buyer', $user_roles);
+    $hasSellerRole = in_array('seller', $user_roles);
+    $hasAdminRole = in_array('admin', $user_roles);
+    $primaryRole = $currentUser->getPrimaryRole();
 } else {
     $user_name = 'Account';
     $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
-    $is_buyer = false;
+    $user_roles = [];
+    $hasBuyerRole = false;
+    $hasSellerRole = false;
+    $hasAdminRole = false;
+    $primaryRole = null;
 }
 
 $show_sell_link = !$is_logged_in;
@@ -62,13 +70,15 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         <!-- Right Section: Cart + Account -->
         <div class="header-right">
             <!-- Cart -->
-            <a href="<?php echo $baseUrl; ?>cart.php" class="cart-link">
-                <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="22" height="22" alt="Cart">
-                <span class="cart-badge"><?php echo $cart_count; ?></span>
-            </a>
+            <?php if (!$is_logged_in || $hasBuyerRole): ?>
+                <a href="<?php echo $baseUrl; ?>cart.php" class="cart-link">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="22" height="22" alt="Cart">
+                    <span class="cart-badge"><?php echo $cart_count; ?></span>
+                </a>
+            <?php endif; ?>
 
-            <!-- Account Dropdown or Login -->
-            <?php if ($is_logged_in && $is_buyer): ?>
+            <!-- Account Dropdown -->
+            <?php if ($is_logged_in): ?>
                 <div class="account-dropdown">
                     <button class="account-btn" id="accountBtn">
                         <img src="<?php echo $user_profile_image; ?>" alt="<?php echo htmlspecialchars($user_name); ?>" class="account-avatar" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
@@ -79,9 +89,30 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                     </button>
                     <div class="dropdown-menu" id="accountDropdown">
                         <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
-                        <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
+
+                        <?php if ($hasBuyerRole): ?>
+                            <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
+                            <a href="<?php echo $baseUrl; ?>cart.php">My Cart</a>
+                        <?php endif; ?>
+
+                        <?php if ($hasSellerRole): ?>
+                            <?php if ($hasBuyerRole): ?>
+                                <hr><?php endif; ?>
+                            <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a>
+                            <a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a>
+                            <a href="<?php echo $baseUrl; ?>orders.php">Orders</a>
+                        <?php endif; ?>
+
+                        <?php if ($hasAdminRole): ?>
+                            <?php if ($hasBuyerRole || $hasSellerRole): ?>
+                                <hr><?php endif; ?>
+                            <a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a>
+                            <a href="<?php echo $baseUrl; ?>admin/users.php">Users</a>
+                            <a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a>
+                        <?php endif; ?>
+
                         <hr>
-                        <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php">Logout</a>
+                        <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link">Logout</a>
                     </div>
                 </div>
             <?php else: ?>
@@ -98,7 +129,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         </div>
     </div>
 
-    <!-- Mobile Search (hidden on desktop) -->
+    <!-- Mobile Search -->
     <div class="mobile-search" id="mobileSearch">
         <form action="<?php echo $baseUrl; ?>product-listings.php" method="GET">
             <input type="search" name="search" placeholder="Search products...">
@@ -108,7 +139,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         </form>
     </div>
 
-    <!-- Mobile Menu (hidden on desktop) -->
+    <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu">
         <div class="mobile-menu-header">
             <div class="mobile-logo">
@@ -119,7 +150,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             </button>
         </div>
 
-        <?php if ($is_logged_in && $is_buyer): ?>
+        <?php if ($is_logged_in): ?>
             <div class="mobile-profile">
                 <img src="<?php echo $user_profile_image; ?>" alt="<?php echo htmlspecialchars($user_name); ?>" class="mobile-profile-img" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                 <div class="mobile-profile-info">
@@ -130,19 +161,36 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         <?php endif; ?>
 
         <ul class="mobile-nav-links">
-            <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
-            <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>">Products</a></li>
+            <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
+            <li><a href="<?php echo $baseUrl; ?>product-listings.php">Products</a></li>
             <?php if ($show_sell_link): ?>
-                <li><a href="<?php echo $baseUrl; ?>sell.php" class="<?php echo $current_page == 'sell.php' ? 'active' : ''; ?>">Sell</a></li>
+                <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
             <?php endif; ?>
-            <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>">About</a></li>
-            <li><a href="<?php echo $baseUrl; ?>cart.php" class="<?php echo $current_page == 'cart.php' ? 'active' : ''; ?>">Cart <?php if ($cart_count > 0): ?><span class="mobile-cart-count"><?php echo $cart_count; ?></span><?php endif; ?></a></li>
+            <li><a href="<?php echo $baseUrl; ?>about.php">About</a></li>
 
-            <?php if ($is_logged_in && $is_buyer): ?>
+            <?php if ($is_logged_in): ?>
                 <li class="mobile-divider"></li>
-                <li><a href="<?php echo $baseUrl; ?>profile.php" class="<?php echo $current_page == 'profile.php' ? 'active' : ''; ?>">My Profile</a></li>
-                <li><a href="<?php echo $baseUrl; ?>my-orders.php" class="<?php echo $current_page == 'my-orders.php' ? 'active' : ''; ?>">My Orders</a></li>
-                <li><a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php">Logout</a></li>
+                <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
+
+                <?php if ($hasBuyerRole): ?>
+                    <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
+                <?php endif; ?>
+
+                <?php if ($hasSellerRole): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-orders.php">Orders</a></li>
+                <?php endif; ?>
+
+                <?php if ($hasAdminRole): ?>
+                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/users.php">Users</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a></li>
+                <?php endif; ?>
+
+                <li class="mobile-divider"></li>
+                <li><a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link">Logout</a></li>
             <?php else: ?>
                 <li class="mobile-divider"></li>
                 <li><button class="mobile-login-btn" id="mobileLoginBtn">Login</button></li>
@@ -154,6 +202,30 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     <div class="menu-overlay" id="menuOverlay"></div>
 </header>
 
+<script>
+    var currentUserRoles = <?php echo isset($currentUser) ? json_encode($user_roles) : '[]'; ?>;
+    var isLoggedIn = <?php echo json_encode($is_logged_in); ?>;
+    var currentUserRole = <?php echo isset($currentUser) ? json_encode($primaryRole) : 'null'; ?>;
+
+    function hasRole(role) {
+        return Array.isArray(currentUserRoles) && currentUserRoles.indexOf(role) !== -1;
+    }
+</script>
+
+<script>
+    $(document).ready(function() {
+        $('#accountBtn').on('click', function(e) {
+            e.stopPropagation();
+            $('#accountDropdown').toggleClass('active');
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.account-dropdown').length) {
+                $('#accountDropdown').removeClass('active');
+            }
+        });
+    });
+</script>
 
 <!-- Login Modal -->
 <div id="login-modal" class="modal">
