@@ -1,9 +1,10 @@
-/* Orders Page Styles
- * Author: Kamogelo Phale
- * ONLY styles that are NOT in components.css
- */
+/* ============================================================
+   Orders Page Styles
+   Author: Kamogelo Phale
+   Only styles NOT in components.css
+   ============================================================ */
 
-/* ========== ORDER TABS (Unique to orders page) ========== */
+/* ========== ORDER TABS ========== */
 .order-tabs {
   display: flex;
   gap: var(--spacing-sm);
@@ -59,39 +60,27 @@
   color: var(--white);
 }
 
-/* ========== TAB CONTENT ========== */
-.tab-content {
-  display: none;
+/* ========== ROLE SWITCH LINK ========== */
+.orders-role-switch {
+  margin-bottom: var(--spacing-md);
 }
 
-.tab-content.active {
-  display: block;
-}
-
-/* ========== BACK LINK (for seller layout) ========== */
-.back-link {
+.orders-switch-link {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
   color: var(--primary-color);
   text-decoration: none;
-  margin-bottom: var(--spacing-md);
   font-weight: var(--font-medium);
+  font-size: var(--font-sm);
   transition: all var(--transition-fast);
 }
 
-.back-link:hover {
-  transform: translateX(-4px);
-  text-decoration: underline;
+.orders-switch-link:hover {
+  transform: translateX(4px);
 }
 
-.back-link img {
-  width: 16px;
-  height: 16px;
-  filter: brightness(0) saturate(100%) invert(48%) sepia(96%) saturate(1577%) hue-rotate(350deg);
-}
-
-/* ========== PAYMENT DETAILS (Order Modal - Unique) ========== */
+/* ========== PAYMENT DETAILS (Order Modal) ========== */
 .payment-details {
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
@@ -112,16 +101,15 @@
   font-size: var(--font-sm);
 }
 
-.payment-details .info-row .info-label {
+.payment-details .info-label {
   color: var(--gray-medium);
 }
 
-.payment-details .info-row .info-value {
+.payment-details .info-value {
   font-weight: var(--font-medium);
   color: var(--dark-bg);
 }
 
-/* Payment Status Badges (Unique to orders) */
 .payment-status-badge {
   display: inline-block;
   padding: 2px 10px;
@@ -145,12 +133,7 @@
   color: var(--error);
 }
 
-.payment-status-badge.refunded {
-  background: var(--info-light);
-  color: var(--info);
-}
-
-/* ========== REVIEW MODAL (Unique to orders) ========== */
+/* ========== REVIEW MODAL ========== */
 .review-modal {
   display: none;
   position: fixed;
@@ -159,7 +142,7 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: var(--z-modal);
   justify-content: center;
   align-items: center;
 }
@@ -205,33 +188,6 @@
   font-size: var(--font-sm);
 }
 
-.review-form-container .form-group {
-  margin-bottom: var(--spacing-lg);
-}
-
-.review-form-container .form-group label {
-  display: block;
-  font-weight: var(--font-medium);
-  margin-bottom: var(--spacing-sm);
-  color: var(--gray-dark);
-}
-
-.review-form-container textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  font-size: var(--font-sm);
-  font-family: inherit;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-.review-form-container textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
 .submit-review-btn {
   width: 100%;
   padding: 12px;
@@ -251,7 +207,7 @@
   transform: translateY(-2px);
 }
 
-/* ========== ORDER DETAILS MODAL - Order Items ========== */
+/* ========== ORDER ITEMS (Modal) ========== */
 #orderModal .order-items-list {
   margin: var(--spacing-lg) 0;
 }
@@ -310,56 +266,4 @@
   font-weight: var(--font-bold);
   font-size: var(--font-lg);
   color: var(--dark-bg);
-}
-
-/* ========== RESPONSIVE - Mobile Card Layout ========== */
-@media (max-width: 768px) {
-  .order-tabs {
-    justify-content: center;
-  }
-
-  .order-tab {
-    padding: 8px 16px;
-    font-size: var(--font-sm);
-  }
-
-  /* Payment details mobile */
-  .payment-details .info-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-
-  #orderModal .order-item {
-    flex-wrap: wrap;
-  }
-
-  #orderModal .order-item-img {
-    width: 50px;
-    height: 50px;
-  }
-}
-
-@media (max-width: 480px) {
-  .order-tab {
-    padding: 6px 12px;
-    font-size: var(--font-xs);
-  }
-
-  .review-form-container {
-    padding: var(--spacing-md);
-  }
-
-  #orderModal .order-item-img {
-    width: 40px;
-    height: 40px;
-  }
-
-  #orderModal .order-item-details h4 {
-    font-size: var(--font-xs);
-  }
-
-  #orderModal .order-item-price {
-    font-size: var(--font-sm);
-  }
 }

@@ -10,7 +10,9 @@
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
+
 $load_products_js = true;
+$page_js = 'index.js';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -125,7 +127,6 @@ $load_products_js = true;
             <div class="how-container">
                 <div class="process-card" data-step="01">
                     <div class="process-icon">
-                        <!--  UserPlus icon -->
                         <i data-lucide="user-plus" style="width: 48px; height: 48px; color: var(--primary-color);"></i>
                     </div>
                     <h3>Create Your Account</h3>
@@ -133,7 +134,6 @@ $load_products_js = true;
                 </div>
                 <div class="process-card" data-step="02">
                     <div class="process-icon">
-                        <!-- product-catalog icon fits "list products" -->
                         <img src="images/icons/product-catalog-svgrepo-com.svg" width="48" height="48" alt="List or Browse" loading="lazy">
                     </div>
                     <h3>List or Browse</h3>
@@ -141,7 +141,6 @@ $load_products_js = true;
                 </div>
                 <div class="process-card" data-step="03">
                     <div class="process-icon">
-                        <!-- cash-atm icon fits "get paid" / "trade" -->
                         <img src="images/icons/cash-atm-svgrepo-com.svg" width="48" height="48" alt="Trade Safely" loading="lazy">
                     </div>
                     <h3>Trade with Confidence</h3>
@@ -159,7 +158,6 @@ $load_products_js = true;
                 </div>
                 <a href="product-listings.php" class="view-all-link">
                     View All Products
-                    <!-- ArrowRight icon -->
                     <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
                 </a>
             </div>
@@ -188,7 +186,7 @@ $load_products_js = true;
                             <img src="images/icons/Payfast logo.svg" alt="PayFast" class="trust-partner-logo" width="120" height="32">
                         </div>
                         <h3>PayFast Protected</h3>
-                        <p>Payments go through PayFast. No cash-in-envelope risks like on Facebook Marketplace.</p>
+                        <p>All payments go through PayFast — South Africa's trusted payment gateway. No cash-in-envelope risks.</p>
                     </div>
                     <div class="trust-card">
                         <div class="trust-icon-wrapper">
@@ -214,65 +212,6 @@ $load_products_js = true;
         lucide.createIcons();
     </script>
 
-    <!-- Page specific Javascript-->
-    <script>
-        function loadFeaturedProducts() {
-            var $grid = $('#featured-products-grid');
-            $grid.html('<div class="loading-spinner">Loading products...</div>');
-
-            $.ajax({
-                url: baseUrl + 'php/endpoints/products/get-products.php?limit=4&page=1',
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    if (data.success && data.products && data.products.length > 0) {
-                        displayProducts(data.products, '#featured-products-grid');
-                    } else {
-                        showFeaturedEmptyState();
-                    }
-                },
-                error: function() {
-                    $grid.html(
-                        '<div class="empty-state">' +
-                        '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error" loading="lazy">' +
-                        '<h3>Could not load products</h3>' +
-                        '<p>Please refresh the page to try again.</p>' +
-                        '</div>'
-                    );
-                }
-            });
-        }
-
-        function showFeaturedEmptyState() {
-            $('#featured-products-grid').html(
-                '<div class="empty-state">' +
-                '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">' +
-                '<h3>No products yet</h3>' +
-                '<p>Be the first to list a product on ConsuTrade!</p>' +
-                '<a href="' + baseUrl + 'sell.php" class="view-all-btn" style="display: inline-block;">Start Selling</a>' +
-                '</div>'
-            );
-        }
-
-        $('#primary-btn').on('click', function() {
-            var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
-            var hasSellerRole = <?php echo isset($currentUser) ? json_encode($currentUser->hasRole('seller')) : 'false'; ?>;
-
-            if (isLoggedIn && hasSellerRole) {
-                window.location.href = baseUrl + 'admin/seller-dashboard.php';
-            } else if (isLoggedIn) {
-                window.location.href = baseUrl + 'sell.php';
-            } else {
-                openModal($('#register-modal'));
-                $('#seller').prop('checked', true);
-                $('#register-modal .modal-header p').text('Create your account to start selling');
-            }
-        });
-
-        $(function() {
-            loadFeaturedProducts();
-        });
-    </script>
 
 </body>
 

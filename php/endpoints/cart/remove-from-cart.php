@@ -10,8 +10,14 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
-if (!$isLoggedIn || !$currentUser instanceof Buyer) {
-    $response['message'] = 'Please login to remove items from cart';
+if (!$isLoggedIn) {
+    $response['message'] = 'Please login to update cart';
+    echo json_encode($response);
+    exit;
+}
+
+if (!$currentUser->hasRole('buyer')) {
+    $response['message'] = 'You need a buyer account to update cart';
     echo json_encode($response);
     exit;
 }

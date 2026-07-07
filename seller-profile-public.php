@@ -4,7 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Displays public seller profile with products and reviews
- * Products loaded via AJAX for consistency with product listings
+ * Reviews limited to 5 initially with "Load More" AJAX
  */
 
 require_once __DIR__ . '/init.php';
@@ -20,7 +20,7 @@ if ($seller_id <= 0) {
 
 $seller = $userRepo->findById($seller_id);
 
-if (!$seller || !$seller instanceof Seller) {
+if (!$seller || !$seller->hasRole('seller')) {
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
@@ -29,9 +29,11 @@ $profile_image = $seller->getProfileImageUrl();
 $ratingData = $reviewRepo->getSellerRating($seller_id);
 $avgRating = $ratingData['avg_rating'] ?? 0;
 $reviewCount = $ratingData['review_count'] ?? 0;
-$sellerReviews = $reviewRepo->findBySeller($seller_id);
 
-// Breadcrumb setup
+// Only load first 5 reviews initially
+$initialReviews = $reviewRepo->findBySeller($seller_id, 5);
+$hasMoreReviews = $reviewCount > 5;
+
 $from_product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
 $from_product_name = isset($_GET['product_name']) ? urldecode($_GET['product_name']) : '';
 
@@ -46,6 +48,9 @@ if ($from_product_id > 0 && $from_product_name) {
         ['label' => htmlspecialchars($seller->getFullName())]
     ];
 }
+
+$page_js = 'seller-profile.js';
+$load_products_js = true;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -54,9 +59,9 @@ if ($from_product_id > 0 && $from_product_name) {
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($seller->getFullName()); ?> - Seller Profile | ConsuTrade</title>
     <meta name="description" content="View products and reviews from <?php echo htmlspecialchars($seller->getFullName()); ?> on ConsuTrade">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
     <style>
-        /* ========== PAGE-SPECIFIC STYLES ONLY ========== */
         .public-seller-profile-container {
             width: 100%;
             max-width: 100%;
@@ -73,18 +78,16 @@ if ($from_product_id > 0 && $from_product_name) {
             padding: var(--spacing-2xl) var(--spacing-xl);
             margin-bottom: var(--spacing-xl);
             color: var(--white);
-            box-shadow: var(--shadow-md);
         }
 
         .seller-public-avatar {
-            width: 120px;
-            height: 120px;
+            width: 72px;
+            height: 72px;
             background: var(--white);
             border-radius: var(--radius-round);
             overflow: hidden;
             flex-shrink: 0;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            box-shadow: var(--shadow-md);
+            border: 3px solid rgba(255, 255, 255, 0.3);
         }
 
         .seller-public-avatar img {
@@ -95,143 +98,122 @@ if ($from_product_id > 0 && $from_product_name) {
 
         .seller-public-info {
             flex: 1;
+            min-width: 0;
         }
 
         .seller-public-info h1 {
-            font-size: var(--font-3xl);
+            font-size: var(--font-2xl);
             font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
             color: var(--white);
         }
 
         .seller-public-meta {
             display: flex;
             align-items: center;
-            gap: var(--spacing-md);
+            gap: var(--spacing-sm);
             flex-wrap: wrap;
-            margin-bottom: var(--spacing-sm);
         }
 
-        .verified-badge,
-        .unverified-badge {
+        .seller-public-badge {
             display: inline-flex;
             align-items: center;
             gap: var(--spacing-xs);
-            padding: var(--spacing-xs) var(--spacing-md);
+            padding: 2px 10px;
             border-radius: var(--radius-round);
-            font-size: var(--font-sm);
-            font-weight: var(--font-medium);
+            font-size: var(--font-xs);
+            font-weight: var(--font-semibold);
         }
 
-        .verified-badge {
+        .seller-public-badge.verified {
             background-color: var(--success);
             color: var(--white);
         }
 
-        .unverified-badge {
+        .seller-public-badge.unverified {
             background-color: var(--warning);
             color: var(--white);
         }
 
-        .verified-badge img,
-        .unverified-badge img {
+        .seller-public-badge img {
             filter: brightness(0) invert(1);
+            width: 14px;
+            height: 14px;
         }
 
         .member-since {
-            background: rgba(0, 0, 0, 0.2);
-            padding: var(--spacing-xs) var(--spacing-md);
-            border-radius: var(--radius-round);
-            font-size: var(--font-sm);
-            color: var(--white);
+            font-size: var(--font-xs);
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .seller-location {
             display: inline-flex;
             align-items: center;
             gap: var(--spacing-xs);
-            background: rgba(0, 0, 0, 0.15);
-            padding: var(--spacing-xs) var(--spacing-md);
-            border-radius: var(--radius-round);
-            font-size: var(--font-sm);
-            width: fit-content;
-            color: var(--white);
+            font-size: var(--font-xs);
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: var(--spacing-xs);
         }
 
         .seller-location img {
             filter: brightness(0) invert(1);
-        }
-
-        .seller-public-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-2xl);
+            width: 12px;
+            height: 12px;
         }
 
         .stat-card {
             background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-xl);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
             text-align: center;
-            box-shadow: var(--shadow-sm);
             border: 1px solid var(--border-light);
-            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
-            border-color: var(--primary-light);
+        .seller-public-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
         }
 
-        .stat-card h3 {
-            font-size: var(--font-md);
-            font-weight: var(--font-medium);
-            color: var(--gray-medium);
-            margin-bottom: var(--spacing-sm);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-number {
-            font-size: var(--font-3xl);
+        .seller-stat-number {
+            font-size: var(--font-2xl);
             font-weight: var(--font-bold);
             color: var(--primary-color);
         }
 
-        .stat-text {
-            font-size: var(--font-base);
-            font-weight: var(--font-medium);
-            color: var(--gray-dark);
+        .seller-stat-label {
+            font-size: var(--font-xs);
+            color: var(--gray-medium);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .rating-summary {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-sm);
+            gap: var(--spacing-xs);
+            margin-top: var(--spacing-xs);
         }
 
-        .seller-public-products {
-            width: 100%;
-        }
-
-        .seller-public-products h2 {
-            font-size: var(--font-2xl);
+        .seller-public-products h2,
+        .seller-reviews-section h2 {
+            font-size: var(--font-xl);
             font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
             padding-bottom: var(--spacing-sm);
-            border-bottom: 3px solid var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
             color: var(--gray-dark);
             display: inline-block;
         }
 
         .seller-public-products .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: var(--spacing-lg);
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: var(--spacing-md);
         }
 
         .seller-reviews-section {
@@ -239,32 +221,17 @@ if ($from_product_id > 0 && $from_product_name) {
             width: 100%;
         }
 
-        .seller-reviews-section h2 {
-            font-size: var(--font-2xl);
-            font-weight: var(--font-bold);
-            margin-bottom: var(--spacing-xl);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 3px solid var(--primary-color);
-            color: var(--gray-dark);
-            display: inline-block;
-        }
-
         .reviews-list {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-lg);
+            gap: var(--spacing-md);
         }
 
         .review-card {
             background: var(--white);
             border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
-            transition: box-shadow var(--transition-fast);
-        }
-
-        .review-card:hover {
-            box-shadow: var(--shadow-md);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
         }
 
         .review-header {
@@ -273,9 +240,7 @@ if ($from_product_id > 0 && $from_product_name) {
             align-items: center;
             flex-wrap: wrap;
             gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 1px solid var(--border-light);
+            margin-bottom: var(--spacing-sm);
         }
 
         .reviewer-info {
@@ -285,8 +250,8 @@ if ($from_product_id > 0 && $from_product_name) {
         }
 
         .reviewer-avatar {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: var(--gray-bg);
             overflow: hidden;
@@ -299,8 +264,9 @@ if ($from_product_id > 0 && $from_product_name) {
         }
 
         .reviewer-name {
-            font-weight: var(--font-bold);
+            font-weight: var(--font-semibold);
             color: var(--dark-bg);
+            font-size: var(--font-sm);
         }
 
         .review-date {
@@ -309,67 +275,31 @@ if ($from_product_id > 0 && $from_product_name) {
         }
 
         .review-comment {
-            font-size: var(--font-md);
+            font-size: var(--font-sm);
             line-height: 1.5;
             color: var(--gray-dark);
+            margin-top: var(--spacing-sm);
+        }
+
+        .load-more-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
             margin-top: var(--spacing-md);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: var(--spacing-2xl);
-            background: var(--white);
-            border-radius: var(--radius-lg);
+            background: var(--gray-bg);
             border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            font-weight: var(--font-medium);
+            color: var(--gray-dark);
+            transition: all var(--transition-fast);
         }
 
-        .empty-state img {
-            opacity: 0.4;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .empty-state h3 {
-            font-size: var(--font-xl);
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--spacing-sm);
-            color: var(--dark-bg);
-        }
-
-        .empty-state p {
-            color: var(--gray-medium);
-        }
-
-        @media (max-width: 768px) {
-            .public-seller-profile-container {
-                padding: var(--spacing-lg);
-            }
-
-            .seller-public-header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .seller-public-meta {
-                justify-content: center;
-            }
-
-            .seller-location {
-                margin: 0 auto;
-            }
-
-            .seller-public-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .seller-public-products .products-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 576px) {
-            .seller-public-products .products-grid {
-                grid-template-columns: 1fr;
-            }
+        .load-more-btn:hover {
+            background: var(--primary-fade);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
         }
     </style>
 </head>
@@ -390,19 +320,19 @@ if ($from_product_id > 0 && $from_product_name) {
                 <h1><?php echo htmlspecialchars($seller->getFullName()); ?></h1>
                 <div class="seller-public-meta">
                     <?php if ($seller->isVerified()): ?>
-                        <span class="verified-badge">
-                            <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16" height="16" alt="Verified"> Verified Seller
+                        <span class="seller-public-badge verified">
+                            <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="14" height="14" alt="Verified"> Verified
                         </span>
                     <?php else: ?>
-                        <span class="unverified-badge">
-                            <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="16" height="16" alt="Unverified"> Unverified Seller
+                        <span class="seller-public-badge unverified">
+                            <img src="<?php echo $baseUrl; ?>images/icons/not-verified-svgrepo-com.svg" width="14" height="14" alt="Unverified"> Unverified
                         </span>
                     <?php endif; ?>
-                    <span class="member-since">Member since <?php echo date('d M Y', strtotime($seller->getCreatedAt())); ?></span>
+                    <span class="member-since">Joined <?php echo date('M Y', strtotime($seller->getCreatedAt())); ?></span>
                 </div>
                 <?php if ($seller->getLocation()): ?>
                     <div class="seller-location">
-                        <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="14" height="14" alt="Location">
+                        <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="12" height="12" alt="Location">
                         <?php echo htmlspecialchars($seller->getLocation()); ?>
                     </div>
                 <?php endif; ?>
@@ -411,27 +341,27 @@ if ($from_product_id > 0 && $from_product_name) {
 
         <div class="seller-public-stats">
             <div class="stat-card">
-                <h3>Products</h3>
-                <p class="stat-number" id="sellerProductCount">-</p>
+                <p class="seller-stat-label">Products</p>
+                <p class="seller-stat-number" id="sellerProductCount">-</p>
             </div>
             <div class="stat-card">
-                <h3>Reviews</h3>
-                <p class="stat-number"><?php echo $reviewCount; ?></p>
+                <p class="seller-stat-label">Reviews</p>
+                <p class="seller-stat-number"><?php echo $reviewCount; ?></p>
                 <?php if ($reviewCount > 0): ?>
                     <div class="rating-summary">
                         <?php echo renderStars($avgRating); ?>
-                        <span class="rating-count">(<?php echo number_format($avgRating, 1); ?>)</span>
+                        <span>(<?php echo number_format($avgRating, 1); ?>)</span>
                     </div>
                 <?php endif; ?>
             </div>
             <div class="stat-card">
-                <h3>Member Since</h3>
-                <p class="stat-text"><?php echo date('d M Y', strtotime($seller->getCreatedAt())); ?></p>
+                <p class="seller-stat-label">Member Since</p>
+                <p class="seller-stat-number"><?php echo date('M Y', strtotime($seller->getCreatedAt())); ?></p>
             </div>
         </div>
 
         <div class="seller-public-products">
-            <h2>Products from <?php echo htmlspecialchars($seller->getFullName()); ?></h2>
+            <h2><?php echo htmlspecialchars($seller->getFullName()); ?>'s Shop</h2>
             <div class="products-grid" id="seller-products-grid">
                 <div class="loading-spinner">Loading products...</div>
             </div>
@@ -439,9 +369,9 @@ if ($from_product_id > 0 && $from_product_name) {
 
         <div class="seller-reviews-section">
             <h2>Customer Reviews</h2>
-            <?php if (!empty($sellerReviews)): ?>
-                <div class="reviews-list">
-                    <?php foreach ($sellerReviews as $review): ?>
+            <?php if (!empty($initialReviews)): ?>
+                <div class="reviews-list" id="reviews-list">
+                    <?php foreach ($initialReviews as $review): ?>
                         <div class="review-card">
                             <div class="review-header">
                                 <div class="reviewer-info">
@@ -461,6 +391,9 @@ if ($from_product_id > 0 && $from_product_name) {
                         </div>
                     <?php endforeach; ?>
                 </div>
+                <?php if ($hasMoreReviews): ?>
+                    <button class="load-more-btn" id="loadMoreReviews" data-seller="<?php echo $seller_id; ?>" data-offset="5">Load More Reviews</button>
+                <?php endif; ?>
             <?php else: ?>
                 <div class="empty-state">
                     <img src="<?php echo $baseUrl; ?>images/icons/comment-svgrepo-com.svg" width="64" height="64" alt="No reviews">
@@ -471,52 +404,11 @@ if ($from_product_id > 0 && $from_product_name) {
         </div>
     </main>
 
-    <?php $load_products_js = true; ?>
+    <script>
+        var sellerProfileId = <?php echo $seller_id; ?>;
+    </script>
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
-
-    <script>
-        $(function() {
-            var sellerId = <?php echo $seller_id; ?>;
-
-            function loadSellerProducts() {
-                var $grid = $('#seller-products-grid');
-
-                $.ajax({
-                    url: baseUrl + 'php/endpoints/products/get-products.php?limit=12&seller_id=' + sellerId,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        if (data.success && data.products && data.products.length > 0) {
-                            $('#sellerProductCount').text(data.total || data.products.length);
-                            displayProducts(data.products, '#seller-products-grid');
-                        } else {
-                            $('#sellerProductCount').text(0);
-                            $grid.html(
-                                '<div class="empty-state">' +
-                                '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" loading="lazy">' +
-                                '<h3>No Products Yet</h3>' +
-                                '<p>This seller has no products available at the moment.</p>' +
-                                '</div>'
-                            );
-                        }
-                    },
-                    error: function() {
-                        $('#sellerProductCount').text(0);
-                        $grid.html(
-                            '<div class="empty-state">' +
-                            '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error" loading="lazy">' +
-                            '<h3>Something went wrong</h3>' +
-                            '<p>Error loading products. Please refresh the page.</p>' +
-                            '</div>'
-                        );
-                    }
-                });
-            }
-
-            loadSellerProducts();
-        });
-    </script>
 
 </body>
 

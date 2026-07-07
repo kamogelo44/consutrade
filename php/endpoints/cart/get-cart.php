@@ -18,7 +18,12 @@ $response = [
     'total' => 0
 ];
 
-if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+if (!$isLoggedIn) {
+    echo json_encode($response);
+    exit;
+}
+
+if (!$currentUser->hasRole('buyer')) {
     echo json_encode($response);
     exit;
 }

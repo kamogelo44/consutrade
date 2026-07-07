@@ -4,6 +4,7 @@
  * Author: Kamogelo Phale
  * 
  * Uses UserService for all statistics calculations.
+ * Pass ?role=seller or ?role=buyer for role-specific stats.
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
@@ -16,7 +17,6 @@ $response = ['success' => false, 'message' => ''];
 // ============================================
 if ($auth->isAdmin() && !isset($_GET['seller_id']) && !isset($_GET['user_id'])) {
     $stats = $userService->getAdminStats();
-
     $response = ['success' => true] + $stats;
     echo json_encode($response);
     exit;
@@ -28,6 +28,7 @@ if ($auth->isAdmin() && !isset($_GET['seller_id']) && !isset($_GET['user_id'])) 
 $sellerId = isset($_GET['seller_id']) ? (int)$_GET['seller_id'] : 0;
 $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $targetId = $sellerId > 0 ? $sellerId : $userId;
+$requestedRole = isset($_GET['role']) ? $_GET['role'] : '';
 
 if ($targetId <= 0) {
     $response['message'] = 'Invalid user ID';
@@ -46,7 +47,7 @@ if (!$targetUser) {
 // ============================================
 // SELLER STATS
 // ============================================
-if ($targetUser instanceof Seller) {
+if ($requestedRole === 'seller' && $targetUser->hasRole('seller')) {
     $stats = $userService->getSellerStats($targetId);
 
     $response = [
@@ -59,7 +60,7 @@ if ($targetUser instanceof Seller) {
         'avg_rating' => $stats['avg_rating'],
         'is_verified' => $targetUser->isVerified(),
         'member_since' => date('F Y', strtotime($targetUser->getCreatedAt())),
-        'has_verification_document' => $targetUser->getVerification() !== null
+        'has_verification_document' => ($targetUser instanceof Seller) ? $targetUser->getVerification() !== null : false
     ];
     echo json_encode($response);
     exit;
@@ -68,8 +69,8 @@ if ($targetUser instanceof Seller) {
 // ============================================
 // BUYER STATS
 // ============================================
-if ($targetUser instanceof Buyer) {
-    $isAuthenticated = ($isLoggedIn && $currentUser instanceof Buyer && $currentUser->getUserId() === $targetId);
+if ($requestedRole === 'buyer' && $targetUser->hasRole('buyer')) {
+    $isAuthenticated = ($isLoggedIn && $currentUser->hasRole('buyer') && $currentUser->getUserId() === $targetId);
 
     if (!$isAuthenticated) {
         $response['message'] = 'Unauthorized to view buyer stats';

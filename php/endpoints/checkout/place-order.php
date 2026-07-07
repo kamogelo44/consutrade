@@ -22,9 +22,18 @@ require_once dirname(__DIR__, 3) . '/init.php';
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
-if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+if (!$isLoggedIn) {
     if ($isAjax) {
-        echo json_encode(['success' => false, 'message' => 'Please log in as a buyer']);
+        echo json_encode(['success' => false, 'message' => 'Please log in']);
+        exit;
+    }
+    header('Location: ' . $baseUrl . 'index.php');
+    exit;
+}
+
+if (!$currentUser->hasRole('buyer')) {
+    if ($isAjax) {
+        echo json_encode(['success' => false, 'message' => 'You need a buyer account']);
         exit;
     }
     header('Location: ' . $baseUrl . 'index.php');

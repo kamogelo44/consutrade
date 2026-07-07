@@ -410,11 +410,11 @@ function displayProductDetails(product) {
     var stockHtml = '';
     
     if (isOutOfStock) {
-        stockHtml = '<div class="stock-status out-of-stock"><span class="stock-icon">✕</span> Out of Stock</div>';
+        stockHtml = '<div class="stock-status out-of-stock">Out of Stock</div>';
     } else if (isLowStock) {
-        stockHtml = '<div class="stock-status low-stock"><span class="stock-icon">⚠</span> Only ' + stockQty + ' left in stock!</div>';
+        stockHtml = '<div class="stock-status low-stock">Only ' + stockQty + ' left in stock!</div>';
     } else {
-        stockHtml = '<div class="stock-status in-stock"><span class="stock-icon">✓</span> In Stock (' + stockQty + ' available)</div>';
+        stockHtml = '<div class="stock-status in-stock">In Stock (' + stockQty + ' available)</div>';
     }
     
     var starsHtml = '';
@@ -425,18 +425,24 @@ function displayProductDetails(product) {
     
     var escapedName = escapeHtml(product.name).replace(/'/g, "\\'");
     
+    var isLoggedInFlag = (typeof isLoggedIn !== 'undefined' && isLoggedIn === true);
+    var isOwnProduct = (typeof currentUserId !== 'undefined' && currentUserId == product.seller_id);
+    var isBuyer = (typeof currentUserRole !== 'undefined' && currentUserRole == 'buyer');
+    var showReportButton = isLoggedInFlag && isBuyer;
+    
     var actionButtonsHtml = '';
     
-    if (isOutOfStock) {
+    if (isOwnProduct) {
+        actionButtonsHtml = '<button class="cart-btn own-product-btn" disabled>This is your product</button>';
+    } else if (isOutOfStock) {
         actionButtonsHtml = '<button class="cart-btn out-of-stock-btn" disabled>Out of Stock</button>';
+    } else if (!isLoggedInFlag) {
+        actionButtonsHtml = '<button class="cart-btn" onclick="openModal($(\'#login-modal\'))">Add to Cart</button>' +
+                            '<button class="buy-btn" onclick="openModal($(\'#login-modal\'))">Buy Now</button>';
     } else {
         actionButtonsHtml = '<button class="cart-btn" onclick="addToCart(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Add to Cart</button>' +
                             '<button class="buy-btn" onclick="buyNow(' + product.id + ', \'' + escapedName + '\', ' + product.price + ')">Buy Now</button>';
     }
-    
-    var isLoggedInFlag = (typeof isLoggedIn !== 'undefined' && isLoggedIn === true);
-    var isBuyer = (typeof currentUserRole !== 'undefined' && currentUserRole == 'buyer');
-    var showReportButton = isLoggedInFlag && isBuyer;
     
     if (showReportButton) {
         actionButtonsHtml += '<button class="report-btn" id="reportProductBtn">' +
@@ -610,18 +616,6 @@ function initReportModal() {
             }
         });
     });
-}
-
-// ============================================================
-// BUY NOW
-// ============================================================
-
-/**
- * Buy now - adds to cart and redirects to checkout.
- */
-function buyNow(productId, productName, productPrice) {
-    addToCart(productId, productName, productPrice);
-    window.location.href = baseUrl + 'checkout.php';
 }
 
 // ============================================================

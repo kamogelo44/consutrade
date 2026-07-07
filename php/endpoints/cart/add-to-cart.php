@@ -10,8 +10,14 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => '', 'cart_count' => 0];
 
-if (!$isLoggedIn || !$currentUser instanceof Buyer) {
+if (!$isLoggedIn) {
     $response['message'] = 'Please login to add items to cart';
+    echo json_encode($response);
+    exit;
+}
+
+if (!$currentUser->hasRole('buyer')) {
+    $response['message'] = 'You need a buyer account to add items to cart';
     echo json_encode($response);
     exit;
 }
@@ -27,7 +33,6 @@ if ($productId <= 0) {
     exit;
 }
 
-// Use ProductService for product lookup
 $product = $productService->findById($productId);
 
 if (!$product || $product->getStatus() !== 'active') {
@@ -36,14 +41,12 @@ if (!$product || $product->getStatus() !== 'active') {
     exit;
 }
 
-// Use domain model for stock validation
 if (!$product->canDecreaseStock($quantity)) {
     $response['message'] = 'Only ' . $product->getStockQuantity() . ' available in stock.';
     echo json_encode($response);
     exit;
 }
 
-// CartRepository for data operations
 $existingItem = $cartRepo->findItemByProduct($userId, $productId);
 
 if ($existingItem) {
@@ -55,7 +58,6 @@ if ($existingItem) {
 
 if ($result) {
     $cartCount = $cartRepo->countItems($userId);
-
     $response['success'] = true;
     $response['message'] = 'Item added to cart';
     $response['cart_count'] = $cartCount;

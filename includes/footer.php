@@ -63,9 +63,60 @@
     var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
 </script>
 
-<script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
-<script src="<?php echo $baseUrl; ?>js/main.js"></script>
+<!-- Library -->
+<script src="<?php echo $baseUrl; ?>js/lib/jquery-3.7.1.min.js"></script>
 
+<!-- Core (must load before modules) -->
+<script src="<?php echo $baseUrl; ?>js/core/utils.js"></script>
+<script src="<?php echo $baseUrl; ?>js/core/ui.js"></script>
+
+<!-- Modules (loaded on all pages) -->
+<script src="<?php echo $baseUrl; ?>js/modules/auth.js"></script>
+<script src="<?php echo $baseUrl; ?>js/modules/cart.js"></script>
+<script src="<?php echo $baseUrl; ?>js/modules/mobile.js"></script>
+
+<!-- Order module (only on order pages) -->
+<?php if (isset($load_orders_js) && $load_orders_js): ?>
+    <script src="<?php echo $baseUrl; ?>js/modules/orders.js"></script>
+<?php endif; ?>
+
+<!-- Products module (listings, details, search) -->
 <?php if (isset($load_products_js) && $load_products_js): ?>
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 <?php endif; ?>
+
+<!-- Dashboard module (admin/seller dashboards) -->
+<?php if (isset($load_dashboard_js) && $load_dashboard_js): ?>
+    <script src="<?php echo $baseUrl; ?>js/image-compressor.js"></script>
+    <script src="<?php echo $baseUrl; ?>js/dashboard.js"></script>
+<?php endif; ?>
+
+<!-- Page-specific init scripts -->
+<?php if (isset($page_js)): ?>
+    <script src="<?php echo $baseUrl; ?>js/pages/<?php echo $page_js; ?>"></script>
+<?php endif; ?>
+
+<!-- Global init -->
+<script>
+    $(function() {
+        initMobileMenu();
+        initMobileSearch();
+        initModalControls();
+        initUserDropdown();
+        initFlashMessages();
+        setActiveLink();
+        initErrorClearingOnInput();
+        initAjaxLogin();
+        initAjaxRegister();
+
+        if (isLoggedIn) {
+            if (window.location.pathname.includes('cart.php')) {
+                loadCartPage();
+            } else {
+                updateCartCount();
+            }
+        } else {
+            updateCartCountDisplay(0);
+        }
+    });
+</script>

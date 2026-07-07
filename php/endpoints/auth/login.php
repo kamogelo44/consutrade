@@ -61,3 +61,4 @@ if ($is_ajax) {
 $_SESSION['flash'] = $result['message'];
 header('Location: ' . $result['redirect']);
 exit;
+a

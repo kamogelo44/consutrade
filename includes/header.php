@@ -217,21 +217,6 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     }
 </script>
 
-<script>
-    $(document).ready(function() {
-        $('#accountBtn').on('click', function(e) {
-            e.stopPropagation();
-            $('#accountDropdown').toggleClass('active');
-        });
-
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('.account-dropdown').length) {
-                $('#accountDropdown').removeClass('active');
-            }
-        });
-    });
-</script>
-
 <!-- Login Modal -->
 <div id="login-modal" class="modal">
     <div class="modal-content">
