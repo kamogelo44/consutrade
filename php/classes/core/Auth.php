@@ -3,37 +3,38 @@
 /**
  * ConsuTrade - Auth Class
  * 
- * Handles ALL authentication and session management.
+ * Handles ALL authentication, session management, rate limiting,
+ * email verification, password reset, and login throttling.
+ * 
+ * Industry-standard security patterns:
+ * - Bcrypt password hashing (cost 12)
+ * - Session regeneration on login
+ * - Account lockout after failed attempts
+ * - Email verification tokens (32-byte random)
+ * - Password reset tokens with expiry
+ * - Session invalidation on password change
  * 
  * @author Kamogelo Phale
- * @version 3.0.0
+ * @version 4.0.0
  */
 
 class Auth
 {
-    /** @var mysqli Database connection */
     private mysqli $db;
-
-    /** @var UserRepository User repository instance */
     private UserRepository $userRepo;
+    private int $maxLoginAttempts = 5;
+    private int $lockoutMinutes = 15;
 
-    /**
-     * Constructor with Dependency Injection.
-     * 
-     * @param mysqli $db Database connection
-     * @param UserRepository|null $userRepo user repository 
-     */
     public function __construct(mysqli $db, ?UserRepository $userRepo = null)
     {
         $this->db = $db;
         $this->userRepo = $userRepo;
     }
 
-    /**
-     * Start or resume session.
-     * 
-     * @return void
-     */
+    // ============================================================
+    // SESSION MANAGEMENT
+    // ============================================================
+
     private function startSession(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -44,28 +45,45 @@ class Auth
         session_start([
             'cookie_httponly' => true,
             'cookie_samesite' => 'Lax',
-            'cookie_path' => '/'
+            'cookie_path' => '/',
+            'cookie_secure' => isset($_SERVER['HTTPS']),
         ]);
     }
 
-    /**
-     * Authenticate user with context.
-     * 
-     * @param string $email User's email address
-     * @param string $password User's password
-     * @param string $context Where login is happening (main, admin, seller)
-     * @return array Associative array with 'success' and 'redirect' or 'message'
-     */
+    // ============================================================
+    // LOGIN
+    // ============================================================
+
     public function login(string $email, string $password, string $context = 'main'): array
     {
-        $user = $this->userRepo->findByEmail($email);
+        $email = strtolower(trim($email));
 
-        if (!$user) {
-            return ['success' => false, 'message' => 'Invalid email or password.'];
+        // Check if account is locked
+        if ($this->isAccountLocked($email)) {
+            $unlockAt = $this->getAccountUnlockTime($email);
+            return [
+                'success' => false,
+                'message' => 'Account temporarily locked due to too many failed attempts. Try again after ' . $unlockAt . '.'
+            ];
         }
 
-        if (!password_verify($password, $user->getPassword())) {
-            return ['success' => false, 'message' => 'Invalid email or password.'];
+        $user = $this->userRepo->findByEmail($email);
+
+        if (!$user || !password_verify($password, $user->getPassword())) {
+            $this->recordFailedAttempt($email);
+            $remaining = $this->getRemainingAttempts($email);
+
+            if ($remaining <= 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Account locked for ' . $this->lockoutMinutes . ' minutes due to too many failed attempts.'
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => "Invalid email or password. {$remaining} attempt(s) remaining."
+            ];
         }
 
         if (!$user->canLogin()) {
@@ -76,19 +94,26 @@ class Auth
             return ['success' => false, 'message' => $message];
         }
 
-        $roles = $user->getRoles();
+        // Check email verification
+        if (!$user->isEmailVerified()) {
+            return [
+                'success' => false,
+                'message' => 'Please verify your email address before logging in. Check your inbox.',
+                'needs_verification' => true,
+                'email' => $email
+            ];
+        }
 
-        // Determine which role to use based on context
+        // Clear failed attempts
+        $this->clearFailedAttempts($email);
+
+        $roles = $user->getRoles();
         $activeRole = $this->determineRole($roles, $context);
 
         if ($activeRole === null) {
-            if ($context === 'admin') {
-                return ['success' => false, 'message' => 'You do not have admin or seller access.'];
-            }
             return ['success' => false, 'message' => 'Invalid email or password.'];
         }
 
-        // Start session and store user data
         $this->startSession();
         session_regenerate_id(true);
 
@@ -100,8 +125,13 @@ class Auth
         $_SESSION['user_object'] = serialize($user);
         $_SESSION['active_role'] = $activeRole;
         $_SESSION['role'] = $activeRole;
+        $_SESSION['login_time'] = time();
+        $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
-        // Update cart count if buyer role exists
+        // Record session
+        $this->recordSession($user->getUserId());
+
+        // Update cart count
         if (in_array('buyer', $roles)) {
             $this->updateCartCount($user->getUserId());
         }
@@ -111,87 +141,366 @@ class Auth
         return ['success' => true, 'redirect' => $redirect];
     }
 
-    /**
-     * Determine which role to use based on context.
-     *
-     * @param array $roles User's roles
-     * @param string $context Login context (main, admin, seller)
-     * @return string|null
-     */
+    // ============================================================
+    // REGISTRATION WITH EMAIL VERIFICATION
+    // ============================================================
+
+    public function register(array $data): array
+    {
+        $email = strtolower(trim($data['email']));
+
+        // Check if email already exists
+        $existing = $this->userRepo->findByEmail($email);
+        if ($existing) {
+            return ['success' => false, 'message' => 'An account with this email already exists.'];
+        }
+
+        // Hash password with bcrypt
+        $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
+        $data['email'] = $email;
+
+        // Generate verification token
+        $token = bin2hex(random_bytes(32));
+        $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+        $data['verification_token'] = $token;
+        $data['verification_token_expiry'] = $tokenExpiry;
+        $data['email_verified'] = 0;
+
+        // Create user
+        $userId = $this->userRepo->create($data);
+
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Registration failed. Please try again.'];
+        }
+
+        // Send verification email
+        $this->sendVerificationEmail($email, $data['full_name'], $token);
+
+        return [
+            'success' => true,
+            'message' => 'Account created successfully. Please check your email to verify your account.',
+            'user_id' => $userId
+        ];
+    }
+
+    public function resendVerificationEmail(string $email): array
+    {
+        $user = $this->userRepo->findByEmail(strtolower(trim($email)));
+
+        if (!$user) {
+            return ['success' => false, 'message' => 'No account found with this email.'];
+        }
+
+        if ($user->isEmailVerified()) {
+            return ['success' => false, 'message' => 'Email is already verified.'];
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+        $this->userRepo->updateVerificationToken($user->getUserId(), $token, $tokenExpiry);
+        $this->sendVerificationEmail($email, $user->getFullName(), $token);
+
+        return ['success' => true, 'message' => 'Verification email resent. Please check your inbox.'];
+    }
+
+    public function verifyEmail(string $token): array
+    {
+        $userId = $this->userRepo->findByVerificationToken($token);
+
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Invalid or expired verification link. Please request a new one.'];
+        }
+
+        $this->userRepo->markEmailVerified($userId);
+        $this->userRepo->clearVerificationToken($userId);
+
+        return ['success' => true, 'message' => 'Email verified successfully. You can now log in.'];
+    }
+
+    // ============================================================
+    // PASSWORD RESET
+    // ============================================================
+
+    public function sendPasswordReset(string $email): array
+    {
+        $user = $this->userRepo->findByEmail(strtolower(trim($email)));
+
+        if (!$user) {
+            // Don't reveal whether email exists (prevents enumeration)
+            return ['success' => true, 'message' => 'If an account exists with this email, a reset link has been sent.'];
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+        $this->userRepo->storePasswordResetToken($user->getUserId(), $token, $expiry);
+        $this->sendPasswordResetEmail($email, $user->getFullName(), $token);
+
+        return ['success' => true, 'message' => 'If an account exists with this email, a reset link has been sent.'];
+    }
+
+    public function resetPassword(string $token, string $newPassword): array
+    {
+        if (strlen($newPassword) < 8) {
+            return ['success' => false, 'message' => 'Password must be at least 8 characters.'];
+        }
+
+        $userId = $this->userRepo->findByPasswordResetToken($token);
+
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Invalid or expired reset link. Please request a new one.'];
+        }
+
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
+        $this->userRepo->updatePassword($userId, $hashedPassword);
+        $this->userRepo->clearPasswordResetToken($userId);
+
+        // Security: invalidate all existing sessions
+        $this->invalidateAllSessions($userId);
+
+        return ['success' => true, 'message' => 'Password reset successfully. Please log in with your new password.'];
+    }
+
+    public function changePassword(int $userId, string $currentPassword, string $newPassword): array
+    {
+        if (strlen($newPassword) < 8) {
+            return ['success' => false, 'message' => 'New password must be at least 8 characters.'];
+        }
+
+        $user = $this->userRepo->findById($userId);
+
+        if (!$user) {
+            return ['success' => false, 'message' => 'User not found.'];
+        }
+
+        if (!password_verify($currentPassword, $user->getPassword())) {
+            return ['success' => false, 'message' => 'Current password is incorrect.'];
+        }
+
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
+        $this->userRepo->updatePassword($userId, $hashedPassword);
+
+        return ['success' => true, 'message' => 'Password changed successfully.'];
+    }
+
+    // ============================================================
+    // EMAIL METHODS
+    // ============================================================
+
+    private function sendVerificationEmail(string $email, string $name, string $token): void
+    {
+        $verificationLink = getBaseUrl() . 'verify-email.php?token=' . $token;
+
+        $subject = 'Verify your ConsuTrade account';
+        $message = "Hello $name,\n\n";
+        $message .= "Welcome to ConsuTrade! Please verify your email address by clicking the link below:\n\n";
+        $message .= "$verificationLink\n\n";
+        $message .= "This link expires in 24 hours.\n\n";
+        $message .= "If you did not create this account, please ignore this email.\n\n";
+        $message .= "— The ConsuTrade Team";
+
+        $headers = "From: ConsuTrade <noreply@consutrade.co.za>\r\n";
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+        @mail($email, $subject, $message, $headers);
+    }
+
+    private function sendPasswordResetEmail(string $email, string $name, string $token): void
+    {
+        $resetLink = getBaseUrl() . 'reset-password.php?token=' . $token;
+
+        $subject = 'Reset your ConsuTrade password';
+        $message = "Hello $name,\n\n";
+        $message .= "You requested a password reset. Click the link below to set a new password:\n\n";
+        $message .= "$resetLink\n\n";
+        $message .= "This link expires in 1 hour.\n\n";
+        $message .= "If you did not request this, please ignore this email.\n\n";
+        $message .= "— The ConsuTrade Team";
+
+        $headers = "From: ConsuTrade <noreply@consutrade.co.za>\r\n";
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+        @mail($email, $subject, $message, $headers);
+    }
+
+    // ============================================================
+    // LOGIN THROTTLING
+    // ============================================================
+
+    private function isAccountLocked(string $email): bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) as attempts, MAX(attempted_at) as last_attempt 
+             FROM login_attempts 
+             WHERE email = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+        );
+        $stmt->bind_param('si', $email, $this->lockoutMinutes);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($row['attempts'] >= $this->maxLoginAttempts) {
+            $lastAttempt = strtotime($row['last_attempt']);
+            $unlockTime = $lastAttempt + ($this->lockoutMinutes * 60);
+            return time() < $unlockTime;
+        }
+
+        return false;
+    }
+
+    private function getAccountUnlockTime(string $email): string
+    {
+        $stmt = $this->db->prepare(
+            "SELECT MAX(attempted_at) as last_attempt 
+             FROM login_attempts 
+             WHERE email = ?"
+        );
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        $lastAttempt = strtotime($row['last_attempt'] ?? 'now');
+        $unlockTime = $lastAttempt + ($this->lockoutMinutes * 60);
+
+        return date('H:i', $unlockTime);
+    }
+
+    private function recordFailedAttempt(string $email): void
+    {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $stmt = $this->db->prepare(
+            "INSERT INTO login_attempts (email, ip_address, attempted_at) VALUES (?, ?, NOW())"
+        );
+        $stmt->bind_param('ss', $email, $ip);
+        $stmt->execute();
+        $stmt->close();
+
+        // Cleanup old attempts
+        $this->db->query("DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+    }
+
+    private function getRemainingAttempts(string $email): int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) as attempts 
+             FROM login_attempts 
+             WHERE email = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+        );
+        $stmt->bind_param('si', $email, $this->lockoutMinutes);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return max(0, $this->maxLoginAttempts - (int)($row['attempts'] ?? 0));
+    }
+
+    private function clearFailedAttempts(string $email): void
+    {
+        $stmt = $this->db->prepare("DELETE FROM login_attempts WHERE email = ?");
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    // ============================================================
+    // SESSION SECURITY
+    // ============================================================
+
+    private function recordSession(int $userId): void
+    {
+        $sessionId = session_id();
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+
+        $stmt = $this->db->prepare(
+            "INSERT INTO user_sessions (session_id, user_id, ip_address, user_agent, created_at) 
+             VALUES (?, ?, ?, ?, NOW())"
+        );
+        $stmt->bind_param('siss', $sessionId, $userId, $ip, $ua);
+        $stmt->execute();
+        $stmt->close();
+
+        // Cleanup old sessions (keep last 30 days)
+        $this->db->query("DELETE FROM user_sessions WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)");
+    }
+
+    public function invalidateAllSessions(int $userId): void
+    {
+        $stmt = $this->db->prepare("DELETE FROM user_sessions WHERE user_id = ?");
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    public function isSessionValid(): bool
+    {
+        if (!$this->isLoggedIn()) {
+            return false;
+        }
+
+        $sessionId = session_id();
+        $stmt = $this->db->prepare("SELECT user_id FROM user_sessions WHERE session_id = ?");
+        $stmt->bind_param('s', $sessionId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return $row !== null;
+    }
+
+    // ============================================================
+    // ROLE MANAGEMENT
+    // ============================================================
+
     private function determineRole(array $roles, string $context): ?string
     {
         if ($context === 'main') {
-            if (in_array('buyer', $roles)) {
-                return 'buyer';
-            }
+            if (in_array('buyer', $roles)) return 'buyer';
             return $roles[0] ?? null;
         }
 
         if ($context === 'admin') {
-            if (in_array('admin', $roles)) {
-                return 'admin';
-            }
-            if (in_array('seller', $roles)) {
-                return 'seller';
-            }
+            if (in_array('admin', $roles)) return 'admin';
+            if (in_array('seller', $roles)) return 'seller';
             return null;
         }
 
         if ($context === 'seller') {
-            if (in_array('seller', $roles)) {
-                return 'seller';
-            }
+            if (in_array('seller', $roles)) return 'seller';
             return null;
         }
 
         return $roles[0] ?? null;
     }
 
-    /**
-     * Get redirect URL based on role and context.
-     *
-     * @param string $role Active role
-     * @param string $context Login context
-     * @return string
-     */
     private function getRedirectByRole(string $role, string $context): string
     {
+        $baseUrl = getBaseUrl();
+
         if ($context === 'admin') {
-            if ($role === 'admin') {
-                return getBaseUrl() . 'admin/admin-dashboard.php';
-            }
-            if ($role === 'seller') {
-                return getBaseUrl() . 'admin/seller-dashboard.php';
-            }
+            if ($role === 'admin') return $baseUrl . 'admin/admin-dashboard.php';
+            if ($role === 'seller') return $baseUrl . 'admin/seller-dashboard.php';
         }
 
-        if ($role === 'admin') {
-            return getBaseUrl() . 'admin/admin-dashboard.php';
-        }
-        if ($role === 'seller') {
-            return getBaseUrl() . 'admin/seller-dashboard.php';
-        }
-        return getBaseUrl() . 'index.php';
+        if ($role === 'admin') return $baseUrl . 'admin/admin-dashboard.php';
+        if ($role === 'seller') return $baseUrl . 'admin/seller-dashboard.php';
+        return $baseUrl . 'index.php';
     }
 
-    /**
-     * Switch user role for current session.
-     *
-     * @param string $role Role to switch to (admin, seller, buyer)
-     * @return bool
-     */
     public function switchRole(string $role): bool
     {
         $this->startSession();
 
-        if (!$this->isLoggedIn()) {
-            return false;
-        }
+        if (!$this->isLoggedIn()) return false;
 
         $user = $this->getCurrentUser();
-        if (!$user || !$user->hasRole($role)) {
-            return false;
-        }
+        if (!$user || !$user->hasRole($role)) return false;
 
         $_SESSION['active_role'] = $role;
         $_SESSION['role'] = $role;
@@ -199,63 +508,28 @@ class Auth
         return true;
     }
 
-    /**
-     * Get current active role.
-     *
-     * @return string|null
-     */
     public function getActiveRole(): ?string
     {
         $this->startSession();
         return $_SESSION['active_role'] ?? $_SESSION['roles'][0] ?? null;
     }
 
-    /**
-     * Get available roles for current user.
-     *
-     * @return array
-     */
     public function getAvailableRoles(): array
     {
         $this->startSession();
-
-        if (!$this->isLoggedIn()) {
-            return [];
-        }
-
+        if (!$this->isLoggedIn()) return [];
         return $_SESSION['roles'] ?? [];
     }
 
-    /**
-     * Update cart count in session for buyer users.
-     * 
-     * @param int $userId User ID
-     * @return void
-     */
-    private function updateCartCount(int $userId): void
-    {
-        $stmt = $this->db->prepare("SELECT SUM(quantity) as total FROM cart WHERE user_id = ?");
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $_SESSION['cart_count'] = (int)($row['total'] ?? 0);
-        $stmt->close();
-    }
+    // ============================================================
+    // USER STATE
+    // ============================================================
 
-    /**
-     * Get current logged in user as User object.
-     * ALWAYS fetches fresh data from database to ensure verification status is up to date.
-     * 
-     * @return User|null User object or null if not logged in
-     */
     public function getCurrentUser(): ?User
     {
         $this->startSession();
 
-        if (!$this->isLoggedIn()) {
-            return null;
-        }
+        if (!$this->isLoggedIn()) return null;
 
         $userId = $_SESSION['user_id'] ?? 0;
         if ($userId > 0) {
@@ -271,91 +545,63 @@ class Auth
         return null;
     }
 
-    /**
-     * Get current user ID.
-     * 
-     * @return int User ID or 0 if not logged in
-     */
     public function getCurrentUserId(): int
     {
         $this->startSession();
         return $_SESSION['user_id'] ?? 0;
     }
 
-    /**
-     * Get current user role (legacy compatibility).
-     * Returns active role.
-     * 
-     * @return string|null User role or null if not logged in
-     */
     public function getCurrentUserRole(): ?string
     {
-        $this->startSession();
         return $this->getActiveRole();
     }
 
-    /**
-     * Check if any user is logged in.
-     * 
-     * @return bool True if logged in, false otherwise
-     */
-    public function isLoggedIn()
+    public function isLoggedIn(): bool
     {
         $this->startSession();
         return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
     }
 
-    /**
-     * Check if admin is logged in (checks active role).
-     * 
-     * @return bool True if admin is logged in, false otherwise
-     */
-    public function isAdmin()
+    public function isAdmin(): bool
     {
         return $this->isLoggedIn() && $this->getActiveRole() === 'admin';
     }
 
-    /**
-     * Check if seller is logged in (checks active role).
-     * 
-     * @return bool True if seller is logged in, false otherwise
-     */
-    public function isSeller()
+    public function isSeller(): bool
     {
         return $this->isLoggedIn() && $this->getActiveRole() === 'seller';
     }
 
-    /**
-     * Check if buyer is logged in (checks active role).
-     * 
-     * @return bool True if buyer is logged in, false otherwise
-     */
-    public function isBuyer()
+    public function isBuyer(): bool
     {
         return $this->isLoggedIn() && $this->getActiveRole() === 'buyer';
     }
 
-    /**
-     * Check if user has a specific role (checks all roles).
-     *
-     * @param string $role Role to check
-     * @return bool
-     */
     public function hasRole(string $role): bool
     {
-        if (!$this->isLoggedIn()) {
-            return false;
-        }
-        $roles = $this->getAvailableRoles();
-        return in_array($role, $roles);
+        if (!$this->isLoggedIn()) return false;
+        return in_array($role, $this->getAvailableRoles());
     }
 
-    /**
-     * Login user authenticated via .htaccess
-     * 
-     * @param User $user User object
-     * @return bool
-     */
+    // ============================================================
+    // CART
+    // ============================================================
+
+    private function updateCartCount(int $userId): void
+    {
+        $stmt = $this->db->prepare("SELECT SUM(quantity) as total FROM cart WHERE user_id = ?");
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $_SESSION['cart_count'] = (int)($row['total'] ?? 0);
+        $stmt->close();
+    }
+
+    // ============================================================
+    // HTACCESS LOGIN
+    // ============================================================
+
     public function loginWithHtaccessUser(User $user): bool
     {
         $this->startSession();
@@ -372,18 +618,26 @@ class Auth
         $_SESSION['active_role'] = $user->getPrimaryRole();
         $_SESSION['role'] = $user->getPrimaryRole();
         $_SESSION['auth_method'] = 'htaccess';
+        $_SESSION['login_time'] = time();
 
         return true;
     }
 
-    /**
-     * Logout current user and destroy session.
-     * 
-     * @return void
-     */
+    // ============================================================
+    // LOGOUT
+    // ============================================================
+
     public function logout(): void
     {
         $this->startSession();
+
+        // Remove session from database
+        $sessionId = session_id();
+        $stmt = $this->db->prepare("DELETE FROM user_sessions WHERE session_id = ?");
+        $stmt->bind_param('s', $sessionId);
+        $stmt->execute();
+        $stmt->close();
+
         $_SESSION = [];
         session_unset();
         session_destroy();

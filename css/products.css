@@ -565,3 +565,187 @@
   height: 30px;
   width: auto;
 }
+
+/* ========== PRODUCTS TABLE (Seller Management) ========== */
+.products-table-wrap {
+  overflow-x: auto;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.products-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+}
+
+.products-table th {
+  text-align: left;
+  padding: var(--spacing-md);
+  background: var(--gray-bg);
+  font-weight: var(--font-semibold);
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.products-table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+  font-size: var(--font-sm);
+}
+
+.products-table tbody tr:hover td {
+  background: var(--gray-bg-light);
+}
+
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.product-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--gray-bg);
+}
+
+.product-name {
+  font-weight: var(--font-medium);
+  color: var(--dark-bg);
+}
+
+.price-cell {
+  font-weight: var(--font-semibold);
+  color: var(--primary-color);
+  white-space: nowrap;
+}
+
+.stock-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-round);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.stock-badge.good {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.stock-badge.low {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.stock-badge.out {
+  background: var(--error-light);
+  color: var(--error);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-round);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+}
+
+.status-badge.active {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.status-badge.suspended {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.product-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.product-actions .action-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--white);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.product-actions .edit-btn {
+  color: var(--info);
+  border-color: var(--info);
+}
+.product-actions .edit-btn:hover {
+  background: var(--info);
+  color: var(--white);
+}
+
+.product-actions .suspend-btn {
+  color: var(--warning-dark);
+  border-color: var(--warning);
+}
+.product-actions .suspend-btn:hover {
+  background: var(--warning);
+  color: var(--white);
+}
+
+.product-actions .activate-btn {
+  color: var(--success);
+  border-color: var(--success);
+}
+.product-actions .activate-btn:hover {
+  background: var(--success);
+  color: var(--white);
+}
+
+.product-actions .delete-btn {
+  color: var(--error);
+  border-color: var(--error);
+}
+.product-actions .delete-btn:hover {
+  background: var(--error);
+  color: var(--white);
+}
+
+.add-product-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 9px 18px;
+  background: var(--primary-color);
+  color: var(--white);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: var(--font-semibold);
+  font-size: var(--font-sm);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.add-product-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.product-count {
+  text-align: center;
+  color: var(--gray-medium);
+  font-size: var(--font-sm);
+  margin-top: var(--spacing-md);
+}

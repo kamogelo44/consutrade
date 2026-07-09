@@ -7,7 +7,7 @@
  * Returns domain models WITHOUT repositories inside them.
  *
  * @author Kamogelo Phale
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 class UserRepository
@@ -31,25 +31,29 @@ class UserRepository
      */
     public function create(array $userData): int|false
     {
-        // Only insert into users table (role column removed)
         $stmt = $this->db->prepare(
-            "INSERT INTO users (full_name, email, phone, password, status, created_at) 
-             VALUES (?, ?, ?, ?, 'active', NOW())"
+            "INSERT INTO users (full_name, email, phone, password, status, 
+             verification_token, verification_token_expiry, email_verified, created_at) 
+             VALUES (?, ?, ?, ?, 'active', ?, ?, 0, NOW())"
         );
 
+        $verificationToken = $userData['verification_token'] ?? null;
+        $verificationTokenExpiry = $userData['verification_token_expiry'] ?? null;
+
         $stmt->bind_param(
-            'ssss',
+            'ssssss',
             $userData['full_name'],
             $userData['email'],
             $userData['phone'],
-            $userData['password']
+            $userData['password'],
+            $verificationToken,
+            $verificationTokenExpiry
         );
 
         if ($stmt->execute()) {
             $userId = $stmt->insert_id;
             $stmt->close();
 
-            // Add role to user_roles table
             if (isset($userData['role'])) {
                 $this->addRole($userId, $userData['role']);
             }
@@ -134,7 +138,6 @@ class UserRepository
 
         if ($row = $result->fetch_assoc()) {
             $stmt->close();
-            // Get roles
             $row['roles'] = $this->getUserRoles($id);
             return $this->hydrate($row);
         }
@@ -218,7 +221,6 @@ class UserRepository
 
     /**
      * Get user checkout info (name, email, phone).
-     * Used during checkout flow.
      *
      * @param int $userId User ID
      * @return array|null
@@ -246,7 +248,8 @@ class UserRepository
      */
     public function findAll(string $filter = 'all', string $search = '', int $limit = 0, int $offset = 0): array
     {
-        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.profile_image, u.location, u.id_verified, u.status, u.created_at,
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.profile_image, u.location, 
+                       u.id_verified, u.email_verified, u.status, u.created_at,
                        GROUP_CONCAT(ur.role) as roles
                 FROM users u
                 LEFT JOIN user_roles ur ON u.user_id = ur.user_id
@@ -306,7 +309,8 @@ class UserRepository
      */
     public function findByRoleWithPagination(string $role, string $search = '', int $limit = 10, int $offset = 0): array
     {
-        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.profile_image, u.location, u.id_verified, u.status, u.created_at,
+        $sql = "SELECT u.user_id, u.full_name, u.email, u.phone, u.profile_image, u.location, 
+                       u.id_verified, u.email_verified, u.status, u.created_at,
                        GROUP_CONCAT(ur.role) as roles
                 FROM users u
                 INNER JOIN user_roles ur ON u.user_id = ur.user_id
@@ -658,23 +662,16 @@ class UserRepository
         $this->db->begin_transaction();
 
         try {
-            // 1. Update users table
             $stmt = $this->db->prepare("UPDATE users SET id_verified = 1 WHERE user_id = ?");
             $stmt->bind_param('i', $sellerId);
-            if (!$stmt->execute()) {
-                throw new Exception('Failed to update users table');
-            }
+            if (!$stmt->execute()) throw new Exception('Failed to update users table');
             $stmt->close();
 
-            // 2. Update seller_verification table
-            $stmt2 = $this->db->prepare("UPDATE seller_verification 
-                                     SET document_verified = 1, 
-                                         verified_at = NOW() 
-                                     WHERE seller_id = ?");
+            $stmt2 = $this->db->prepare(
+                "UPDATE seller_verification SET document_verified = 1, verified_at = NOW() WHERE seller_id = ?"
+            );
             $stmt2->bind_param('i', $sellerId);
-            if (!$stmt2->execute()) {
-                throw new Exception('Failed to update seller_verification table');
-            }
+            if (!$stmt2->execute()) throw new Exception('Failed to update seller_verification table');
             $stmt2->close();
 
             $this->db->commit();
@@ -697,23 +694,16 @@ class UserRepository
         $this->db->begin_transaction();
 
         try {
-            // 1. Update users table
             $stmt = $this->db->prepare("UPDATE users SET id_verified = 0 WHERE user_id = ?");
             $stmt->bind_param('i', $sellerId);
-            if (!$stmt->execute()) {
-                throw new Exception('Failed to update users table');
-            }
+            if (!$stmt->execute()) throw new Exception('Failed to update users table');
             $stmt->close();
 
-            // 2. Update seller_verification table
-            $stmt2 = $this->db->prepare("UPDATE seller_verification 
-                                     SET document_verified = 0, 
-                                         verified_at = NULL 
-                                     WHERE seller_id = ?");
+            $stmt2 = $this->db->prepare(
+                "UPDATE seller_verification SET document_verified = 0, verified_at = NULL WHERE seller_id = ?"
+            );
             $stmt2->bind_param('i', $sellerId);
-            if (!$stmt2->execute()) {
-                throw new Exception('Failed to update seller_verification table');
-            }
+            if (!$stmt2->execute()) throw new Exception('Failed to update seller_verification table');
             $stmt2->close();
 
             $this->db->commit();
@@ -733,12 +723,167 @@ class UserRepository
      */
     public function upgradeToSeller(int $userId): bool
     {
-        // Check if user already has seller role
         $roles = $this->getUserRoles($userId);
-        if (in_array('seller', $roles)) {
-            return true;
-        }
+        if (in_array('seller', $roles)) return true;
         return $this->addRole($userId, 'seller');
+    }
+
+    // ============================================================
+    // EMAIL VERIFICATION
+    // ============================================================
+
+    /**
+     * Find user by verification token.
+     *
+     * @param string $token Verification token
+     * @return int|null User ID or null if invalid/expired
+     */
+    public function findByVerificationToken(string $token): ?int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT user_id FROM users 
+             WHERE verification_token = ? AND verification_token_expiry > NOW()"
+        );
+        $stmt->bind_param('s', $token);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return $row ? (int)$row['user_id'] : null;
+    }
+
+    /**
+     * Mark user email as verified.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function markEmailVerified(int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET email_verified = 1, verification_token = NULL, 
+             verification_token_expiry = NULL WHERE user_id = ?"
+        );
+        $stmt->bind_param('i', $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Clear verification token.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function clearVerificationToken(int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET verification_token = NULL, 
+             verification_token_expiry = NULL WHERE user_id = ?"
+        );
+        $stmt->bind_param('i', $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Update verification token (for resending).
+     *
+     * @param int $userId User ID
+     * @param string $token New token
+     * @param string $expiry Expiry datetime
+     * @return bool
+     */
+    public function updateVerificationToken(int $userId, string $token, string $expiry): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET verification_token = ?, verification_token_expiry = ? WHERE user_id = ?"
+        );
+        $stmt->bind_param('ssi', $token, $expiry, $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    // ============================================================
+    // PASSWORD RESET
+    // ============================================================
+
+    /**
+     * Store password reset token.
+     *
+     * @param int $userId User ID
+     * @param string $token Reset token
+     * @param string $expiry Expiry datetime
+     * @return bool
+     */
+    public function storePasswordResetToken(int $userId, string $token, string $expiry): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE user_id = ?"
+        );
+        $stmt->bind_param('ssi', $token, $expiry, $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
+     * Find user by password reset token.
+     *
+     * @param string $token Reset token
+     * @return int|null User ID or null if invalid/expired
+     */
+    public function findByPasswordResetToken(string $token): ?int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT user_id FROM users 
+             WHERE reset_token = ? AND reset_token_expiry > NOW()"
+        );
+        $stmt->bind_param('s', $token);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        return $row ? (int)$row['user_id'] : null;
+    }
+
+    /**
+     * Clear password reset token.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function clearPasswordResetToken(int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE user_id = ?"
+        );
+        $stmt->bind_param('i', $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    // ============================================================
+    // SESSION MANAGEMENT
+    // ============================================================
+
+    /**
+     * Invalidate all sessions for a user (on password change).
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function invalidateSessions(int $userId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM user_sessions WHERE user_id = ?");
+        $stmt->bind_param('i', $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
     }
 
     // ============================================================
@@ -976,22 +1121,17 @@ class UserRepository
 
     /**
      * Check if a user has a verification document.
-     * Only applies to sellers, returns false for other roles.
      *
      * @param array $row User row data
-     * @return bool True if the user is a seller with a document
+     * @return bool
      */
     private function userHasDocument(array $row): bool
     {
         $roles = $row['roles'] ?? [];
-        if (!in_array('seller', $roles)) {
-            return false;
-        }
+        if (!in_array('seller', $roles)) return false;
 
         $stmt = $this->db->prepare("SELECT document_path FROM seller_verification WHERE seller_id = ?");
-        if (!$stmt) {
-            return false;
-        }
+        if (!$stmt) return false;
 
         $stmt->bind_param('i', $row['user_id']);
         $stmt->execute();
@@ -1011,9 +1151,7 @@ class UserRepository
     public function findVerification(int $sellerId): ?SellerVerification
     {
         $stmt = $this->db->prepare("SELECT * FROM seller_verification WHERE seller_id = ?");
-        if (!$stmt) {
-            return null;
-        }
+        if (!$stmt) return null;
         $stmt->bind_param('i', $sellerId);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -1024,7 +1162,6 @@ class UserRepository
 
     /**
      * Hydrate database row into appropriate User subclass.
-     * NO repositories are injected into domain models!
      *
      * @param array $data Database row with roles included
      * @return User
@@ -1037,11 +1174,9 @@ class UserRepository
         switch ($primaryRole) {
             case 'admin':
                 return new Admin($data);
-
             case 'seller':
                 $verification = $this->findVerification($data['user_id']);
                 return new Seller($data, $verification);
-
             case 'buyer':
             default:
                 return new Buyer($data);
@@ -1059,9 +1194,7 @@ class UserRepository
     {
         $priority = ['admin', 'seller', 'buyer'];
         foreach ($priority as $role) {
-            if (in_array($role, $roles)) {
-                return $role;
-            }
+            if (in_array($role, $roles)) return $role;
         }
         return 'buyer';
     }

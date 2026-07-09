@@ -6,11 +6,12 @@
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
-// Detect AJAX request
+// Rate limit: 5 attempts per 60 seconds
+rateLimit('login', 5, 60);
+
 $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
-// Only process POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     if ($is_ajax) {
         echo json_encode(['success' => false, 'message' => 'Invalid request method']);
@@ -24,23 +25,19 @@ $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 $context = $_POST['context'] ?? 'main';
 
-// Validate input
 if (empty($email) || empty($password)) {
-    $error_msg = 'Please enter both email and password.';
     if ($is_ajax) {
-        echo json_encode(['success' => false, 'message' => $error_msg]);
+        echo json_encode(['success' => false, 'message' => 'Please enter both email and password.']);
         exit;
     }
-    $_SESSION['login_error'] = $error_msg;
+    $_SESSION['login_error'] = 'Please enter both email and password.';
     $_SESSION['login_email'] = $email;
     header('Location: ' . $baseUrl . 'index.php');
     exit;
 }
 
-// Auth class handles everything with context
 $result = $auth->login($email, $password, $context);
 
-// Handle login failure
 if (!$result['success']) {
     if ($is_ajax) {
         echo json_encode(['success' => false, 'message' => $result['message']]);
@@ -52,13 +49,10 @@ if (!$result['success']) {
     exit;
 }
 
-// Handle successful login
 if ($is_ajax) {
     echo json_encode(['success' => true, 'redirect' => $result['redirect']]);
     exit;
 }
 
-$_SESSION['flash'] = $result['message'];
 header('Location: ' . $result['redirect']);
 exit;
-a

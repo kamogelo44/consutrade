@@ -7,7 +7,7 @@
  * Contains shared properties and methods common to every user.
  *
  * @author Kamogelo Phale
- * @version 3.0.0
+ * @version 3.1.0
  */
 
 abstract class User
@@ -36,6 +36,9 @@ abstract class User
     /** @var bool */
     protected $idVerified;
 
+    /** @var bool */
+    protected $emailVerified;
+
     /** @var string */
     protected $profileImage;
 
@@ -60,6 +63,7 @@ abstract class User
         $this->location     = (string) ($data['location']    ?? '');
         $this->roles        = (array)  ($data['roles']       ?? ['buyer']);
         $this->idVerified   = (bool) ($data['id_verified']   ?? false);
+        $this->emailVerified = (bool) ($data['email_verified'] ?? false);
         $this->profileImage = (string) ($data['profile_image'] ?? '');
         $this->createdAt    = (string) ($data['created_at']   ?? '');
         $this->status       = (string) ($data['status']       ?? 'active');
@@ -145,7 +149,6 @@ abstract class User
 
     /**
      * Get the user's role (legacy compatibility).
-     * Returns primary role.
      *
      * @return string
      */
@@ -162,6 +165,16 @@ abstract class User
     public function isVerified()
     {
         return $this->idVerified;
+    }
+
+    /**
+     * Check if user's email is verified.
+     *
+     * @return bool
+     */
+    public function isEmailVerified(): bool
+    {
+        return $this->emailVerified;
     }
 
     /**
@@ -283,6 +296,7 @@ abstract class User
             'location' => $this->location,
             'roles' => $this->roles,
             'id_verified' => $this->idVerified,
+            'email_verified' => $this->emailVerified,
             'profile_image' => $this->profileImage,
             'created_at' => $this->createdAt,
             'status' => $this->status
@@ -304,6 +318,7 @@ abstract class User
         $this->location = $data['location'];
         $this->roles = $data['roles'] ?? ['buyer'];
         $this->idVerified = $data['id_verified'];
+        $this->emailVerified = (bool)($data['email_verified'] ?? false);
         $this->profileImage = $data['profile_image'];
         $this->createdAt = $data['created_at'];
         $this->status = $data['status'];

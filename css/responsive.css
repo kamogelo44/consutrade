@@ -847,3 +847,22 @@
     height: 40px;
   }
 }
+
+/* ========== MY PRODUCTS ========== */
+@media (max-width: 768px) {
+  .products-table {
+    min-width: 500px;
+  }
+}
+
+@media (max-width: 480px) {
+  .products-table th,
+  .products-table td {
+    padding: var(--spacing-sm);
+    font-size: var(--font-xs);
+  }
+  .product-thumb {
+    width: 32px;
+    height: 32px;
+  }
+}

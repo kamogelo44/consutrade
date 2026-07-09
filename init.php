@@ -186,6 +186,27 @@ $GLOBALS['currentUserRole'] = $currentUserRole;
 $GLOBALS['isLoggedIn'] = $isLoggedIn;
 $GLOBALS['baseUrl'] = $baseUrl;
 
+/**
+ * Apply rate limiting to endpoint.
+ * Exits with 429 if limit exceeded.
+ */
+function rateLimit(string $endpoint, int $maxRequests, int $windowSeconds): void
+{
+    global $rateLimiter;
+
+    $result = $rateLimiter->check($endpoint, $maxRequests, $windowSeconds);
+
+    if (!$result['allowed']) {
+        $rateLimiter->sendRateLimitResponse($result['retry_after']);
+        exit;
+    }
+
+    // Add rate limit headers to response
+    header('X-RateLimit-Limit: ' . $maxRequests);
+    header('X-RateLimit-Remaining: ' . $result['remaining']);
+    header('X-RateLimit-Reset: ' . (time() + $result['retry_after']));
+}
+
 // Cache control headers for logged-in users
 if ($isLoggedIn) {
     header('Cache-Control: no-cache, no-store, must-revalidate');

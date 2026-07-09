@@ -6,6 +6,9 @@
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
+// Rate limit: 3 registrations per hour
+rateLimit('register', 3, 3600);
+
 $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 
@@ -21,7 +24,7 @@ if ($auth->isLoggedIn()) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $full_name        = trim($_POST['full_name'] ?? '');
-    $email            = trim($_POST['email'] ?? '');
+    $email            = strtolower(trim($_POST['email'] ?? ''));
     $phone            = trim($_POST['phone'] ?? '');
     $password         = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
@@ -62,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (empty($password)) {
         $errors['password'] = 'Password is required';
-    } elseif (strlen($password) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
+    } elseif (strlen($password) < 8) {
+        $errors['password'] = 'Password must be at least 8 characters';
     } elseif (strlen($password) > 255) {
         $errors['password'] = 'Password is too long';
     }
@@ -80,9 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // If user exists and is trying to become a seller
     if ($existing_user && $role === 'seller' && empty($errors)) {
-        // Check if user already has seller role
         if ($existing_user->hasRole('seller')) {
-            // User already has seller account - just log them in
             $auth->login($email, $password, 'admin');
             $_SESSION['flash'] = 'Welcome back! You already have a seller account.';
 
@@ -95,13 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             header('Location: ' . $redirect_url);
             exit;
         } else {
-            // User exists but doesn't have seller role - add it
             $userId = $existing_user->getUserId();
             $result = $userRepo->addRole($userId, 'seller');
 
             if ($result) {
                 $auth->login($email, $password, 'admin');
-                $_SESSION['flash'] = 'Seller access added to your account! Welcome to the seller dashboard.';
+                $_SESSION['flash'] = 'Seller access added to your account!';
 
                 $redirect_url = $baseUrl . 'admin/seller-dashboard.php';
 
@@ -117,12 +117,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // If user exists and trying to register as buyer
     if ($existing_user && $role === 'buyer' && empty($errors)) {
         $errors['email'] = 'An account with this email already exists. Please login instead.';
     }
 
-    // If user doesn't exist, check phone
     if (!$existing_user && empty($errors)) {
         if (!empty($clean_phone)) {
             $existing_phone = $userRepo->findByPhone($clean_phone);
@@ -132,44 +130,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // If no errors and no existing user, create new user
+    // Create new user via Auth class
     if (empty($errors) && !$existing_user) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
         $userData = [
             'full_name' => $full_name,
             'email' => $email,
             'phone' => $clean_phone,
-            'password' => $hashed_password,
+            'password' => $password,
             'role' => $role
         ];
 
-        $userId = $userRepo->create($userData);
+        $result = $auth->register($userData);
 
-        if ($userId) {
-            $context = ($role === 'seller') ? 'admin' : 'main';
-            $auth->login($email, $password, $context);
-
-            if ($role === 'seller') {
-                $_SESSION['flash'] = 'Welcome to ConsuTrade! Your seller account has been created.';
-                $redirect_url = $baseUrl . 'admin/seller-dashboard.php';
-            } else {
-                $_SESSION['flash'] = 'Welcome to ConsuTrade, ' . $full_name . '!';
-                $redirect_url = $baseUrl . 'index.php';
-            }
-
+        if ($result['success']) {
             if ($is_ajax) {
-                echo json_encode(['success' => true, 'redirect' => $redirect_url]);
+                echo json_encode([
+                    'success' => true,
+                    'message' => $result['message'],
+                    'redirect' => $baseUrl . 'index.php'
+                ]);
                 exit;
             }
-            header('Location: ' . $redirect_url);
+            $_SESSION['flash'] = $result['message'];
+            header('Location: ' . $baseUrl . 'index.php');
             exit;
         } else {
-            $errors['general'] = 'Registration failed. Please try again.';
+            $errors['general'] = $result['message'];
         }
     }
 
-    // If we still have errors, return them
     if (!empty($errors)) {
         if ($is_ajax) {
             echo json_encode([

@@ -20,39 +20,34 @@ $load_orders_js = true;
     <?php include 'includes/header.php'; ?>
     <?php include 'includes/breadcrumb.php'; ?>
 
-    <main class="orders-container">
-        <div class="page-header">
-            <h1>My Orders</h1>
-            <p>Track and manage your purchases</p>
+    <main class="orders-page">
+        <div class="orders-page-header">
+            <div>
+                <h1>My Orders</h1>
+                <p>Track your purchases</p>
+            </div>
+            <?php if (isset($hasSellerRole) && $hasSellerRole): ?>
+                <a href="orders.php?tab=seller" class="orders-switch-link">Selling orders →</a>
+            <?php endif; ?>
         </div>
 
-        <?php if ($hasSellerRole): ?>
-            <div class="orders-role-switch">
-                <a href="?tab=seller" class="orders-switch-link">Switch to Selling →</a>
-            </div>
-        <?php endif; ?>
-
-        <div class="filters-bar">
-            <div class="filter-group">
-                <select id="statusFilter">
-                    <option value="all">All Orders</option>
-                    <option value="pending">Pending</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-            </div>
-            <div class="search-group">
-                <input type="text" id="searchInput" placeholder="Search orders...">
-                <button id="searchBtn" class="search-btn">
-                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" alt="Search" width="16" height="16">
-                </button>
+        <div class="orders-filters">
+            <select id="statusFilter" class="orders-filter-select">
+                <option value="all">All Orders</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+            <div class="orders-search">
+                <input type="text" id="searchInput" placeholder="Search by order number...">
+                <button id="searchBtn"><img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search"></button>
             </div>
         </div>
 
-        <div class="table-wrapper">
-            <table class="data-table">
+        <div class="orders-table-wrap">
+            <table class="orders-table">
                 <thead>
                     <tr>
                         <th>Order #</th>
@@ -70,14 +65,15 @@ $load_orders_js = true;
         <div class="pagination" id="pagination"></div>
     </main>
 
+    <!-- Order Details Modal -->
     <div id="orderModal" class="order-modal">
         <div class="order-modal-content">
             <div class="order-modal-header">
                 <h2>Order Details</h2>
                 <button class="btn-close" onclick="closeOrderModal()">&times;</button>
             </div>
-            <div id="orderModalBody"></div>
-            <div id="orderModalFooter"></div>
+            <div class="order-modal-body" id="orderModalBody"></div>
+            <div class="order-modal-footer" id="orderModalFooter"></div>
         </div>
     </div>
 

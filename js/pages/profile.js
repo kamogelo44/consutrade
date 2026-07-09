@@ -101,7 +101,7 @@ $(function() {
     // LOAD STATS
     // ============================================================
 
-function loadUserStats() {
+function loadUserSstats() {
     // Load seller stats
     if ($('#stat-products').length) {
         $.ajax({

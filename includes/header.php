@@ -91,7 +91,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                         <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
 
                         <?php if ($hasBuyerRole): ?>
-                            <a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a>
+                            <a href="<?php echo $baseUrl; ?>orders.php">Orders</a>
                             <a href="<?php echo $baseUrl; ?>cart.php">My Cart</a>
                         <?php endif; ?>
 
@@ -178,14 +178,14 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                 <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
 
                 <?php if ($hasBuyerRole): ?>
-                    <li><a href="<?php echo $baseUrl; ?>my-orders.php">My Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>orders.php">Orders</a></li>
                     <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
                 <?php endif; ?>
 
                 <?php if ($hasSellerRole): ?>
                     <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
                     <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/seller-orders.php">Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>orders.php">Orders</a></li>
                 <?php endif; ?>
 
                 <?php if ($hasAdminRole): ?>

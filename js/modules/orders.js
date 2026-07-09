@@ -173,7 +173,7 @@ function loadOrders(endpoint, $container, $pagination, page, status, search, use
         url: baseUrl + endpoint,
         type: 'GET',
         dataType: 'json',
-        data: { page: page, status: status, search: search },
+        data: { page: page, status: status, search: search, type: userRole },
         success: function(data) {
             if (data.success && data.orders && data.orders.length) {
                 renderOrdersTable(data.orders, $container, userRole);
