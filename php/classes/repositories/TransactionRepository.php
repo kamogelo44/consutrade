@@ -24,20 +24,36 @@ class TransactionRepository
 
     /**
      * Creates a transaction record after a successful payment.
-     * This links the PayFast reference to the order and records the amount paid.
+     * Uses idempotency key to prevent duplicate processing.
      *
      * @param int $orderId The order ID
      * @param string $payfastRef The PayFast payment reference
      * @param float $amount The amount paid
-     * @return Transaction|false The transaction object or false on failure
+     * @param string|null $idempotencyKey Unique key to prevent duplicates
+     * @return Transaction|false The transaction object or false on failure/duplicate
      */
-    public function createFromPayment(int $orderId, string $payfastRef, float $amount): Transaction|false
+    public function createFromPayment(int $orderId, string $payfastRef, float $amount, ?string $idempotencyKey = null): Transaction|false
     {
+        // Check for duplicate if idempotency key provided
+        if ($idempotencyKey) {
+            $stmt = $this->db->prepare(
+                "SELECT transaction_id FROM transactions WHERE idempotency_key = ?"
+            );
+            $stmt->bind_param('s', $idempotencyKey);
+            $stmt->execute();
+            if ($stmt->get_result()->fetch_assoc()) {
+                $stmt->close();
+                error_log("Duplicate transaction prevented for idempotency_key: $idempotencyKey");
+                return false;
+            }
+            $stmt->close();
+        }
+
         $stmt = $this->db->prepare(
-            "INSERT INTO transactions (order_id, payfast_ref, amount, status, paid_at) 
-             VALUES (?, ?, ?, 'completed', NOW())"
+            "INSERT INTO transactions (order_id, payfast_ref, amount, status, idempotency_key, paid_at) 
+         VALUES (?, ?, ?, 'completed', ?, NOW())"
         );
-        $stmt->bind_param('isd', $orderId, $payfastRef, $amount);
+        $stmt->bind_param('isds', $orderId, $payfastRef, $amount, $idempotencyKey);
 
         if (!$stmt->execute()) {
             error_log("Transaction creation failed for order_id: $orderId - " . $stmt->error);

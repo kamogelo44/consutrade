@@ -7,7 +7,7 @@
  * It should be included at the top of every page.
  *
  * @author Kamogelo Phale
- * @version 2.1.0
+ * @version 2.4.0
  */
 
 // Session settings
@@ -23,6 +23,13 @@ require_once __DIR__ . '/php/classes/core/Database.php';
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
+
+// ============================================================
+// PHPMailer
+// ============================================================
+require_once __DIR__ . '/php/lib/PHPMailer/Exception.php';
+require_once __DIR__ . '/php/lib/PHPMailer/PHPMailer.php';
+require_once __DIR__ . '/php/lib/PHPMailer/SMTP.php';
 
 // ============================================================
 // LOAD REPOSITORIES
@@ -78,7 +85,6 @@ require_once __DIR__ . '/php/classes/core/Auth.php';
 $userRepo = new UserRepository($conn);
 $categoryRepo = new CategoryRepository($conn);
 
-// ProductImageService is now available because we loaded services first
 $productImageService = new ProductImageService();
 $productRepo = new ProductRepository($conn, $productImageService);
 $productImageRepo = new ProductImageRepository($conn);
@@ -93,7 +99,6 @@ $reportRepo = new ReportRepository($conn, $productRepo);
 // ============================================================
 $auth = new Auth($conn, $userRepo);
 
-// Auto-login from .htaccess authentication
 if (isset($_SERVER['PHP_AUTH_USER']) && !$auth->isLoggedIn()) {
     $email = $_SERVER['PHP_AUTH_USER'];
     $user = $userRepo->findByEmail($email);
@@ -104,7 +109,6 @@ if (isset($_SERVER['PHP_AUTH_USER']) && !$auth->isLoggedIn()) {
     }
 }
 
-// UserService
 $userService = new UserService(
     $conn,
     $userRepo,
@@ -116,7 +120,6 @@ $userService = new UserService(
     $auth
 );
 
-// AdminService
 $adminService = new AdminService(
     $conn,
     $userRepo,
@@ -152,12 +155,40 @@ $orderService = new OrderService(
 $productService = new ProductService($productRepo);
 
 // ============================================================
+// RATE LIMITER
+// ============================================================
+require_once __DIR__ . '/php/classes/core/RateLimiter.php';
+$rateLimiter = new RateLimiter($conn);
+$GLOBALS['rateLimiter'] = $rateLimiter;
+
+// ============================================================
 // SESSION & USER
 // ============================================================
 $currentUser = $auth->getCurrentUser();
 $isLoggedIn = $auth->isLoggedIn();
 $currentUserRole = $auth->getCurrentUserRole();
 $baseUrl = getBaseUrl();
+
+// ============================================================
+// SESSION TIMEOUT CHECK
+// ============================================================
+if ($isLoggedIn) {
+    if (!$auth->checkSessionTimeout()) {
+        if (!headers_sent()) {
+            header('Location: ' . $baseUrl . 'index.php?timeout=1');
+            exit;
+        }
+    }
+}
+
+// ============================================================
+// DAILY MAINTENANCE
+// ============================================================
+$cleanupKey = 'last_cleanup_' . date('Y-m-d');
+if (!isset($_SESSION[$cleanupKey])) {
+    require_once __DIR__ . '/php/cron/cleanup-orders.php';
+    $_SESSION[$cleanupKey] = true;
+}
 
 // ============================================================
 // GLOBAL VARIABLES
@@ -201,7 +232,6 @@ function rateLimit(string $endpoint, int $maxRequests, int $windowSeconds): void
         exit;
     }
 
-    // Add rate limit headers to response
     header('X-RateLimit-Limit: ' . $maxRequests);
     header('X-RateLimit-Remaining: ' . $result['remaining']);
     header('X-RateLimit-Reset: ' . (time() + $result['retry_after']));

@@ -11,7 +11,6 @@
 // LOAD ENVIRONMENT - AZURE FIRST
 // ============================================================
 
-// Try Azure environment variables first (App Settings)
 $env = [
     // Database
     'DB_HOST' => $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? null,
@@ -29,14 +28,20 @@ $env = [
 
     // Maintenance
     'MAINTENANCE_ALLOWED_IPS' => $_ENV['MAINTENANCE_ALLOWED_IPS'] ?? $_SERVER['MAINTENANCE_ALLOWED_IPS'] ?? null,
+
+    // SMTP Email
+    'SMTP_HOST' => $_ENV['SMTP_HOST'] ?? $_SERVER['SMTP_HOST'] ?? null,
+    'SMTP_PORT' => $_ENV['SMTP_PORT'] ?? $_SERVER['SMTP_PORT'] ?? null,
+    'SMTP_USER' => $_ENV['SMTP_USER'] ?? $_SERVER['SMTP_USER'] ?? null,
+    'SMTP_PASS' => $_ENV['SMTP_PASS'] ?? $_SERVER['SMTP_PASS'] ?? null,
+    'SMTP_FROM' => $_ENV['SMTP_FROM'] ?? $_SERVER['SMTP_FROM'] ?? null,
+    'SMTP_FROM_NAME' => $_ENV['SMTP_FROM_NAME'] ?? $_SERVER['SMTP_FROM_NAME'] ?? null,
 ];
 
-// Check if Azure variables are set (not null and not empty)
 $azureVariablesSet = array_filter($env, function ($value) {
     return $value !== null && $value !== '';
 });
 
-// If no Azure variables are set, fallback to .env file
 if (empty($azureVariablesSet)) {
     $envFile = __DIR__ . '/../.env';
     if (file_exists($envFile)) {
@@ -49,7 +54,6 @@ if (empty($azureVariablesSet)) {
     }
 }
 
-// For PHPUNIT testing
 if (defined('PHPUNIT_TESTING') && PHPUNIT_TESTING === true) {
     $testEnvFile = __DIR__ . '/../.env.testing';
     if (file_exists($testEnvFile)) {
@@ -63,10 +67,9 @@ if (defined('PHPUNIT_TESTING') && PHPUNIT_TESTING === true) {
 }
 
 // ============================================================
-// ENSURE DEFAULTS
+// DEFAULTS
 // ============================================================
 
-// Ensure PAYFAST_SANDBOX has a default value
 if (!isset($env['PAYFAST_SANDBOX']) || $env['PAYFAST_SANDBOX'] === '') {
     $env['PAYFAST_SANDBOX'] = 'true';
 }
@@ -109,11 +112,9 @@ define('DB_PASS', $env['DB_PASS'] ?? '');
 define('PAYFAST_MERCHANT_ID', $env['PAYFAST_MERCHANT_ID'] ?? '');
 define('PAYFAST_MERCHANT_KEY', $env['PAYFAST_MERCHANT_KEY'] ?? '');
 
-// Convert PAYFAST_SANDBOX to boolean
 $sandbox = isset($env['PAYFAST_SANDBOX']) ? filter_var($env['PAYFAST_SANDBOX'], FILTER_VALIDATE_BOOLEAN) : true;
 define('PAYFAST_SANDBOX', $sandbox);
 
-// PayFast URLs
 if (PAYFAST_SANDBOX) {
     define('PAYFAST_PROCESS_URL', 'https://sandbox.payfast.co.za/eng/process');
     define('PAYFAST_VALIDATE_URL', 'https://sandbox.payfast.co.za/eng/query/validate');
@@ -122,16 +123,20 @@ if (PAYFAST_SANDBOX) {
     define('PAYFAST_VALIDATE_URL', 'https://www.payfast.co.za/eng/query/validate');
 }
 
+// SMTP Email
+define('SMTP_HOST', $env['SMTP_HOST'] ?? 'smtp.gmail.com');
+define('SMTP_PORT', $env['SMTP_PORT'] ?? 587);
+define('SMTP_USER', $env['SMTP_USER'] ?? '');
+define('SMTP_PASS', $env['SMTP_PASS'] ?? '');
+define('SMTP_FROM', $env['SMTP_FROM'] ?? '');
+define('SMTP_FROM_NAME', $env['SMTP_FROM_NAME'] ?? 'ConsuTrade');
+
 // ============================================================
 // MAINTENANCE MODE CHECK
 // ============================================================
 
-/**
- * Get the real client IP address (works behind proxies like Azure)
- */
 function getRealClientIp(): ?string
 {
-    // Check Azure/Cloudflare forwarded headers first
     if (isset($_SERVER['HTTP_X_ORIGINAL_FORWARDED_FOR'])) {
         $ip = $_SERVER['HTTP_X_ORIGINAL_FORWARDED_FOR'];
     } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -142,13 +147,11 @@ function getRealClientIp(): ?string
         $ip = $_SERVER['REMOTE_ADDR'] ?? null;
     }
 
-    // Handle comma-separated IPs (take the first one)
     if ($ip && strpos($ip, ',') !== false) {
         $ips = explode(',', $ip);
         $ip = trim($ips[0]);
     }
 
-    // Strip port number if present (IPv4 with port)
     if ($ip && strpos($ip, ':') !== false) {
         $parts = explode(':', $ip);
         if (strpos($parts[0], '.') !== false && count($parts) === 2) {
@@ -159,15 +162,10 @@ function getRealClientIp(): ?string
     return $ip;
 }
 
-/**
- * Check if the current user is allowed during maintenance mode
- * Returns true if allowed, false if should be blocked
- */
 function isMaintenanceAllowed(): bool
 {
     global $env;
 
-    // If maintenance IPs aren't set, allow everyone (maintenance mode disabled)
     if (empty($GLOBALS['env']['MAINTENANCE_ALLOWED_IPS'])) {
         return true;
     }
@@ -178,10 +176,6 @@ function isMaintenanceAllowed(): bool
     return in_array($clientIp, $allowedIps);
 }
 
-/**
- * Redirect to maintenance page if not allowed
- * Call this at the top of any page that should respect maintenance mode
- */
 function checkMaintenanceMode(): void
 {
     global $baseUrl;
@@ -191,9 +185,5 @@ function checkMaintenanceMode(): void
         exit;
     }
 }
-
-// ============================================================
-// MAKE ENV AVAILABLE GLOBALLY
-// ============================================================
 
 $GLOBALS['env'] = $env;

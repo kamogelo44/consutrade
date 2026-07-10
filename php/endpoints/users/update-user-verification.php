@@ -6,6 +6,9 @@
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
+// Rate limit: 20 verification actions per minute
+rateLimit('admin_verify', 20, 60);
+
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
@@ -26,7 +29,6 @@ if ($user_id <= 0) {
     exit;
 }
 
-// Use UserService for verification update
 $result = $userService->updateVerification($user_id, $verify);
 
 $response['success'] = $result['success'];

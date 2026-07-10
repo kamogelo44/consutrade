@@ -55,6 +55,22 @@ class CartRepository
         return null;
     }
 
+    /**
+     * Get product ID from a cart item.
+     * Used to verify ownership before updating quantity.
+     */
+    public function findProductIdByCartId(int $cartId, int $userId): ?int
+    {
+        $stmt = $this->db->prepare("SELECT product_id FROM cart WHERE cart_id = ? AND user_id = ?");
+        $stmt->bind_param('ii', $cartId, $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return $row ? (int)$row['product_id'] : null;
+    }
+
     public function findByUser(int $userId): array
     {
         $sql = "SELECT c.cart_id, c.quantity, c.added_at,

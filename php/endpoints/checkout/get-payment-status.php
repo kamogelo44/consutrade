@@ -2,14 +2,13 @@
 /*
  * ConsuTrade - Get Payment Status Endpoint
  * Processes payment redirect from PayFast and returns status data.
- * 
- * Called by order-confirmation.php via include.
- * Also can be called directly for AJAX status checks.
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
-// When called via include, return array. When called directly, output JSON.
+// Rate limit: 10 payment status checks per minute
+rateLimit('payment_status', 10, 60);
+
 $isDirectAccess = basename($_SERVER['SCRIPT_FILENAME']) === 'get-payment-status.php';
 
 if (!$isLoggedIn) {
@@ -34,7 +33,6 @@ $paymentId = $_GET['m_payment_id'] ?? '';
 $orderId = (int)($_GET['order_id'] ?? 0);
 
 try {
-    // Use PaymentStatusService for all logic
     $result = $paymentStatusService->getStatus(
         $paymentStatus,
         $paymentId,
@@ -42,7 +40,6 @@ try {
         $currentUser->getUserId()
     );
 
-    // Ensure all array keys exist
     $result = array_merge([
         'success' => false,
         'message' => '',
@@ -53,7 +50,6 @@ try {
         'redirect_url' => $baseUrl . 'cart.php'
     ], $result);
 
-    // On success, clean up session
     if ($result['success']) {
         unset($_SESSION['checkout_data']);
         unset($_SESSION['payment_error']);
@@ -70,11 +66,9 @@ try {
 
     return $result;
 } catch (Exception $e) {
-    error_log("Payment Status Error: " . $e->getMessage());
-
     $errorResult = [
         'success' => false,
-        'message' => 'An error occurred while checking your payment. Please check your orders page.',
+        'message' => 'An error occurred while checking your payment.',
         'redirect' => false,
         'order' => null,
         'transaction' => null

@@ -2072,3 +2072,73 @@ a.about-contact-item:hover {
   color: var(--gray-light);
   margin-top: var(--spacing-sm);
 }
+
+/* ========== FORGOT/RESET PASSWORD PAGE ========== */
+.forgot-password-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: var(--spacing-xl);
+}
+
+.forgot-password-container {
+  max-width: 440px;
+  width: 100%;
+}
+
+.forgot-password-container h1 {
+  font-size: var(--font-2xl);
+  font-weight: var(--font-bold);
+  color: var(--dark-bg);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+}
+
+.forgot-password-container p {
+  color: var(--gray-medium);
+  font-size: var(--font-md);
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.forgot-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-message {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-sm);
+}
+
+.form-message.success-message {
+  background: var(--success-light);
+  color: var(--success);
+  border-left: 4px solid var(--success);
+}
+
+.form-message.error-message {
+  background: var(--error-light);
+  color: var(--error);
+  border-left: 4px solid var(--error);
+}
+
+.form-footer-link {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-sm);
+  color: var(--gray-medium);
+}
+
+.form-footer-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.form-footer-link a:hover {
+  text-decoration: underline;
+}

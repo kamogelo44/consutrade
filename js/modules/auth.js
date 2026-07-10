@@ -56,6 +56,17 @@ function initErrorClearingOnInput() {
     $('#switch-to-login').on('click', function() {
         clearRegisterErrors();
     });
+
+    // Forgot password link in login modal
+    $('#forgotPasswordLink').on('click', function(e) {
+        e.preventDefault();
+        var email = $('#login-email').val().trim();
+        var url = baseUrl + 'forgot-password.php';
+        if (email) {
+            url += '?email=' + encodeURIComponent(email);
+        }
+        window.location.href = url;
+    });
 }
 
 // ============================================================

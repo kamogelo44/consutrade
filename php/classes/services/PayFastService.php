@@ -4,10 +4,10 @@
  * ConsuTrade - PayFastService
  *
  * Coordinates the payment flow between our system and PayFast.
- * This service handles ITN verification, payment processing, and order updates.
+ * Uses idempotency keys to prevent duplicate payment processing.
  *
  * @author Kamogelo Phale
- * @version 2.2.0
+ * @version 3.0.0
  */
 
 class PayFastService
@@ -31,7 +31,6 @@ class PayFastService
 
     /**
      * Main entry point for PayFast's server-to-server notification.
-     * PayFast calls this after a user completes payment.
      *
      * @param array $postData The POST data from PayFast
      * @return array Response with success flag and message
@@ -39,12 +38,10 @@ class PayFastService
     public function handleItn(array $postData): array
     {
         if (!$this->verifySignature($postData)) {
-            error_log("PayFast ITN: Invalid signature for payment_id: " . ($postData['m_payment_id'] ?? 'unknown'));
             return ['success' => false, 'message' => 'Invalid signature'];
         }
 
         if (!$this->validateWithPayFast($postData)) {
-            error_log("PayFast ITN: Validation failed for payment_id: " . ($postData['m_payment_id'] ?? 'unknown'));
             return ['success' => false, 'message' => 'PayFast validation failed'];
         }
 
@@ -52,8 +49,7 @@ class PayFastService
     }
 
     /**
-     * Verifies the signature sent by PayFast to ensure the request is authentic.
-     * PayFast generates this using our merchant key and the posted data.
+     * Verifies the signature sent by PayFast.
      *
      * @param array $data The POST data from PayFast
      * @return bool True if the signature is valid
@@ -72,13 +68,11 @@ class PayFastService
         }
         $pfParamString = rtrim($pfParamString, '&');
 
-        $expectedSignature = md5($pfParamString);
-        return hash_equals($expectedSignature, $data['signature']);
+        return hash_equals(md5($pfParamString), $data['signature']);
     }
 
     /**
      * Confirms with PayFast that the payment actually happened.
-     * This prevents spoofed ITN requests.
      *
      * @param array $data The POST data from PayFast
      * @return bool True if PayFast confirms the payment
@@ -110,23 +104,15 @@ class PayFastService
         curl_close($ch);
 
         if ($error) {
-            error_log("PayFast validation CURL error: " . $error);
             return false;
         }
 
-        $response = trim($response);
-        if ($response === 'VALID' || $response === 'VERIFIED') {
-            return true;
-        }
-
-        error_log("PayFast validation failed. Response was: " . substr($response, 0, 200));
-        return false;
+        return in_array(trim($response), ['VALID', 'VERIFIED']);
     }
 
     /**
-     * Processes a confirmed payment by updating order status,
-     * creating a transaction record, and clearing the user's cart.
-     * All operations run in a database transaction for consistency.
+     * Processes a confirmed payment using idempotency to prevent duplicates.
+     * Uses m_payment_id from PayFast as the idempotency key.
      *
      * @param array $data The validated POST data from PayFast
      * @return array Result with success flag and message
@@ -137,17 +123,19 @@ class PayFastService
         $paymentId = $data['m_payment_id'] ?? '';
         $payfastRef = $data['pf_payment_id'] ?? '';
 
-        $parts = explode('_', $paymentId);
-        $timestamp = (int)($parts[0] ?? 0);
-        $userId = (int)($parts[1] ?? 0);
-
         if ($paymentStatus !== 'COMPLETE') {
             return ['success' => false, 'message' => 'Payment not complete'];
         }
 
-        if (empty($paymentId) || empty($payfastRef) || $userId <= 0) {
-            error_log("PayFast ITN: Invalid data - paymentId: $paymentId, payfastRef: $payfastRef, userId: $userId");
+        if (empty($paymentId) || empty($payfastRef)) {
             return ['success' => false, 'message' => 'Invalid payment data'];
+        }
+
+        $parts = explode('_', $paymentId);
+        $userId = (int)($parts[1] ?? 0);
+
+        if ($userId <= 0) {
+            return ['success' => false, 'message' => 'Invalid user in payment data'];
         }
 
         $this->db->begin_transaction();
@@ -155,77 +143,44 @@ class PayFastService
         try {
             $orders = $this->getOrdersByPaymentId($paymentId, $userId);
 
-            if (empty($orders) && $timestamp > 0) {
-                $singleOrder = $this->getSingleOrder($timestamp, $userId);
-                if ($singleOrder) {
-                    $orders = [$singleOrder];
-                }
-            }
-
             if (empty($orders)) {
                 $existingOrder = $this->getOrderByPaymentIdAnyStatus($paymentId, $userId);
-                if ($existingOrder && in_array($existingOrder['status'], ['processing', 'completed', 'shipped'])) {
+                if ($existingOrder && $existingOrder['status'] !== 'pending') {
                     $this->cartRepo->deleteAllByUser($userId);
                     $this->db->commit();
                     return ['success' => true, 'message' => 'Payment already processed'];
                 }
-                throw new Exception('No pending orders found for this payment');
+                throw new Exception('No orders found for this payment');
             }
-
-            $processedCount = 0;
 
             foreach ($orders as $order) {
                 if ($order['status'] !== 'pending') {
-                    $processedCount++;
                     continue;
                 }
 
-                $updated = $this->orderRepo->updateStatusDirect($order['order_id'], 'processing');
-                if (!$updated) {
-                    throw new Exception("Failed to update order status for order_id: {$order['order_id']}");
-                }
+                $this->orderRepo->updateStatusDirect($order['order_id'], 'processing');
 
-                $existingTransaction = $this->transactionRepo->findByOrderId($order['order_id']);
-                if ($existingTransaction) {
-                    $updated = $this->transactionRepo->updatePayFastRef(
-                        $existingTransaction->getTransactionId(),
-                        $payfastRef,
-                        'completed'
-                    );
-                    if (!$updated) {
-                        throw new Exception("Failed to update transaction for order_id: {$order['order_id']}");
-                    }
-                } else {
-                    $result = $this->transactionRepo->createFromPayment(
-                        $order['order_id'],
-                        $payfastRef,
-                        $order['total_price']
-                    );
-                    if ($result === false) {
-                        throw new Exception("Failed to create transaction record for order_id: {$order['order_id']}");
-                    }
-                }
-
-                $processedCount++;
+                // Use m_payment_id as idempotency key to prevent duplicates
+                $this->transactionRepo->createFromPayment(
+                    $order['order_id'],
+                    $payfastRef,
+                    $order['total_price'],
+                    $paymentId  // idempotency key
+                );
             }
 
             $this->cartRepo->deleteAllByUser($userId);
-
             $this->db->commit();
-            return ['success' => true, 'message' => 'Payment processed successfully'];
+
+            return ['success' => true, 'message' => 'Payment processed'];
         } catch (Exception $e) {
             $this->db->rollback();
-            error_log("PayFast ITN Error: " . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 
     /**
      * Finds all pending orders associated with a payment ID.
-     *
-     * @param string $paymentId The payment ID
-     * @param int $userId The buyer's user ID
-     * @return array List of orders
      */
     private function getOrdersByPaymentId(string $paymentId, int $userId): array
     {
@@ -246,34 +201,7 @@ class PayFastService
     }
 
     /**
-     * Fallback to find a single pending order when payment_id doesn't match multiple orders.
-     *
-     * @param int $orderId The order ID
-     * @param int $userId The buyer's user ID
-     * @return array|null Order data or null if not found
-     */
-    private function getSingleOrder(int $orderId, int $userId): ?array
-    {
-        $sql = "SELECT order_id, total_price, status FROM orders 
-                WHERE order_id = ? AND buyer_id = ? AND status = 'pending'";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bind_param('ii', $orderId, $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        $order = $result->fetch_assoc();
-        $stmt->close();
-
-        return $order ?: null;
-    }
-
-    /**
      * Get an order by payment ID regardless of status.
-     * Used to check if an order was already processed.
-     *
-     * @param string $paymentId The payment ID
-     * @param int $userId The buyer's user ID
-     * @return array|null Order data or null if not found
      */
     private function getOrderByPaymentIdAnyStatus(string $paymentId, int $userId): ?array
     {

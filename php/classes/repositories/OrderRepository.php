@@ -512,18 +512,44 @@ class OrderRepository
      *
      * @return array List of all orders with buyer and seller info
      */
-    public function findAll(): array
+    public function findAll(string $status = 'all', string $search = '', int $limit = 10, int $offset = 0): array
     {
         $sql = "SELECT o.order_id, o.total_price, o.status, o.created_at,
-                       buyer.full_name as buyer_name, buyer.user_id as buyer_id,
-                       seller.full_name as seller_name, seller.user_id as seller_id,
-                       (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
-                FROM orders o
-                JOIN users buyer ON o.buyer_id = buyer.user_id
-                JOIN users seller ON o.seller_id = seller.user_id
-                ORDER BY o.created_at DESC";
+                   buyer.full_name as buyer_name, buyer.user_id as buyer_id,
+                   seller.full_name as seller_name, seller.user_id as seller_id,
+                   (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+            FROM orders o
+            JOIN users buyer ON o.buyer_id = buyer.user_id
+            JOIN users seller ON o.seller_id = seller.user_id
+            WHERE 1=1";
+
+        $params = [];
+        $types = "";
+
+        if ($status !== 'all') {
+            $sql .= " AND o.status = ?";
+            $params[] = $status;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (o.order_id LIKE ? OR buyer.full_name LIKE ? OR seller.full_name LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "sss";
+        }
+
+        $sql .= " ORDER BY o.created_at DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
 
         $stmt = $this->db->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -787,11 +813,41 @@ class OrderRepository
      *
      * @return int Total number of orders
      */
-    public function countAll(): int
+    public function countAll(string $status = 'all', string $search = ''): int
     {
-        $result = $this->db->query("SELECT COUNT(*) as count FROM orders");
-        $row = $result->fetch_assoc();
-        return (int)($row['count'] ?? 0);
+        $sql = "SELECT COUNT(*) as total FROM orders o
+            JOIN users buyer ON o.buyer_id = buyer.user_id
+            JOIN users seller ON o.seller_id = seller.user_id
+            WHERE 1=1";
+
+        $params = [];
+        $types = "";
+
+        if ($status !== 'all') {
+            $sql .= " AND o.status = ?";
+            $params[] = $status;
+            $types .= "s";
+        }
+
+        if (!empty($search)) {
+            $sql .= " AND (o.order_id LIKE ? OR buyer.full_name LIKE ? OR seller.full_name LIKE ?)";
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+            $types .= "sss";
+        }
+
+        $stmt = $this->db->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $total = (int)($result->fetch_assoc()['total'] ?? 0);
+        $stmt->close();
+
+        return $total;
     }
 
     /**
@@ -1001,5 +1057,45 @@ class OrderRepository
         $row = $result->fetch_assoc();
         $stmt->close();
         return (int)($row['count'] ?? 0);
+    }
+
+    // ============================================================
+    // MAINTENANCE
+    // ============================================================
+
+    /**
+     * Soft-delete old orders based on status and age.
+     * Cancelled orders: 90 days
+     * Completed orders: 7 years
+     *
+     * @return int Number of orders soft-deleted
+     */
+    public function cleanupOldOrders(): int
+    {
+        $count = 0;
+
+        // Soft-delete cancelled orders older than 90 days
+        $stmt = $this->db->prepare(
+            "UPDATE orders SET deleted_at = NOW() 
+         WHERE status = 'cancelled' 
+         AND created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)
+         AND deleted_at IS NULL"
+        );
+        $stmt->execute();
+        $count += $stmt->affected_rows;
+        $stmt->close();
+
+        // Soft-delete completed orders older than 7 years
+        $stmt = $this->db->prepare(
+            "UPDATE orders SET deleted_at = NOW() 
+         WHERE status = 'completed' 
+         AND created_at < DATE_SUB(NOW(), INTERVAL 7 YEAR)
+         AND deleted_at IS NULL"
+        );
+        $stmt->execute();
+        $count += $stmt->affected_rows;
+        $stmt->close();
+
+        return $count;
     }
 }

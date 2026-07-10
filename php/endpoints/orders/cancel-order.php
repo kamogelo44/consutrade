@@ -6,12 +6,13 @@
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
+rateLimit('order_cancel', 5, 300);
+
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
 
 $response = ['success' => false, 'message' => ''];
 
-// Check if user has buyer role (not just active role)
 if (!$isLoggedIn || !$currentUser->hasRole('buyer')) {
     $response['message'] = 'Unauthorized. Only buyers can cancel orders.';
     echo json_encode($response);
@@ -27,42 +28,10 @@ if ($orderId <= 0) {
     exit;
 }
 
-$userId = $currentUser->getUserId();
+// OrderService handles state validation, cancellation, stock restoration, and refunds
+$result = $orderService->cancelByBuyer($orderId, $currentUser->getUserId());
 
-// Use OrderService for order lookup - use buyer-specific method
-$orderData = $orderService->findByIdForBuyer($orderId, $userId);
-
-if (!$orderData) {
-    $response['message'] = 'Order not found or you do not have permission.';
-    echo json_encode($response);
-    exit;
-}
-
-$order = new Order($orderData);
-
-if (!$order->canBeCancelledByBuyer()) {
-    $response['message'] = 'Only pending orders can be cancelled. Current status: ' . ucfirst($order->getStatus());
-    echo json_encode($response);
-    exit;
-}
-
-$conn->begin_transaction();
-
-try {
-    // Use OrderService for cancellation with stock restoration
-    $result = $orderService->cancelByBuyer($orderId, $userId);
-
-    if (!$result) {
-        throw new Exception('Failed to cancel order');
-    }
-
-    $conn->commit();
-
-    $response['success'] = true;
-    $response['message'] = 'Order cancelled successfully.';
-} catch (Exception $e) {
-    $conn->rollback();
-    $response['message'] = 'Could not cancel order. Please try again.';
-}
+$response['success'] = $result['success'];
+$response['message'] = $result['message'];
 
 echo json_encode($response);

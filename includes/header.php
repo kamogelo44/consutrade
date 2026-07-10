@@ -241,7 +241,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                     </button>
                 </div>
             </div>
-            <div class="reset-pass"><a href="#">Forgot Password?</a></div>
+            <div class="reset-pass"><a href="#" id="forgotPasswordLink">Forgot Password?</a></div>
             <button type="submit" class="submit-btn">Login</button>
             <div class="register-link">Don't have an account? <a href="#" id="switch-to-register">Register here</a></div>
         </form>

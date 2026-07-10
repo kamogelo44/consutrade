@@ -4,10 +4,12 @@
  * Author: Kamogelo Phale
  * 
  * Allows admins to approve or reject seller verification documents.
- * Uses AdminService for all business logic.
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
+
+// Rate limit: 20 verification decisions per minute
+rateLimit('admin_verify_seller', 20, 60);
 
 header('Content-Type: application/json');
 
@@ -35,7 +37,6 @@ if (!in_array($decision, ['approve', 'reject'])) {
     exit;
 }
 
-// Use AdminService for seller verification
 $result = $adminService->verifySeller($sellerId, $decision);
 
 $response['success'] = $result['success'];

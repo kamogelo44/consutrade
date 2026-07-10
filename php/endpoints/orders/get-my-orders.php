@@ -1,10 +1,12 @@
 <?php
 /*
  * ConsuTrade - Get My Orders (AJAX)
- * Works for both buyers and sellers based on context
+ * Works for both buyers and sellers based on type parameter
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
+
+rateLimit('my_orders', 30, 60);
 
 header('Content-Type: application/json');
 
@@ -19,16 +21,12 @@ if (!$isLoggedIn) {
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $status = $_GET['status'] ?? 'all';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$orderType = $_GET['type'] ?? 'buyer';
 $limit = 10;
 $offset = ($page - 1) * $limit;
-
 $userId = $currentUser->getUserId();
 
-// Check context - what type of orders to load
-$orderType = $_GET['type'] ?? 'buyer'; // 'buyer' or 'seller'
-
 if ($orderType === 'seller') {
-    // Load seller orders (orders where user is the seller)
     if (!$currentUser->hasRole('seller')) {
         $response['error'] = 'You do not have seller access';
         echo json_encode($response);
@@ -38,7 +36,6 @@ if ($orderType === 'seller') {
     $orders = $orderService->findBySeller($userId, $status, $search, $limit, $offset);
     $totalOrders = $orderService->countBySeller($userId, $status, $search);
 } else {
-    // Load buyer orders (orders where user is the buyer)
     if (!$currentUser->hasRole('buyer')) {
         $response['error'] = 'You do not have buyer access';
         echo json_encode($response);
@@ -50,15 +47,9 @@ if ($orderType === 'seller') {
 
     foreach ($orders as &$order) {
         $review = $reviewRepo->findByOrderAndBuyer($order['order_id'], $userId);
-        if ($review) {
-            $order['has_review'] = true;
-            $order['review_rating'] = $review['rating'];
-            $order['review_comment'] = $review['comment'];
-        } else {
-            $order['has_review'] = false;
-            $order['review_rating'] = null;
-            $order['review_comment'] = null;
-        }
+        $order['has_review'] = (bool) $review;
+        $order['review_rating'] = $review['rating'] ?? null;
+        $order['review_comment'] = $review['comment'] ?? null;
     }
 }
 

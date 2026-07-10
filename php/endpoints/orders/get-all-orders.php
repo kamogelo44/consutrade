@@ -1,18 +1,16 @@
 <?php
 /*
  * ConsuTrade - Get All Orders (Admin AJAX)
- * Author: Kamogelo Phale
- * 
- * Returns paginated list of all orders for admin management
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
+
+rateLimit('admin_all_orders', 30, 60);
 
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'orders' => [], 'total_pages' => 1, 'current_page' => 1];
 
-// Check if user has admin role (not just active role)
 if (!$currentUser->hasRole('admin')) {
     echo json_encode($response);
     exit;
@@ -24,31 +22,12 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $limit  = 10;
 $offset = ($page - 1) * $limit;
 
-// Use OrderService for data retrieval
-$allOrders = $orderService->findAll();
-
-$filtered = array_filter($allOrders, function ($order) use ($status, $search) {
-    if ($status !== 'all' && $order['status'] !== $status) return false;
-    if (!empty($search)) {
-        $searchLower = strtolower($search);
-        if (
-            strpos(strtolower($order['buyer_name']), $searchLower) === false &&
-            strpos(strtolower($order['seller_name']), $searchLower) === false &&
-            strpos((string)$order['order_id'], $search) === false
-        ) {
-            return false;
-        }
-    }
-    return true;
-});
-
-$total = count($filtered);
-$totalPages = ceil($total / $limit);
-$paginated = array_slice($filtered, $offset, $limit);
+$orders = $orderService->findAll($status, $search, $limit, $offset);
+$totalOrders = $orderService->countAll($status, $search);
 
 $response['success'] = true;
-$response['orders'] = $paginated;
-$response['total_pages'] = $totalPages;
+$response['orders'] = $orders;
+$response['total_pages'] = ceil($totalOrders / $limit);
 $response['current_page'] = $page;
 
 echo json_encode($response);

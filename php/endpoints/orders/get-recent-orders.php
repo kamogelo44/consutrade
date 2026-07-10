@@ -6,11 +6,12 @@
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
+rateLimit('admin_recent_orders', 20, 60);
+
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'orders' => [], 'message' => ''];
 
-// Check if user has admin role (not just active role)
 if (!$currentUser->hasRole('admin')) {
     $response['message'] = 'Unauthorized';
     echo json_encode($response);
@@ -19,7 +20,6 @@ if (!$currentUser->hasRole('admin')) {
 
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
 
-// Use OrderService for recent orders
 $orders = $orderService->findRecent($limit);
 
 $response['success'] = true;

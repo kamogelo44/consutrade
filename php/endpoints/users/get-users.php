@@ -4,10 +4,13 @@
  * Author: Kamogelo Phale
  * 
  * Handles user listing for admin panel with filtering, pagination, and search.
- * Uses AdminService for all data retrieval.
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
+
+// Rate limit: 30 requests per minute (admin only)
+rateLimit('admin_get_users', 30, 60);
+
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'users' => [], 'total_pages' => 1, 'current_page' => 1];
@@ -36,7 +39,6 @@ try {
         exit;
     }
 
-    // Use AdminService for user listing
     $result = $adminService->getUsers($roleFilter, $searchTerm, $page, $limit);
 
     $response['success'] = true;
@@ -44,8 +46,7 @@ try {
     $response['total_pages'] = $result['total_pages'];
     $response['current_page'] = $result['current_page'];
 } catch (Exception $e) {
-    error_log("GetUsers Error: " . $e->getMessage());
-    $response['error'] = $e->getMessage();
+    $response['error'] = 'Could not load users.';
 }
 
 echo json_encode($response);

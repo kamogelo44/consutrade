@@ -7,6 +7,10 @@
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
+
+// Rate limit: 30 document views per minute (admin only)
+rateLimit('admin_view_doc', 30, 60);
+
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'has_document' => false];
@@ -28,13 +32,9 @@ if ($userId <= 0) {
 $doc = $adminService->getVerificationDocument($userId);
 
 if ($doc && !empty($doc['document_path'])) {
-    // ============================================================
-    // Check if the file actually exists on the server
-    // ============================================================
     $filePath = $_SERVER['DOCUMENT_ROOT'] . '/' . $doc['document_path'];
-    $fileExists = file_exists($filePath);
 
-    if ($fileExists) {
+    if (file_exists($filePath)) {
         $response['success'] = true;
         $response['has_document'] = true;
         $response['document_path'] = $doc['document_path'];
@@ -43,7 +43,6 @@ if ($doc && !empty($doc['document_path'])) {
             ? date('d M Y, H:i', strtotime($doc['submitted_at']))
             : 'Unknown date';
     } else {
-        // File is in database but doesn't exist on server
         $response['success'] = true;
         $response['has_document'] = false;
         $response['message'] = 'Document file is missing. Please ask the seller to re-upload.';

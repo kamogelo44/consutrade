@@ -6,7 +6,7 @@
  * Handles payment status determination using domain classes.
  * 
  * @author Kamogelo Phale
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 class PaymentStatusService
@@ -23,22 +23,19 @@ class PaymentStatusService
     }
 
     /**
-     * Get payment status result from PayFast redirect
+     * Get payment status result from PayFast redirect.
      */
     public function getStatus(string $paymentStatus, string $paymentId, int $orderId, int $userId): array
     {
-        // Extract order_id from m_payment_id if needed
         if ($orderId === 0 && !empty($paymentId)) {
             $order = $this->orderRepo->findByPaymentId($paymentId);
             if ($order) $orderId = (int)$order['order_id'];
         }
 
-        // No payment data - redirect to cart
         if (empty($paymentStatus) && $orderId === 0) {
             return ['redirect' => true, 'url' => 'cart.php'];
         }
 
-        // Handle based on payment status
         switch ($paymentStatus) {
             case 'COMPLETE':
                 return $this->handleComplete($orderId, $userId);
@@ -54,34 +51,21 @@ class PaymentStatusService
     private function handleComplete(int $orderId, int $userId): array
     {
         if ($orderId <= 0) {
-            return [
-                'success' => false,
-                'message' => 'Unable to identify your order.'
-            ];
+            return ['success' => false, 'message' => 'Unable to identify your order.'];
         }
 
         $order = $this->orderRepo->findById($orderId, $userId, 'buyer');
         if (!$order) {
-            return [
-                'success' => false,
-                'message' => 'Order not found. Please contact support.'
-            ];
+            return ['success' => false, 'message' => 'Order not found.'];
         }
 
         $transaction = $this->transactionRepo->findByOrderId($orderId);
 
-        // If order is still pending, ITN might be delayed
         if ($order['status'] === 'pending') {
-            sleep(1);
-            $transaction = $this->transactionRepo->findByOrderId($orderId);
-            $order = $this->orderRepo->findById($orderId, $userId, 'buyer');
-
-            if ($order['status'] === 'pending') {
-                return [
-                    'success' => false,
-                    'message' => 'Payment received but confirmation is pending. Please check your email.'
-                ];
-            }
+            return [
+                'success' => false,
+                'message' => 'Payment received. Your order is being processed. Please check your orders page.'
+            ];
         }
 
         return [
@@ -95,7 +79,7 @@ class PaymentStatusService
     {
         return [
             'success' => false,
-            'message' => 'Your payment was cancelled. You can try again from your cart.'
+            'message' => 'Payment was cancelled. You can try again from your cart.'
         ];
     }
 
@@ -103,7 +87,7 @@ class PaymentStatusService
     {
         return [
             'success' => false,
-            'message' => 'Your payment failed. Please check your payment method and try again.'
+            'message' => 'Payment failed. Please check your payment method and try again.'
         ];
     }
 
@@ -112,7 +96,7 @@ class PaymentStatusService
         if (!empty($paymentStatus)) {
             return [
                 'success' => false,
-                'message' => 'Payment status: ' . htmlspecialchars($paymentStatus) . '. Please contact support.'
+                'message' => 'Payment status: ' . htmlspecialchars($paymentStatus)
             ];
         }
 
@@ -127,34 +111,22 @@ class PaymentStatusService
     {
         $order = $this->orderRepo->findById($orderId, $userId, 'buyer');
         if (!$order) {
-            return [
-                'success' => false,
-                'message' => 'Order not found. Please check your order history.'
-            ];
+            return ['success' => false, 'message' => 'Order not found.'];
         }
 
         $transaction = $this->transactionRepo->findByOrderId($orderId);
 
-        // Use domain class methods for status checking
         if ($transaction && $transaction->isPaid()) {
-            return [
-                'success' => true,
-                'order' => $order,
-                'transaction' => $transaction
-            ];
+            return ['success' => true, 'order' => $order, 'transaction' => $transaction];
         }
 
         if (in_array($order['status'], ['processing', 'completed', 'shipped'])) {
-            return [
-                'success' => true,
-                'order' => $order,
-                'transaction' => $transaction
-            ];
+            return ['success' => true, 'order' => $order, 'transaction' => $transaction];
         }
 
         return [
             'success' => false,
-            'message' => 'Your order is pending payment confirmation. Please wait a moment...'
+            'message' => 'Your order is pending payment confirmation.'
         ];
     }
 }

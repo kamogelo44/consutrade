@@ -6,6 +6,9 @@
 
 require_once dirname(__DIR__, 3) . '/init.php';
 
+// Rate limit: 10 status changes per minute
+rateLimit('admin_status', 10, 60);
+
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
@@ -26,7 +29,6 @@ if ($userId <= 0 || empty($newStatus)) {
     exit;
 }
 
-// Prevent admin from changing their own status
 if ($userId == $currentUser->getUserId()) {
     $response['message'] = 'You cannot change your own account status.';
     echo json_encode($response);

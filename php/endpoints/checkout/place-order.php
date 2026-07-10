@@ -4,20 +4,10 @@
  * Author: Kamogelo Phale
  * 
  * Creates orders and prepares checkout data for payment.
- * Called when user clicks "Proceed to Checkout" button.
- * 
- * Flow:
- * 1. Verify user is logged in as buyer
- * 2. Get cart items and verify stock
- * 3. Create orders (pending status)
- * 4. Create transaction with placeholder reference
- * 5. Store checkout data in session
- * 6. Redirect to checkout.php
+ * Called when user clicks "Proceed to Checkout" or "Buy Now".
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
-
-// $baseUrl is already defined in init.php
 
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
@@ -52,7 +42,6 @@ if (empty($cartItems)) {
     exit;
 }
 
-// Verify stock
 $stockErrors = $cartService->verifyStock($cartItems);
 if (!empty($stockErrors)) {
     $_SESSION['checkout_errors'] = $stockErrors;
@@ -64,16 +53,10 @@ if (!empty($stockErrors)) {
     exit;
 }
 
-// Calculate totals
 $totals = $cartService->calculateTotals($cartItems);
-
-// Get user info
 $userInfo = $userRepo->findCheckoutInfo($userId);
-
-// Generate clean payment ID - NO "PF-PENDING-" prefix
 $paymentId = time() . '_' . $userId;
 
-// CREATE ORDER NOW (BEFORE PAYMENT)
 $checkoutResult = $cartService->processCheckout($userId, $cartItems);
 
 if (!$checkoutResult['success']) {
@@ -86,7 +69,6 @@ if (!$checkoutResult['success']) {
     exit;
 }
 
-// Store checkout data in session for the checkout page
 $_SESSION['checkout_data'] = [
     'payment_id' => $paymentId,
     'primary_order_id' => $checkoutResult['primary_order_id'],

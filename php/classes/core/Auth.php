@@ -1,18 +1,13 @@
 <?php
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 /**
  * ConsuTrade - Auth Class
  * 
  * Handles ALL authentication, session management, rate limiting,
  * email verification, password reset, and login throttling.
- * 
- * Industry-standard security patterns:
- * - Bcrypt password hashing (cost 12)
- * - Session regeneration on login
- * - Account lockout after failed attempts
- * - Email verification tokens (32-byte random)
- * - Password reset tokens with expiry
- * - Session invalidation on password change
  * 
  * @author Kamogelo Phale
  * @version 4.0.0
@@ -58,7 +53,6 @@ class Auth
     {
         $email = strtolower(trim($email));
 
-        // Check if account is locked
         if ($this->isAccountLocked($email)) {
             $unlockAt = $this->getAccountUnlockTime($email);
             return [
@@ -94,7 +88,6 @@ class Auth
             return ['success' => false, 'message' => $message];
         }
 
-        // Check email verification
         if (!$user->isEmailVerified()) {
             return [
                 'success' => false,
@@ -104,7 +97,6 @@ class Auth
             ];
         }
 
-        // Clear failed attempts
         $this->clearFailedAttempts($email);
 
         $roles = $user->getRoles();
@@ -126,12 +118,11 @@ class Auth
         $_SESSION['active_role'] = $activeRole;
         $_SESSION['role'] = $activeRole;
         $_SESSION['login_time'] = time();
+        $_SESSION['last_activity'] = time();
         $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
-        // Record session
         $this->recordSession($user->getUserId());
 
-        // Update cart count
         if (in_array('buyer', $roles)) {
             $this->updateCartCount($user->getUserId());
         }
@@ -149,31 +140,26 @@ class Auth
     {
         $email = strtolower(trim($data['email']));
 
-        // Check if email already exists
         $existing = $this->userRepo->findByEmail($email);
         if ($existing) {
             return ['success' => false, 'message' => 'An account with this email already exists.'];
         }
 
-        // Hash password with bcrypt
         $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
         $data['email'] = $email;
 
-        // Generate verification token
         $token = bin2hex(random_bytes(32));
         $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
         $data['verification_token'] = $token;
         $data['verification_token_expiry'] = $tokenExpiry;
         $data['email_verified'] = 0;
 
-        // Create user
         $userId = $this->userRepo->create($data);
 
         if (!$userId) {
             return ['success' => false, 'message' => 'Registration failed. Please try again.'];
         }
 
-        // Send verification email
         $this->sendVerificationEmail($email, $data['full_name'], $token);
 
         return [
@@ -209,7 +195,7 @@ class Auth
         $userId = $this->userRepo->findByVerificationToken($token);
 
         if (!$userId) {
-            return ['success' => false, 'message' => 'Invalid or expired verification link. Please request a new one.'];
+            return ['success' => false, 'message' => 'Invalid or expired verification link.'];
         }
 
         $this->userRepo->markEmailVerified($userId);
@@ -227,7 +213,6 @@ class Auth
         $user = $this->userRepo->findByEmail(strtolower(trim($email)));
 
         if (!$user) {
-            // Don't reveal whether email exists (prevents enumeration)
             return ['success' => true, 'message' => 'If an account exists with this email, a reset link has been sent.'];
         }
 
@@ -249,14 +234,12 @@ class Auth
         $userId = $this->userRepo->findByPasswordResetToken($token);
 
         if (!$userId) {
-            return ['success' => false, 'message' => 'Invalid or expired reset link. Please request a new one.'];
+            return ['success' => false, 'message' => 'Invalid or expired reset link.'];
         }
 
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
         $this->userRepo->updatePassword($userId, $hashedPassword);
         $this->userRepo->clearPasswordResetToken($userId);
-
-        // Security: invalidate all existing sessions
         $this->invalidateAllSessions($userId);
 
         return ['success' => true, 'message' => 'Password reset successfully. Please log in with your new password.'];
@@ -288,6 +271,28 @@ class Auth
     // EMAIL METHODS
     // ============================================================
 
+    private function sendEmail(string $to, string $subject, string $body): bool
+    {
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host       = SMTP_HOST;
+            $mail->Port       = SMTP_PORT;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = SMTP_USER;
+            $mail->Password   = SMTP_PASS;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->setFrom(SMTP_FROM, SMTP_FROM_NAME);
+            $mail->addAddress($to);
+            $mail->Subject = $subject;
+            $mail->Body    = $body;
+
+            return $mail->send();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
     private function sendVerificationEmail(string $email, string $name, string $token): void
     {
         $verificationLink = getBaseUrl() . 'verify-email.php?token=' . $token;
@@ -300,10 +305,7 @@ class Auth
         $message .= "If you did not create this account, please ignore this email.\n\n";
         $message .= "— The ConsuTrade Team";
 
-        $headers = "From: ConsuTrade <noreply@consutrade.co.za>\r\n";
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-
-        @mail($email, $subject, $message, $headers);
+        $this->sendEmail($email, $subject, $message);
     }
 
     private function sendPasswordResetEmail(string $email, string $name, string $token): void
@@ -318,10 +320,7 @@ class Auth
         $message .= "If you did not request this, please ignore this email.\n\n";
         $message .= "— The ConsuTrade Team";
 
-        $headers = "From: ConsuTrade <noreply@consutrade.co.za>\r\n";
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-
-        @mail($email, $subject, $message, $headers);
+        $this->sendEmail($email, $subject, $message);
     }
 
     // ============================================================
@@ -353,9 +352,7 @@ class Auth
     private function getAccountUnlockTime(string $email): string
     {
         $stmt = $this->db->prepare(
-            "SELECT MAX(attempted_at) as last_attempt 
-             FROM login_attempts 
-             WHERE email = ?"
+            "SELECT MAX(attempted_at) as last_attempt FROM login_attempts WHERE email = ?"
         );
         $stmt->bind_param('s', $email);
         $stmt->execute();
@@ -379,7 +376,6 @@ class Auth
         $stmt->execute();
         $stmt->close();
 
-        // Cleanup old attempts
         $this->db->query("DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
     }
 
@@ -425,7 +421,6 @@ class Auth
         $stmt->execute();
         $stmt->close();
 
-        // Cleanup old sessions (keep last 30 days)
         $this->db->query("DELETE FROM user_sessions WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)");
     }
 
@@ -619,6 +614,7 @@ class Auth
         $_SESSION['role'] = $user->getPrimaryRole();
         $_SESSION['auth_method'] = 'htaccess';
         $_SESSION['login_time'] = time();
+        $_SESSION['last_activity'] = time();
 
         return true;
     }
@@ -631,7 +627,6 @@ class Auth
     {
         $this->startSession();
 
-        // Remove session from database
         $sessionId = session_id();
         $stmt = $this->db->prepare("DELETE FROM user_sessions WHERE session_id = ?");
         $stmt->bind_param('s', $sessionId);
@@ -645,5 +640,48 @@ class Auth
         if (isset($_COOKIE['CONSUTRADE_SESSION'])) {
             setcookie('CONSUTRADE_SESSION', '', time() - 3600, '/');
         }
+    }
+
+    // ============================================================
+    // SESSION TIMEOUT
+    // ============================================================
+
+    private const SESSION_LIFETIME = 1800;
+
+    public function checkSessionTimeout(): bool
+    {
+        $this->startSession();
+
+        if (!$this->isLoggedIn()) {
+            return false;
+        }
+
+        $loginTime = $_SESSION['login_time'] ?? 0;
+        $lastActivity = $_SESSION['last_activity'] ?? 0;
+
+        if (time() - $loginTime > 28800) {
+            $this->logout();
+            return false;
+        }
+
+        if (time() - $lastActivity > self::SESSION_LIFETIME) {
+            $this->logout();
+            return false;
+        }
+
+        $_SESSION['last_activity'] = time();
+
+        return true;
+    }
+
+    public function requiresReauth(): bool
+    {
+        $lastActivity = $_SESSION['last_activity'] ?? 0;
+        return (time() - $lastActivity) > 300;
+    }
+
+    public function markAuthenticated(): void
+    {
+        $_SESSION['last_activity'] = time();
     }
 }

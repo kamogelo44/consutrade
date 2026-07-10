@@ -8,6 +8,10 @@
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
+
+// Rate limit: 30 requests per minute
+rateLimit('user_stats', 30, 60);
+
 header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
