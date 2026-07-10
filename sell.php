@@ -2,19 +2,18 @@
 /*
  * ConsuTrade - Seller Information Page
  * Author: Kamogelo Phale
- * 
- * Information page for potential sellers to learn about selling on ConsuTrade
  */
 
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
-// If user is already a seller, redirect to seller dashboard
 if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
     header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
     exit;
 }
+
+$page_js = 'sell.js';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +25,6 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
     <meta name="description" content="Stop selling on WhatsApp and Facebook. Get your own storefront, verified badge, and secure PayFast payments on ConsuTrade.">
     <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
-    <script src="<?php echo $baseUrl; ?>js/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
@@ -36,51 +34,20 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
     <main>
         <!-- Hero Section -->
         <section class="sell-hero">
-            <div class="sell-hero-grid">
-                <div class="sell-hero-content">
-                    <h1>Stop selling in WhatsApp groups</h1>
-                    <p class="sell-hero-subtitle">
-                        Get your own storefront, earn a verified badge, and get paid securely through PayFast.
-                        No more "payment proof" screenshots. No more ghosting.
-                    </p>
-                    <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
-                        <div class="sell-hero-actions">
-                            <button class="sell-hero-btn" id="upgradeToSellerBtn">Add Seller Access — It's Free</button>
-                        </div>
-                    <?php else: ?>
-                        <div class="sell-hero-actions">
-                            <button class="sell-hero-btn" id="sellerRegisterBtn">Create Seller Account — It's Free</button>
-                            <button class="sell-hero-btn-secondary" onclick="openModal($('#login-modal'))">Already have an account? Login</button>
-                        </div>
-                    <?php endif; ?>
-                </div>
-                <div class="sell-hero-visual">
-                    <div class="sell-hero-card">
-                        <div class="sell-hero-card-header">
-                            <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="16" height="16" alt="Verified">
-                            <span>Verified Seller</span>
-                        </div>
-                        <div class="sell-hero-card-body">
-                            <div class="sell-hero-product">
-                                <div class="sell-hero-product-img"></div>
-                                <div>
-                                    <strong>Handmade Baskets</strong>
-                                    <span>R350</span>
-                                </div>
-                            </div>
-                            <div class="sell-hero-product">
-                                <div class="sell-hero-product-img"></div>
-                                <div>
-                                    <strong>Shweshwe Dress</strong>
-                                    <span>R580</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="sell-hero-card-footer">
-                            <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast" width="55" height="auto">
-                        </div>
+            <div class="sell-hero-content">
+                <h1>Stop selling in WhatsApp groups</h1>
+                <p class="sell-hero-subtitle">
+                    Get your own storefront, earn a verified badge, and get paid securely through PayFast.
+                    No more "payment proof" screenshots. No more ghosting.
+                </p>
+                <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
+                    <button class="sell-hero-btn" id="upgradeToSellerBtn">Add Seller Access — It's Free</button>
+                <?php else: ?>
+                    <div class="sell-hero-actions">
+                        <button class="sell-hero-btn" id="sellerRegisterBtn">Create Seller Account — It's Free</button>
+                        <button class="sell-hero-btn-secondary" id="loginInsteadBtn">Already have an account? Login</button>
                     </div>
-                </div>
+                <?php endif; ?>
             </div>
         </section>
 
@@ -91,7 +58,6 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
                 <p class="section-subtitle">WhatsApp and Facebook Marketplace weren't built for traders. ConsuTrade was.</p>
             </div>
             <div class="sell-comparison-grid">
-                <!-- The Old Way -->
                 <div class="sell-comparison-card sell-comparison-old">
                     <h3>The Old Way</h3>
                     <ul>
@@ -102,7 +68,6 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
                         <li>Cash deposits and e-wallet risks</li>
                     </ul>
                 </div>
-                <!-- The ConsuTrade Way -->
                 <div class="sell-comparison-card sell-comparison-new">
                     <h3>The ConsuTrade Way</h3>
                     <ul>
@@ -125,21 +90,21 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
             <div class="sell-steps-grid">
                 <div class="sell-step" data-step="01">
                     <div class="sell-step-icon">
-                        <img src="<?php echo $baseUrl; ?>images/icons/register-svgrepo-com.svg" width="40" height="40" alt="Register">
+                        <img src="<?php echo $baseUrl; ?>images/icons/register-svgrepo-com.svg" width="40" height="40" alt="Register" loading="lazy">
                     </div>
                     <h3>Create your account</h3>
                     <p>Sign up as a seller. Verify with your SA ID to earn your trusted badge.</p>
                 </div>
                 <div class="sell-step" data-step="02">
                     <div class="sell-step-icon">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="40" height="40" alt="List">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="40" height="40" alt="List" loading="lazy">
                     </div>
                     <h3>List your products</h3>
                     <p>Upload photos, set prices, and share your story. Your listings go live instantly.</p>
                 </div>
                 <div class="sell-step" data-step="03">
                     <div class="sell-step-icon">
-                        <img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" width="40" height="40" alt="Get paid">
+                        <img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" width="40" height="40" alt="Get paid" loading="lazy">
                     </div>
                     <h3>Get paid securely</h3>
                     <p>Buyers pay through PayFast. You receive payment confirmation. No scams.</p>
@@ -153,19 +118,19 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
                 <h2>What you need to get started</h2>
                 <div class="sell-requirements-grid">
                     <div class="sell-requirement">
-                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="24" height="24" alt="ID">
+                        <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="24" height="24" alt="ID" loading="lazy">
                         <span>South African ID</span>
                     </div>
                     <div class="sell-requirement">
-                        <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" width="24" height="24" alt="Email">
+                        <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" width="24" height="24" alt="Email" loading="lazy">
                         <span>Email address</span>
                     </div>
                     <div class="sell-requirement">
-                        <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" width="24" height="24" alt="Phone">
+                        <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" width="24" height="24" alt="Phone" loading="lazy">
                         <span>Phone number</span>
                     </div>
                     <div class="sell-requirement">
-                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="24" height="24" alt="Products">
+                        <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="24" height="24" alt="Products" loading="lazy">
                         <span>Products to sell</span>
                     </div>
                 </div>
@@ -189,68 +154,6 @@ if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
 
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
-
-    <script>
-        window.addEventListener('load', function() {
-            var $sellerRegisterBtn = $('#sellerRegisterBtn');
-            var $createSellerBtn = $('#createSellerBtn');
-            var $upgradeBtn = $('#upgradeToSellerBtn');
-            var $upgradeBtn2 = $('#upgradeToSellerBtn2');
-            var $registerModal = $('#register-modal');
-            var $sellerRadio = $('#seller');
-
-            function openSellerRegisterModal() {
-                if ($sellerRadio.length) {
-                    $sellerRadio.prop('checked', true);
-                }
-
-                var isLoggedIn = <?php echo json_encode($isLoggedIn); ?>;
-                var hasSellerRole = <?php echo isset($currentUser) ? json_encode($currentUser->hasRole('seller')) : 'false'; ?>;
-
-                if (isLoggedIn && hasSellerRole) {
-                    window.location.href = baseUrl + 'admin/seller-dashboard.php';
-                    return;
-                }
-
-                if (isLoggedIn) {
-                    var userData = <?php echo isset($currentUser) ? json_encode([
-                                        'full_name' => $currentUser->getFullName(),
-                                        'email' => $currentUser->getEmail(),
-                                        'phone' => $currentUser->getPhone()
-                                    ]) : 'null'; ?>;
-
-                    if (userData) {
-                        $('#register-full-name').val(userData.full_name);
-                        $('#register-email').val(userData.email);
-                        $('#register-phone').val(userData.phone);
-                        $('#register-email').prop('readonly', true);
-                        $('#register-phone').prop('readonly', true);
-                        $('#register-modal .modal-header p').text('Add seller access to your existing account');
-                    }
-                } else {
-                    $('#register-full-name').val('');
-                    $('#register-email').val('');
-                    $('#register-phone').val('');
-                    $('#register-email').prop('readonly', false);
-                    $('#register-phone').prop('readonly', false);
-                    $('#register-modal .modal-header p').text('Create your account to start selling');
-                }
-
-                if (typeof openModal === 'function') {
-                    openModal($registerModal);
-                } else {
-                    $registerModal.addClass('active');
-                    $registerModal.css('visibility', 'visible');
-                    $('body').css('overflow', 'hidden');
-                }
-            }
-
-            if ($sellerRegisterBtn.length) $sellerRegisterBtn.on('click', openSellerRegisterModal);
-            if ($createSellerBtn.length) $createSellerBtn.on('click', openSellerRegisterModal);
-            if ($upgradeBtn.length) $upgradeBtn.on('click', openSellerRegisterModal);
-            if ($upgradeBtn2.length) $upgradeBtn2.on('click', openSellerRegisterModal);
-        });
-    </script>
 
 </body>
 

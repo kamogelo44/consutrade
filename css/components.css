@@ -652,6 +652,200 @@
   border: 1px solid var(--info);
 }
 
+/* ========== VERIFICATION COMPONENT ========== */
+.verification-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.verification-card .card-header {
+  font-size: var(--font-xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.verification-state {
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  background: var(--gray-bg-light);
+}
+
+.verification-state.verified {
+  border-left: 4px solid var(--success);
+}
+.verification-state.pending {
+  border-left: 4px solid var(--info);
+}
+.verification-state.no-document {
+  border-left: 4px solid var(--warning);
+}
+
+.state-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.state-header h3 {
+  font-size: var(--font-lg);
+  font-weight: var(--font-semibold);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.state-header h3 img {
+  width: 20px;
+  height: 20px;
+}
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-round);
+  font-size: var(--font-xs);
+  font-weight: var(--font-medium);
+}
+
+.state-badge img {
+  width: 14px;
+  height: 14px;
+}
+.state-badge.verified {
+  background: var(--success-light);
+  color: var(--success);
+}
+.state-badge.pending {
+  background: var(--info-light);
+  color: var(--info);
+}
+.state-badge.not-verified {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.state-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.state-content .info-text strong {
+  color: var(--dark-bg);
+}
+
+.document-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.document-file .file-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  word-break: break-all;
+}
+
+.document-file .file-link:hover {
+  text-decoration: underline;
+}
+
+.document-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+}
+
+.document-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--white);
+  transition: all var(--transition-fast);
+  font-weight: var(--font-medium);
+}
+
+.document-actions .preview-btn {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.document-actions .preview-btn:hover {
+  background: var(--primary-color);
+  color: var(--white);
+}
+.document-actions .replace-btn {
+  border-color: var(--info);
+  color: var(--info);
+}
+.document-actions .replace-btn:hover {
+  background: var(--info);
+  color: var(--white);
+}
+.document-actions .delete-btn {
+  border-color: var(--error);
+  color: var(--error);
+}
+.document-actions .delete-btn:hover {
+  background: var(--error);
+  color: var(--white);
+}
+
+.drop-zone {
+  border: 2px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--spacing-md);
+  background: var(--white);
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+  border-color: var(--primary-color);
+  background: var(--primary-fade);
+}
+.drop-zone .file-types {
+  font-size: var(--font-xs);
+  color: var(--gray-medium);
+  margin-top: var(--spacing-xs);
+}
+.drop-zone .upload-icon {
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+
+.file-name-display {
+  color: var(--primary-color);
+  font-weight: bold;
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-sm);
+}
+
 /* ========== CART VERIFICATION BADGES ========== */
 .verified-badge-cart,
 .unverified-badge-cart {

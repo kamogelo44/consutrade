@@ -866,3 +866,37 @@
     height: 32px;
   }
 }
+
+/* ========== VERIFICATION COMPONENT ========== */
+@media (max-width: 768px) {
+  .verification-card {
+    padding: var(--spacing-lg);
+  }
+  .verification-state {
+    padding: var(--spacing-md);
+  }
+  .state-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .document-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .document-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  .drop-zone {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .verification-card {
+    padding: var(--spacing-md);
+  }
+  .verification-state {
+    padding: var(--spacing-sm);
+  }
+}

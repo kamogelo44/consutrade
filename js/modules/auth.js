@@ -97,12 +97,32 @@ function initAjaxLogin() {
                     window.location.href = response.redirect;
                 } else {
                     displayModalErrors('#login-modal', { general: response.message }, { email: $('#login-email').val() });
+                    
+                    // Show resend verification link if needed
+                    if (response.needs_verification) {
+                        $('#login-error-container').append(
+                            '<p style="margin-top:8px;"><a href="#" id="resendVerificationLink">Resend verification email</a></p>'
+                        );
+                        
+                        $('#resendVerificationLink').on('click', function(e) {
+                            e.preventDefault();
+                            var email = response.email || $('#login-email').val();
+                            $.ajax({
+                                url: baseUrl + 'php/endpoints/users/resend-verification.php',
+                                type: 'POST',
+                                data: { email: email },
+                                dataType: 'json',
+                                success: function(res) {
+                                    $('#login-error-container').html(res.message)
+                                        .removeClass('error-container')
+                                        .addClass(res.success ? 'success-message' : 'error-message');
+                                }
+                            });
+                        });
+                    }
+                    
                     $submitBtn.prop('disabled', false).text(originalText);
                 }
-            },
-            error: function() {
-                displayModalErrors('#login-modal', { general: 'Something went wrong. Please try again.' }, {});
-                $submitBtn.prop('disabled', false).text(originalText);
             }
         });
     });

@@ -45,6 +45,7 @@ if ($roleCount === 1) {
 }
 
 $page_js = 'profile.js';
+$load_verification_js = true;
 ?>
 <!DOCTYPE html>
 <html lang="en">

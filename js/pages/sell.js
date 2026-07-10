@@ -1,8 +1,3 @@
-/**
- * ConsuTrade - Sell Page Init
- * Depends on: jQuery
- */
-
 $(function() {
     var $sellerRegisterBtn = $('#sellerRegisterBtn');
     var $createSellerBtn = $('#createSellerBtn');
@@ -35,8 +30,7 @@ $(function() {
         if (typeof openModal === 'function') {
             openModal($registerModal);
         } else {
-            $registerModal.addClass('active');
-            $registerModal.css('visibility', 'visible');
+            $registerModal.addClass('active').css('visibility', 'visible');
             $('body').css('overflow', 'hidden');
         }
     }
@@ -45,4 +39,8 @@ $(function() {
     if ($createSellerBtn.length) $createSellerBtn.on('click', openSellerRegisterModal);
     if ($upgradeBtn.length) $upgradeBtn.on('click', openSellerRegisterModal);
     if ($upgradeBtn2.length) $upgradeBtn2.on('click', openSellerRegisterModal);
+
+    $('#loginInsteadBtn').on('click', function() {
+        openModal($('#login-modal'));
+    });
 });

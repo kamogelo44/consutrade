@@ -75,6 +75,11 @@
 <script src="<?php echo $baseUrl; ?>js/modules/cart.js"></script>
 <script src="<?php echo $baseUrl; ?>js/modules/mobile.js"></script>
 
+<!-- Verification module -->
+<?php if (isset($load_verification_js) && $load_verification_js): ?>
+    <script src="<?php echo $baseUrl; ?>js/modules/verification.js"></script>
+<?php endif; ?>
+
 <!-- Order module (only on order pages) -->
 <?php if (isset($load_orders_js) && $load_orders_js): ?>
     <script src="<?php echo $baseUrl; ?>js/modules/orders.js"></script>

@@ -4,12 +4,14 @@
  * Author: Kamogelo Phale
  * 
  * Main landing page displaying featured products and site information
- * Uses components: header.php, footer.php, product-card (via functions.php)
  */
 
 require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
+
+// Get 3 real products for hero display
+$heroProducts = $productRepo->findAll('active', '', 3, 0);
 
 $load_products_js = true;
 $page_js = 'index.js';
@@ -22,12 +24,7 @@ $page_js = 'index.js';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ConsuTrade - Buy and Sell Across South Africa</title>
     <meta name="description" content="Buy and sell products from local South African traders. Secure payments with PayFast.">
-
-    <!-- CSS Files -->
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
-
-    <!-- Lucide Icons CDN for icons we don't have locally -->
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -37,80 +34,40 @@ $page_js = 'index.js';
     <main class="content">
         <?php include 'includes/flash-message.php'; ?>
 
+        <?php if (isset($_GET['verified']) && $_GET['verified'] === 'pending'): ?>
+            <div class="verification-notice">
+                <img src="images/icons/email-svgrepo-com.svg" width="20" height="20" alt="Email">
+                <span>Account created! Please check your email to verify your account before logging in.</span>
+            </div>
+        <?php endif; ?>
+
         <!-- Hero Section -->
         <section class="hero">
             <div class="hero-grid">
                 <div class="hero-content">
-                    <div class="hero-badge">
-                        <span class="pulse-dot"></span>
-                        South Africa's C2C Marketplace
-                    </div>
-                    <h1>Buy and sell with <span class="hero-highlight">real people</span> in your community</h1>
+                    <h1>Your spaza shop, <span class="hero-highlight">online</span></h1>
                     <p class="hero-subtitle">
-                        The trusted platform for informal traders and buyers. No fake profiles. No scams. Just verified sellers and secure PayFast payments.
+                        Buy and sell with real people in your community. Verified sellers, PayFast payments, no scams.
                     </p>
                     <div class="hero-actions">
-                        <button class="sell-btn" id="primary-btn">
-                            Start Selling Today
-                            <span class="btn-subtitle">Free to list — no monthly fees</span>
-                        </button>
-                        <button class="browse-btn" onclick="window.location.href='product-listings.php'">
-                            Browse Products
-                        </button>
+                        <a href="product-listings.php" class="hero-btn hero-btn-primary">Browse Products</a>
+                        <button class="hero-btn hero-btn-secondary" id="primary-btn">Start Selling</button>
                     </div>
                     <div class="hero-trust">
-                        <div class="hero-trust-item">
-                            <img src="images/icons/Payfast logo.svg" alt="PayFast Secure Payments" width="80" height="24">
-                        </div>
-                        <div class="hero-trust-item">
-                            <img src="images/icons/verified-svgrepo-com.svg" alt="Verified Sellers" width="20" height="20" style="filter: brightness(0) invert(1);">
-                            <span>Verified sellers you can trust</span>
-                        </div>
+                        <img src="images/icons/Payfast logo.svg" alt="PayFast" width="70" height="20">
+                        <span class="hero-trust-divider"></span>
+                        <img src="images/icons/verified-svgrepo-com.svg" alt="Verified" width="16" height="16" style="filter: brightness(0) invert(1);">
+                        <span>Verified sellers</span>
                     </div>
                 </div>
                 <div class="hero-visual">
-                    <div class="hero-card hero-card--1">
-                        <div class="mini-product">
-                            <div class="mini-product-icon">
-                                <img src="images/icons/product-catalog-svgrepo-com.svg" alt="Product" width="28" height="28">
-                            </div>
-                            <div class="mini-product-info">
-                                <span>Handmade Baskets</span>
-                                <strong>R350</strong>
-                                <small class="verified-tag">
-                                    <img src="images/icons/verified-svgrepo-com.svg" width="12" height="12" alt="Verified" style="vertical-align: middle;">
-                                    Verified Seller
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="hero-card hero-card--2">
-                        <div class="mini-product">
-                            <div class="mini-product-icon">
-                                <img src="images/icons/product-catalog-svgrepo-com.svg" alt="Product" width="28" height="28">
-                            </div>
-                            <div class="mini-product-info">
-                                <span>Fresh Vegetables</span>
-                                <strong>R85</strong>
-                                <small class="verified-tag">
-                                    <img src="images/icons/verified-svgrepo-com.svg" width="12" height="12" alt="Verified" style="vertical-align: middle;">
-                                    Verified Seller
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="hero-card hero-card--3">
-                        <div class="mini-product">
-                            <div class="mini-product-icon">
-                                <img src="images/icons/product-catalog-svgrepo-com.svg" alt="Product" width="28" height="28">
-                            </div>
-                            <div class="mini-product-info">
-                                <span>Shweshwe Dress</span>
-                                <strong>R580</strong>
-                                <small class="verified-tag">
-                                    <img src="images/icons/verified-svgrepo-com.svg" width="12" height="12" alt="Verified" style="vertical-align: middle;">
-                                    Verified Seller
-                                </small>
+                    <div class="hero-visual-card" id="hero-products">
+                        <!-- Products load here via AJAX -->
+                        <div class="hero-visual-row skeleton-row">
+                            <div class="skeleton skeleton-image"></div>
+                            <div style="flex:1;">
+                                <div class="skeleton skeleton-text" style="width:70%;"></div>
+                                <div class="skeleton skeleton-text" style="width:40%;margin-top:4px;"></div>
                             </div>
                         </div>
                     </div>
@@ -127,21 +84,21 @@ $page_js = 'index.js';
             <div class="how-container">
                 <div class="process-card" data-step="01">
                     <div class="process-icon">
-                        <i data-lucide="user-plus" style="width: 48px; height: 48px; color: var(--primary-color);"></i>
+                        <img src="images/icons/register-svgrepo-com.svg" width="48" height="48" alt="Register" loading="lazy">
                     </div>
                     <h3>Create Your Account</h3>
                     <p>Sign up for free as a buyer or seller. Sellers verify with SA ID to earn a trusted badge.</p>
                 </div>
                 <div class="process-card" data-step="02">
                     <div class="process-icon">
-                        <img src="images/icons/product-catalog-svgrepo-com.svg" width="48" height="48" alt="List or Browse" loading="lazy">
+                        <img src="images/icons/product-catalog-svgrepo-com.svg" width="48" height="48" alt="Browse" loading="lazy">
                     </div>
                     <h3>List or Browse</h3>
                     <p>Sellers upload products. Buyers browse listings from verified traders near them.</p>
                 </div>
                 <div class="process-card" data-step="03">
                     <div class="process-icon">
-                        <img src="images/icons/cash-atm-svgrepo-com.svg" width="48" height="48" alt="Trade Safely" loading="lazy">
+                        <img src="images/icons/cash-atm-svgrepo-com.svg" width="48" height="48" alt="Trade" loading="lazy">
                     </div>
                     <h3>Trade with Confidence</h3>
                     <p>Pay securely through PayFast. Both buyer and seller are protected on every transaction.</p>
@@ -156,10 +113,7 @@ $page_js = 'index.js';
                     <h2 class="section-heading">Latest from the Community</h2>
                     <p class="section-subtitle">Recently listed by verified South African traders</p>
                 </div>
-                <a href="product-listings.php" class="view-all-link">
-                    View All Products
-                    <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
-                </a>
+                <a href="product-listings.php" class="view-all-link">View All Products →</a>
             </div>
             <div class="prod-grid" id="featured-products-grid">
                 <div class="loading-spinner">Loading products...</div>
@@ -179,7 +133,7 @@ $page_js = 'index.js';
                             <img src="images/icons/verified-svgrepo-com.svg" alt="Verified Sellers" class="trust-icon" width="48" height="48">
                         </div>
                         <h3>Verified Sellers</h3>
-                        <p>Every seller verifies their identity with SA ID. Look for the verified badge — no fake profiles, no scammers.</p>
+                        <p>Every seller verifies their identity with SA ID. No fake profiles, no scammers.</p>
                     </div>
                     <div class="trust-card">
                         <div class="trust-icon-wrapper">
@@ -190,28 +144,19 @@ $page_js = 'index.js';
                     </div>
                     <div class="trust-card">
                         <div class="trust-icon-wrapper">
-                            <i data-lucide="package-search" class="trust-icon" style="width: 48px; height: 48px;"></i>
+                            <img src="images/icons/product-catalog-svgrepo-com.svg" alt="Order Tracking" class="trust-icon" width="48" height="48">
                         </div>
                         <h3>Order Tracking</h3>
-                        <p>Track every order from purchase to completion. Know exactly where your order stands at all times.</p>
+                        <p>Track every order from purchase to completion. Know exactly where your order stands.</p>
                     </div>
                 </div>
-                <a href="about.php" class="learn-more-link">
-                    Learn more about how ConsuTrade works
-                    <i data-lucide="arrow-right" style="width: 16px; height: 16px; vertical-align: middle;"></i>
-                </a>
+                <a href="about.php" class="learn-more-link">Learn more about how ConsuTrade works →</a>
             </div>
         </section>
     </main>
 
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
-
-    <!-- Initialize Lucide icons -->
-    <script>
-        lucide.createIcons();
-    </script>
-
 
 </body>
 

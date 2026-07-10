@@ -1,6 +1,8 @@
-/* ========== ANIMATIONS ========== */
-/* Author: Kamogelo Phale */
-/* All animation keyframes go here - nothing else */
+/* ============================================================
+   Animations - ConsuTrade
+   Author: Kamogelo Phale
+   All animation keyframes go here - nothing else
+   ============================================================ */
 
 /* Spinner Animation (for loading states) */
 @keyframes spin {
@@ -9,27 +11,26 @@
   }
 }
 
-/* Pulse Animation (for hero badge dot) */
-@keyframes pulse {
+/* Skeleton loading shimmer (currently unique to hero page will eventually replace the loading spinner in future)*/
+
+@keyframes skeletonShimmer {
   0% {
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    background-position: 200% 0;
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    background-position: -200% 0;
   }
 }
 
-/* Float Animation (for hero product cards) */
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-2deg);
+/* Hero Visual Fade In */
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
   }
-  50% {
-    transform: translateY(-15px) rotate(2deg);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

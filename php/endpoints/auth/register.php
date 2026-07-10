@@ -147,12 +147,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 echo json_encode([
                     'success' => true,
                     'message' => $result['message'],
-                    'redirect' => $baseUrl . 'index.php'
+                    'redirect' => $baseUrl . 'index.php?verified=pending'
                 ]);
                 exit;
             }
             $_SESSION['flash'] = $result['message'];
-            header('Location: ' . $baseUrl . 'index.php');
+            header('Location: ' . $baseUrl . 'index.php?verified=pending');
             exit;
         } else {
             $errors['general'] = $result['message'];

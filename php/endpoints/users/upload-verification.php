@@ -21,6 +21,12 @@ if (!$isLoggedIn || !$currentUser->hasRole('seller')) {
     exit;
 }
 
+if (!$currentUser->isEmailVerified()) {
+    $response['message'] = 'Please verify your email address before uploading verification documents.';
+    echo json_encode($response);
+    exit;
+}
+
 $seller_id = $currentUser->getUserId();
 
 if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
