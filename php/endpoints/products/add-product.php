@@ -2,9 +2,6 @@
 /*
  * ConsuTrade - Add Product Handler
  * Author: Kamogelo Phale
- * 
- * Handles product creation with simplified gallery system.
- * Client-side compression handles image processing.
  */
 
 require_once dirname(__DIR__, 3) . '/init.php';
@@ -12,6 +9,13 @@ require_once dirname(__DIR__, 3) . '/init.php';
 if (!$isLoggedIn || !$currentUser->hasRole('seller')) {
     $_SESSION['error'] = 'You must be logged in as a seller to add products.';
     header('Location: ' . $baseUrl . 'admin/login.php');
+    exit;
+}
+
+// Block demo accounts
+if ($currentUser->isDemo()) {
+    $_SESSION['error'] = 'Demo accounts cannot create products. Please verify your email first.';
+    header('Location: ' . $baseUrl . 'admin/add-product.php');
     exit;
 }
 
@@ -42,7 +46,6 @@ if (!empty($errors)) {
     exit;
 }
 
-// Create product using Product object
 $product = new Product([
     'title' => $title,
     'category_id' => $categoryId,
@@ -65,7 +68,6 @@ if (!$productId) {
 
 $newProduct = $productService->findById($productId);
 
-// Handle images
 $newImagePaths = [];
 $imageService = new ProductImageService();
 
@@ -99,7 +101,6 @@ if (isset($_FILES['product_images']) && !empty($_FILES['product_images']['name']
     }
 }
 
-// Update product with main image if available
 if (!empty($newImagePaths)) {
     $newProduct->setImageUrl($newImagePaths[0]);
     $productService->update($newProduct);

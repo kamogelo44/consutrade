@@ -57,6 +57,13 @@ var totalPages = 1;
 var currentSearchQuery = '';
 
 // ============================================================
+// INITIAL CATEGORY FROM URL
+// ============================================================
+
+// Check if a category was passed from the URL (homepage category links)
+var initialCategory = window.initialCategory || '';
+
+// ============================================================
 // PRODUCT LISTINGS FUNCTIONS
 // ============================================================
 
@@ -73,6 +80,13 @@ function loadProducts() {
     params.append('page', currentPage);
     params.append('sort', currentSort);
     params.append('limit', 12);
+
+    // Check for initial category from URL (homepage links)
+    if (initialCategory && (!currentFilters.categories || currentFilters.categories.length === 0)) {
+        currentFilters.categories = [initialCategory];
+        // Check the checkbox in the UI
+        $('input[name="category[]"][value="' + initialCategory + '"]').prop('checked', true);
+    }
 
     // Check if we're on search page
     var isSearchPage = window.location.pathname.includes('search-results.php');
@@ -91,21 +105,17 @@ function loadProducts() {
     if (currentFilters.price_range) params.append('price_range', currentFilters.price_range);
     if (currentFilters.location) params.append('location', currentFilters.location);
 
-    $productsGrid.html('<div class="loading-spinner">' + (isSearchPage ? 'Searching for products...' : 'Loading products...') + '</div>');
+    var loadingText = isSearchPage ? 'Searching for products...' : 'Loading products...';
+    $productsGrid.html('<div class="loading-spinner">' + loadingText + '</div>');
 
     // Use different endpoint based on page
-    var endpoint = isSearchPage ? 'php/endpoints/products/search-products.php' : 'php/endpoints/products/get-products.php'
+    var endpoint = isSearchPage ? 'php/endpoints/products/search-products.php' : 'php/endpoints/products/get-products.php';
 
     $.ajax({
         url: baseUrl + endpoint + '?' + params.toString(),
         type: 'GET',
         dataType: 'json',
         success: function(data) {
-            // ============================================================
-            // DEBUG: Log the response to see what's being returned
-            // ============================================================
-            console.log('Search response:', data);
-
             if (data.success && data.products && data.products.length > 0) {
                 if (typeof displayProducts === 'function') {
                     displayProducts(data.products);
@@ -326,6 +336,8 @@ function setupProductEventListeners() {
             location: ''
         };
         currentPage = 1;
+        // Clear the initial category so it doesn't reappear
+        initialCategory = '';
         loadProducts();
     });
 
@@ -616,6 +628,39 @@ function initReportModal() {
             }
         });
     });
+}
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+
+/**
+ * Fix image URL to ensure it has the correct base path.
+ */
+function fixImageUrl(url, fallback) {
+    if (!url) {
+        return fallback ? baseUrl + fallback : baseUrl + 'images/default-product.png';
+    }
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    if (url.startsWith('/')) {
+        return baseUrl + url.substring(1);
+    }
+    if (url.startsWith('images/')) {
+        return baseUrl + url;
+    }
+    return baseUrl + url;
+}
+
+/**
+ * Escape HTML to prevent XSS.
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ============================================================

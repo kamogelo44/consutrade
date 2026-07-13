@@ -11,6 +11,9 @@ require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
+// Get category from URL
+$selectedCategory = isset($_GET['category']) ? trim($_GET['category']) : '';
+
 $load_products_js = true;
 ?>
 <!DOCTYPE html>
@@ -19,7 +22,7 @@ $load_products_js = true;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shop Products - ConsuTrade</title>
+    <title><?php echo !empty($selectedCategory) ? ucfirst($selectedCategory) . ' - ' : ''; ?>Shop Products - ConsuTrade</title>
     <meta name="description" content="Browse all products on ConsuTrade - South Africa's trusted marketplace">
     <meta name="author" content="Kamogelo Phale">
 
@@ -35,8 +38,32 @@ $load_products_js = true;
         <!-- Listings Banner -->
         <div class="listings-banner">
             <div class="listings-banner-content">
-                <h1>Browse the Market</h1>
-                <p>Products from verified traders across South Africa</p>
+                <h1>
+                    <?php
+                    if (!empty($selectedCategory)) {
+                        $categoryNames = [
+                            'clothing' => 'Clothing & Accessories',
+                            'electronics' => 'Electronics',
+                            'food' => 'Food & Drinks',
+                            'furniture' => 'Furniture',
+                            'beauty' => 'Beauty & Health',
+                            'other' => 'Other'
+                        ];
+                        echo $categoryNames[$selectedCategory] ?? ucfirst($selectedCategory);
+                    } else {
+                        echo 'Browse the Market';
+                    }
+                    ?>
+                </h1>
+                <p>
+                    <?php
+                    if (!empty($selectedCategory)) {
+                        echo 'Products in this category from verified traders across South Africa';
+                    } else {
+                        echo 'Products from verified traders across South Africa';
+                    }
+                    ?>
+                </p>
             </div>
         </div>
 
@@ -55,27 +82,27 @@ $load_products_js = true;
                         <fieldset class="filter-category">
                             <legend class="filter-heading">Category</legend>
                             <label class="checkbox-label">
-                                <input type="checkbox" name="category[]" value="clothing">
+                                <input type="checkbox" name="category[]" value="clothing" <?php echo $selectedCategory === 'clothing' ? 'checked' : ''; ?>>
                                 <span>Clothing & Accessories</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" name="category[]" value="electronics">
+                                <input type="checkbox" name="category[]" value="electronics" <?php echo $selectedCategory === 'electronics' ? 'checked' : ''; ?>>
                                 <span>Electronics</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" name="category[]" value="food">
+                                <input type="checkbox" name="category[]" value="food" <?php echo $selectedCategory === 'food' ? 'checked' : ''; ?>>
                                 <span>Food & Drinks</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" name="category[]" value="furniture">
+                                <input type="checkbox" name="category[]" value="furniture" <?php echo $selectedCategory === 'furniture' ? 'checked' : ''; ?>>
                                 <span>Furniture</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" name="category[]" value="beauty">
+                                <input type="checkbox" name="category[]" value="beauty" <?php echo $selectedCategory === 'beauty' ? 'checked' : ''; ?>>
                                 <span>Beauty & Health</span>
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" name="category[]" value="other">
+                                <input type="checkbox" name="category[]" value="other" <?php echo $selectedCategory === 'other' ? 'checked' : ''; ?>>
                                 <span>Other</span>
                             </label>
                         </fieldset>
@@ -117,7 +144,23 @@ $load_products_js = true;
             <section class="listings-products">
                 <div class="listings-header">
                     <div>
-                        <h2>All Products</h2>
+                        <h2>
+                            <?php
+                            if (!empty($selectedCategory)) {
+                                $categoryNames = [
+                                    'clothing' => 'Clothing & Accessories',
+                                    'electronics' => 'Electronics',
+                                    'food' => 'Food & Drinks',
+                                    'furniture' => 'Furniture',
+                                    'beauty' => 'Beauty & Health',
+                                    'other' => 'Other'
+                                ];
+                                echo $categoryNames[$selectedCategory] ?? ucfirst($selectedCategory);
+                            } else {
+                                echo 'All Products';
+                            }
+                            ?>
+                        </h2>
                         <p class="listings-count" id="listingsCount"></p>
                     </div>
                     <div class="listings-actions">
@@ -145,6 +188,13 @@ $load_products_js = true;
 
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
+
+    <!-- Pass category to JavaScript -->
+    <script>
+        window.initialCategory = '<?php echo $selectedCategory; ?>';
+    </script>
+
+    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 
 </body>
 

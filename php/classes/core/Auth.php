@@ -88,7 +88,7 @@ class Auth
             return ['success' => false, 'message' => $message];
         }
 
-        if (!$user->isEmailVerified()) {
+        if (!$user->isEmailVerified() && !$user->isDemo()) {
             return [
                 'success' => false,
                 'message' => 'Please verify your email address before logging in. Check your inbox.',

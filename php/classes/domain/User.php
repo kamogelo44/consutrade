@@ -48,6 +48,9 @@ abstract class User
     /** @var string */
     protected $status;
 
+    /** @var bool */
+    protected bool $isDemo;
+
     /**
      * Constructor.
      *
@@ -67,6 +70,7 @@ abstract class User
         $this->profileImage = (string) ($data['profile_image'] ?? '');
         $this->createdAt    = (string) ($data['created_at']   ?? '');
         $this->status       = (string) ($data['status']       ?? 'active');
+        $this->isDemo = (bool)($data['is_demo'] ?? false);
     }
 
     /**
@@ -281,6 +285,11 @@ abstract class User
         return $this->profileImage;
     }
 
+    public function isDemo(): bool
+    {
+        return $this->isDemo;
+    }
+
     /**
      * Returns serializable data for session storage.
      *
@@ -299,7 +308,8 @@ abstract class User
             'email_verified' => $this->emailVerified,
             'profile_image' => $this->profileImage,
             'created_at' => $this->createdAt,
-            'status' => $this->status
+            'status' => $this->status,
+            'is_demo' => $this->isDemo
         ];
     }
 
@@ -322,6 +332,7 @@ abstract class User
         $this->profileImage = $data['profile_image'];
         $this->createdAt = $data['created_at'];
         $this->status = $data['status'];
+        $this->isDemo = (bool)($data['is_demo'] ?? false);
     }
 
     /**
