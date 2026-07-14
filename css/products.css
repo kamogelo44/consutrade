@@ -132,7 +132,7 @@
 
 .search-loc-wrapper input[type="search"]:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(230, 92, 0, 0.1);
 }
 
 /* ========== PRODUCTS SECTION ========== */
@@ -222,7 +222,7 @@
 
 .small-img.active {
   border: 2px solid var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2);
+  box-shadow: 0 0 0 2px rgba(230, 92, 0, 0.2);
 }
 
 .small-img img {
@@ -326,25 +326,25 @@
 
 .verified-badge {
   background-color: var(--success-light);
-  border: 1px solid var(--success);
+  border: 1px solid var(--sa-green);
 }
 
 .verified-badge p {
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
-  color: var(--success);
+  color: var(--sa-green);
   margin: 0;
 }
 
 .not-verified-badge {
   background-color: var(--warning-light);
-  border: 1px solid var(--warning);
+  border: 1px solid var(--warning-dark);
 }
 
 .not-verified-badge p {
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
-  color: var(--warning);
+  color: var(--warning-dark);
   margin: 0;
 }
 
@@ -535,12 +535,12 @@
 
 .action-btns .report-btn {
   background-color: var(--error-light);
-  color: var(--error);
-  border: 1px solid var(--error);
+  color: var(--sa-red);
+  border: 1px solid var(--sa-red);
 }
 
 .action-btns .report-btn:hover {
-  background-color: var(--error);
+  background-color: var(--sa-red);
   color: var(--white);
 }
 
@@ -637,7 +637,7 @@
 
 .stock-badge.good {
   background: var(--success-light);
-  color: var(--success);
+  color: var(--sa-green);
 }
 
 .stock-badge.low {
@@ -647,7 +647,7 @@
 
 .stock-badge.out {
   background: var(--error-light);
-  color: var(--error);
+  color: var(--sa-red);
 }
 
 .status-badge {
@@ -660,7 +660,7 @@
 
 .status-badge.active {
   background: var(--success-light);
-  color: var(--success);
+  color: var(--sa-green);
 }
 
 .status-badge.suspended {
@@ -688,38 +688,38 @@
 }
 
 .product-actions .edit-btn {
-  color: var(--info);
-  border-color: var(--info);
+  color: var(--sa-blue);
+  border-color: var(--sa-blue);
 }
 .product-actions .edit-btn:hover {
-  background: var(--info);
+  background: var(--sa-blue);
   color: var(--white);
 }
 
 .product-actions .suspend-btn {
   color: var(--warning-dark);
-  border-color: var(--warning);
+  border-color: var(--warning-dark);
 }
 .product-actions .suspend-btn:hover {
-  background: var(--warning);
+  background: var(--warning-dark);
   color: var(--white);
 }
 
 .product-actions .activate-btn {
-  color: var(--success);
-  border-color: var(--success);
+  color: var(--sa-green);
+  border-color: var(--sa-green);
 }
 .product-actions .activate-btn:hover {
-  background: var(--success);
+  background: var(--sa-green);
   color: var(--white);
 }
 
 .product-actions .delete-btn {
-  color: var(--error);
-  border-color: var(--error);
+  color: var(--sa-red);
+  border-color: var(--sa-red);
 }
 .product-actions .delete-btn:hover {
-  background: var(--error);
+  background: var(--sa-red);
   color: var(--white);
 }
 

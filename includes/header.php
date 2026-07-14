@@ -43,6 +43,11 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             <div class="logo">
                 <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
             </div>
+            <!-- South African Flag Badge -->
+            <div class="sa-badge">
+                <span class="sa-flag">🇿🇦</span>
+                <span class="sa-text">Proudly South African</span>
+            </div>
             <nav class="main-nav">
                 <ul>
                     <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
@@ -67,8 +72,25 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             </div>
         </div>
 
-        <!-- Right Section: Cart + Account -->
+        <!-- Right Section: Language + Cart + Account -->
         <div class="header-right">
+            <!-- Language Selector - Always visible on desktop -->
+            <div class="language-dropdown">
+                <button class="language-btn" id="languageBtn">
+                    <span class="lang-flag"><?php echo strtoupper(getCurrentLanguage()); ?></span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="language-menu" id="languageMenu">
+                    <?php foreach (getAvailableLanguages() as $code => $name): ?>
+                        <a href="?lang=<?php echo $code; ?>" class="<?php echo $code == getCurrentLanguage() ? 'active' : ''; ?>">
+                            <?php echo $name; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
             <!-- Cart -->
             <?php if (!$is_logged_in || $hasBuyerRole): ?>
                 <a href="<?php echo $baseUrl; ?>cart.php" class="cart-link">
@@ -173,6 +195,17 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             <?php endif; ?>
             <li><a href="<?php echo $baseUrl; ?>about.php">About</a></li>
 
+            <!-- Mobile Language Selector -->
+            <li class="mobile-divider"></li>
+            <li class="mobile-lang-label">Language</li>
+            <?php foreach (getAvailableLanguages() as $code => $name): ?>
+                <li>
+                    <a href="?lang=<?php echo $code; ?>" class="<?php echo $code == getCurrentLanguage() ? 'active' : ''; ?>">
+                        <?php echo $name; ?>
+                    </a>
+                </li>
+            <?php endforeach; ?>
+
             <?php if ($is_logged_in): ?>
                 <li class="mobile-divider"></li>
                 <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
@@ -215,6 +248,25 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     function hasRole(role) {
         return Array.isArray(currentUserRoles) && currentUserRoles.indexOf(role) !== -1;
     }
+</script>
+
+<!-- Language Dropdown JavaScript -->
+<script>
+    $(document).ready(function() {
+        var $langBtn = $('#languageBtn');
+        var $langMenu = $('#languageMenu');
+
+        if ($langBtn.length && $langMenu.length) {
+            $langBtn.on('click', function(e) {
+                e.stopPropagation();
+                $langMenu.toggleClass('active');
+            });
+
+            $(document).on('click', function() {
+                $langMenu.removeClass('active');
+            });
+        }
+    });
 </script>
 
 <!-- Login Modal -->

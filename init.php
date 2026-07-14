@@ -181,6 +181,67 @@ if ($isLoggedIn) {
     }
 }
 
+// Include translations
+require_once __DIR__ . '/includes/translations.php';
+
+// ============================================================
+// AUTO-TRANSLATE ALL OUTPUT
+// ============================================================
+
+/**
+ * Auto-translate the entire page output
+ * Replaces English text with the selected language
+ */
+function autoTranslatePage($content)
+{
+    $lang = getCurrentLanguage();
+
+    // Skip if English (no translation needed)
+    if ($lang === 'en') {
+        return $content;
+    }
+
+    $translations = getTranslations()[$lang] ?? [];
+    $english = getTranslations()['en'] ?? [];
+
+    // Build translation map
+    $map = [];
+    foreach ($english as $key => $value) {
+        if (isset($translations[$key]) && $translations[$key] !== $value) {
+            $map[$value] = $translations[$key];
+        }
+    }
+
+    // Sort by length (longest first) to avoid partial matches
+    uksort($map, function ($a, $b) {
+        return strlen($b) - strlen($a);
+    });
+
+    // Replace text in HTML
+    $search = array_keys($map);
+    $replace = array_values($map);
+
+    // Only translate text content (not inside HTML tags)
+    return preg_replace_callback('/>([^<]*)</', function ($matches) use ($search, $replace) {
+        $text = $matches[1];
+        // Don't translate empty text or if it's numbers
+        if (trim($text) === '' || is_numeric(trim($text))) {
+            return '>' . $text . '<';
+        }
+        $text = str_replace($search, $replace, $text);
+        return '>' . $text . '<';
+    }, $content);
+}
+
+// Start output buffering
+ob_start();
+
+// Auto-translate when page finishes
+register_shutdown_function(function () {
+    $content = ob_get_clean();
+    echo autoTranslatePage($content);
+});
+
 // ============================================================
 // DAILY MAINTENANCE
 // ============================================================

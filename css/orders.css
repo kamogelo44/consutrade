@@ -211,20 +211,20 @@
 }
 
 .orders-table .action-btn.view-btn {
-  color: var(--info);
-  border-color: var(--info);
+  color: var(--sa-blue);
+  border-color: var(--sa-blue);
 }
 .orders-table .action-btn.view-btn:hover {
-  background: var(--info);
+  background: var(--sa-blue);
   color: var(--white);
 }
 
 .orders-table .action-btn.process-btn {
   color: var(--warning-dark);
-  border-color: var(--warning);
+  border-color: var(--warning-dark);
 }
 .orders-table .action-btn.process-btn:hover {
-  background: var(--warning);
+  background: var(--warning-dark);
   color: var(--white);
 }
 
@@ -238,20 +238,20 @@
 }
 
 .orders-table .action-btn.complete-btn {
-  color: var(--success);
-  border-color: var(--success);
+  color: var(--sa-green);
+  border-color: var(--sa-green);
 }
 .orders-table .action-btn.complete-btn:hover {
-  background: var(--success);
+  background: var(--sa-green);
   color: var(--white);
 }
 
 .orders-table .action-btn.cancel-btn {
-  color: var(--error);
-  border-color: var(--error);
+  color: var(--sa-red);
+  border-color: var(--sa-red);
 }
 .orders-table .action-btn.cancel-btn:hover {
-  background: var(--error);
+  background: var(--sa-red);
   color: var(--white);
 }
 
@@ -291,7 +291,7 @@
 .orders-table .error-cell {
   text-align: center;
   padding: var(--spacing-xl);
-  color: var(--error);
+  color: var(--sa-red);
   font-size: var(--font-sm);
 }
 
@@ -366,16 +366,16 @@
 }
 
 .order-modal-footer .process-btn {
-  background: var(--warning);
+  background: var(--warning-dark);
 }
 .order-modal-footer .ship-btn {
   background: var(--primary-color);
 }
 .order-modal-footer .complete-btn {
-  background: var(--success);
+  background: var(--sa-green);
 }
 .order-modal-footer .cancel-btn {
-  background: var(--error);
+  background: var(--sa-red);
 }
 
 .order-modal-footer button:hover {
@@ -490,7 +490,7 @@
   padding: var(--spacing-md);
   background: var(--gray-bg-light);
   border-radius: var(--radius-md);
-  border-left: 4px solid var(--success);
+  border-left: 4px solid var(--sa-green);
 }
 
 .payment-details h4 {
@@ -526,17 +526,17 @@
 
 .payment-status-badge.completed {
   background: var(--success-light);
-  color: var(--success);
+  color: var(--sa-green);
 }
 
 .payment-status-badge.pending {
   background: var(--warning-light);
-  color: var(--warning);
+  color: var(--warning-dark);
 }
 
 .payment-status-badge.failed {
   background: var(--error-light);
-  color: var(--error);
+  color: var(--sa-red);
 }
 
 /* ========== REVIEW MODAL ========== */

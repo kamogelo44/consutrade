@@ -17,12 +17,12 @@
 
 .order-status-badge.status-pending {
   background: var(--warning-light);
-  color: var(--warning);
+  color: var(--warning-dark);
 }
 
 .order-status-badge.status-processing {
   background: var(--info-light);
-  color: var(--info);
+  color: var(--sa-blue);
 }
 
 .order-status-badge.status-shipped {
@@ -32,12 +32,12 @@
 
 .order-status-badge.status-completed {
   background: var(--success-light);
-  color: var(--success);
+  color: var(--sa-green);
 }
 
 .order-status-badge.status-cancelled {
   background: var(--error-light);
-  color: var(--error);
+  color: var(--sa-red);
 }
 
 /* ========== REVIEW STARS ========== */
@@ -48,22 +48,22 @@
 }
 
 .review-stars .star {
-  color: #ffc107;
+  color: var(--sa-yellow);
   font-size: var(--font-base);
 }
 
 .review-stars .star.empty {
-  color: #ddd;
+  color: var(--gray-lighter);
 }
 
 .star {
   font-size: 30px;
-  color: #ffc107;
+  color: var(--sa-yellow);
   display: inline-block;
 }
 
 .star.empty {
-  color: #ddd;
+  color: var(--gray-lighter);
 }
 
 .rating-stars-large {
@@ -73,11 +73,11 @@
 
 .rating-stars-large .star {
   font-size: 24px;
-  color: #ffc107;
+  color: var(--sa-yellow);
 }
 
 .rating-stars-large .star.empty {
-  color: #ddd;
+  color: var(--gray-lighter);
 }
 
 .rating-stars {
@@ -88,7 +88,7 @@
 
 .rating-stars .star {
   font-size: 32px;
-  color: #ddd;
+  color: var(--gray-lighter);
   cursor: pointer;
   transition: transform var(--transition-fast);
 }
@@ -98,7 +98,7 @@
 }
 
 .rating-stars .star.active {
-  color: #ffc107;
+  color: var(--sa-yellow);
 }
 
 /* ========== MODAL ICONS ========== */
@@ -203,7 +203,7 @@
 .search-bar input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(230, 92, 0, 0.1);
 }
 
 /* ========== EMPTY STATE ========== */
@@ -287,20 +287,20 @@
 
 .stock-status.in-stock {
   background: var(--success-light);
-  color: var(--success);
-  border-left: 4px solid var(--success);
+  color: var(--sa-green);
+  border-left: 4px solid var(--sa-green);
 }
 
 .stock-status.low-stock {
   background: var(--warning-light);
-  color: var(--warning);
-  border-left: 4px solid var(--warning);
+  color: var(--warning-dark);
+  border-left: 4px solid var(--warning-dark);
 }
 
 .stock-status.out-of-stock {
   background: var(--error-light);
-  color: var(--error);
-  border-left: 4px solid var(--error);
+  color: var(--sa-red);
+  border-left: 4px solid var(--sa-red);
 }
 
 .product-error-container {
@@ -444,12 +444,12 @@
 
 .cancel-btn {
   background: var(--error-light);
-  color: var(--error);
-  border: 1px solid var(--error);
+  color: var(--sa-red);
+  border: 1px solid var(--sa-red);
 }
 
 .cancel-btn:hover {
-  background: var(--error);
+  background: var(--sa-red);
   color: var(--white);
   transform: translateY(-2px);
 }
@@ -505,16 +505,16 @@
 }
 
 .condition-badge.new {
-  background: var(--success);
+  background: var(--sa-green);
 }
 .condition-badge.like-new {
-  background: var(--info);
+  background: var(--sa-blue);
 }
 .condition-badge.good {
   background: var(--primary-color);
 }
 .condition-badge.fair {
-  background: var(--warning);
+  background: var(--warning-dark);
 }
 
 .out-of-stock-badge-card,
@@ -531,7 +531,7 @@
 }
 
 .out-of-stock-badge-card {
-  background: var(--error);
+  background: var(--sa-red);
 }
 .low-stock-badge-card {
   background: var(--warning-dark);
@@ -628,14 +628,14 @@
 
 .verified-badge-card {
   background: var(--success-light);
-  color: var(--success-dark);
-  border: 1px solid var(--success);
+  color: var(--sa-green);
+  border: 1px solid var(--sa-green);
 }
 
 .unverified-badge-card {
   background: var(--warning-light);
   color: var(--warning-dark);
-  border: 1px solid var(--warning);
+  border: 1px solid var(--warning-dark);
 }
 
 .pending-badge-card {
@@ -648,8 +648,8 @@
   font-weight: var(--font-semibold);
   white-space: nowrap;
   background: var(--info-light);
-  color: var(--info-dark);
-  border: 1px solid var(--info);
+  color: var(--sa-blue);
+  border: 1px solid var(--sa-blue);
 }
 
 /* ========== VERIFICATION COMPONENT ========== */
@@ -676,13 +676,13 @@
 }
 
 .verification-state.verified {
-  border-left: 4px solid var(--success);
+  border-left: 4px solid var(--sa-green);
 }
 .verification-state.pending {
-  border-left: 4px solid var(--info);
+  border-left: 4px solid var(--sa-blue);
 }
 .verification-state.no-document {
-  border-left: 4px solid var(--warning);
+  border-left: 4px solid var(--warning-dark);
 }
 
 .state-header {
@@ -726,15 +726,15 @@
 }
 .state-badge.verified {
   background: var(--success-light);
-  color: var(--success);
+  color: var(--sa-green);
 }
 .state-badge.pending {
   background: var(--info-light);
-  color: var(--info);
+  color: var(--sa-blue);
 }
 .state-badge.not-verified {
   background: var(--warning-light);
-  color: var(--warning);
+  color: var(--warning-dark);
 }
 
 .state-content {
@@ -797,19 +797,19 @@
   color: var(--white);
 }
 .document-actions .replace-btn {
-  border-color: var(--info);
-  color: var(--info);
+  border-color: var(--sa-blue);
+  color: var(--sa-blue);
 }
 .document-actions .replace-btn:hover {
-  background: var(--info);
+  background: var(--sa-blue);
   color: var(--white);
 }
 .document-actions .delete-btn {
-  border-color: var(--error);
-  color: var(--error);
+  border-color: var(--sa-red);
+  color: var(--sa-red);
 }
 .document-actions .delete-btn:hover {
-  background: var(--error);
+  background: var(--sa-red);
   color: var(--white);
 }
 
@@ -860,14 +860,14 @@
 
 .verified-badge-cart {
   background: var(--success-light);
-  border: 1px solid var(--success);
-  color: var(--success);
+  border: 1px solid var(--sa-green);
+  color: var(--sa-green);
 }
 
 .unverified-badge-cart {
   background: var(--warning-light);
-  border: 1px solid var(--warning);
-  color: var(--warning);
+  border: 1px solid var(--warning-dark);
+  color: var(--warning-dark);
 }
 
 /* ========== CART QUANTITY CONTROLS ========== */
@@ -913,7 +913,7 @@
 .stock-warning {
   display: block;
   font-size: var(--font-xs);
-  color: var(--warning);
+  color: var(--warning-dark);
   margin-top: 4px;
 }
 
@@ -923,8 +923,8 @@
   align-items: center;
   gap: 6px;
   background: transparent;
-  border: 1px solid var(--error);
-  color: var(--error);
+  border: 1px solid var(--sa-red);
+  color: var(--sa-red);
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
@@ -934,7 +934,7 @@
 }
 
 .remove-btn:hover {
-  background: var(--error);
+  background: var(--sa-red);
   color: var(--white);
 }
 
@@ -1077,13 +1077,13 @@
 }
 
 .toast-success {
-  background: var(--success);
+  background: var(--sa-green);
 }
 .toast-error {
-  background: var(--error);
+  background: var(--sa-red);
 }
 .toast-info {
-  background: var(--info);
+  background: var(--sa-blue);
 }
 
 .toast-warning {
@@ -1110,7 +1110,7 @@
   height: 24px;
   margin-right: var(--spacing-sm);
   border: 2px solid var(--border-light);
-  border-top-color: var(--primary-color);
+  border-top-color: var(--sa-yellow);
   border-radius: 50%;
   vertical-align: middle;
 }
@@ -1238,7 +1238,7 @@
 }
 
 .btn-verify {
-  background: var(--success);
+  background: var(--sa-green);
   color: var(--white);
   padding: 10px 24px;
   border: none;
@@ -1249,12 +1249,12 @@
 }
 
 .btn-verify:hover {
-  background: var(--success-dark);
+  background: var(--accent-dark);
   transform: translateY(-2px);
 }
 
 .btn-reject {
-  background: var(--error);
+  background: var(--sa-red);
   color: var(--white);
   padding: 10px 24px;
   border: none;
@@ -1340,4 +1340,46 @@
   background: var(--gray-light);
   cursor: not-allowed;
   transform: none;
+}
+
+/* ========== BREADCRUMB ========== */
+
+.breadcrumb {
+  margin: 30px 0 20px 30px;
+  padding: var(--spacing-md) 20px;
+  font-size: var(--font-md);
+  background-color: var(--gray-bg-light);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.breadcrumb a {
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: color var(--transition-fast);
+  font-weight: var(--font-medium);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+}
+
+.breadcrumb a:hover {
+  background-color: var(--primary-fade);
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: var(--gray-light);
+  font-size: var(--font-md);
+  margin: 0 var(--spacing-xs);
+}
+
+.breadcrumb .current-page {
+  color: var(--dark-bg);
+  font-weight: var(--font-semibold);
+  background-color: var(--primary-fade);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-round);
 }

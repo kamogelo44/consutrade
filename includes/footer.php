@@ -74,6 +74,7 @@
 <script src="<?php echo $baseUrl; ?>js/modules/auth.js"></script>
 <script src="<?php echo $baseUrl; ?>js/modules/cart.js"></script>
 <script src="<?php echo $baseUrl; ?>js/modules/mobile.js"></script>
+<script src="<?php echo $baseUrl; ?>js/modules/language.js"></script>
 
 <!-- Verification module -->
 <?php if (isset($load_verification_js) && $load_verification_js): ?>

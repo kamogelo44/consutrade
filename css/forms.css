@@ -119,12 +119,12 @@
 
 .error-container {
   background-color: var(--error-light);
-  border-left: 4px solid var(--error);
+  border-left: 4px solid var(--sa-red);
   border-radius: var(--radius-md);
   padding: 8px 12px;
   margin-bottom: var(--spacing-md);
   display: none;
-  color: var(--error);
+  color: var(--sa-red);
   font-size: var(--font-sm);
   font-weight: var(--font-medium);
   line-height: 1.4;
@@ -171,7 +171,7 @@
 .input-group input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(230, 92, 0, 0.1);
 }
 
 .input-group input::placeholder {
@@ -180,19 +180,19 @@
 }
 
 .input-group.error input {
-  border-color: var(--error) !important;
+  border-color: var(--sa-red) !important;
   background-color: var(--error-light);
   width: 100%;
   box-sizing: border-box;
 }
 
 .input-group.error label {
-  color: var(--error);
+  color: var(--sa-red);
   text-align: left;
 }
 
 .error-text {
-  color: var(--error);
+  color: var(--sa-red);
   font-size: var(--font-xs);
   font-weight: var(--font-medium);
   line-height: 1.4;
@@ -281,7 +281,7 @@
 .submit-btn:hover {
   background-color: var(--primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(230, 92, 0, 0.3);
 }
 
 .submit-btn:active {
@@ -432,72 +432,5 @@
 }
 
 .user-type.error {
-  border-color: var(--error);
-}
-
-@media (max-width: 768px) {
-  .modal-content {
-    width: 92%;
-    padding: 22px 20px;
-    max-width: 380px;
-    max-height: 85vh;
-  }
-
-  .modal-header h1 {
-    font-size: var(--font-xl);
-  }
-
-  .radio-buttons {
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-
-  .input-group input,
-  .password-field-wrapper input {
-    height: 44px;
-    padding: 10px 12px;
-  }
-
-  .submit-btn {
-    height: 44px;
-    padding: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .modal-content {
-    padding: 18px 16px;
-    width: 95%;
-    max-height: 90vh;
-  }
-
-  .modal-header {
-    margin-bottom: var(--spacing-md);
-  }
-
-  .modal-header h1 {
-    font-size: var(--font-lg);
-  }
-
-  .form-fields,
-  .user-type {
-    padding: 10px;
-  }
-
-  .input-group input,
-  .password-field-wrapper input {
-    padding: 8px 10px;
-    font-size: var(--font-sm);
-    height: 42px;
-  }
-
-  .submit-btn {
-    padding: 10px;
-    height: 42px;
-  }
-
-  .radio-btn {
-    padding: 7px 10px;
-    font-size: var(--font-sm);
-  }
+  border-color: var(--sa-red);
 }

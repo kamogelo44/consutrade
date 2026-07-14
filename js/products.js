@@ -4,6 +4,8 @@
  * 
  * Handles product listings, filtering, pagination, search, and product details.
  * Used on: product-listings.php, product-details.php, search-results.php, index.php
+ * 
+ * Depends on: utils.js (escapeHtml, fixImageUrl, getEmptyStateHTML)
  */
 
 // ============================================================
@@ -139,6 +141,8 @@ function loadProducts() {
 
 /**
  * Displays products in grid with optional container selector.
+ * Uses fixImageUrl from utils.js
+ * Uses escapeHtml from utils.js
  */
 function displayProducts(products, containerSelector) {
     cacheProductElements();
@@ -229,6 +233,7 @@ function displayProducts(products, containerSelector) {
 
 /**
  * Shows empty state when no products match filters.
+ * Uses getEmptyStateHTML from utils.js
  */
 function showEmptyState() {
     cacheProductElements();
@@ -237,6 +242,8 @@ function showEmptyState() {
     var title = isSearchPage ? 'No products found for "' + escapeHtml(currentSearchQuery) + '"' : 'No products found';
     var message = isSearchPage ? 'We couldn\'t find any products matching your search.' : 'We couldn\'t find any products matching your criteria.';
     var buttonText = isSearchPage ? 'Browse All Products' : 'Clear Filters';
+    var buttonLink = isSearchPage ? 'product-listings.php' : '';
+
     var buttonAction = isSearchPage ? 'window.location.href=\'product-listings.php\'' : '$resetFiltersBtn.click()';
 
     $productsGrid.html(
@@ -391,6 +398,8 @@ function loadProductDetails(id) {
 
 /**
  * Renders product details on the page
+ * Uses fixImageUrl from utils.js
+ * Uses escapeHtml from utils.js
  */
 function displayProductDetails(product) {
     var mainImage = fixImageUrl(product.image_url);
@@ -631,36 +640,140 @@ function initReportModal() {
 }
 
 // ============================================================
-// UTILITY FUNCTIONS
+// CART FUNCTIONS
 // ============================================================
 
 /**
- * Fix image URL to ensure it has the correct base path.
+ * Add product to cart via AJAX.
+ * Uses showSuccessToast and showErrorToast from utils.js (or defined below)
  */
-function fixImageUrl(url, fallback) {
-    if (!url) {
-        return fallback ? baseUrl + fallback : baseUrl + 'images/default-product.png';
+function addToCart(productId, productName, price) {
+    if (!isLoggedIn) {
+        openModal($('#login-modal'));
+        return;
     }
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
-    }
-    if (url.startsWith('/')) {
-        return baseUrl + url.substring(1);
-    }
-    if (url.startsWith('images/')) {
-        return baseUrl + url;
-    }
-    return baseUrl + url;
+
+    $.ajax({
+        url: baseUrl + 'php/endpoints/cart/add.php',
+        type: 'POST',
+        data: {
+            product_id: productId,
+            quantity: 1
+        },
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                showSuccessToast(productName + ' added to cart');
+                // Update cart count
+                if (data.cart_count !== undefined) {
+                    $('.cart-badge').text(data.cart_count);
+                } else {
+                    // Reload page to update cart count
+                    location.reload();
+                }
+            } else {
+                showErrorToast(data.message || 'Failed to add to cart');
+            }
+        },
+        error: function() {
+            showErrorToast('Something went wrong. Please try again.');
+        }
+    });
 }
 
 /**
- * Escape HTML to prevent XSS.
+ * Buy now - redirect to checkout.
  */
-function escapeHtml(text) {
-    if (!text) return '';
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function buyNow(productId, productName, price) {
+    if (!isLoggedIn) {
+        openModal($('#login-modal'));
+        return;
+    }
+
+    // Add to cart first, then redirect to cart page
+    $.ajax({
+        url: baseUrl + 'php/endpoints/cart/add.php',
+        type: 'POST',
+        data: {
+            product_id: productId,
+            quantity: 1
+        },
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                window.location.href = baseUrl + 'cart.php';
+            } else {
+                showErrorToast(data.message || 'Failed to add to cart');
+            }
+        },
+        error: function() {
+            showErrorToast('Something went wrong. Please try again.');
+        }
+    });
+}
+
+// ============================================================
+// TOAST FUNCTIONS (if not already in global scope)
+// ============================================================
+
+/**
+ * Show toast notification.
+ * Falls back to alert if toast container doesn't exist.
+ */
+function showToast(message, type) {
+    // Check if toast function already exists from another file
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+        return;
+    }
+
+    var toastContainer = $('.toast-container');
+    if (!toastContainer.length) {
+        $('body').append('<div class="toast-container"></div>');
+        toastContainer = $('.toast-container');
+    }
+
+    var iconMap = {
+        'success': 'verified-svgrepo-com.svg',
+        'error': 'error-svgrepo-com.svg',
+        'info': 'info-svgrepo-com.svg',
+        'warning': 'warning-svgrepo-com.svg'
+    };
+
+    var icon = iconMap[type] || 'info-svgrepo-com.svg';
+
+    var toast = $(
+        '<div class="toast-notification toast-' + type + '">' +
+            '<div class="toast-icon">' +
+                '<img src="' + baseUrl + 'images/icons/' + icon + '" alt="' + type + '">' +
+            '</div>' +
+            '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+        '</div>'
+    );
+
+    toastContainer.append(toast);
+
+    setTimeout(function() {
+        toast.addClass('hiding');
+        setTimeout(function() {
+            toast.remove();
+        }, 300);
+    }, 4000);
+
+    toast.on('click', function() {
+        toast.addClass('hiding');
+        setTimeout(function() {
+            toast.remove();
+        }, 300);
+    });
+}
+
+function showSuccessToast(message) {
+    showToast(message, 'success');
+}
+
+function showErrorToast(message) {
+    showToast(message, 'error');
 }
 
 // ============================================================

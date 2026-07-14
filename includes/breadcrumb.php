@@ -42,7 +42,7 @@ if (isset($breadcrumbItems) && !empty($breadcrumbItems)) {
             <?php if (isset($item['url'])): ?>
                 <a href="<?php echo buildBreadcrumbUrl($item['url'], $isAdminPage, $baseUrl); ?>"><?php echo htmlspecialchars($item['label']); ?></a>
             <?php else: ?>
-                <span class="breadcrumb-current"><?php echo htmlspecialchars($item['label']); ?></span>
+                <span class="current-page"><?php echo htmlspecialchars($item['label']); ?></span>
             <?php endif; ?>
         <?php endforeach; ?>
     </div>

@@ -21,7 +21,7 @@ $page_js = 'sell.js';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sell on ConsuTrade - Start Selling Online</title>
+    <title><?php t('sell'); ?> on ConsuTrade - Start Selling Online</title>
     <meta name="description" content="Stop selling on WhatsApp and Facebook. Get your own storefront, verified badge, and secure PayFast payments on ConsuTrade.">
     <meta name="author" content="Kamogelo Phale">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
@@ -35,6 +35,9 @@ $page_js = 'sell.js';
         <!-- Hero Section -->
         <section class="sell-hero">
             <div class="sell-hero-content">
+                <div class="sell-hero-badge">
+                    <span>For South African sellers</span>
+                </div>
                 <h1>Stop selling in WhatsApp groups</h1>
                 <p class="sell-hero-subtitle">
                     Get your own storefront, earn a verified badge, and get paid securely through PayFast.
@@ -54,6 +57,7 @@ $page_js = 'sell.js';
         <!-- Problem vs Solution Section -->
         <section class="sell-comparison">
             <div class="section-header">
+                <div class="section-tag">Why switch</div>
                 <h2 class="section-heading">There's a better way to sell</h2>
                 <p class="section-subtitle">WhatsApp and Facebook Marketplace weren't built for traders. ConsuTrade was.</p>
             </div>
@@ -84,6 +88,7 @@ $page_js = 'sell.js';
         <!-- How It Works -->
         <section class="sell-steps">
             <div class="section-header">
+                <div class="section-tag">Get started</div>
                 <h2 class="section-heading">Start selling in minutes</h2>
                 <p class="section-subtitle">No paperwork. No registration fees. Just your SA ID and your products.</p>
             </div>
@@ -115,6 +120,7 @@ $page_js = 'sell.js';
         <!-- What You Need -->
         <section class="sell-requirements">
             <div class="sell-requirements-container">
+                <div class="section-tag">Requirements</div>
                 <h2>What you need to get started</h2>
                 <div class="sell-requirements-grid">
                     <div class="sell-requirement">

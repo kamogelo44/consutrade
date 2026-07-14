@@ -44,12 +44,12 @@ $page_js = 'index.js';
             <div class="hero-grid">
                 <div class="hero-content">
                     <div class="hero-tag">
-                        <span>South African marketplace</span>
+                        <span>Local trade. Real people. No delivery fees.</span>
                     </div>
-                    <h1>Trade with <span class="hero-highlight">real people</span> in your area</h1>
-                    <p class="hero-subtitle">Buy and sell with verified local traders. No middlemen, no delivery fees — just your community.</p>
+                    <h1>Your community <span class="hero-highlight">marketplace</span></h1>
+                    <p class="hero-subtitle">Buy and sell with verified traders in your area. No middlemen, no delivery fees — just your neighbours.</p>
                     <div class="hero-actions">
-                        <a href="product-listings.php" class="hero-btn hero-btn-primary">Browse products</a>
+                        <a href="product-listings.php" class="hero-btn hero-btn-primary">Browse local goods</a>
                         <button class="hero-btn hero-btn-secondary" id="primary-btn">Start selling</button>
                     </div>
                     <div class="hero-stats">

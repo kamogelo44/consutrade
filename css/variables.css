@@ -1,15 +1,51 @@
-/* CSS Variables */
+/* CSS Variables - ConsuTrade South Africa */
 
 :root {
-  /* Primary Brand Colors */
-  --primary-color: #ff6b00;
-  --primary-dark: #e05f00;
-  --primary-darker: #cc5500;
-  --primary-light: #ff8533;
-  --primary-lighter: #ffa366;
-  --primary-fade: #fff4e8;
+  /* ============================================================
+     SOUTH AFRICAN FLAG COLORS
+     ============================================================ */
 
-  /* Neutral Colors */
+  --sa-black: #000000;
+  --sa-yellow: #ffb612;
+  --sa-green: #007a4b;
+  --sa-white: #ffffff;
+  --sa-red: #de3831;
+  --sa-blue: #002395;
+
+  /* ============================================================
+     PRIMARY BRAND COLORS
+     ============================================================ */
+
+  --primary-color: #e65c00;
+  --primary-dark: #cc4f00;
+  --primary-darker: #b34500;
+  --primary-light: #ff7a33;
+  --primary-lighter: #ffa366;
+  --primary-fade: #fff0e6;
+
+  /* ============================================================
+     SECONDARY BRAND COLORS
+     ============================================================ */
+
+  --secondary-color: #fdb813;
+  --secondary-dark: #e5a500;
+  --secondary-light: #ffd966;
+
+  /* ============================================================
+     ACCENT COLORS
+     ============================================================ */
+
+  --accent-color: #007a4b;
+  --accent-dark: #005a38;
+  --accent-light: #4caf50;
+  --south-african-blue: #002395;
+  --south-african-blue-light: #1a3f8c;
+  --south-african-red: #de3831;
+
+  /* ============================================================
+     NEUTRAL COLORS
+     ============================================================ */
+
   --white: #ffffff;
   --black: #000000;
   --dark-bg: #1a1a1a;
@@ -17,35 +53,55 @@
   --gray-medium: #666666;
   --gray-light: #999999;
   --gray-lighter: #cccccc;
-  --gray-bg: #f5f5f5;
-  --gray-bg-light: #f8f9fa;
+  --gray-bg: #f5f0eb;
+  --gray-bg-light: #faf7f3;
 
-  /* Border Colors */
-  --border-light: #e0e0e0;
-  --border-medium: #cccccc;
-  --border-dark: #999999;
+  /* ============================================================
+     EARTH TONES
+     ============================================================ */
 
-  /* Status Colors */
-  --success: #4caf50;
+  --earth-brown: #8b6b4a;
+  --earth-cream: #fff8e7;
+  --earth-terracotta: #c67b5c;
+
+  /* ============================================================
+     BORDER COLORS
+     ============================================================ */
+
+  --border-light: #e8e0d8;
+  --border-medium: #d0c8c0;
+  --border-dark: #a09890;
+
+  /* ============================================================
+     STATUS COLORS
+     ============================================================ */
+
+  --success: #007a4b;
   --success-light: #e8f5e9;
-  --success-dark: #388e3c;
-  --error: #f44336;
+  --success-dark: #005a38;
+  --error: #de3831;
   --error-light: #ffebee;
-  --error-dark: #d32f2f;
-  --warning: #ff9800;
-  --warning-light: #fff3e0;
-  --warning-dark: #e68900;
-  --info: #2196f3;
-  --info-light: #e3f2fd;
-  --info-dark: #1976d2;
+  --error-dark: #b32d2a;
+  --warning: #fdb813;
+  --warning-light: #fff8e1;
+  --warning-dark: #e5a500;
+  --info: #002395;
+  --info-light: #e3f0ff;
+  --info-dark: #001a70;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+  /* ============================================================
+     SHADOWS
+     ============================================================ */
 
-  /* Spacing */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.16);
+
+  /* ============================================================
+     SPACING
+     ============================================================ */
+
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -53,14 +109,20 @@
   --spacing-xl: 32px;
   --spacing-2xl: 48px;
 
-  /* Border Radius */
+  /* ============================================================
+     BORDER RADIUS
+     ============================================================ */
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-round: 999px;
 
-  /* Font Sizes */
+  /* ============================================================
+     FONT SIZES
+     ============================================================ */
+
   --font-xs: 11px;
   --font-sm: 12px;
   --font-md: 14px;
@@ -71,18 +133,27 @@
   --font-3xl: 28px;
   --font-4xl: 32px;
 
-  /* Font Weights */
+  /* ============================================================
+     FONT WEIGHTS
+     ============================================================ */
+
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
 
-  /* Transitions */
+  /* ============================================================
+     TRANSITIONS
+     ============================================================ */
+
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.6s ease;
 
-  /* Z-Index Layers */
+  /* ============================================================
+     Z-INDEX LAYERS
+     ============================================================ */
+
   --z-below: -1;
   --z-normal: 1;
   --z-dropdown: 100;

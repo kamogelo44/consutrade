@@ -199,6 +199,9 @@
   .header-left {
     gap: 0;
   }
+  .sa-badge .sa-text {
+    display: none;
+  }
   .main-nav {
     display: none;
   }
@@ -756,50 +759,48 @@
 /* ========== SELL PAGE ========== */
 
 @media (max-width: 992px) {
-  .sell-hero-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-xl);
+  .sell-hero {
+    padding: 60px var(--spacing-md);
   }
-  .sell-hero-visual {
-    display: none;
-  }
-  .sell-hero-content {
-    text-align: center;
-  }
-  .sell-hero-actions {
-    align-items: center;
-  }
-  .sell-hero-subtitle {
-    margin: 0 auto var(--spacing-xl);
-  }
+
   .sell-comparison-grid {
     grid-template-columns: 1fr;
+  }
+
+  .sell-steps-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
   }
 }
 
 @media (max-width: 768px) {
-  .sell-hero {
-    padding: 60px var(--spacing-md);
-  }
   .sell-hero-content h1 {
     font-size: 1.75rem;
   }
+
   .sell-steps {
     padding: 60px var(--spacing-md);
   }
-  .sell-steps-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-    max-width: 400px;
-  }
+
   .sell-comparison {
     padding: 60px var(--spacing-md);
   }
+
   .sell-requirements {
     padding: 40px var(--spacing-md);
   }
+
   .sell-cta {
     padding: 60px var(--spacing-md);
+  }
+
+  .sell-requirements-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sell-cta-container h2 {
+    font-size: var(--font-2xl);
   }
 }
 
@@ -807,15 +808,9 @@
   .sell-hero-content h1 {
     font-size: 1.5rem;
   }
+
   .sell-hero-subtitle {
     font-size: var(--font-md);
-  }
-  .sell-requirements-grid {
-    flex-direction: column;
-    align-items: center;
-  }
-  .sell-cta-container h2 {
-    font-size: var(--font-2xl);
   }
 }
 
@@ -824,17 +819,51 @@
   .about-container {
     padding: var(--spacing-md);
   }
+
   .about-header h1 {
-    font-size: var(--font-2xl);
+    font-size: var(--font-3xl);
+  }
+
+  .about-section {
+    padding: var(--spacing-lg);
+  }
+
+  .about-section-highlight {
+    padding-left: var(--spacing-lg);
+  }
+
+  .about-contact {
+    flex-direction: column;
+  }
+
+  .about-contact-item {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .about-difference-list li {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 }
 
 @media (max-width: 480px) {
   .about-header h1 {
+    font-size: var(--font-2xl);
+  }
+
+  .about-header p {
+    font-size: var(--font-md);
+  }
+
+  .about-section h2 {
     font-size: var(--font-xl);
   }
-  .about-section h2 {
-    font-size: var(--font-lg);
+
+  .about-section-highlight {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
   }
 }
 
@@ -1025,5 +1054,103 @@
   }
   .verification-state {
     padding: var(--spacing-sm);
+  }
+}
+
+/* ========== LANGUAGE DROPDOWN - MOBILE ========== */
+
+/* Hide language dropdown on very small screens, but keep it visible on tablet */
+@media (max-width: 480px) {
+  .language-dropdown {
+    display: none;
+  }
+}
+
+/* ========== MODAL / FORM RESPONSIVE STYLES ========== */
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 92%;
+    padding: 22px 20px;
+    max-width: 380px;
+    max-height: 85vh;
+  }
+
+  .modal-header h1 {
+    font-size: var(--font-xl);
+  }
+
+  .radio-buttons {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .input-group input,
+  .password-field-wrapper input {
+    height: 44px;
+    padding: 10px 12px;
+  }
+
+  .submit-btn {
+    height: 44px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 18px 16px;
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .modal-header {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .modal-header h1 {
+    font-size: var(--font-lg);
+  }
+
+  .form-fields,
+  .user-type {
+    padding: 10px;
+  }
+
+  .input-group input,
+  .password-field-wrapper input {
+    padding: 8px 10px;
+    font-size: var(--font-sm);
+    height: 42px;
+  }
+
+  .submit-btn {
+    padding: 10px;
+    height: 42px;
+  }
+
+  .radio-btn {
+    padding: 7px 10px;
+    font-size: var(--font-sm);
+  }
+}
+
+/*Breadcrumb resposive styles*/
+
+@media (max-width: 768px) {
+  .breadcrumb {
+    margin: 20px 15px;
+    padding: 10px 15px;
+    font-size: var(--font-sm);
+    width: calc(100% - 30px);
+  }
+}
+
+@media (max-width: 480px) {
+  .breadcrumb {
+    margin: 15px var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-xs);
+    width: calc(100% - var(--spacing-xl));
   }
 }
