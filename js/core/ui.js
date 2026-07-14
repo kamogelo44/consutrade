@@ -225,3 +225,27 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
         }
     });
 }
+
+// ============================================================
+// ERROR CLEARING ON INPUT
+// ============================================================
+
+/**
+ * Initialize error clearing on input focus and keypress.
+ * Removes error styling when user starts typing.
+ */
+function initErrorClearingOnInput() {
+    // Clear error state on input focus
+    $(document).on('focus', '.input-group.error input', function() {
+        var $group = $(this).closest('.input-group');
+        $group.removeClass('error');
+        $group.find('.error-text').remove();
+    });
+
+    // Clear error state on input keypress
+    $(document).on('input', '.input-group.error input', function() {
+        var $group = $(this).closest('.input-group');
+        $group.removeClass('error');
+        $group.find('.error-text').remove();
+    });
+}

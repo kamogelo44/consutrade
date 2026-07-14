@@ -50,12 +50,12 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             </div>
             <nav class="main-nav">
                 <ul>
-                    <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>">Products</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>"><?php t('home'); ?></a></li>
+                    <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>"><?php t('products'); ?></a></li>
                     <?php if ($show_sell_link): ?>
-                        <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
+                        <li><a href="<?php echo $baseUrl; ?>sell.php"><?php t('sell'); ?></a></li>
                     <?php endif; ?>
-                    <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>">About</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>"><?php t('about'); ?></a></li>
                 </ul>
             </nav>
         </div>
@@ -64,7 +64,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         <div class="header-center">
             <div class="search-wrapper">
                 <form action="<?php echo $baseUrl; ?>search-results.php" method="GET">
-                    <input type="search" name="search" placeholder="Search products..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                    <input type="search" name="search" placeholder="<?php t('search_placeholder'); ?>" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit" class="search-btn">
                         <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">
                     </button>
@@ -110,37 +110,37 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                         </svg>
                     </button>
                     <div class="dropdown-menu" id="accountDropdown">
-                        <a href="<?php echo $baseUrl; ?>profile.php">My Profile</a>
+                        <a href="<?php echo $baseUrl; ?>profile.php"><?php t('my_profile'); ?></a>
 
                         <?php if ($hasBuyerRole): ?>
-                            <a href="<?php echo $baseUrl; ?>orders.php">Orders</a>
-                            <a href="<?php echo $baseUrl; ?>cart.php">My Cart</a>
+                            <a href="<?php echo $baseUrl; ?>orders.php"><?php t('orders'); ?></a>
+                            <a href="<?php echo $baseUrl; ?>cart.php"><?php t('my_cart'); ?></a>
                         <?php endif; ?>
 
                         <?php if ($hasSellerRole): ?>
                             <?php if ($hasBuyerRole): ?>
                                 <hr><?php endif; ?>
-                            <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a>
-                            <a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a>
-                            <a href="<?php echo $baseUrl; ?>orders.php">Orders</a>
+                            <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php"><?php t('seller_dashboard'); ?></a>
+                            <a href="<?php echo $baseUrl; ?>admin/my-products.php"><?php t('my_products'); ?></a>
+                            <a href="<?php echo $baseUrl; ?>orders.php"><?php t('orders'); ?></a>
                         <?php endif; ?>
 
                         <?php if ($hasAdminRole): ?>
                             <?php if ($hasBuyerRole || $hasSellerRole): ?>
                                 <hr><?php endif; ?>
-                            <a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a>
-                            <a href="<?php echo $baseUrl; ?>admin/users.php">Users</a>
-                            <a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a>
+                            <a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php"><?php t('admin_dashboard'); ?></a>
+                            <a href="<?php echo $baseUrl; ?>admin/users.php"><?php t('users'); ?></a>
+                            <a href="<?php echo $baseUrl; ?>admin/all-orders.php"><?php t('all_orders'); ?></a>
                         <?php endif; ?>
 
                         <hr>
-                        <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link">Logout</a>
+                        <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link"><?php t('logout'); ?></a>
                     </div>
                 </div>
             <?php else: ?>
                 <div class="auth-buttons">
-                    <button class="login-btn" id="loginBtn">Login</button>
-                    <button class="signup-btn" id="registerBtn">Sign Up</button>
+                    <button class="login-btn" id="loginBtn"><?php t('login'); ?></button>
+                    <button class="signup-btn" id="registerBtn"><?php t('sign_up'); ?></button>
                 </div>
             <?php endif; ?>
 
@@ -159,7 +159,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     <!-- Mobile Search -->
     <div class="mobile-search" id="mobileSearch">
         <form action="<?php echo $baseUrl; ?>product-listings.php" method="GET">
-            <input type="search" name="search" placeholder="Search products...">
+            <input type="search" name="search" placeholder="<?php t('search_placeholder'); ?>">
             <button type="submit">
                 <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="18" height="18" alt="Search">
             </button>
@@ -188,16 +188,16 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         <?php endif; ?>
 
         <ul class="mobile-nav-links">
-            <li><a href="<?php echo $baseUrl; ?>index.php">Home</a></li>
-            <li><a href="<?php echo $baseUrl; ?>product-listings.php">Products</a></li>
+            <li><a href="<?php echo $baseUrl; ?>index.php"><?php t('home'); ?></a></li>
+            <li><a href="<?php echo $baseUrl; ?>product-listings.php"><?php t('products'); ?></a></li>
             <?php if ($show_sell_link): ?>
-                <li><a href="<?php echo $baseUrl; ?>sell.php">Sell</a></li>
+                <li><a href="<?php echo $baseUrl; ?>sell.php"><?php t('sell'); ?></a></li>
             <?php endif; ?>
-            <li><a href="<?php echo $baseUrl; ?>about.php">About</a></li>
+            <li><a href="<?php echo $baseUrl; ?>about.php"><?php t('about'); ?></a></li>
 
             <!-- Mobile Language Selector -->
             <li class="mobile-divider"></li>
-            <li class="mobile-lang-label">Language</li>
+            <li class="mobile-lang-label"><?php t('language'); ?></li>
             <?php foreach (getAvailableLanguages() as $code => $name): ?>
                 <li>
                     <a href="?lang=<?php echo $code; ?>" class="<?php echo $code == getCurrentLanguage() ? 'active' : ''; ?>">
@@ -208,31 +208,31 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
 
             <?php if ($is_logged_in): ?>
                 <li class="mobile-divider"></li>
-                <li><a href="<?php echo $baseUrl; ?>profile.php">My Profile</a></li>
+                <li><a href="<?php echo $baseUrl; ?>profile.php"><?php t('my_profile'); ?></a></li>
 
                 <?php if ($hasBuyerRole): ?>
-                    <li><a href="<?php echo $baseUrl; ?>orders.php">Orders</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>cart.php">My Cart</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>orders.php"><?php t('orders'); ?></a></li>
+                    <li><a href="<?php echo $baseUrl; ?>cart.php"><?php t('my_cart'); ?></a></li>
                 <?php endif; ?>
 
                 <?php if ($hasSellerRole): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">Seller Dashboard</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/my-products.php">My Products</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>orders.php">Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php"><?php t('seller_dashboard'); ?></a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/my-products.php"><?php t('my_products'); ?></a></li>
+                    <li><a href="<?php echo $baseUrl; ?>orders.php"><?php t('orders'); ?></a></li>
                 <?php endif; ?>
 
                 <?php if ($hasAdminRole): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">Admin Dashboard</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/users.php">Users</a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php">All Orders</a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php"><?php t('admin_dashboard'); ?></a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/users.php"><?php t('users'); ?></a></li>
+                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php"><?php t('all_orders'); ?></a></li>
                 <?php endif; ?>
 
                 <li class="mobile-divider"></li>
-                <li><a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link">Logout</a></li>
+                <li><a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link"><?php t('logout'); ?></a></li>
             <?php else: ?>
                 <li class="mobile-divider"></li>
-                <li><button class="mobile-login-btn" id="mobileLoginBtn">Login</button></li>
-                <li><button class="mobile-signup-btn" id="mobileRegisterBtn">Sign Up</button></li>
+                <li><button class="mobile-login-btn" id="mobileLoginBtn"><?php t('login'); ?></button></li>
+                <li><button class="mobile-signup-btn" id="mobileRegisterBtn"><?php t('sign_up'); ?></button></li>
             <?php endif; ?>
         </ul>
     </div>
@@ -240,33 +240,19 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     <div class="menu-overlay" id="menuOverlay"></div>
 </header>
 
+<!-- GLOBAL JAVASCRIPT VARIABLES -->
 <script>
-    var currentUserRoles = <?php echo isset($currentUser) ? json_encode($user_roles) : '[]'; ?>;
-    var isLoggedIn = <?php echo json_encode($is_logged_in); ?>;
-    var currentUserRole = <?php echo isset($currentUser) ? json_encode($primaryRole) : 'null'; ?>;
+    var baseUrl = '<?php echo $baseUrl; ?>';
+    var currentUserId = <?php echo $currentUser ? $currentUser->getUserId() : 0; ?>;
+    var currentUserRole = '<?php echo $currentUserRole ?? ''; ?>';
+    var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
 
-    function hasRole(role) {
-        return Array.isArray(currentUserRoles) && currentUserRoles.indexOf(role) !== -1;
-    }
-</script>
-
-<!-- Language Dropdown JavaScript -->
-<script>
-    $(document).ready(function() {
-        var $langBtn = $('#languageBtn');
-        var $langMenu = $('#languageMenu');
-
-        if ($langBtn.length && $langMenu.length) {
-            $langBtn.on('click', function(e) {
-                e.stopPropagation();
-                $langMenu.toggleClass('active');
-            });
-
-            $(document).on('click', function() {
-                $langMenu.removeClass('active');
-            });
-        }
-    });
+    // Translations for JavaScript
+    var translations = <?php
+                        $lang = getCurrentLanguage();
+                        $trans = getTranslations()[$lang] ?? [];
+                        echo json_encode($trans);
+                        ?>;
 </script>
 
 <!-- Login Modal -->
@@ -275,27 +261,27 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         <button class="btn-close"></button>
         <div class="modal-header">
             <h1>Consu<span>Trade</span></h1>
-            <p>Welcome back! Please login to your account</p>
+            <p><?php t('welcome_back'); ?></p>
         </div>
         <div id="login-error-container" class="error-container" style="display: none;"></div>
         <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/auth/login.php">
             <input type="hidden" name="role_type" value="buyer">
             <div class="input-group">
-                <label for="login-email">Email Address</label>
-                <input type="email" id="login-email" name="email" placeholder="Enter your email address" required>
+                <label for="login-email"><?php t('email_address'); ?></label>
+                <input type="email" id="login-email" name="email" placeholder="<?php t('email_address'); ?>" required>
             </div>
             <div class="input-group">
-                <label for="login-password">Password</label>
+                <label for="login-password"><?php t('password'); ?></label>
                 <div class="password-field-wrapper">
-                    <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
+                    <input type="password" id="login-password" name="password" placeholder="<?php t('password'); ?>" required>
                     <button type="button" class="password-toggle-btn" onclick="togglePassword('login-password', this)">
                         <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
                     </button>
                 </div>
             </div>
-            <div class="reset-pass"><a href="#" id="forgotPasswordLink">Forgot Password?</a></div>
-            <button type="submit" class="submit-btn">Login</button>
-            <div class="register-link">Don't have an account? <a href="#" id="switch-to-register">Register here</a></div>
+            <div class="reset-pass"><a href="#" id="forgotPasswordLink"><?php t('forgot_password'); ?></a></div>
+            <button type="submit" class="submit-btn"><?php t('login'); ?></button>
+            <div class="register-link"><?php t('no_account'); ?> <a href="#" id="switch-to-register"><?php t('register_here'); ?></a></div>
         </form>
     </div>
 </div>
@@ -306,35 +292,35 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
         <button class="btn-close"></button>
         <div class="modal-header">
             <h1>Consu<span>Trade</span></h1>
-            <p>Create your account to start buying and selling</p>
+            <p><?php t('create_account'); ?></p>
         </div>
         <div id="register-error-container" class="error-container" style="display: none;"></div>
         <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/auth/register.php">
             <div class="input-group">
-                <label for="register-full-name">Full Name</label>
-                <input type="text" id="register-full-name" name="full_name" placeholder="Enter your full name" required>
+                <label for="register-full-name"><?php t('full_name'); ?></label>
+                <input type="text" id="register-full-name" name="full_name" placeholder="<?php t('full_name'); ?>" required>
             </div>
             <div class="input-group">
-                <label for="register-email">Email Address</label>
-                <input type="email" id="register-email" name="email" placeholder="Enter your email address" required>
+                <label for="register-email"><?php t('email_address'); ?></label>
+                <input type="email" id="register-email" name="email" placeholder="<?php t('email_address'); ?>" required>
             </div>
             <div class="input-group">
-                <label for="register-phone">Phone Number</label>
-                <input type="tel" id="register-phone" name="phone" placeholder="Enter your phone number" required>
+                <label for="register-phone"><?php t('phone_number'); ?></label>
+                <input type="tel" id="register-phone" name="phone" placeholder="<?php t('phone_number'); ?>" required>
             </div>
             <div class="input-group">
-                <label for="register-password">Password</label>
+                <label for="register-password"><?php t('password'); ?></label>
                 <div class="password-field-wrapper">
-                    <input type="password" id="register-password" name="password" placeholder="Create a password" required>
+                    <input type="password" id="register-password" name="password" placeholder="<?php t('password'); ?>" required>
                     <button type="button" class="password-toggle-btn" onclick="togglePassword('register-password', this)">
                         <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
                     </button>
                 </div>
             </div>
             <div class="input-group">
-                <label for="register-confirm-password">Confirm Password</label>
+                <label for="register-confirm-password"><?php t('confirm_password'); ?></label>
                 <div class="password-field-wrapper">
-                    <input type="password" id="register-confirm-password" name="confirm_password" placeholder="Confirm your password" required>
+                    <input type="password" id="register-confirm-password" name="confirm_password" placeholder="<?php t('confirm_password'); ?>" required>
                     <button type="button" class="password-toggle-btn" onclick="togglePassword('register-confirm-password', this)">
                         <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
                     </button>
@@ -342,17 +328,17 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             </div>
 
             <fieldset class="user-type">
-                <legend>I want to...</legend>
+                <legend><?php t('i_want_to'); ?></legend>
                 <div class="radio-buttons">
                     <input type="radio" id="buyer" name="role" value="buyer" checked>
-                    <label for="buyer" class="radio-btn radio">Buy Products</label>
+                    <label for="buyer" class="radio-btn radio"><?php t('buy_products'); ?></label>
                     <input type="radio" id="seller" name="role" value="seller">
-                    <label for="seller" class="radio-btn radio">Sell Products</label>
+                    <label for="seller" class="radio-btn radio"><?php t('sell_products'); ?></label>
                 </div>
             </fieldset>
 
-            <button type="submit" class="submit-btn">Create Account</button>
-            <div class="login-link">Already have an account? <a href="#" id="switch-to-login">Login here</a></div>
+            <button type="submit" class="submit-btn"><?php t('create_account_btn'); ?></button>
+            <div class="login-link"><?php t('already_have_account'); ?> <a href="#" id="switch-to-login"><?php t('login_here'); ?></a></div>
         </form>
     </div>
 </div>

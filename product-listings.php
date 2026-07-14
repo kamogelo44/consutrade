@@ -186,15 +186,13 @@ $load_products_js = true;
         </div>
     </main>
 
-    <?php include 'includes/footer.php'; ?>
-    <?php include 'includes/modal-errors.php'; ?>
-
     <!-- Pass category to JavaScript -->
     <script>
         window.initialCategory = '<?php echo $selectedCategory; ?>';
     </script>
 
-    <script src="<?php echo $baseUrl; ?>js/products.js"></script>
+    <?php include 'includes/footer.php'; ?>
+    <?php include 'includes/modal-errors.php'; ?>
 
 </body>
 

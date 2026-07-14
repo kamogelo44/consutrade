@@ -38,14 +38,14 @@ function loadHeroProducts() {
             }
         },
         error: function() {
-            $container.html('<p style="color:var(--gray-medium);font-size:var(--font-sm);">Unable to load latest listings</p>');
+            $container.html('<p style="color:var(--gray-medium);font-size:var(--font-sm);">' + t('error_loading_products') + '</p>');
         }
     });
 }
 
 function loadFeaturedProducts() {
     var $grid = $('#featured-products-grid');
-    $grid.html('<div class="loading-spinner">Loading products...</div>');
+    $grid.html('<div class="loading-spinner">' + t('loading_products') + '</div>');
 
     $.ajax({
         url: baseUrl + 'php/endpoints/products/get-products.php?limit=6&page=1',
@@ -62,8 +62,8 @@ function loadFeaturedProducts() {
             $grid.html(
                 '<div class="empty-state">' +
                 '<img src="' + baseUrl + 'images/icons/error-svgrepo-com.svg" width="64" height="64" alt="Error" loading="lazy">' +
-                '<h3>Could not load products</h3>' +
-                '<p>Please refresh the page to try again.</p>' +
+                '<h3>' + t('error_loading_products') + '</h3>' +
+                '<p>' + t('error_loading_products') + '</p>' +
                 '</div>'
             );
         }
@@ -72,7 +72,7 @@ function loadFeaturedProducts() {
 
 function loadTopSellers() {
     var $grid = $('#sellers-grid');
-    $grid.html('<div class="loading-spinner">Loading sellers...</div>');
+    $grid.html('<div class="loading-spinner">' + t('loading_products') + '</div>');
 
     $.ajax({
         url: baseUrl + 'php/endpoints/users/get-top-sellers.php?limit=4',
@@ -85,8 +85,8 @@ function loadTopSellers() {
                 data.sellers.forEach(function(seller) {
                     var initials = (seller.full_name || 'U').substring(0, 1);
                     var verifiedBadge = seller.id_verified ? 
-                        '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' :
-                        '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
+                        '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>' + t('verified') + '</span></div>' :
+                        '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>' + t('unverified') + '</span></div>';
                     
                     var productCount = seller.product_count || 0;
                     var rating = seller.rating || 0;
@@ -105,18 +105,18 @@ function loadTopSellers() {
                             '<div class="seller-card-stats">' +
                                 '<div>' +
                                     '<span class="stat-number">' + productCount + '</span>' +
-                                    '<span class="stat-label">Listings</span>' +
+                                    '<span class="stat-label">' + t('listings') + '</span>' +
                                 '</div>' +
                                 '<div>' +
                                     '<span class="stat-number">' + rating.toFixed(1) + '</span>' +
-                                    '<span class="stat-label">Rating</span>' +
+                                    '<span class="stat-label">' + t('rating') + '</span>' +
                                 '</div>' +
                                 '<div>' +
                                     '<span class="stat-number">' + trades + '</span>' +
-                                    '<span class="stat-label">Trades</span>' +
+                                    '<span class="stat-label">' + t('trades') + '</span>' +
                                 '</div>' +
                             '</div>' +
-                            '<a href="seller-profile.php?id=' + seller.user_id + '" class="seller-link">View shop →</a>' +
+                            '<a href="seller-profile-public.php?seller_id=' + seller.user_id + '" class="seller-link">' + t('view_shop') + ' →</a>' +
                         '</div>'
                     );
                     $grid.append(card);
@@ -124,8 +124,8 @@ function loadTopSellers() {
             } else {
                 $grid.html(
                     '<div class="empty-state" style="grid-column:1/-1;">' +
-                    '<h3>No sellers yet</h3>' +
-                    '<p>Be the first verified seller on ConsuTrade!</p>' +
+                    '<h3>' + t('no_products_found') + '</h3>' +
+                    '<p>' + t('no_products_found') + '</p>' +
                     '</div>'
                 );
             }
@@ -133,8 +133,8 @@ function loadTopSellers() {
         error: function() {
             $grid.html(
                 '<div class="empty-state" style="grid-column:1/-1;">' +
-                '<h3>Could not load sellers</h3>' +
-                '<p>Please refresh the page to try again.</p>' +
+                '<h3>' + t('error_loading_products') + '</h3>' +
+                '<p>' + t('error_loading_products') + '</p>' +
                 '</div>'
             );
         }
@@ -144,10 +144,10 @@ function loadTopSellers() {
 function showFeaturedEmptyState() {
     $('#featured-products-grid').html(
         '<div class="empty-state">' +
-        '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products">' +
-        '<h3>No products yet</h3>' +
-        '<p>Be the first to list a product on ConsuTrade!</p>' +
-        '<a href="' + baseUrl + 'sell.php" class="view-all-btn" style="display:inline-block;">Start Selling</a>' +
+        '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" loading="lazy">' +
+        '<h3>' + t('no_products_found') + '</h3>' +
+        '<p>' + t('no_products_found') + '</p>' +
+        '<a href="' + baseUrl + 'sell.php" class="view-all-btn" style="display:inline-block;">' + t('start_selling') + '</a>' +
         '</div>'
     );
 }
@@ -222,7 +222,7 @@ $(function() {
         } else {
             openModal($('#register-modal'));
             $('#seller').prop('checked', true);
-            $('#register-modal .modal-header p').text('Create your account to start selling');
+            $('#register-modal .modal-header p').text(t('create_account'));
         }
     });
 });

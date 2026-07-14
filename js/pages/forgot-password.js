@@ -20,12 +20,12 @@ $(function() {
         if (!email) {
             $msg.removeClass('success-message error-message')
                .addClass('error-message')
-               .text('Please enter your email address.')
+               .text(t('email_required'))
                .show();
             return;
         }
 
-        $btn.prop('disabled', true).text('Sending...');
+        $btn.prop('disabled', true).text(t('sending'));
 
         $.ajax({
             url: baseUrl + 'php/endpoints/users/forgot-password.php',
@@ -42,14 +42,14 @@ $(function() {
                     $('#forgotPasswordForm').hide();
                 }
 
-                $btn.prop('disabled', false).text('Send Reset Link');
+                $btn.prop('disabled', false).text(t('send_reset_link'));
             },
             error: function() {
                 $msg.removeClass('success-message')
                    .addClass('error-message')
-                   .text('Something went wrong. Please try again.')
+                   .text(t('error_occurred'))
                    .show();
-                $btn.prop('disabled', false).text('Send Reset Link');
+                $btn.prop('disabled', false).text(t('send_reset_link'));
             }
         });
     });

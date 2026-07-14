@@ -5,7 +5,7 @@
  * Handles product listings, filtering, pagination, search, and product details.
  * Used on: product-listings.php, product-details.php, search-results.php, index.php
  * 
- * Depends on: utils.js (escapeHtml, fixImageUrl, getEmptyStateHTML)
+ * Depends on: utils.js (escapeHtml, fixImageUrl, showToast, showSuccessToast, showErrorToast)
  */
 
 // ============================================================
@@ -59,6 +59,15 @@ var totalPages = 1;
 var currentSearchQuery = '';
 
 // ============================================================
+// INFINITE SCROLL VARIABLES
+// ============================================================
+
+var isLoading = false;
+var hasMoreProducts = true;
+var observer = null;
+var isInfiniteScrollEnabled = true;
+
+// ============================================================
 // INITIAL CATEGORY FROM URL
 // ============================================================
 
@@ -77,6 +86,9 @@ function loadProducts() {
     cacheProductElements();
 
     if (!$productsGrid || !$productsGrid.length) return;
+
+    // Reset infinite scroll state
+    resetInfiniteScroll();
 
     var params = new URLSearchParams();
     params.append('page', currentPage);
@@ -120,21 +132,29 @@ function loadProducts() {
         success: function(data) {
             if (data.success && data.products && data.products.length > 0) {
                 if (typeof displayProducts === 'function') {
-                    displayProducts(data.products);
+                    // Initial load - replace content
+                    displayProducts(data.products, '#products-grid', false);
                 } else {
                     console.error('displayProducts function not found');
                     $productsGrid.html('<p class="error">Error: displayProducts function not loaded.</p>');
                 }
                 totalPages = data.total_pages || 1;
-                displayPagination();
+                hasMoreProducts = data.products.length >= 12;
+                
+                // Setup infinite scroll after products load
+                if (hasMoreProducts && isInfiniteScrollEnabled) {
+                    setupInfiniteScroll();
+                }
             } else {
                 showEmptyState();
+                hasMoreProducts = false;
             }
         },
         error: function(xhr, status, error) {
             console.error('Search error:', status, error);
             console.error('Response:', xhr.responseText);
             showErrorState();
+            hasMoreProducts = false;
         }
     });
 }
@@ -143,8 +163,12 @@ function loadProducts() {
  * Displays products in grid with optional container selector.
  * Uses fixImageUrl from utils.js
  * Uses escapeHtml from utils.js
+ * 
+ * @param {Array} products - Array of product objects
+ * @param {string} containerSelector - Optional container selector
+ * @param {boolean} append - If true, appends to existing content instead of replacing
  */
-function displayProducts(products, containerSelector) {
+function displayProducts(products, containerSelector, append) {
     cacheProductElements();
 
     var $grid = $productsGrid;
@@ -154,7 +178,10 @@ function displayProducts(products, containerSelector) {
 
     if (!$grid || !$grid.length) return;
 
-    $grid.empty();
+    // If not appending, clear the grid
+    if (!append) {
+        $grid.empty();
+    }
 
     for (var i = 0; i < products.length; i++) {
         var product = products[i];
@@ -233,7 +260,6 @@ function displayProducts(products, containerSelector) {
 
 /**
  * Shows empty state when no products match filters.
- * Uses getEmptyStateHTML from utils.js
  */
 function showEmptyState() {
     cacheProductElements();
@@ -242,8 +268,6 @@ function showEmptyState() {
     var title = isSearchPage ? 'No products found for "' + escapeHtml(currentSearchQuery) + '"' : 'No products found';
     var message = isSearchPage ? 'We couldn\'t find any products matching your search.' : 'We couldn\'t find any products matching your criteria.';
     var buttonText = isSearchPage ? 'Browse All Products' : 'Clear Filters';
-    var buttonLink = isSearchPage ? 'product-listings.php' : '';
-
     var buttonAction = isSearchPage ? 'window.location.href=\'product-listings.php\'' : '$resetFiltersBtn.click()';
 
     $productsGrid.html(
@@ -255,6 +279,7 @@ function showEmptyState() {
         '</div>'
     );
     $paginationContainer.empty();
+    removeLoadingIndicator();
 }
 
 /**
@@ -270,20 +295,220 @@ function showErrorState() {
         '</div>'
     );
     $paginationContainer.empty();
+    removeLoadingIndicator();
+}
+
+// ============================================================
+// INFINITE SCROLL FUNCTIONS
+// ============================================================
+
+/**
+ * Sets up infinite scroll using Intersection Observer.
+ */
+function setupInfiniteScroll() {
+    // Don't setup if already exists
+    if (observer) {
+        observer.disconnect();
+        observer = null;
+    }
+
+    // Remove old sentinel
+    $('#scroll-sentinel').remove();
+
+    // Create sentinel element at the bottom
+    var $sentinel = $('<div id="scroll-sentinel" style="height: 1px;"></div>');
+    $('#products-grid').after($sentinel);
+
+    // Use Intersection Observer if available
+    if (typeof IntersectionObserver !== 'undefined') {
+        observer = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting) {
+                loadMoreProducts();
+            }
+        }, {
+            rootMargin: '0px 0px 300px 0px'
+        });
+
+        observer.observe($sentinel[0]);
+    } else {
+        // Fallback to scroll event for older browsers
+        setupScrollFallback();
+    }
 }
 
 /**
- * Renders pagination controls.
+ * Fallback for browsers without Intersection Observer.
  */
-function displayPagination() {
-    cacheProductElements();
+function setupScrollFallback() {
+    var $window = $(window);
+    var $document = $(document);
 
-    if (typeof renderPagination === 'function') {
-        renderPagination($paginationContainer, currentPage, totalPages, function(page) {
-            currentPage = page;
-            loadProducts();
-            $htmlBody.animate({ scrollTop: 0 }, 'smooth');
+    $window.off('scroll.infinite').on('scroll.infinite', function() {
+        var scrollPosition = $window.scrollTop() + $window.height();
+        var documentHeight = $document.height();
+
+        if (scrollPosition >= documentHeight - 400) {
+            loadMoreProducts();
+        }
+    });
+}
+
+/**
+ * Loads the next page of products (infinite scroll).
+ */
+function loadMoreProducts() {
+    // Don't load if already loading, no more products, or not enabled
+    if (isLoading || !hasMoreProducts || !isInfiniteScrollEnabled) return;
+
+    isLoading = true;
+    currentPage++;
+
+    showLoadingIndicator();
+
+    var params = new URLSearchParams();
+    params.append('page', currentPage);
+    params.append('sort', currentSort);
+    params.append('limit', 12);
+
+    if (currentFilters.categories && currentFilters.categories.length > 0) {
+        params.append('categories', currentFilters.categories.join(','));
+    }
+    if (currentFilters.price_range) params.append('price_range', currentFilters.price_range);
+    if (currentFilters.location) params.append('location', currentFilters.location);
+
+    var isSearchPage = window.location.pathname.includes('search-results.php');
+    if (isSearchPage && currentSearchQuery) {
+        params.append('search', currentSearchQuery);
+    }
+
+    var endpoint = isSearchPage ? 'php/endpoints/products/search-products.php' : 'php/endpoints/products/get-products.php';
+
+    $.ajax({
+        url: baseUrl + endpoint + '?' + params.toString(),
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            removeLoadingIndicator();
+
+            if (data.success && data.products && data.products.length > 0) {
+                if (typeof displayProducts === 'function') {
+                    // Append new products
+                    displayProducts(data.products, '#products-grid', true);
+                }
+                // Check if there are more products (batch size is 12)
+                hasMoreProducts = data.products.length >= 12;
+                
+                // Re-setup sentinel for next batch
+                if (hasMoreProducts) {
+                    resetSentinel();
+                } else {
+                    // Show "no more products" message
+                    showEndMessage();
+                }
+            } else {
+                hasMoreProducts = false;
+                showEndMessage();
+            }
+
+            isLoading = false;
+        },
+        error: function() {
+            removeLoadingIndicator();
+            isLoading = false;
+            hasMoreProducts = false;
+            showErrorToast('Failed to load more products.');
+        }
+    });
+}
+
+/**
+ * Resets the sentinel observer after loading new products.
+ */
+function resetSentinel() {
+    // Remove old sentinel
+    $('#scroll-sentinel').remove();
+
+    if (!hasMoreProducts) return;
+
+    // Create new sentinel
+    var $sentinel = $('<div id="scroll-sentinel" style="height: 1px;"></div>');
+    $('#products-grid').after($sentinel);
+
+    if (observer) {
+        observer.disconnect();
+        observer = null;
+    }
+
+    if (typeof IntersectionObserver !== 'undefined') {
+        observer = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting) {
+                loadMoreProducts();
+            }
+        }, {
+            rootMargin: '0px 0px 300px 0px'
         });
+        observer.observe($sentinel[0]);
+    }
+}
+
+/**
+ * Shows a loading indicator at the bottom of the product grid.
+ */
+function showLoadingIndicator() {
+    removeLoadingIndicator();
+    var $loading = $(
+        '<div id="infinite-loading" class="loading-spinner">' +
+            'Loading more products...' +
+        '</div>'
+    );
+    $('#products-grid').after($loading);
+}
+
+/**
+ * Removes the loading indicator.
+ */
+function removeLoadingIndicator() {
+    $('#infinite-loading').remove();
+}
+
+/**
+ * Shows "no more products" message at the bottom.
+ */
+function showEndMessage() {
+    var $endMessage = $(
+        '<div id="end-message" style="text-align:center;padding:var(--spacing-xl);color:var(--gray-medium);font-size:var(--font-sm);">' +
+            'You\'ve reached the end of the list' +
+        '</div>'
+    );
+    
+    // Remove existing end message
+    $('#end-message').remove();
+    
+    // Only show if products exist (not empty state)
+    if ($productsGrid.children().length > 0) {
+        $('#products-grid').after($endMessage);
+    }
+}
+
+/**
+ * Resets infinite scroll state.
+ * Call this when filters change or search is performed.
+ */
+function resetInfiniteScroll() {
+    currentPage = 1;
+    hasMoreProducts = true;
+    isLoading = false;
+    isInfiniteScrollEnabled = true;
+    removeLoadingIndicator();
+    $('#end-message').remove();
+    $('#scroll-sentinel').remove();
+
+    // Remove scroll event fallback
+    $window.off('scroll.infinite');
+
+    if (observer) {
+        observer.disconnect();
+        observer = null;
     }
 }
 
@@ -645,7 +870,7 @@ function initReportModal() {
 
 /**
  * Add product to cart via AJAX.
- * Uses showSuccessToast and showErrorToast from utils.js (or defined below)
+ * Uses showSuccessToast and showErrorToast from utils.js
  */
 function addToCart(productId, productName, price) {
     if (!isLoggedIn) {
@@ -713,100 +938,38 @@ function buyNow(productId, productName, price) {
 }
 
 // ============================================================
-// TOAST FUNCTIONS (if not already in global scope)
+// DOCUMENT READY - WITH JQUERY LOAD CHECK
 // ============================================================
 
-/**
- * Show toast notification.
- * Falls back to alert if toast container doesn't exist.
- */
-function showToast(message, type) {
-    // Check if toast function already exists from another file
-    if (typeof window.showToast === 'function') {
-        window.showToast(message, type);
-        return;
+(function waitForJQuery() {
+    if (typeof jQuery !== 'undefined') {
+        jQuery(function() {
+            // Cache elements
+            cacheProductElements();
+
+            // Initialize product listings or search
+            if ($('#products-grid').length) {
+                var isSearchPage = window.location.pathname.includes('search-results.php');
+                if (isSearchPage) {
+                    var urlParams = new URLSearchParams(window.location.search);
+                    currentSearchQuery = urlParams.get('search') || '';
+                }
+
+                window.loadProducts = loadProducts;
+                loadProducts();
+                setupProductEventListeners();
+            }
+
+            // Initialize product details
+            if ($('.product-details-container').length) {
+                var productId = $('.product-details-container').data('product-id');
+                if (productId > 0) {
+                    loadProductDetails(productId);
+                }
+                initReportModal();
+            }
+        });
+    } else {
+        setTimeout(waitForJQuery, 50);
     }
-
-    var toastContainer = $('.toast-container');
-    if (!toastContainer.length) {
-        $('body').append('<div class="toast-container"></div>');
-        toastContainer = $('.toast-container');
-    }
-
-    var iconMap = {
-        'success': 'verified-svgrepo-com.svg',
-        'error': 'error-svgrepo-com.svg',
-        'info': 'info-svgrepo-com.svg',
-        'warning': 'warning-svgrepo-com.svg'
-    };
-
-    var icon = iconMap[type] || 'info-svgrepo-com.svg';
-
-    var toast = $(
-        '<div class="toast-notification toast-' + type + '">' +
-            '<div class="toast-icon">' +
-                '<img src="' + baseUrl + 'images/icons/' + icon + '" alt="' + type + '">' +
-            '</div>' +
-            '<div class="toast-message">' + escapeHtml(message) + '</div>' +
-        '</div>'
-    );
-
-    toastContainer.append(toast);
-
-    setTimeout(function() {
-        toast.addClass('hiding');
-        setTimeout(function() {
-            toast.remove();
-        }, 300);
-    }, 4000);
-
-    toast.on('click', function() {
-        toast.addClass('hiding');
-        setTimeout(function() {
-            toast.remove();
-        }, 300);
-    });
-}
-
-function showSuccessToast(message) {
-    showToast(message, 'success');
-}
-
-function showErrorToast(message) {
-    showToast(message, 'error');
-}
-
-// ============================================================
-// DOCUMENT READY
-// ============================================================
-
-$(function() {
-    // Cache elements
-    cacheProductElements();
-
-    // Initialize product listings or search
-    if ($('#products-grid').length) {
-        // Check if we're on search page
-        var isSearchPage = window.location.pathname.includes('search-results.php');
-        if (isSearchPage) {
-            var urlParams = new URLSearchParams(window.location.search);
-            currentSearchQuery = urlParams.get('search') || '';
-        }
-
-        // Make loadProducts globally accessible for pagination
-        window.loadProducts = loadProducts;
-
-        // Load products
-        loadProducts();
-        setupProductEventListeners();
-    }
-
-    // Initialize product details
-    if ($('.product-details-container').length) {
-        var productId = $('.product-details-container').data('product-id');
-        if (productId > 0) {
-            loadProductDetails(productId);
-        }
-        initReportModal();
-    }
-});
+})();

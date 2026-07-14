@@ -4,6 +4,19 @@
  */
 
 /**
+ * Translate text in JavaScript
+ * Usage: t('home') or t('add_to_cart')
+ * 
+ * If translation not found, returns the key itself
+ */
+function t(key) {
+    if (typeof translations !== 'undefined' && translations && translations[key]) {
+        return translations[key];
+    }
+    return key;
+}
+
+/**
  * Escapes user input to prevent XSS attacks
  */
 function escapeHtml(text) {

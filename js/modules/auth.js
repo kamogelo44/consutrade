@@ -39,36 +39,6 @@ function clearRegisterErrors() {
     $('#register-form .error-text').remove();
 }
 
-function initErrorClearingOnInput() {
-    $('#login-email, #login-password').on('input', function() {
-        clearLoginErrors();
-    });
-
-    $('#register-full-name, #register-email, #register-phone, #register-password, #register-confirm-password').on('input', function() {
-        $('#register-error-container').hide().empty();
-        $(this).closest('.input-group').removeClass('error');
-    });
-
-    $('#switch-to-register').on('click', function() {
-        clearLoginErrors();
-    });
-
-    $('#switch-to-login').on('click', function() {
-        clearRegisterErrors();
-    });
-
-    // Forgot password link in login modal
-    $('#forgotPasswordLink').on('click', function(e) {
-        e.preventDefault();
-        var email = $('#login-email').val().trim();
-        var url = baseUrl + 'forgot-password.php';
-        if (email) {
-            url += '?email=' + encodeURIComponent(email);
-        }
-        window.location.href = url;
-    });
-}
-
 // ============================================================
 // AJAX LOGIN
 // ============================================================

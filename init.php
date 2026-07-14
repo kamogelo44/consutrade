@@ -184,6 +184,17 @@ if ($isLoggedIn) {
 // Include translations
 require_once __DIR__ . '/includes/translations.php';
 
+// Handle language from URL - MUST run before any output
+if (isset($_GET['lang'])) {
+    $lang = $_GET['lang'];
+    if (setLanguage($lang)) {
+        // Redirect to remove the lang parameter from URL
+        $redirectUrl = strtok($_SERVER['REQUEST_URI'], '?');
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
+}
+
 // ============================================================
 // AUTO-TRANSLATE ALL OUTPUT
 // ============================================================
@@ -217,19 +228,29 @@ function autoTranslatePage($content)
         return strlen($b) - strlen($a);
     });
 
-    // Replace text in HTML
     $search = array_keys($map);
     $replace = array_values($map);
 
-    // Only translate text content (not inside HTML tags)
-    return preg_replace_callback('/>([^<]*)</', function ($matches) use ($search, $replace) {
-        $text = $matches[1];
-        // Don't translate empty text or if it's numbers
-        if (trim($text) === '' || is_numeric(trim($text))) {
-            return '>' . $text . '<';
+    // Split content by script and style tags to protect them
+    $pattern = '/(<script\b[^>]*>.*?<\/script>)|(<style\b[^>]*>.*?<\/style>)|(<[^>]*>)/is';
+
+    return preg_replace_callback($pattern, function ($matches) use ($search, $replace) {
+        // If it's a script or style tag, return it unchanged
+        if (!empty($matches[1]) || !empty($matches[2])) {
+            return $matches[0];
         }
-        $text = str_replace($search, $replace, $text);
-        return '>' . $text . '<';
+
+        // If it's an HTML tag, return it unchanged
+        if (!empty($matches[3])) {
+            return $matches[0];
+        }
+
+        // Otherwise, translate text content
+        $text = $matches[0];
+        if (trim($text) === '' || is_numeric(trim($text))) {
+            return $text;
+        }
+        return str_replace($search, $replace, $text);
     }, $content);
 }
 

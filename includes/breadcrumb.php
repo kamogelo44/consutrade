@@ -36,13 +36,13 @@ if (isset($breadcrumbItems) && !empty($breadcrumbItems)) {
     }
 ?>
     <div class="breadcrumb">
-        <a href="<?php echo $baseUrl; ?>index.php">Home</a>
+        <a href="<?php echo $baseUrl; ?>index.php"><?php t('home'); ?></a>
         <?php foreach ($breadcrumbItems as $index => $item): ?>
             <span class="breadcrumb-separator">›</span>
             <?php if (isset($item['url'])): ?>
-                <a href="<?php echo buildBreadcrumbUrl($item['url'], $isAdminPage, $baseUrl); ?>"><?php echo htmlspecialchars($item['label']); ?></a>
+                <a href="<?php echo buildBreadcrumbUrl($item['url'], $isAdminPage, $baseUrl); ?>"><?php echo htmlspecialchars($item['label'] ?? ''); ?></a>
             <?php else: ?>
-                <span class="current-page"><?php echo htmlspecialchars($item['label']); ?></span>
+                <span class="current-page"><?php echo htmlspecialchars($item['label'] ?? ''); ?></span>
             <?php endif; ?>
         <?php endforeach; ?>
     </div>

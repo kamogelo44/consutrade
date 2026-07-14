@@ -20,7 +20,7 @@ $page_js = 'index.js';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConsuTrade - South African Marketplace</title>
+    <title>ConsuTrade - <?php t('south_african_marketplace'); ?></title>
     <meta name="description" content="Buy and sell from local South African traders. Secure payments with PayFast.">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>css/main.css">
 </head>
@@ -35,7 +35,7 @@ $page_js = 'index.js';
         <?php if (isset($_GET['verified']) && $_GET['verified'] === 'pending'): ?>
             <div class="verification-notice">
                 <img src="images/icons/email-svgrepo-com.svg" width="20" height="20" alt="Email">
-                <span>Account created! Please check your email to verify your account before logging in.</span>
+                <span><?php t('account_created_verify'); ?></span>
             </div>
         <?php endif; ?>
 
@@ -44,40 +44,40 @@ $page_js = 'index.js';
             <div class="hero-grid">
                 <div class="hero-content">
                     <div class="hero-tag">
-                        <span>Local trade. Real people. No delivery fees.</span>
+                        <span><?php t('local_trade_tagline'); ?></span>
                     </div>
-                    <h1>Your community <span class="hero-highlight">marketplace</span></h1>
-                    <p class="hero-subtitle">Buy and sell with verified traders in your area. No middlemen, no delivery fees — just your neighbours.</p>
+                    <h1><?php t('your_community_marketplace'); ?></h1>
+                    <p class="hero-subtitle"><?php t('hero_subtitle_text'); ?></p>
                     <div class="hero-actions">
-                        <a href="product-listings.php" class="hero-btn hero-btn-primary">Browse local goods</a>
-                        <button class="hero-btn hero-btn-secondary" id="primary-btn">Start selling</button>
+                        <a href="product-listings.php" class="hero-btn hero-btn-primary"><?php t('browse_local_goods'); ?></a>
+                        <button class="hero-btn hero-btn-secondary" id="primary-btn"><?php t('start_selling'); ?></button>
                     </div>
                     <div class="hero-stats">
                         <div class="stat-item">
                             <span class="stat-number"><?php echo number_format($activeSellers); ?></span>
-                            <span class="stat-label">Active traders</span>
+                            <span class="stat-label"><?php t('active_traders'); ?></span>
                         </div>
                         <div class="stat-divider"></div>
                         <div class="stat-item">
                             <span class="stat-number"><?php echo number_format($totalListings); ?></span>
-                            <span class="stat-label">Items listed</span>
+                            <span class="stat-label"><?php t('items_listed'); ?></span>
                         </div>
                         <div class="stat-divider"></div>
                         <div class="stat-item">
                             <span class="stat-number">98%</span>
-                            <span class="stat-label">Trades completed</span>
+                            <span class="stat-label"><?php t('trades_completed'); ?></span>
                         </div>
                     </div>
                     <div class="hero-payment">
-                        <span>Secure payments with</span>
+                        <span><?php t('secure_payments'); ?></span>
                         <img src="images/icons/Payfast logo.svg" alt="PayFast" width="60" height="18">
                     </div>
                 </div>
                 <div class="hero-visual">
                     <div class="hero-card" id="hero-products">
                         <div class="hero-card-header">
-                            <span>Latest listings</span>
-                            <span>New</span>
+                            <span><?php t('latest_listings'); ?></span>
+                            <span><?php t('new'); ?></span>
                         </div>
                         <div class="hero-card-body">
                             <div class="skeleton-row">
@@ -97,60 +97,60 @@ $page_js = 'index.js';
         <section class="category-section">
             <div class="category-container">
                 <div class="category-header">
-                    <span class="section-tag">Browse</span>
-                    <h2>Shop by category</h2>
-                    <p>Find what you need from local sellers</p>
+                    <span class="section-tag"><?php t('browse'); ?></span>
+                    <h2><?php t('shop_by_category_text'); ?></h2>
+                    <p><?php t('find_what_you_need_text'); ?></p>
                 </div>
                 <div class="category-grid">
                     <a href="product-listings.php?category=clothing" class="category-card">
                         <div class="cat-image">
                             <picture>
                                 <source srcset="images/categories/clothing.webp" type="image/webp">
-                                <img src="images/categories/clothing.jpg" alt="Clothing" width="64" height="64" loading="lazy">
+                                <img src="images/categories/clothing.jpg" alt="<?php t('clothing'); ?>" width="64" height="64" loading="lazy">
                             </picture>
                         </div>
-                        <span class="cat-name">Clothing</span>
-                        <span class="cat-count">Fashion &amp; accessories</span>
+                        <span class="cat-name"><?php t('clothing'); ?></span>
+                        <span class="cat-count"><?php t('fashion_accessories'); ?></span>
                     </a>
                     <a href="product-listings.php?category=electronics" class="category-card">
                         <div class="cat-image">
                             <picture>
                                 <source srcset="images/categories/electronics.webp" type="image/webp">
-                                <img src="images/categories/electronics.jpg" alt="Electronics" width="64" height="64" loading="lazy">
+                                <img src="images/categories/electronics.jpg" alt="<?php t('electronics'); ?>" width="64" height="64" loading="lazy">
                             </picture>
                         </div>
-                        <span class="cat-name">Electronics</span>
-                        <span class="cat-count">Phones &amp; gadgets</span>
+                        <span class="cat-name"><?php t('electronics'); ?></span>
+                        <span class="cat-count"><?php t('phones_gadgets'); ?></span>
                     </a>
                     <a href="product-listings.php?category=food" class="category-card">
                         <div class="cat-image">
                             <picture>
                                 <source srcset="images/categories/food.webp" type="image/webp">
-                                <img src="images/categories/food.jpg" alt="Food" width="64" height="64" loading="lazy">
+                                <img src="images/categories/food.jpg" alt="<?php t('food_drinks'); ?>" width="64" height="64" loading="lazy">
                             </picture>
                         </div>
-                        <span class="cat-name">Food &amp; Drinks</span>
-                        <span class="cat-count">Groceries &amp; beverages</span>
+                        <span class="cat-name"><?php t('food_drinks'); ?></span>
+                        <span class="cat-count"><?php t('groceries_beverages'); ?></span>
                     </a>
                     <a href="product-listings.php?category=furniture" class="category-card">
                         <div class="cat-image">
                             <picture>
                                 <source srcset="images/categories/furniture.webp" type="image/webp">
-                                <img src="images/categories/furniture.jpg" alt="Furniture" width="64" height="64" loading="lazy">
+                                <img src="images/categories/furniture.jpg" alt="<?php t('furniture'); ?>" width="64" height="64" loading="lazy">
                             </picture>
                         </div>
-                        <span class="cat-name">Furniture</span>
-                        <span class="cat-count">Home &amp; office</span>
+                        <span class="cat-name"><?php t('furniture'); ?></span>
+                        <span class="cat-count"><?php t('home_office'); ?></span>
                     </a>
                     <a href="product-listings.php?category=beauty" class="category-card">
                         <div class="cat-image">
                             <picture>
                                 <source srcset="images/categories/beauty.webp" type="image/webp">
-                                <img src="images/categories/beauty.jpg" alt="Beauty" width="64" height="64" loading="lazy">
+                                <img src="images/categories/beauty.jpg" alt="<?php t('beauty_health'); ?>" width="64" height="64" loading="lazy">
                             </picture>
                         </div>
-                        <span class="cat-name">Beauty &amp; Health</span>
-                        <span class="cat-count">Cosmetics &amp; wellness</span>
+                        <span class="cat-name"><?php t('beauty_health'); ?></span>
+                        <span class="cat-count"><?php t('cosmetics_wellness'); ?></span>
                     </a>
                     <a href="product-listings.php?category=other" class="category-card category-all">
                         <div class="cat-image cat-all">
@@ -158,8 +158,8 @@ $page_js = 'index.js';
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
                         </div>
-                        <span class="cat-name">Other</span>
-                        <span class="cat-count">Everything else</span>
+                        <span class="cat-name"><?php t('other'); ?></span>
+                        <span class="cat-count"><?php t('everything_else'); ?></span>
                     </a>
                 </div>
             </div>
@@ -169,25 +169,25 @@ $page_js = 'index.js';
         <section class="featured">
             <div class="featured-header">
                 <div>
-                    <span class="section-tag">Recent</span>
-                    <h2 class="section-heading">Newly listed</h2>
-                    <p class="section-subtitle">From sellers across South Africa</p>
+                    <span class="section-tag"><?php t('recent'); ?></span>
+                    <h2 class="section-heading"><?php t('newly_listed_text'); ?></h2>
+                    <p class="section-subtitle"><?php t('from_sellers_across_sa'); ?></p>
                 </div>
-                <a href="product-listings.php" class="view-all-link">View all →</a>
+                <a href="product-listings.php" class="view-all-link"><?php t('view_all_text'); ?> →</a>
             </div>
             <div class="prod-grid" id="featured-products-grid">
-                <div class="loading-spinner">Loading products...</div>
+                <div class="loading-spinner"><?php t('loading_products'); ?></div>
             </div>
         </section>
 
         <!-- TOP SELLERS -->
         <section class="sellers-section">
             <div class="sellers-header">
-                <span class="section-tag">Community</span>
-                <h2>Top verified sellers</h2>
+                <span class="section-tag"><?php t('community'); ?></span>
+                <h2><?php t('top_verified_sellers'); ?></h2>
             </div>
             <div class="sellers-grid" id="sellers-grid">
-                <div class="loading-spinner">Loading sellers...</div>
+                <div class="loading-spinner"><?php t('loading_products'); ?></div>
             </div>
         </section>
 
@@ -195,8 +195,8 @@ $page_js = 'index.js';
         <section class="difference-section">
             <div class="difference-container">
                 <div class="difference-content">
-                    <span class="section-tag">Why ConsuTrade</span>
-                    <h2>Built for local trade</h2>
+                    <span class="section-tag"><?php t('why_consutrade_text'); ?></span>
+                    <h2><?php t('built_for_local_trade_text'); ?></h2>
                     <ul class="difference-list">
                         <li>
                             <div class="diff-icon diff-verified">
@@ -206,8 +206,8 @@ $page_js = 'index.js';
                                 </svg>
                             </div>
                             <div>
-                                <strong>Verified identity</strong>
-                                <p>Sellers verify with SA ID. You know who you're trading with.</p>
+                                <strong><?php t('verified_identity_text'); ?></strong>
+                                <p><?php t('verified_identity_desc_text'); ?></p>
                             </div>
                         </li>
                         <li>
@@ -218,8 +218,8 @@ $page_js = 'index.js';
                                 </svg>
                             </div>
                             <div>
-                                <strong>No delivery fees</strong>
-                                <p>Find traders in your area. Collect in person or arrange your own delivery.</p>
+                                <strong><?php t('no_delivery_fees_text'); ?></strong>
+                                <p><?php t('no_delivery_fees_desc_text'); ?></p>
                             </div>
                         </li>
                         <li>
@@ -230,16 +230,16 @@ $page_js = 'index.js';
                                 </svg>
                             </div>
                             <div>
-                                <strong>PayFast protection</strong>
-                                <p>Pay securely through South Africa's trusted payment gateway.</p>
+                                <strong><?php t('payfast_protection_text'); ?></strong>
+                                <p><?php t('payfast_protection_desc_text'); ?></p>
                             </div>
                         </li>
                     </ul>
                 </div>
                 <div class="difference-testimonial">
                     <blockquote>
-                        <p>"I was selling through WhatsApp groups. ConsuTrade made it easier — people find my shop without me spamming groups."</p>
-                        <cite>Thabo M., Soweto</cite>
+                        <p><?php t('testimonial_text'); ?></p>
+                        <cite><?php t('testimonial_author_text'); ?></cite>
                     </blockquote>
                 </div>
             </div>
@@ -248,11 +248,11 @@ $page_js = 'index.js';
         <!-- CTA -->
         <section class="cta-section">
             <div class="cta-container">
-                <h2>Ready to start trading?</h2>
-                <p>Join thousands of South Africans buying and selling locally.</p>
+                <h2><?php t('ready_to_start_text'); ?></h2>
+                <p><?php t('join_thousands_text'); ?></p>
                 <div class="cta-buttons">
-                    <a href="register.php" class="cta-btn cta-btn-primary">Create account</a>
-                    <a href="about.php" class="cta-btn cta-btn-secondary">Learn more</a>
+                    <a href="register.php" class="cta-btn cta-btn-primary"><?php t('create_account_text'); ?></a>
+                    <a href="about.php" class="cta-btn cta-btn-secondary"><?php t('learn_more_text'); ?></a>
                 </div>
             </div>
         </section>
