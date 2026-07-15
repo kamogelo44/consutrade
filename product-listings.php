@@ -178,7 +178,16 @@ $load_products_js = true;
                 </div>
 
                 <div class="listings-grid" id="products-grid">
-                    <div class="loading-spinner">Loading products...</div>
+                    <?php for ($i = 0; $i < 12; $i++): ?>
+                        <div class="prod-card skeleton-card">
+                            <div class="img-container skeleton" style="height:180px;"></div>
+                            <div class="prod-info-container">
+                                <div class="skeleton skeleton-text" style="width:80%;height:16px;"></div>
+                                <div class="skeleton skeleton-text" style="width:40%;height:14px;margin-top:8px;"></div>
+                                <div class="skeleton skeleton-text" style="width:60%;height:12px;margin-top:8px;"></div>
+                            </div>
+                        </div>
+                    <?php endfor; ?>
                 </div>
 
                 <div class="pagination" id="pagination"></div>

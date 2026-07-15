@@ -125,6 +125,18 @@ class UserService
     }
 
     /**
+     * Check if a user is currently online (active within last 15 minutes).
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function isUserOnline(int $userId): bool
+    {
+        $user = $this->userRepo->findById($userId);
+        return $user ? $user->isOnline() : false;
+    }
+
+    /**
      * Get seller statistics.
      */
     public function getSellerStats(int $sellerId): array

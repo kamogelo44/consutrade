@@ -2336,6 +2336,24 @@ function getAvailableLanguages()
     ];
 }
 
+function getFlagEmoji($code)
+{
+    $flags = [
+        'en' => '🇬🇧',
+        'af' => '🇿🇦',
+        'zu' => '🇿🇦',
+        'xh' => '🇿🇦',
+        'nso' => '🇿🇦',
+        'st' => '🇿🇦',
+        'tn' => '🇿🇦',
+        'ts' => '🇿🇦',
+        've' => '🇿🇦',
+        'nr' => '🇿🇦',
+        'ss' => '🇿🇦',
+    ];
+    return $flags[$code] ?? '🌐';
+}
+
 function getCurrentLanguage()
 {
     if (isset($_SESSION['language']) && array_key_exists($_SESSION['language'], getAvailableLanguages())) {

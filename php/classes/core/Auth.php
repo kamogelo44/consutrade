@@ -99,6 +99,9 @@ class Auth
 
         $this->clearFailedAttempts($email);
 
+        // Update last active timestamp on login
+        $this->userRepo->updateLastActive($user->getUserId());
+
         $roles = $user->getRoles();
         $activeRole = $this->determineRole($roles, $context);
 
@@ -616,6 +619,9 @@ class Auth
         $_SESSION['login_time'] = time();
         $_SESSION['last_activity'] = time();
 
+        // Update last active timestamp
+        $this->userRepo->updateLastActive($user->getUserId());
+
         return true;
     }
 
@@ -671,6 +677,9 @@ class Auth
 
         $_SESSION['last_activity'] = time();
 
+        // Update last_active on each request
+        $this->userRepo->updateLastActive($this->getCurrentUserId());
+
         return true;
     }
 
@@ -683,5 +692,20 @@ class Auth
     public function markAuthenticated(): void
     {
         $_SESSION['last_activity'] = time();
+    }
+
+    // ============================================================
+    // LAST ACTIVE TRACKING
+    // ============================================================
+
+    /**
+     * Update the current user's last active timestamp.
+     * Call this on each page load for logged-in users.
+     */
+    public function touchLastActive(): void
+    {
+        if ($this->isLoggedIn()) {
+            $this->userRepo->updateLastActive($this->getCurrentUserId());
+        }
     }
 }

@@ -407,7 +407,8 @@ class ProductRepository
                        p.location, p.condition, p.stock_quantity, p.created_at,
                        COALESCE(pi.image_url, p.image_url) AS display_image,
                        u.full_name as seller_name, u.user_id as seller_id,
-                       u.profile_image, u.id_verified as is_verified
+                       u.profile_image, u.id_verified as is_verified,
+                       u.last_active
                 FROM products p
                 JOIN users u ON p.seller_id = u.user_id
                 LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
@@ -533,7 +534,8 @@ class ProductRepository
         $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url,
                        p.location, p.condition, p.stock_quantity, p.created_at,
                        u.full_name as seller_name, u.user_id as seller_id,
-                       u.profile_image, u.id_verified as is_verified
+                       u.profile_image, u.id_verified as is_verified,
+                       u.last_active
                 FROM products p
                 JOIN users u ON p.seller_id = u.user_id
                 WHERE p.status = 'active'
@@ -611,6 +613,9 @@ class ProductRepository
                 'condition'      => $row['condition'] ?? 'Good',
                 'stock_quantity' => (int) ($row['stock_quantity'] ?? 1),
                 'is_verified'    => (bool) $row['is_verified'],
+                'is_online' => isset($row['last_active']) && $row['last_active']
+                    ? (time() - strtotime($row['last_active']) < 900)
+                    : false,
                 'profile_image'  => $row['profile_image'] ?? null
             ];
         }

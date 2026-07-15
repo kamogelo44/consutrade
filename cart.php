@@ -43,27 +43,36 @@ $page_js = 'cart.js';
         <?php include 'includes/breadcrumb.php'; ?>
 
         <div class="cart-container">
-            <div class="cart-header">
-                <h1><?php t('your_cart'); ?> (<span id="cart-item-count"><?php echo $total_quantity; ?></span> <?php t('items'); ?>)</h1>
-            </div>
+            <?php if (!empty($cart_items)): ?>
+                <div class="cart-header">
+                    <h1><?php t('your_cart'); ?> (<span id="cart-item-count"><?php echo $total_quantity; ?></span> <?php t('items'); ?>)</h1>
+                </div>
 
-            <div id="cart-layout" style="display: <?php echo empty($cart_items) ? 'none' : 'flex'; ?>;">
-                <div class="cart-grid">
-                    <div class="table-wrapper">
-                        <table class="cart-table">
-                            <thead>
-                                <tr>
-                                    <th><?php t('product'); ?></th>
-                                    <th><?php t('seller'); ?></th>
-                                    <th><?php t('price'); ?></th>
-                                    <th><?php t('quantity'); ?></th>
-                                    <th><?php t('action'); ?></th>
-                                </tr>
-                            </thead>
-                            <tbody id="cart-table-body"></tbody>
-                        </table>
+                <div id="cart-layout" class="cart-layout-container">
+                    <div class="cart-grid">
+                        <div class="table-wrapper">
+                            <table class="cart-table">
+                                <thead>
+                                    <tr>
+                                        <th><?php t('product'); ?></th>
+                                        <th><?php t('seller'); ?></th>
+                                        <th><?php t('price'); ?></th>
+                                        <th><?php t('quantity'); ?></th>
+                                        <th><?php t('action'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cart-table-body">
+                                    <tr class="skeleton-row">
+                                        <td colspan="5">
+                                            <div class="skeleton" style="height: 56px; width: 100%;"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="mobile-cart-items"></div>
                     </div>
-                    <div id="mobile-cart-items"></div>
+
                     <div class="order-summary">
                         <h2><?php t('order_summary'); ?></h2>
                         <div class="summary-row">
@@ -81,10 +90,10 @@ $page_js = 'cart.js';
                         <button class="checkout-btn" id="checkoutBtn"><?php t('checkout'); ?></button>
                         <button class="continue-shopping" id="continueBtn"><?php t('continue_shopping'); ?></button>
                         <div class="summary-footer">
-                            <a href="https://www.payfast.co.za" class="payfast-badge" target="_blank" rel="noopener noreferrer">
+                            <div class="payfast-badge">
                                 <span><?php t('secure_payments_by'); ?></span>
                                 <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast">
-                            </a>
+                            </div>
                             <div class="security-text">
                                 <img src="<?php echo $baseUrl; ?>images/icons/secure-card-svgrepo-com.svg" width="14" height="14" alt="Secure">
                                 <span><?php t('security_text'); ?></span>
@@ -92,16 +101,16 @@ $page_js = 'cart.js';
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div id="empty-cart" style="display: <?php echo empty($cart_items) ? 'flex' : 'none'; ?>;">
-                <div class="empty-state">
-                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Empty cart">
-                    <h3><?php t('cart_empty'); ?></h3>
-                    <p><?php t('start_shopping'); ?></p>
-                    <button class="shop-btn" id="browseBtn"><?php t('browse_products'); ?></button>
+            <?php else: ?>
+                <div id="empty-cart" class="empty-cart-container">
+                    <div class="empty-state">
+                        <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="64" height="64" alt="Empty cart">
+                        <h3><?php t('cart_empty'); ?></h3>
+                        <p><?php t('start_shopping'); ?></p>
+                        <button class="shop-btn" id="browseBtn"><?php t('browse_products'); ?></button>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
         </div>
     </main>
 

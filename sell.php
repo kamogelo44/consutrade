@@ -8,6 +8,7 @@ require_once __DIR__ . '/init.php';
 include __DIR__ . '/includes/session-vars.php';
 include __DIR__ . '/includes/functions.php';
 
+// If already a seller, redirect to dashboard
 if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('seller')) {
     header('Location: ' . $baseUrl . 'admin/seller-dashboard.php');
     exit;

@@ -1,6 +1,6 @@
 /**
  * ConsuTrade - Mobile UI Module
- * Mobile menu, mobile search, user dropdown
+ * Mobile menu, mobile search, user dropdown, language toggles
  * Depends on: jQuery
  */
 
@@ -92,6 +92,46 @@ function initUserDropdown() {
             }
         });
     }
+}
+
+// ============================================================
+// MOBILE LANGUAGE TOGGLE
+// ============================================================
+
+function initMobileLanguageToggle() {
+    var $toggle = $('#mobileLangToggle');
+    var $options = $('#mobileLangOptions');
+    
+    if (!$toggle.length || !$options.length) return;
+    
+    // Toggle on click
+    $toggle.on('click', function(e) {
+        e.stopPropagation();
+        $(this).toggleClass('active');
+        $options.toggleClass('open');
+    });
+    
+    // Close when clicking a language option
+    $options.find('.mobile-lang-option').on('click', function() {
+        $toggle.removeClass('active');
+        $options.removeClass('open');
+    });
+    
+    // Close when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.mobile-lang-compact').length) {
+            $toggle.removeClass('active');
+            $options.removeClass('open');
+        }
+    });
+    
+    // Close on Escape key
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $toggle.removeClass('active');
+            $options.removeClass('open');
+        }
+    });
 }
 
 // ============================================================

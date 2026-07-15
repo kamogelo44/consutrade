@@ -51,6 +51,9 @@ abstract class User
     /** @var bool */
     protected bool $isDemo;
 
+    /** @var string|null */
+    protected $lastActive;
+
     /**
      * Constructor.
      *
@@ -71,6 +74,7 @@ abstract class User
         $this->createdAt    = (string) ($data['created_at']   ?? '');
         $this->status       = (string) ($data['status']       ?? 'active');
         $this->isDemo = (bool)($data['is_demo'] ?? false);
+        $this->lastActive = $data['last_active'] ?? null;
     }
 
     /**
@@ -221,6 +225,29 @@ abstract class User
     }
 
     /**
+     * Returns the user's last active timestamp.
+     *
+     * @return string|null
+     */
+    public function getLastActive(): ?string
+    {
+        return $this->lastActive;
+    }
+
+    /**
+     * Checks if the user is currently online (active within last 15 minutes).
+     *
+     * @return bool
+     */
+    public function isOnline(): bool
+    {
+        if (!$this->lastActive) {
+            return false;
+        }
+        return (time() - strtotime($this->lastActive)) < 900;
+    }
+
+    /**
      * Helper to get full system path for a file
      *
      * @param string $filePath Relative file path
@@ -309,7 +336,8 @@ abstract class User
             'profile_image' => $this->profileImage,
             'created_at' => $this->createdAt,
             'status' => $this->status,
-            'is_demo' => $this->isDemo
+            'is_demo' => $this->isDemo,
+            'last_active' => $this->lastActive
         ];
     }
 
@@ -333,6 +361,7 @@ abstract class User
         $this->createdAt = $data['created_at'];
         $this->status = $data['status'];
         $this->isDemo = (bool)($data['is_demo'] ?? false);
+        $this->lastActive = $data['last_active'] ?? null;
     }
 
     /**

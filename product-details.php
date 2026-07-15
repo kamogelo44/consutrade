@@ -53,7 +53,39 @@ $breadcrumbItems = [
 
         <div class="product-details-container" data-product-id="<?php echo $product_id; ?>">
             <div id="product-details-content">
-                <div class="loading-spinner">Loading product details...</div>
+                <!-- Product Details Skeleton -->
+                <div style="max-width: 1200px; margin: 0 auto; padding: var(--spacing-xl); display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-2xl);">
+                    <!-- Image side -->
+                    <div>
+                        <div class="skeleton" style="width: 100%; aspect-ratio: 1/1; border-radius: var(--radius-lg);"></div>
+                        <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-md);">
+                            <div class="skeleton" style="width: 72px; height: 72px; border-radius: var(--radius-md);"></div>
+                            <div class="skeleton" style="width: 72px; height: 72px; border-radius: var(--radius-md);"></div>
+                            <div class="skeleton" style="width: 72px; height: 72px; border-radius: var(--radius-md);"></div>
+                            <div class="skeleton" style="width: 72px; height: 72px; border-radius: var(--radius-md);"></div>
+                        </div>
+                    </div>
+
+                    <!-- Info side -->
+                    <div>
+                        <div class="skeleton" style="width: 100px; height: 24px; border-radius: var(--radius-round);"></div>
+                        <div class="skeleton skeleton-text" style="width: 90%; margin-top: var(--spacing-md);"></div>
+                        <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                        <div class="skeleton skeleton-text" style="width: 35%; height: 32px; margin-top: var(--spacing-sm);"></div>
+                        <div class="skeleton" style="width: 120px; height: 28px; border-radius: var(--radius-md); margin-top: var(--spacing-sm);"></div>
+                        <div class="skeleton skeleton-text" style="width: 100%; margin-top: var(--spacing-lg);"></div>
+                        <div class="skeleton skeleton-text" style="width: 100%;"></div>
+                        <div class="skeleton skeleton-text" style="width: 80%;"></div>
+                        <div class="skeleton skeleton-text" style="width: 45%; margin-top: var(--spacing-md);"></div>
+                        <div class="skeleton skeleton-text" style="width: 35%;"></div>
+                    </div>
+                </div>
+
+                <!-- Seller card skeleton -->
+                <div class="skeleton" style="max-width: 1200px; margin: var(--spacing-xl) auto 0; height: 200px; border-radius: var(--radius-lg);"></div>
+
+                <!-- Actions card skeleton -->
+                <div class="skeleton" style="max-width: 1200px; margin: var(--spacing-lg) auto 0; height: 120px; border-radius: var(--radius-lg);"></div>
             </div>
         </div>
     </main>

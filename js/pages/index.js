@@ -1,7 +1,39 @@
 /**
  * ConsuTrade - Homepage
- * All dynamic content loads via AJAX
+ * Only dynamic content (stats, products, sellers)
  */
+
+function loadHeroStats() {
+    var stats = window.heroStats;
+    if (!stats) return;
+
+    var $items = $('#hero-stats-container .stat-item');
+    if ($items.length < 3) return;
+
+    // Active traders
+    $items.eq(0).find('.stat-number')
+        .removeClass('skeleton skeleton-stat-number')
+        .text(stats.activeSellers.toLocaleString());
+    $items.eq(0).find('.stat-label')
+        .removeClass('skeleton skeleton-stat-label')
+        .text(t('active_traders'));
+
+    // Items listed
+    $items.eq(1).find('.stat-number')
+        .removeClass('skeleton skeleton-stat-number')
+        .text(stats.totalListings.toLocaleString());
+    $items.eq(1).find('.stat-label')
+        .removeClass('skeleton skeleton-stat-label')
+        .text(t('items_listed'));
+
+    // Trades completed
+    $items.eq(2).find('.stat-number')
+        .removeClass('skeleton skeleton-stat-number')
+        .text(stats.tradesCompleted + '%');
+    $items.eq(2).find('.stat-label')
+        .removeClass('skeleton skeleton-stat-label')
+        .text(t('trades_completed'));
+}
 
 function loadHeroProducts() {
     var $container = $('#hero-products .hero-card-body');
@@ -12,16 +44,17 @@ function loadHeroProducts() {
         dataType: 'json',
         success: function(data) {
             if (data.success && data.products && data.products.length > 0) {
+                // Remove skeleton
+                $('#hero-products-skeleton').remove();
                 $container.empty();
-                
+
                 data.products.forEach(function(product, index) {
                     var imageUrl = product.display_image || product.image || product.image_url || 'images/default-product.png';
                     var productName = product.name || product.title || 'Product';
                     var productPrice = parseFloat(product.price || 0);
-                    
-                    // Only add border-bottom if not the last item
+
                     var borderStyle = (index < data.products.length - 1) ? 'border-bottom:1px solid var(--border-light);' : '';
-                    
+
                     var row = $(
                         '<a href="product-details.php?id=' + product.id + '" style="display:flex;align-items:center;gap:var(--spacing-md);padding:var(--spacing-sm) 0;' + borderStyle + 'text-decoration:none;">' +
                             '<div style="width:52px;height:52px;border-radius:var(--radius-md);overflow:hidden;flex-shrink:0;background:var(--gray-bg);">' +
@@ -38,14 +71,15 @@ function loadHeroProducts() {
             }
         },
         error: function() {
-            $container.html('<p style="color:var(--gray-medium);font-size:var(--font-sm);">' + t('error_loading_products') + '</p>');
+            $('#hero-products-skeleton').replaceWith(
+                '<p style="color:var(--gray-medium);font-size:var(--font-sm);">' + t('error_loading_products') + '</p>'
+            );
         }
     });
 }
 
 function loadFeaturedProducts() {
     var $grid = $('#featured-products-grid');
-    $grid.html('<div class="loading-spinner">' + t('loading_products') + '</div>');
 
     $.ajax({
         url: baseUrl + 'php/endpoints/products/get-products.php?limit=6&page=1',
@@ -72,7 +106,6 @@ function loadFeaturedProducts() {
 
 function loadTopSellers() {
     var $grid = $('#sellers-grid');
-    $grid.html('<div class="loading-spinner">' + t('loading_products') + '</div>');
 
     $.ajax({
         url: baseUrl + 'php/endpoints/users/get-top-sellers.php?limit=4',
@@ -81,17 +114,17 @@ function loadTopSellers() {
         success: function(data) {
             if (data.success && data.sellers && data.sellers.length > 0) {
                 $grid.empty();
-                
+
                 data.sellers.forEach(function(seller) {
                     var initials = (seller.full_name || 'U').substring(0, 1);
-                    var verifiedBadge = seller.id_verified ? 
-                        '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>' + t('verified') + '</span></div>' :
-                        '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>' + t('unverified') + '</span></div>';
-                    
+                    var verifiedBadge = seller.id_verified ?
+                        '<span class="verified-badge-card">&#10003;</span>' :
+                        '<span class="unverified-badge-card">!</span>';
+
                     var productCount = seller.product_count || 0;
                     var rating = seller.rating || 0;
                     var trades = seller.trades || 0;
-                    
+
                     var card = $(
                         '<div class="seller-card">' +
                             '<div class="seller-card-top">' +
@@ -167,7 +200,6 @@ function initLocationSearch() {
             return;
         }
 
-        // Check if endpoint exists, otherwise use fallback
         $.ajax({
             url: baseUrl + 'php/endpoints/location/nearby.php',
             type: 'GET',
@@ -181,7 +213,6 @@ function initLocationSearch() {
                 }
             },
             error: function() {
-                // Fallback - show realistic-looking numbers
                 var productCount = Math.floor(Math.random() * 30) + 5;
                 var sellerCount = Math.floor(Math.random() * 15) + 3;
                 $nearbyCount.text(productCount);
@@ -209,6 +240,7 @@ function initLocationSearch() {
 }
 
 $(function() {
+    loadHeroStats();
     loadHeroProducts();
     loadFeaturedProducts();
     loadTopSellers();

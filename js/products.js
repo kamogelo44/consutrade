@@ -119,8 +119,9 @@ function loadProducts() {
     if (currentFilters.price_range) params.append('price_range', currentFilters.price_range);
     if (currentFilters.location) params.append('location', currentFilters.location);
 
-    var loadingText = isSearchPage ? 'Searching for products...' : 'Loading products...';
-    $productsGrid.html('<div class="loading-spinner">' + loadingText + '</div>');
+    // Don't replace skeleton with spinner - keep skeleton
+    // var loadingText = isSearchPage ? 'Searching for products...' : 'Loading products...';
+    // $productsGrid.html('<div class="loading-spinner">' + loadingText + '</div>');
 
     // Use different endpoint based on page
     var endpoint = isSearchPage ? 'php/endpoints/products/search-products.php' : 'php/endpoints/products/get-products.php';
@@ -178,7 +179,6 @@ function displayProducts(products, containerSelector, append) {
 
     if (!$grid || !$grid.length) return;
 
-    // If not appending, clear the grid
     if (!append) {
         $grid.empty();
     }
@@ -202,12 +202,10 @@ function displayProducts(products, containerSelector, append) {
             stockBadge = '<div class="low-stock-badge-card">Only ' + stockQty + ' left</div>';
         }
 
-        var sellerBadge = '';
-        if (product.is_verified) {
-            sellerBadge = '<div class="verified-badge-card"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>';
-        } else {
-            sellerBadge = '<div class="unverified-badge-card"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
-        }
+        /* ---------- Verification badge - icon only ---------- */
+        var verifiedBadge = product.is_verified
+            ? '<span class="verified-badge-card">&#10003;</span>'
+            : '<span class="unverified-badge-card">!</span>';
 
         var isOutOfStock = stockQty <= 0;
         var addToCartButton = '';
@@ -235,17 +233,17 @@ function displayProducts(products, containerSelector, append) {
                 '<h3 class="prod-name">' + escapeHtml(product.name) + '</h3>' +
                 '<p class="prod-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
                 '<div class="seller-info">' +
-                    '<div class="seller-avatar">' +
+                    '<div class="seller-avatar' + (product.is_online ? ' online' : '') + '">' +
                         '<img src="' + sellerAvatar + '" alt="' + escapeHtml(product.seller_name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
                     '</div>' +
                     '<div class="seller-details">' +
                         '<p class="seller-name">' + escapeHtml(product.seller_name) + '</p>' +
+                        verifiedBadge +
                         '<p class="location">' +
                             '<img src="' + baseUrl + 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location" loading="lazy">' +
                             escapeHtml(product.location || 'South Africa') +
                         '</p>' +
                     '</div>' +
-                    sellerBadge +
                 '</div>' +
                 addToCartButton +
                 '<div class="payment-badge">' +
@@ -591,10 +589,11 @@ var currentProductId = 0;
 /**
  * Loads product details for single product page.
  */
+/**
+ * Loads product details for single product page.
+ */
 function loadProductDetails(id) {
     if (!$('.product-details-container').length) return;
-
-    $('#product-details-content').html('<div class="loading-spinner">Loading product details...</div>');
 
     $.get(baseUrl + 'php/endpoints/products/get-product.php?id=' + id, function(data) {
         if (data.success && data.product) {
@@ -748,15 +747,15 @@ function displayProductDetails(product) {
         '<section class="review">' +
             '<div class="rev-container">' +
                 '<div class="seller-profile">' +
-                    '<div class="profile-pic">' +
+                    '<div class="profile-pic' + (product.is_online ? ' online' : '') + '">' +
                         '<img src="' + sellerImage + '" width="40" height="40" alt="' + escapeHtml(product.seller_name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
                     '</div>' +
                     '<p class="seller-name">' + escapeHtml(product.seller_name) + '</p>' +
                 '</div>' +
                 '<div class="verification">' +
                     (product.is_verified ? 
-                        '<div class="verified-badge"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Verified Seller</p></div>' : 
-                        '<div class="not-verified-badge"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="20" height="20" loading="lazy"><p>Not Verified</p></div>') +
+                        '<span class="sp-badge verified">&#10003;</span>' : 
+                        '<span class="sp-badge unverified">!</span>') +
                 '</div>' +
                 '<div class="contact-buttons">' + contactHtml + '</div>' +
                 '<div class="star-reviews">' +

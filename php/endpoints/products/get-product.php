@@ -79,6 +79,7 @@ $response['product'] = [
     'seller_phone' => $seller ? $seller->getPhone() : '',
     'seller_email' => $seller ? $seller->getEmail() : '',
     'is_verified' => $seller ? $seller->isVerified() : false,
+    'is_online' => $seller ? $seller->isOnline() : false,
     'stock_quantity' => $product->getStockQuantity(),
     'status' => $product->getStatus(),
     'avg_rating' => $rating['avg_rating'] ?? 0,

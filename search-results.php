@@ -12,6 +12,8 @@ $breadcrumbItems = [
     ['url' => 'product-listings.php', 'label' => 'Products'],
     ['label' => 'Search: ' . htmlspecialchars($search_query)]
 ];
+
+$load_products_js = true;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -38,7 +40,6 @@ $breadcrumbItems = [
 
             <aside class="filter-sidebar" id="filterSidebar">
                 <form id="filterForm">
-                    <!-- Hidden search query for form submission -->
                     <input type="hidden" name="search" value="<?php echo htmlspecialchars($search_query); ?>">
 
                     <fieldset class="filter-fields">
@@ -128,7 +129,16 @@ $breadcrumbItems = [
                 </div>
 
                 <div class="listings-grid" id="products-grid">
-                    <div class="loading-spinner">Searching for products...</div>
+                    <?php for ($i = 0; $i < 12; $i++): ?>
+                        <div class="prod-card skeleton-card">
+                            <div class="img-container skeleton" style="height:180px;"></div>
+                            <div class="prod-info-container">
+                                <div class="skeleton skeleton-text" style="width:80%;height:16px;"></div>
+                                <div class="skeleton skeleton-text" style="width:40%;height:14px;margin-top:8px;"></div>
+                                <div class="skeleton skeleton-text" style="width:60%;height:12px;margin-top:8px;"></div>
+                            </div>
+                        </div>
+                    <?php endfor; ?>
                 </div>
 
                 <div class="pagination" id="pagination"></div>
@@ -139,7 +149,6 @@ $breadcrumbItems = [
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>
 
-    <!-- Single products.js handles both product listings and search -->
     <script src="<?php echo $baseUrl; ?>js/products.js"></script>
 
 </body>

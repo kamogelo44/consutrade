@@ -39,7 +39,9 @@ $page_js = 'index.js';
             </div>
         <?php endif; ?>
 
-        <!-- HERO -->
+        <!-- ============================================================
+        HERO — STATIC CONTENT RENDERED BY PHP
+        ============================================================ -->
         <section class="hero">
             <div class="hero-grid">
                 <div class="hero-content">
@@ -52,25 +54,26 @@ $page_js = 'index.js';
                         <a href="product-listings.php" class="hero-btn hero-btn-primary"><?php t('browse_local_goods'); ?></a>
                         <button class="hero-btn hero-btn-secondary" id="primary-btn"><?php t('start_selling'); ?></button>
                     </div>
-                    <div class="hero-stats">
+                    <!-- Hero Stats — Skeleton (dynamic data from DB) -->
+                    <div class="hero-stats" id="hero-stats-container">
                         <div class="stat-item">
-                            <span class="stat-number"><?php echo number_format($activeSellers); ?></span>
-                            <span class="stat-label"><?php t('active_traders'); ?></span>
+                            <span class="stat-number skeleton skeleton-stat-number"></span>
+                            <span class="stat-label skeleton skeleton-stat-label"></span>
                         </div>
                         <div class="stat-divider"></div>
                         <div class="stat-item">
-                            <span class="stat-number"><?php echo number_format($totalListings); ?></span>
-                            <span class="stat-label"><?php t('items_listed'); ?></span>
+                            <span class="stat-number skeleton skeleton-stat-number"></span>
+                            <span class="stat-label skeleton skeleton-stat-label"></span>
                         </div>
                         <div class="stat-divider"></div>
                         <div class="stat-item">
-                            <span class="stat-number">98%</span>
-                            <span class="stat-label"><?php t('trades_completed'); ?></span>
+                            <span class="stat-number skeleton skeleton-stat-number"></span>
+                            <span class="stat-label skeleton skeleton-stat-label"></span>
                         </div>
                     </div>
                     <div class="hero-payment">
                         <span><?php t('secure_payments'); ?></span>
-                        <img src="images/icons/Payfast logo.svg" alt="PayFast" width="60" height="18">
+                        <img src="images/icons/Payfast logo.svg" alt="PayFast" width="60" height="18" loading="lazy">
                     </div>
                 </div>
                 <div class="hero-visual">
@@ -80,7 +83,8 @@ $page_js = 'index.js';
                             <span><?php t('new'); ?></span>
                         </div>
                         <div class="hero-card-body">
-                            <div class="skeleton-row">
+                            <!-- Skeleton for hero products -->
+                            <div class="skeleton-row" id="hero-products-skeleton">
                                 <div class="skeleton skeleton-image"></div>
                                 <div style="flex:1;">
                                     <div class="skeleton skeleton-text" style="width:70%;"></div>
@@ -93,7 +97,9 @@ $page_js = 'index.js';
             </div>
         </section>
 
-        <!-- CATEGORIES -->
+        <!-- ============================================================
+        CATEGORIES — STATIC CONTENT RENDERED BY PHP
+        ============================================================ -->
         <section class="category-section">
             <div class="category-container">
                 <div class="category-header">
@@ -101,71 +107,46 @@ $page_js = 'index.js';
                     <h2><?php t('shop_by_category_text'); ?></h2>
                     <p><?php t('find_what_you_need_text'); ?></p>
                 </div>
-                <div class="category-grid">
-                    <a href="product-listings.php?category=clothing" class="category-card">
-                        <div class="cat-image">
-                            <picture>
-                                <source srcset="images/categories/clothing.webp" type="image/webp">
-                                <img src="images/categories/clothing.jpg" alt="<?php t('clothing'); ?>" width="64" height="64" loading="lazy">
-                            </picture>
-                        </div>
-                        <span class="cat-name"><?php t('clothing'); ?></span>
-                        <span class="cat-count"><?php t('fashion_accessories'); ?></span>
-                    </a>
-                    <a href="product-listings.php?category=electronics" class="category-card">
-                        <div class="cat-image">
-                            <picture>
-                                <source srcset="images/categories/electronics.webp" type="image/webp">
-                                <img src="images/categories/electronics.jpg" alt="<?php t('electronics'); ?>" width="64" height="64" loading="lazy">
-                            </picture>
-                        </div>
-                        <span class="cat-name"><?php t('electronics'); ?></span>
-                        <span class="cat-count"><?php t('phones_gadgets'); ?></span>
-                    </a>
-                    <a href="product-listings.php?category=food" class="category-card">
-                        <div class="cat-image">
-                            <picture>
-                                <source srcset="images/categories/food.webp" type="image/webp">
-                                <img src="images/categories/food.jpg" alt="<?php t('food_drinks'); ?>" width="64" height="64" loading="lazy">
-                            </picture>
-                        </div>
-                        <span class="cat-name"><?php t('food_drinks'); ?></span>
-                        <span class="cat-count"><?php t('groceries_beverages'); ?></span>
-                    </a>
-                    <a href="product-listings.php?category=furniture" class="category-card">
-                        <div class="cat-image">
-                            <picture>
-                                <source srcset="images/categories/furniture.webp" type="image/webp">
-                                <img src="images/categories/furniture.jpg" alt="<?php t('furniture'); ?>" width="64" height="64" loading="lazy">
-                            </picture>
-                        </div>
-                        <span class="cat-name"><?php t('furniture'); ?></span>
-                        <span class="cat-count"><?php t('home_office'); ?></span>
-                    </a>
-                    <a href="product-listings.php?category=beauty" class="category-card">
-                        <div class="cat-image">
-                            <picture>
-                                <source srcset="images/categories/beauty.webp" type="image/webp">
-                                <img src="images/categories/beauty.jpg" alt="<?php t('beauty_health'); ?>" width="64" height="64" loading="lazy">
-                            </picture>
-                        </div>
-                        <span class="cat-name"><?php t('beauty_health'); ?></span>
-                        <span class="cat-count"><?php t('cosmetics_wellness'); ?></span>
-                    </a>
-                    <a href="product-listings.php?category=other" class="category-card category-all">
-                        <div class="cat-image cat-all">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7" />
-                            </svg>
-                        </div>
-                        <span class="cat-name"><?php t('other'); ?></span>
-                        <span class="cat-count"><?php t('everything_else'); ?></span>
-                    </a>
+                <div class="category-grid" id="categories-grid">
+                    <?php
+                    $categories = [
+                        ['name' => 'clothing', 'desc' => 'fashion_accessories', 'link' => 'product-listings.php?category=clothing', 'img' => 'clothing'],
+                        ['name' => 'electronics', 'desc' => 'phones_gadgets', 'link' => 'product-listings.php?category=electronics', 'img' => 'electronics'],
+                        ['name' => 'food_drinks', 'desc' => 'groceries_beverages', 'link' => 'product-listings.php?category=food', 'img' => 'food'],
+                        ['name' => 'furniture', 'desc' => 'home_office', 'link' => 'product-listings.php?category=furniture', 'img' => 'furniture'],
+                        ['name' => 'beauty_health', 'desc' => 'cosmetics_wellness', 'link' => 'product-listings.php?category=beauty', 'img' => 'beauty'],
+                        ['name' => 'other', 'desc' => 'everything_else', 'link' => 'product-listings.php?category=other', 'img' => 'other'],
+                    ];
+                    foreach ($categories as $cat):
+                        $isLast = $cat['name'] === 'other';
+                        $cardClass = $isLast ? 'category-card category-all' : 'category-card';
+                    ?>
+                        <a href="<?php echo $cat['link']; ?>" class="<?php echo $cardClass; ?>">
+                            <?php if ($isLast): ?>
+                                <div class="cat-image cat-all">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M5 12h14M12 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            <?php else: ?>
+                                <div class="cat-image">
+                                    <picture>
+                                        <source srcset="images/categories/<?php echo $cat['img']; ?>.webp" type="image/webp">
+                                        <img src="images/categories/<?php echo $cat['img']; ?>.jpg" alt="<?php t($cat['name']); ?>" width="64" height="64" loading="lazy">
+                                    </picture>
+                                </div>
+                            <?php endif; ?>
+                            <span class="cat-name"><?php t($cat['name']); ?></span>
+                            <span class="cat-count"><?php t($cat['desc']); ?></span>
+                        </a>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </section>
 
-        <!-- FEATURED PRODUCTS -->
+        <!-- ============================================================
+        FEATURED PRODUCTS — DYNAMIC (Skeleton + AJAX)
+        ============================================================ -->
         <section class="featured">
             <div class="featured-header">
                 <div>
@@ -176,22 +157,60 @@ $page_js = 'index.js';
                 <a href="product-listings.php" class="view-all-link"><?php t('view_all_text'); ?> →</a>
             </div>
             <div class="prod-grid" id="featured-products-grid">
-                <div class="loading-spinner"><?php t('loading_products'); ?></div>
+                <?php for ($i = 0; $i < 6; $i++): ?>
+                    <div class="prod-card skeleton-card">
+                        <div class="img-container skeleton skeleton-product-image"></div>
+                        <div class="prod-info-container">
+                            <div class="skeleton skeleton-product-title"></div>
+                            <div class="skeleton skeleton-product-price"></div>
+                            <div class="skeleton skeleton-product-meta"></div>
+                        </div>
+                    </div>
+                <?php endfor; ?>
             </div>
         </section>
 
-        <!-- TOP SELLERS -->
+        <!-- ============================================================
+        TOP SELLERS — DYNAMIC (Skeleton + AJAX)
+        ============================================================ -->
         <section class="sellers-section">
             <div class="sellers-header">
                 <span class="section-tag"><?php t('community'); ?></span>
                 <h2><?php t('top_verified_sellers'); ?></h2>
             </div>
             <div class="sellers-grid" id="sellers-grid">
-                <div class="loading-spinner"><?php t('loading_products'); ?></div>
+                <?php for ($i = 0; $i < 4; $i++): ?>
+                    <div class="seller-card skeleton-card">
+                        <div class="seller-card-top">
+                            <div class="seller-avatar skeleton skeleton-seller-avatar"></div>
+                            <div>
+                                <div class="skeleton skeleton-seller-name"></div>
+                                <div class="skeleton skeleton-seller-location"></div>
+                            </div>
+                        </div>
+                        <div class="seller-card-stats">
+                            <div>
+                                <div class="skeleton skeleton-seller-stat"></div>
+                                <div class="skeleton skeleton-seller-stat-label"></div>
+                            </div>
+                            <div>
+                                <div class="skeleton skeleton-seller-stat"></div>
+                                <div class="skeleton skeleton-seller-stat-label"></div>
+                            </div>
+                            <div>
+                                <div class="skeleton skeleton-seller-stat"></div>
+                                <div class="skeleton skeleton-seller-stat-label"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton skeleton-seller-link"></div>
+                    </div>
+                <?php endfor; ?>
             </div>
         </section>
 
-        <!-- DIFFERENCE -->
+        <!-- ============================================================
+        DIFFERENCE — STATIC CONTENT RENDERED BY PHP
+        ============================================================ -->
         <section class="difference-section">
             <div class="difference-container">
                 <div class="difference-content">
@@ -245,7 +264,9 @@ $page_js = 'index.js';
             </div>
         </section>
 
-        <!-- CTA -->
+        <!-- ============================================================
+        CTA — STATIC CONTENT RENDERED BY PHP
+        ============================================================ -->
         <section class="cta-section">
             <div class="cta-container">
                 <h2><?php t('ready_to_start_text'); ?></h2>
@@ -258,6 +279,15 @@ $page_js = 'index.js';
         </section>
 
     </main>
+
+    <!-- Pass data to JavaScript -->
+    <script>
+        var heroStats = {
+            activeSellers: <?php echo json_encode($activeSellers); ?>,
+            totalListings: <?php echo json_encode($totalListings); ?>,
+            tradesCompleted: 98
+        };
+    </script>
 
     <?php include 'includes/footer.php'; ?>
     <?php include 'includes/modal-errors.php'; ?>

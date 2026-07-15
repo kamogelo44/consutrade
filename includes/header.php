@@ -27,7 +27,11 @@ if ($is_logged_in && isset($currentUser)) {
     $primaryRole = null;
 }
 
-$show_sell_link = !$is_logged_in;
+// Show Sell link to everyone - logged out users see it to sign up, logged in buyers see it to upgrade
+$show_sell_link = true;
+
+// Only show "New" badge to buyers who can upgrade to seller
+$show_upgrade_badge = $is_logged_in && $hasBuyerRole && !$hasSellerRole;
 
 if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     $cart_count = $cartRepo->countItems($currentUser->getUserId());
@@ -52,9 +56,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                 <ul>
                     <li><a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>"><?php t('home'); ?></a></li>
                     <li><a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>"><?php t('products'); ?></a></li>
-                    <?php if ($show_sell_link): ?>
-                        <li><a href="<?php echo $baseUrl; ?>sell.php"><?php t('sell'); ?></a></li>
-                    <?php endif; ?>
+                    <li><a href="<?php echo $baseUrl; ?>sell.php"><?php t('sell'); ?></a></li>
                     <li><a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>"><?php t('about'); ?></a></li>
                 </ul>
             </nav>
@@ -72,7 +74,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             </div>
         </div>
 
-        <!-- Right Section: Language + Cart + Account -->
+        <!-- Right Section: Language + Cart + Notifications + Account -->
         <div class="header-right">
             <!-- Language Selector - Always visible on desktop -->
             <div class="language-dropdown">
@@ -85,7 +87,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                 <div class="language-menu" id="languageMenu">
                     <?php foreach (getAvailableLanguages() as $code => $name): ?>
                         <a href="?lang=<?php echo $code; ?>" class="<?php echo $code == getCurrentLanguage() ? 'active' : ''; ?>">
-                            <?php echo $name; ?>
+                            <?php echo getFlagEmoji($code); ?> <?php echo $name; ?>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -97,6 +99,21 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                     <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="22" height="22" alt="Cart">
                     <span class="cart-badge"><?php echo $cart_count; ?></span>
                 </a>
+            <?php endif; ?>
+
+            <!-- Notification Bell -->
+            <?php if ($is_logged_in): ?>
+                <div class="notifications-dropdown">
+                    <button class="notif-btn" id="notifBtn" aria-label="Notifications">
+                        <img src="<?php echo $baseUrl; ?>images/icons/bell-svgrepo-com.svg" width="20" height="20" alt="Notifications">
+                        <span class="notif-badge" id="notifBadge"></span>
+                    </button>
+                    <div class="notif-menu" id="notifMenu">
+                        <div class="notif-list">
+                            <div class="notif-empty">No notifications yet</div>
+                        </div>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <!-- Account Dropdown -->
@@ -145,12 +162,12 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             <?php endif; ?>
 
             <!-- Mobile Search Toggle -->
-            <button class="mobile-search-toggle" id="mobileSearchIcon">
+            <button class="mobile-search-toggle" id="mobileSearchIcon" aria-label="Search">
                 <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="20" height="20" alt="Search">
             </button>
 
             <!-- Mobile Menu Toggle -->
-            <button class="menu-toggle" id="menuToggle">
+            <button class="menu-toggle" id="menuToggle" aria-label="Menu">
                 <span></span><span></span><span></span>
             </button>
         </div>
@@ -172,67 +189,206 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             <div class="mobile-logo">
                 <a href="<?php echo $baseUrl; ?>index.php">Consu<span>Trade</span></a>
             </div>
-            <button class="close-menu" id="closeMenu">
+            <button class="close-menu" id="closeMenu" aria-label="Close menu">
                 <span></span><span></span>
             </button>
         </div>
 
         <?php if ($is_logged_in): ?>
-            <div class="mobile-profile">
+            <!-- User Profile Card -->
+            <div class="mobile-profile-card">
                 <img src="<?php echo $user_profile_image; ?>" alt="<?php echo htmlspecialchars($user_name); ?>" class="mobile-profile-img" onerror="this.src='<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg'">
                 <div class="mobile-profile-info">
                     <span class="mobile-profile-name"><?php echo htmlspecialchars($user_name); ?></span>
                     <span class="mobile-profile-email"><?php echo htmlspecialchars($currentUser->getEmail()); ?></span>
+                    <span class="mobile-profile-role">
+                        <?php
+                        $roleLabels = [];
+                        if ($hasBuyerRole) $roleLabels[] = 'Buyer';
+                        if ($hasSellerRole) $roleLabels[] = 'Seller';
+                        if ($hasAdminRole) $roleLabels[] = 'Admin';
+                        echo implode(' • ', $roleLabels);
+                        ?>
+                    </span>
                 </div>
             </div>
         <?php endif; ?>
 
-        <ul class="mobile-nav-links">
-            <li><a href="<?php echo $baseUrl; ?>index.php"><?php t('home'); ?></a></li>
-            <li><a href="<?php echo $baseUrl; ?>product-listings.php"><?php t('products'); ?></a></li>
-            <?php if ($show_sell_link): ?>
-                <li><a href="<?php echo $baseUrl; ?>sell.php"><?php t('sell'); ?></a></li>
+        <!-- Quick Actions -->
+        <div class="mobile-quick-actions">
+            <?php if (!$is_logged_in || $hasBuyerRole): ?>
+                <a href="<?php echo $baseUrl; ?>cart.php" class="mobile-quick-action">
+                    <img src="<?php echo $baseUrl; ?>images/icons/shopping-cart-01-svgrepo-com.svg" width="20" height="20" alt="Cart" class="quick-icon">
+                    <span class="quick-label"><?php t('cart'); ?></span>
+                    <span class="quick-badge cart-badge-mobile"><?php echo $cart_count; ?></span>
+                </a>
             <?php endif; ?>
-            <li><a href="<?php echo $baseUrl; ?>about.php"><?php t('about'); ?></a></li>
-
-            <!-- Mobile Language Selector -->
-            <li class="mobile-divider"></li>
-            <li class="mobile-lang-label"><?php t('language'); ?></li>
-            <?php foreach (getAvailableLanguages() as $code => $name): ?>
-                <li>
-                    <a href="?lang=<?php echo $code; ?>" class="<?php echo $code == getCurrentLanguage() ? 'active' : ''; ?>">
-                        <?php echo $name; ?>
-                    </a>
-                </li>
-            <?php endforeach; ?>
 
             <?php if ($is_logged_in): ?>
-                <li class="mobile-divider"></li>
-                <li><a href="<?php echo $baseUrl; ?>profile.php"><?php t('my_profile'); ?></a></li>
+                <a href="<?php echo $baseUrl; ?>orders.php" class="mobile-quick-action">
+                    <img src="<?php echo $baseUrl; ?>images/icons/clipboard-svgrepo-com.svg" width="20" height="20" alt="Orders" class="quick-icon">
+                    <span class="quick-label"><?php t('orders'); ?></span>
+                </a>
+                <a href="<?php echo $baseUrl; ?>messages.php" class="mobile-quick-action">
+                    <img src="<?php echo $baseUrl; ?>images/icons/comment-svgrepo-com.svg" width="20" height="20" alt="Messages" class="quick-icon">
+                    <span class="quick-label"><?php t('messages'); ?></span>
+                    <span class="quick-badge">2</span>
+                </a>
+            <?php endif; ?>
+
+            <a href="<?php echo $baseUrl; ?>product-listings.php" class="mobile-quick-action">
+                <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="20" height="20" alt="Browse" class="quick-icon">
+                <span class="quick-label"><?php t('browse'); ?></span>
+            </a>
+        </div>
+
+        <!-- Search in menu -->
+        <div class="mobile-menu-search">
+            <form action="<?php echo $baseUrl; ?>search-results.php" method="GET">
+                <input type="search" name="search" placeholder="<?php t('search_placeholder'); ?>" class="mobile-menu-search-input">
+                <button type="submit">
+                    <img src="<?php echo $baseUrl; ?>images/icons/search-svgrepo-com.svg" width="16" height="16" alt="Search">
+                </button>
+            </form>
+        </div>
+
+        <!-- Main Navigation -->
+        <ul class="mobile-nav-links">
+            <!-- Main Pages -->
+            <li class="mobile-nav-section"><?php t('menu'); ?></li>
+            <li>
+                <a href="<?php echo $baseUrl; ?>index.php" class="<?php echo $current_page == 'index.php' ? 'active' : ''; ?>">
+                    <img src="<?php echo $baseUrl; ?>images/icons/products-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                    <span class="nav-label"><?php t('home'); ?></span>
+                </a>
+            </li>
+            <li>
+                <a href="<?php echo $baseUrl; ?>product-listings.php" class="<?php echo $current_page == 'product-listings.php' ? 'active' : ''; ?>">
+                    <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                    <span class="nav-label"><?php t('products'); ?></span>
+                </a>
+            </li>
+            <li>
+                <a href="<?php echo $baseUrl; ?>sell.php">
+                    <img src="<?php echo $baseUrl; ?>images/icons/sell-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                    <span class="nav-label"><?php t('sell'); ?></span>
+                    <?php if ($show_upgrade_badge): ?>
+                        <span class="nav-badge new">New</span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            <li>
+                <a href="<?php echo $baseUrl; ?>about.php" class="<?php echo $current_page == 'about.php' ? 'active' : ''; ?>">
+                    <img src="<?php echo $baseUrl; ?>images/icons/info-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                    <span class="nav-label"><?php t('about'); ?></span>
+                </a>
+            </li>
+
+            <!-- Account Section -->
+            <?php if ($is_logged_in): ?>
+                <li class="mobile-nav-section"><?php t('account'); ?></li>
+                <li>
+                    <a href="<?php echo $baseUrl; ?>profile.php">
+                        <img src="<?php echo $baseUrl; ?>images/icons/profile-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                        <span class="nav-label"><?php t('my_profile'); ?></span>
+                    </a>
+                </li>
 
                 <?php if ($hasBuyerRole): ?>
-                    <li><a href="<?php echo $baseUrl; ?>orders.php"><?php t('orders'); ?></a></li>
-                    <li><a href="<?php echo $baseUrl; ?>cart.php"><?php t('my_cart'); ?></a></li>
+                    <li>
+                        <a href="<?php echo $baseUrl; ?>orders.php">
+                            <img src="<?php echo $baseUrl; ?>images/icons/clipboard-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                            <span class="nav-label"><?php t('orders'); ?></span>
+                        </a>
+                    </li>
                 <?php endif; ?>
 
                 <?php if ($hasSellerRole): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php"><?php t('seller_dashboard'); ?></a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/my-products.php"><?php t('my_products'); ?></a></li>
-                    <li><a href="<?php echo $baseUrl; ?>orders.php"><?php t('orders'); ?></a></li>
+                    <li class="mobile-nav-sub-section"><?php t('seller'); ?></li>
+                    <li>
+                        <a href="<?php echo $baseUrl; ?>admin/seller-dashboard.php">
+                            <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                            <span class="nav-label"><?php t('seller_dashboard'); ?></span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?php echo $baseUrl; ?>admin/my-products.php">
+                            <img src="<?php echo $baseUrl; ?>images/icons/products-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                            <span class="nav-label"><?php t('my_products'); ?></span>
+                        </a>
+                    </li>
                 <?php endif; ?>
 
                 <?php if ($hasAdminRole): ?>
-                    <li><a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php"><?php t('admin_dashboard'); ?></a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/users.php"><?php t('users'); ?></a></li>
-                    <li><a href="<?php echo $baseUrl; ?>admin/all-orders.php"><?php t('all_orders'); ?></a></li>
+                    <li class="mobile-nav-sub-section"><?php t('admin'); ?></li>
+                    <li>
+                        <a href="<?php echo $baseUrl; ?>admin/admin-dashboard.php">
+                            <img src="<?php echo $baseUrl; ?>images/icons/dashboard-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                            <span class="nav-label"><?php t('admin_dashboard'); ?></span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?php echo $baseUrl; ?>admin/users.php">
+                            <img src="<?php echo $baseUrl; ?>images/icons/users-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                            <span class="nav-label"><?php t('users'); ?></span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?php echo $baseUrl; ?>admin/all-orders.php">
+                            <img src="<?php echo $baseUrl; ?>images/icons/clipboard-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                            <span class="nav-label"><?php t('all_orders'); ?></span>
+                        </a>
+                    </li>
                 <?php endif; ?>
 
-                <li class="mobile-divider"></li>
-                <li><a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link"><?php t('logout'); ?></a></li>
             <?php else: ?>
+                <!-- Auth Section (not logged in) -->
+                <li class="mobile-nav-section"><?php t('account'); ?></li>
+                <li>
+                    <button class="mobile-login-btn" id="mobileLoginBtn">
+                        <img src="<?php echo $baseUrl; ?>images/icons/login-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                        <span class="nav-label"><?php t('login'); ?></span>
+                    </button>
+                </li>
+                <li>
+                    <button class="mobile-signup-btn" id="mobileRegisterBtn">
+                        <img src="<?php echo $baseUrl; ?>images/icons/register-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                        <span class="nav-label"><?php t('sign_up'); ?></span>
+                        <span class="nav-badge free">Free</span>
+                    </button>
+                </li>
+            <?php endif; ?>
+
+            <!-- Language Section -->
+            <li class="mobile-nav-section"><?php t('language'); ?></li>
+            <li class="mobile-lang-compact">
+                <div class="mobile-lang-current" id="mobileLangToggle">
+                    <span class="lang-flag"><?php echo getFlagEmoji(getCurrentLanguage()); ?></span>
+                    <span class="lang-name"><?php echo getAvailableLanguages()[getCurrentLanguage()] ?? 'English'; ?></span>
+                    <img src="<?php echo $baseUrl; ?>images/icons/chevron-down-svgrepo-com.svg" width="14" height="14" alt="Toggle" class="lang-chevron">
+                </div>
+                <div class="mobile-lang-options" id="mobileLangOptions">
+                    <?php foreach (getAvailableLanguages() as $code => $name): ?>
+                        <a href="?lang=<?php echo $code; ?>" class="mobile-lang-option <?php echo $code == getCurrentLanguage() ? 'active' : ''; ?>">
+                            <span class="lang-flag"><?php echo getFlagEmoji($code); ?></span>
+                            <span class="lang-name"><?php echo $name; ?></span>
+                            <?php if ($code == getCurrentLanguage()): ?>
+                                <span class="lang-check">✓</span>
+                            <?php endif; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </li>
+
+            <!-- Logout (if logged in) -->
+            <?php if ($is_logged_in): ?>
                 <li class="mobile-divider"></li>
-                <li><button class="mobile-login-btn" id="mobileLoginBtn"><?php t('login'); ?></button></li>
-                <li><button class="mobile-signup-btn" id="mobileRegisterBtn"><?php t('sign_up'); ?></button></li>
+                <li class="mobile-logout">
+                    <a href="<?php echo $baseUrl; ?>php/endpoints/auth/logout.php" class="logout-link">
+                        <img src="<?php echo $baseUrl; ?>images/icons/logout-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
+                        <span class="nav-label"><?php t('logout'); ?></span>
+                    </a>
+                </li>
             <?php endif; ?>
         </ul>
     </div>
@@ -254,91 +410,3 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                         echo json_encode($trans);
                         ?>;
 </script>
-
-<!-- Login Modal -->
-<div id="login-modal" class="modal">
-    <div class="modal-content">
-        <button class="btn-close"></button>
-        <div class="modal-header">
-            <h1>Consu<span>Trade</span></h1>
-            <p><?php t('welcome_back'); ?></p>
-        </div>
-        <div id="login-error-container" class="error-container" style="display: none;"></div>
-        <form id="login-form" class="login-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/auth/login.php">
-            <input type="hidden" name="role_type" value="buyer">
-            <div class="input-group">
-                <label for="login-email"><?php t('email_address'); ?></label>
-                <input type="email" id="login-email" name="email" placeholder="<?php t('email_address'); ?>" required>
-            </div>
-            <div class="input-group">
-                <label for="login-password"><?php t('password'); ?></label>
-                <div class="password-field-wrapper">
-                    <input type="password" id="login-password" name="password" placeholder="<?php t('password'); ?>" required>
-                    <button type="button" class="password-toggle-btn" onclick="togglePassword('login-password', this)">
-                        <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
-                    </button>
-                </div>
-            </div>
-            <div class="reset-pass"><a href="#" id="forgotPasswordLink"><?php t('forgot_password'); ?></a></div>
-            <button type="submit" class="submit-btn"><?php t('login'); ?></button>
-            <div class="register-link"><?php t('no_account'); ?> <a href="#" id="switch-to-register"><?php t('register_here'); ?></a></div>
-        </form>
-    </div>
-</div>
-
-<!-- Register Modal -->
-<div id="register-modal" class="modal">
-    <div class="modal-content">
-        <button class="btn-close"></button>
-        <div class="modal-header">
-            <h1>Consu<span>Trade</span></h1>
-            <p><?php t('create_account'); ?></p>
-        </div>
-        <div id="register-error-container" class="error-container" style="display: none;"></div>
-        <form id="register-form" class="register-form" method="POST" action="<?php echo $baseUrl; ?>php/endpoints/auth/register.php">
-            <div class="input-group">
-                <label for="register-full-name"><?php t('full_name'); ?></label>
-                <input type="text" id="register-full-name" name="full_name" placeholder="<?php t('full_name'); ?>" required>
-            </div>
-            <div class="input-group">
-                <label for="register-email"><?php t('email_address'); ?></label>
-                <input type="email" id="register-email" name="email" placeholder="<?php t('email_address'); ?>" required>
-            </div>
-            <div class="input-group">
-                <label for="register-phone"><?php t('phone_number'); ?></label>
-                <input type="tel" id="register-phone" name="phone" placeholder="<?php t('phone_number'); ?>" required>
-            </div>
-            <div class="input-group">
-                <label for="register-password"><?php t('password'); ?></label>
-                <div class="password-field-wrapper">
-                    <input type="password" id="register-password" name="password" placeholder="<?php t('password'); ?>" required>
-                    <button type="button" class="password-toggle-btn" onclick="togglePassword('register-password', this)">
-                        <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
-                    </button>
-                </div>
-            </div>
-            <div class="input-group">
-                <label for="register-confirm-password"><?php t('confirm_password'); ?></label>
-                <div class="password-field-wrapper">
-                    <input type="password" id="register-confirm-password" name="confirm_password" placeholder="<?php t('confirm_password'); ?>" required>
-                    <button type="button" class="password-toggle-btn" onclick="togglePassword('register-confirm-password', this)">
-                        <img src="<?php echo $baseUrl; ?>images/icons/eye-open-svgrepo-com.svg" width="18" height="18">
-                    </button>
-                </div>
-            </div>
-
-            <fieldset class="user-type">
-                <legend><?php t('i_want_to'); ?></legend>
-                <div class="radio-buttons">
-                    <input type="radio" id="buyer" name="role" value="buyer" checked>
-                    <label for="buyer" class="radio-btn radio"><?php t('buy_products'); ?></label>
-                    <input type="radio" id="seller" name="role" value="seller">
-                    <label for="seller" class="radio-btn radio"><?php t('sell_products'); ?></label>
-                </div>
-            </fieldset>
-
-            <button type="submit" class="submit-btn"><?php t('create_account_btn'); ?></button>
-            <div class="login-link"><?php t('already_have_account'); ?> <a href="#" id="switch-to-login"><?php t('login_here'); ?></a></div>
-        </form>
-    </div>
-</div>

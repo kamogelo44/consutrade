@@ -67,7 +67,6 @@ $(function() {
     function displaySellerProfile(data) {
         var $container = $('#sp-storefront-container');
 
-        // Use data from API, fallback to page data
         var sellerName = data.seller_name || sellerNameFromPage;
         var profileImage = data.profile_image || sellerProfileImageFromPage;
         var location = data.location || sellerLocationFromPage;
@@ -75,15 +74,16 @@ $(function() {
         var productCount = data.total_products || 0;
         var isVerified = data.is_verified || false;
 
-        var verifiedBadge = isVerified ?
-            '<span class="sp-badge verified"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="13" height="13" alt="Verified"> ' + t('verified') + '</span>' :
-            '<span class="sp-badge unverified"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="13" height="13" alt="Unverified"> ' + t('unverified') + '</span>';
+        /* ---------- Verification badge - icon only ---------- */
+        var verifiedBadge = isVerified
+            ? '<span class="sp-badge verified">&#10003;</span>'
+            : '<span class="sp-badge unverified">!</span>';
 
         var html =
             '<div class="sp-storefront">' +
                 '<div class="sp-cover"></div>' +
                 '<div class="sp-storefront-body">' +
-                    '<div class="sp-avatar-wrap">' +
+                    '<div class="sp-avatar-wrap' + (data.is_online ? ' online' : '') + '">' +
                         '<img src="' + profileImage + '" alt="' + escapeHtml(sellerName) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
                     '</div>' +
                     '<div class="sp-storefront-info">' +

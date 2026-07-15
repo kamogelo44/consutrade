@@ -76,6 +76,7 @@ if ($requestedRole === 'seller' && $targetUser->hasRole('seller')) {
         'avg_rating' => $stats['avg_rating'],
         'total_reviews' => $reviewCount,
         'is_verified' => $targetUser->isVerified(),
+        'is_online' => $targetUser->isOnline(),
         'member_since' => date('F Y', strtotime($targetUser->getCreatedAt())),
         'has_verification_document' => ($targetUser instanceof Seller) ? $targetUser->getVerification() !== null : false
     ];

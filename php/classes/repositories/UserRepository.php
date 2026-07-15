@@ -615,6 +615,21 @@ class UserRepository
     }
 
     /**
+     * Update user's last active timestamp.
+     *
+     * @param int $userId User ID
+     * @return bool
+     */
+    public function updateLastActive(int $userId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE users SET last_active = NOW() WHERE user_id = ?");
+        $stmt->bind_param('i', $userId);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /**
      * Update user password.
      *
      * @param int $userId User ID
