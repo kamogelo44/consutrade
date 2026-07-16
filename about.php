@@ -29,15 +29,15 @@ include __DIR__ . '/includes/session-vars.php';
     <main class="about-container">
         <div class="about-header">
             <div class="about-header-badge">
-                <span>Proudly South African</span>
+                <span><?php t('proudly_south_african'); ?></span>
             </div>
-            <h1>About ConsuTrade</h1>
-            <p>A marketplace built for South Africa's informal traders</p>
+            <h1><?php t('about_consutrade'); ?></h1>
+            <p><?php t('about_subtitle'); ?></p>
         </div>
 
         <div class="about-content">
             <div class="about-section">
-                <h2>What This Is</h2>
+                <h2><?php t('what_this_is'); ?></h2>
                 <p>ConsuTrade is a peer-to-peer marketplace connecting informal traders — from township vendors to home-based entrepreneurs — with buyers across South Africa.</p>
                 <p>Most informal traders sell through WhatsApp groups and Facebook Marketplace. Those platforms weren't built for trading. There's no payment protection, no seller verification, and no way to prove you're legitimate. ConsuTrade fixes that.</p>
             </div>
@@ -49,13 +49,13 @@ include __DIR__ . '/includes/session-vars.php';
                         <path d="M12 6v6l4 2" />
                     </svg>
                 </div>
-                <h2>Why It Exists</h2>
+                <h2><?php t('why_it_exists'); ?></h2>
                 <p>South Africa's informal economy is worth nearly <strong>R900 billion</strong> and employs almost <strong>20% of the working population</strong>. Yet platforms like Takealot and BobShop require business registration documents that most informal traders don't have.</p>
                 <p>ConsuTrade was built specifically for these traders — no business registration needed, just a South African ID.</p>
             </div>
 
             <div class="about-section">
-                <h2>How It's Different</h2>
+                <h2><?php t('how_its_different'); ?></h2>
                 <ul class="about-difference-list">
                     <li>
                         <span class="diff-icon-about diff-verified-about">
@@ -65,8 +65,8 @@ include __DIR__ . '/includes/session-vars.php';
                             </svg>
                         </span>
                         <div>
-                            <strong>Verified sellers, not anonymous profiles.</strong>
-                            <p>Every seller verifies with their SA ID. Buyers see a badge on every listing.</p>
+                            <strong><?php t('diff_verified_sellers'); ?></strong>
+                            <p><?php t('diff_verified_sellers_desc'); ?></p>
                         </div>
                     </li>
                     <li>
@@ -77,8 +77,8 @@ include __DIR__ . '/includes/session-vars.php';
                             </svg>
                         </span>
                         <div>
-                            <strong>PayFast on every transaction.</strong>
-                            <p>No cash deposits. No e-wallet scams. Payments are protected.</p>
+                            <strong><?php t('diff_payfast'); ?></strong>
+                            <p><?php t('diff_payfast_desc'); ?></p>
                         </div>
                     </li>
                     <li>
@@ -90,8 +90,8 @@ include __DIR__ . '/includes/session-vars.php';
                             </svg>
                         </span>
                         <div>
-                            <strong>Built for low data usage.</strong>
-                            <p>South Africa has some of the most expensive mobile data in Africa. Every page is designed to load fast and use minimal data.</p>
+                            <strong><?php t('diff_low_data'); ?></strong>
+                            <p><?php t('diff_low_data_desc'); ?></p>
                         </div>
                     </li>
                     <li>
@@ -101,15 +101,15 @@ include __DIR__ . '/includes/session-vars.php';
                             </svg>
                         </span>
                         <div>
-                            <strong>Order tracking from start to finish.</strong>
-                            <p>No more scrolling through WhatsApp chats to find out what someone ordered.</p>
+                            <strong><?php t('diff_order_tracking'); ?></strong>
+                            <p><?php t('diff_order_tracking_desc'); ?></p>
                         </div>
                     </li>
                 </ul>
             </div>
 
             <div class="about-section about-section-contact">
-                <h2>Contact</h2>
+                <h2><?php t('contact_us'); ?></h2>
                 <div class="about-contact">
                     <a href="mailto:support@consutrade.co.za" class="about-contact-item">
                         <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" width="20" height="20" alt="Email">
@@ -117,7 +117,7 @@ include __DIR__ . '/includes/session-vars.php';
                     </a>
                     <div class="about-contact-item">
                         <img src="<?php echo $baseUrl; ?>images/icons/pin-location-svgrepo-com.svg" width="20" height="20" alt="Location">
-                        Limpopo, South Africa
+                        <?php t('limpopo_south_africa'); ?>
                     </div>
                 </div>
             </div>

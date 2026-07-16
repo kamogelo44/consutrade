@@ -47,17 +47,17 @@ function addToCart(productId, productName, productPrice) {
         success: function(data) {
             if (data.success) {
                 updateCartCountDisplay(data.cart_count || 0);
-                showSuccessToast(data.message || 'Item added to cart');
+                showSuccessToast(data.message || t('item_added_to_cart'));
             } else {
-                showErrorToast(data.message || 'Error adding item to cart');
+                showErrorToast(data.message || t('error_adding_to_cart'));
             }
         },
-        error: function() { showErrorToast('Something went wrong'); }
+        error: function() { showErrorToast(t('error_occurred')); }
     });
 }
 
 function removeFromCart(productId) {
-    if (!confirm('Are you sure you want to remove this item from your cart?')) return;
+    if (!confirm(t('remove_item_confirm'))) return;
 
     $.ajax({
         url: baseUrl + 'php/endpoints/cart/remove-from-cart.php',
@@ -70,13 +70,13 @@ function removeFromCart(productId) {
                 if (window.location.pathname.includes('cart.php')) {
                     refreshCart();
                 } else {
-                    showSuccessToast(data.message || 'Item removed from cart');
+                    showSuccessToast(data.message || t('item_removed_from_cart'));
                 }
             } else {
-                showErrorToast(data.message || 'Error removing item from cart');
+                showErrorToast(data.message || t('error_removing_from_cart'));
             }
         },
-        error: function() { showErrorToast('Something went wrong'); }
+        error: function() { showErrorToast(t('error_occurred')); }
     });
 }
 
@@ -96,12 +96,12 @@ function buyNow(productId, productName, productPrice) {
             console.log('Cart response:', cartResponse);
             
             if (!cartResponse.success) {
-                showErrorToast(cartResponse.message || 'Could not add item to cart');
+                showErrorToast(cartResponse.message || t('could_not_add_to_cart'));
                 return;
             }
 
             updateCartCountDisplay(cartResponse.cart_count || 0);
-            showSuccessToast('Item added! Creating checkout...');
+            showSuccessToast(t('item_added_checkout'));
 
             // Create checkout session
             $.ajax({
@@ -113,24 +113,24 @@ function buyNow(productId, productName, productPrice) {
                     console.log('Checkout response:', checkoutResponse);
                     
                     if (checkoutResponse.success) {
-                        showSuccessToast('Checkout ready! Redirecting...');
+                        showSuccessToast(t('checkout_ready'));
                         setTimeout(function() {
                             window.location.href = baseUrl + 'checkout.php';
                         }, 1000);
                     } else {
-                        showErrorToast(checkoutResponse.message || 'Checkout failed');
+                        showErrorToast(checkoutResponse.message || t('checkout_failed'));
                         console.error('Checkout failed:', checkoutResponse);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Checkout AJAX error:', status, error, xhr.responseText);
-                    showErrorToast('Network error. Check console.');
+                    showErrorToast(t('network_error'));
                 }
             });
         },
         error: function(xhr, status, error) {
             console.error('Cart AJAX error:', status, error, xhr.responseText);
-            showErrorToast('Network error. Check console.');
+            showErrorToast(t('network_error'));
         }
     });
 }
@@ -145,8 +145,8 @@ function loadCartPage() {
     if (!isLoggedIn) {
         $('#cart-layout').hide();
         $('#empty-cart').show();
-        $('#empty-cart h3').text('Login Required');
-        $('#empty-cart p').text('Please log in to view your cart.');
+        $('#empty-cart h3').text(t('login_required'));
+        $('#empty-cart p').text(t('please_login_to_view_cart'));
         return;
     }
 
@@ -178,9 +178,9 @@ function updateCartTotalsDisplay(cartData) {
     var deliveryFee = parseFloat(cartData.delivery_fee) || 0;
     var total = parseFloat(cartData.total) || 0;
 
-    $('.sub-total-val').text('R ' + subtotal.toFixed(2));
-    $('.deliv-fee-val').text('R ' + deliveryFee.toFixed(2));
-    $('.total-val').text('R ' + total.toFixed(2));
+    $('.sub-total-val').text(t('currency_symbol') + ' ' + subtotal.toFixed(2));
+    $('.deliv-fee-val').text(t('currency_symbol') + ' ' + deliveryFee.toFixed(2));
+    $('.total-val').text(t('currency_symbol') + ' ' + total.toFixed(2));
 }
 
 function refreshCart() {
@@ -201,11 +201,11 @@ function refreshCart() {
                 $('#empty-cart').show();
                 updateCartCountDisplay(0);
             } else {
-                showErrorToast('Failed to load cart data');
+                showErrorToast(t('failed_load_cart'));
             }
         },
         error: function() {
-            showErrorToast('Failed to refresh cart');
+            showErrorToast(t('failed_refresh_cart'));
         }
     });
 }
@@ -260,42 +260,42 @@ function displayCartItems(cartData) {
         var itemTotal = price * quantity;
 
         var verifiedBadge = item.is_verified ?
-            '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>Verified Seller</span></div>' :
-            '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>Unverified</span></div>';
+            '<div class="verified-badge-cart"><img src="' + baseUrl + 'images/icons/verified-svgrepo-com.svg" width="14" height="14"><span>' + t('verified_seller') + '</span></div>' :
+            '<div class="unverified-badge-cart"><img src="' + baseUrl + 'images/icons/not-verified-svgrepo-com.svg" width="14" height="14"><span>' + t('unverified') + '</span></div>';
 
         var imagePath = fixImageUrl(item.image || item.image_url);
         var productName = item.product_name || item.title || 'Product';
-        var sellerName = item.seller_name || 'Unknown Seller';
+        var sellerName = item.seller_name || t('unknown_seller');
         var cartId = item.cart_id;
         var productId = item.product_id;
         var stockQty = parseInt(item.stock_quantity) || 99;
 
         if ($desktopTableBody.length) {
             var row = $('<tr>').html(
-                '<td class="product-cell" data-label="Product">' +
+                '<td class="product-cell" data-label="' + t('product') + '">' +
                     '<div class="cart-product-wrapper">' +
                         '<div class="cart-img-container"><img src="' + imagePath + '" alt="' + escapeHtml(productName) + '" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'"></div>' +
                         '<div class="cart-prod-info"><p class="prod-name">' + escapeHtml(productName) + '</p></div>' +
                     '</div>' +
                 '</td>' +
-                '<td class="seller-cell" data-label="Seller">' +
+                '<td class="seller-cell" data-label="' + t('seller') + '">' +
                     '<div class="seller-cart-info">' +
                         '<p class="seller-name">' + escapeHtml(sellerName) + '</p>' +
                         '<div class="verification">' + verifiedBadge + '</div>' +
                     '</div>' +
                 '</td>' +
-                '<td class="price-cell" data-label="Price">R ' + price.toFixed(2) + '</td>' +
-                '<td class="quantity-cell" data-label="Quantity">' +
+                '<td class="price-cell" data-label="' + t('price') + '">' + t('currency_symbol') + ' ' + price.toFixed(2) + '</td>' +
+                '<td class="quantity-cell" data-label="' + t('quantity') + '">' +
                     '<div class="quantity-controls">' +
                         '<button class="qty-decrease" data-cart-id="' + cartId + '">-</button>' +
                         '<input type="number" class="qty-input" value="' + quantity + '" min="1" max="' + Math.min(99, stockQty) + '" data-cart-id="' + cartId + '" style="width: 60px; text-align: center;">' +
                         '<button class="qty-increase" data-cart-id="' + cartId + '">+</button>' +
                     '</div>' +
-                    (quantity >= stockQty && stockQty > 0 ? '<small class="stock-warning">Max ' + stockQty + ' available</small>' : '') +
+                    (quantity >= stockQty && stockQty > 0 ? '<small class="stock-warning">' + t('max_available').replace('{stock}', stockQty) + '</small>' : '') +
                 '</td>' +
-                '<td class="actions-cell" data-label="Action">' +
+                '<td class="actions-cell" data-label="' + t('action') + '">' +
                     '<button class="remove-btn" data-product-id="' + productId + '">' +
-                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="Remove">' +
+                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="16" height="16" alt="' + t('remove') + '">' +
                     '</button>' +
                 '</td>'
             );
@@ -314,8 +314,8 @@ function displayCartItems(cartData) {
                 '</div>' +
                 '<div class="cart-card-body">' +
                     '<div>' +
-                        '<div class="cart-card-price">R ' + price.toFixed(2) + ' each</div>' +
-                        '<div style="font-weight: bold; color: var(--primary-color);">Total: R ' + itemTotal.toFixed(2) + '</div>' +
+                        '<div class="cart-card-price">' + t('currency_symbol') + ' ' + price.toFixed(2) + ' ' + t('each') + '</div>' +
+                        '<div style="font-weight: bold; color: var(--primary-color);">' + t('total') + ': ' + t('currency_symbol') + ' ' + itemTotal.toFixed(2) + '</div>' +
                     '</div>' +
                     '<div class="quantity-controls">' +
                         '<button class="qty-decrease" data-cart-id="' + cartId + '">-</button>' +
@@ -323,7 +323,7 @@ function displayCartItems(cartData) {
                         '<button class="qty-increase" data-cart-id="' + cartId + '">+</button>' +
                     '</div>' +
                     '<button class="remove-btn" data-product-id="' + productId + '">' +
-                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="Remove">' +
+                        '<img src="' + baseUrl + 'images/icons/delete-svgrepo-com.svg" width="14" height="14" alt="' + t('remove') + '">' +
                     '</button>' +
                 '</div>'
             );
@@ -361,7 +361,7 @@ function displayCartItems(cartData) {
         if (isNaN(quantity) || quantity < 1) quantity = 1;
         if (quantity > maxVal) {
             quantity = maxVal;
-            alert('Only ' + maxVal + ' available in stock.');
+            alert(t('only_available_in_stock').replace('{max}', maxVal));
         }
         $input.val(quantity);
         updateCartQuantity(cartId, quantity);
@@ -369,7 +369,7 @@ function displayCartItems(cartData) {
 
     $(document).off('click', '.remove-btn').on('click', '.remove-btn', function() {
         var productId = $(this).data('product-id');
-        if (confirm('Remove this item from your cart?')) {
+        if (confirm(t('remove_item_confirm'))) {
             removeFromCart(productId);
         }
     });
@@ -395,17 +395,17 @@ function updateCartQuantity(cartId, quantity) {
                     if (typeof initialCartData !== 'undefined') {
                         initialCartData = response.cart;
                     }
-                    showSuccessToast(response.message || 'Cart updated');
+                    showSuccessToast(response.message || t('cart_updated'));
                 } else {
                     refreshCart();
                 }
             } else {
-                showErrorToast(response.message || 'Failed to update cart');
+                showErrorToast(response.message || t('failed_update_cart'));
                 setTimeout(function() { location.reload(); }, 1500);
             }
         },
         error: function() {
-            showErrorToast('Something went wrong. Please refresh the page.');
+            showErrorToast(t('error_refresh_page'));
             setTimeout(function() { location.reload(); }, 1500);
         }
     });

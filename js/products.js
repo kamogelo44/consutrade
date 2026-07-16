@@ -196,27 +196,30 @@ function displayProducts(products, containerSelector, append) {
 
         var stockQty = parseInt(product.stock_quantity) || 0;
         var stockBadge = '';
+        var cartBtn = '';
+
         if (stockQty <= 0) {
-            stockBadge = '<div class="out-of-stock-badge-card">Out of Stock</div>';
+            stockBadge = '<span class="out-of-stock-badge-card">' + t('out_of_stock') + '</span>';
+            cartBtn = '<button class="prod-cart-btn disabled" disabled aria-label="' + t('out_of_stock') + '">' +
+                '<img src="' + baseUrl + 'images/icons/x-svgrepo-com.svg" alt="" width="16" height="16">' +
+            '</button>';
         } else if (stockQty <= 5) {
-            stockBadge = '<div class="low-stock-badge-card">Only ' + stockQty + ' left</div>';
+            stockBadge = '<span class="low-stock-badge-card">' + t('only_n_left').replace('{n}', stockQty) + '</span>';
+            cartBtn = '<button class="prod-cart-btn" data-product-id="' + product.id + '" aria-label="' + t('add_to_cart') + '">' +
+                '<img src="' + baseUrl + 'images/icons/shopping-cart-01-svgrepo-com.svg" alt="" width="16" height="16">' + +
+            '</button>';
+        } else {
+            cartBtn = '<button class="prod-cart-btn" data-product-id="' + product.id + '" aria-label="' + t('add_to_cart') + '">' +
+                '<img src="' + baseUrl + 'images/icons/shopping-cart-01-svgrepo-com.svg" alt="" width="16" height="16">' +
+            '</button>';
         }
 
-        /* ---------- Verification badge - icon only ---------- */
         var verifiedBadge = product.is_verified
             ? '<span class="verified-badge-card">&#10003;</span>'
             : '<span class="unverified-badge-card">!</span>';
 
-        var isOutOfStock = stockQty <= 0;
-        var addToCartButton = '';
-
-        if (isOutOfStock) {
-            addToCartButton = '<button class="out-of-stock-btn" disabled>Out of Stock</button>';
-        } else {
-            addToCartButton = '<button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart(' + product.id + ', \'' + escapeHtml(product.name).replace(/'/g, "\\'") + '\', ' + product.price + ')">Add to Cart</button>';
-        }
-
         var sellerAvatar = fixImageUrl(product.profile_image, 'images/icons/profile-svgrepo-com.svg');
+        var onlineClass = product.is_online ? ' online' : '';
 
         var $card = $('<div>').addClass('prod-card').css('cursor', 'pointer');
         $card.on('click', function(id) {
@@ -225,35 +228,46 @@ function displayProducts(products, containerSelector, append) {
 
         $card.html(
             '<div class="img-container">' +
-                '<img src="' + imagePath + '" alt="' + escapeHtml(product.name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
-                '<div class="condition-badge ' + conditionClass + '">' + conditionText + '</div>' +
+                '<span class="condition-badge ' + conditionClass + '">' + conditionText + '</span>' +
                 stockBadge +
+                '<img src="' + imagePath + '" alt="' + escapeHtml(product.name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/default-product.png\'">' +
             '</div>' +
             '<div class="prod-info-container">' +
                 '<h3 class="prod-name">' + escapeHtml(product.name) + '</h3>' +
-                '<p class="prod-price">R ' + parseFloat(product.price).toFixed(2) + '</p>' +
+                '<div class="prod-price-row">' +
+                    '<p class="prod-price"><span class="currency">R</span>' + parseFloat(product.price).toFixed(2) + '</p>' +
+                    cartBtn +
+                '</div>' +
                 '<div class="seller-info">' +
-                    '<div class="seller-avatar' + (product.is_online ? ' online' : '') + '">' +
+                    '<div class="seller-avatar' + onlineClass + '">' +
                         '<img src="' + sellerAvatar + '" alt="' + escapeHtml(product.seller_name) + '" loading="lazy" onerror="this.src=\'' + baseUrl + 'images/icons/profile-svgrepo-com.svg\'">' +
                     '</div>' +
                     '<div class="seller-details">' +
-                        '<p class="seller-name">' + escapeHtml(product.seller_name) + '</p>' +
+                        '<span class="seller-name">' + escapeHtml(product.seller_name) + '</span>' +
                         verifiedBadge +
-                        '<p class="location">' +
-                            '<img src="' + baseUrl + 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt="location" loading="lazy">' +
+                        '<span class="location">' +
+                            '<img src="' + baseUrl + 'images/icons/pin-location-svgrepo-com.svg" width="10" height="10" alt=""> ' +
                             escapeHtml(product.location || 'South Africa') +
-                        '</p>' +
+                        '</span>' +
                     '</div>' +
                 '</div>' +
-                addToCartButton +
-                '<div class="payment-badge">' +
-                    '<span>Secure payment via</span>' +
-                    '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast" loading="lazy">' +
-                '</div>' +
+            '</div>' +
+            '<div class="payment-badge">' +
+                '<span>' + t('secured_by') + '</span>' +
+                '<img src="' + baseUrl + 'images/icons/Payfast logo.svg" alt="PayFast" loading="lazy">' +
             '</div>'
         );
         $grid.append($card);
     }
+
+    // Bind cart buttons
+    $grid.find('.prod-cart-btn').not('.disabled').off('click').on('click', function(e) {
+        e.stopPropagation();
+        var productId = $(this).data('product-id');
+        if (productId && typeof addToCart === 'function') {
+            addToCart(productId);
+        }
+    });
 }
 
 /**
@@ -265,19 +279,34 @@ function showEmptyState() {
     var isSearchPage = window.location.pathname.includes('search-results.php');
     var title = isSearchPage ? 'No products found for "' + escapeHtml(currentSearchQuery) + '"' : 'No products found';
     var message = isSearchPage ? 'We couldn\'t find any products matching your search.' : 'We couldn\'t find any products matching your criteria.';
-    var buttonText = isSearchPage ? 'Browse All Products' : 'Clear Filters';
-    var buttonAction = isSearchPage ? 'window.location.href=\'product-listings.php\'' : '$resetFiltersBtn.click()';
 
     $productsGrid.html(
         '<div class="empty-state" id="empty-products-state">' +
             '<img src="' + baseUrl + 'images/icons/product-catalog-svgrepo-com.svg" width="64" height="64" alt="No products" loading="lazy">' +
             '<h3>' + title + '</h3>' +
             '<p>' + message + '</p>' +
-            '<button class="view-all-btn" onclick="' + buttonAction + '">' + buttonText + '</button>' +
+            (isSearchPage 
+                ? '<a href="' + baseUrl + 'product-listings.php" class="view-all-btn">Browse All Products</a>'
+                : '<button class="view-all-btn" id="empty-clear-filters-btn">Clear Filters</button>') +
         '</div>'
     );
     $paginationContainer.empty();
     removeLoadingIndicator();
+
+    // Bind the clear filters button after it's added to DOM
+    if (!isSearchPage) {
+        $('#empty-clear-filters-btn').on('click', function() {
+            $filterForm[0].reset();
+            currentFilters = {
+                categories: [],
+                price_range: '',
+                location: ''
+            };
+            currentPage = 1;
+            initialCategory = '';
+            loadProducts();
+        });
+    }
 }
 
 /**

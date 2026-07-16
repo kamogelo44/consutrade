@@ -2403,3 +2403,128 @@
   border-radius: var(--radius-md);
   display: inline-block;
 }
+
+/* ============================================================
+   LISTINGS BANNER
+   ============================================================ */
+
+.listings-banner {
+  background: var(--dark-bg);
+  padding: 20px 16px;
+  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.listings-banner.hidden {
+  display: none !important;
+}
+
+.listings-banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.banner-text {
+  flex: 1;
+}
+
+.listings-banner h1 {
+  font-size: var(--font-3xl);
+  color: var(--white);
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.listings-banner p {
+  font-size: var(--font-md);
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0;
+}
+
+.banner-close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--white);
+  border-radius: var(--radius-round);
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.banner-close-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.banner-close-btn .icon {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.banner-close-btn:hover .icon {
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   BANNER RESTORE WRAPPER
+   ============================================================ */
+
+#bannerRestoreWrapper {
+  display: none;
+  padding: 12px 16px;
+  background: var(--gray-bg-light);
+  border-bottom: 1px solid var(--border-light);
+  text-align: center;
+}
+
+#bannerRestoreWrapper.visible {
+  display: block !important;
+}
+
+.banner-restore-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-round);
+  color: var(--gray-medium);
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.banner-restore-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--primary-fade);
+}
+
+.banner-restore-btn .icon {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.banner-restore-btn:hover .icon {
+  transform: translateY(2px);
+}

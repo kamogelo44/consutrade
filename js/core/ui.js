@@ -15,6 +15,49 @@ var $deleteModal = null;
 var $cartCountElements = null;
 
 // ============================================================
+// BANNER CONTROLS
+// ============================================================
+
+/**
+ * Initialize banner close functionality with localStorage persistence
+ * Used on product listings pages
+ */
+function initBannerControls() {
+    var $banner = $('#listingsBanner');
+    var $restoreWrapper = $('#bannerRestoreWrapper');
+    var $closeBtn = $('#bannerCloseBtn');
+    var $restoreBtn = $('#bannerRestoreBtn');
+    var BANNER_HIDDEN_KEY = 'consutrade_banner_hidden';
+    
+    if (!$banner.length) return;
+    
+    var isHidden = localStorage.getItem(BANNER_HIDDEN_KEY) === 'true';
+    
+    if (isHidden) {
+        $banner.addClass('hidden');
+        // Show the restore wrapper by removing inline style and adding class
+        $restoreWrapper.css('display', '');
+        $restoreWrapper.addClass('visible');
+    }
+    
+    $closeBtn.on('click', function() {
+        $banner.addClass('hidden');
+        // Show the restore wrapper
+        $restoreWrapper.css('display', '');
+        $restoreWrapper.addClass('visible');
+        localStorage.setItem(BANNER_HIDDEN_KEY, 'true');
+    });
+    
+    $restoreBtn.on('click', function() {
+        $banner.removeClass('hidden');
+        // Hide the restore wrapper
+        $restoreWrapper.removeClass('visible');
+        $restoreWrapper.css('display', 'none');
+        localStorage.removeItem(BANNER_HIDDEN_KEY);
+    });
+}
+
+// ============================================================
 // TOAST NOTIFICATIONS
 // ============================================================
 
@@ -199,7 +242,7 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     var html = '';
 
     if (currentPage > 1) {
-        html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">← Previous</button>';
+        html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">← ' + t('previous') + '</button>';
     }
 
     for (var i = 1; i <= totalPages; i++) {
@@ -213,7 +256,7 @@ function renderPagination($container, currentPage, totalPages, onPageChange) {
     }
 
     if (currentPage < totalPages) {
-        html += '<button class="page-btn" data-page="' + (currentPage + 1) + '">Next →</button>';
+        html += '<button class="page-btn" data-page="' + (currentPage + 1) + '">' + t('next') + ' →</button>'; 
     }
 
     $container.html(html);
@@ -248,4 +291,133 @@ function initErrorClearingOnInput() {
         $group.removeClass('error');
         $group.find('.error-text').remove();
     });
+}
+
+// ============================================================
+// LISTINGS page
+// ============================================================
+
+var FILTERS_HIDDEN_KEY = 'consutrade_filters_hidden';
+var LOCATION_DEBOUNCE_MS = 400;
+
+/**
+ * Initialize collapsible filter sidebar (desktop only)
+ * State persisted in localStorage
+ */
+/**
+ * Initialize collapsible filter sidebar with morph transition
+ * State persisted in localStorage
+ * The sidebar morphs from full width to a thin bar instead of disappearing
+ */
+function initFilterCollapse() {
+    var $sidebar = $('#filterSidebar');
+    var $toggle = $('#filterToggleBtn');
+    if (!$sidebar.length || !$toggle.length) return;
+
+    var $label = $toggle.find('.filter-toggle-label');
+    var $arrow = $toggle.find('.filter-arrow');
+
+    function apply(hidden) {
+        // Toggle collapsed class on sidebar (morphs the whole sidebar)
+        $sidebar.toggleClass('collapsed', hidden);
+        
+        // Update button text and arrow
+        if ($label.length) {
+            $label.text(hidden ? 'Show' : 'Hide');
+        }
+        if ($arrow.length) {
+            $arrow.text(hidden ? '→' : '←');
+        }
+        
+        // Update aria-expanded
+        $toggle.attr('aria-expanded', String(!hidden));
+    }
+
+    // Restore persisted state
+    var startHidden = false;
+    try {
+        startHidden = localStorage.getItem(FILTERS_HIDDEN_KEY) === 'true';
+    } catch (e) { /* storage unavailable */ }
+    apply(startHidden);
+
+    // Toggle on click
+    $toggle.on('click', function() {
+        var hidden = !$sidebar.hasClass('collapsed');
+        apply(hidden);
+        try {
+            localStorage.setItem(FILTERS_HIDDEN_KEY, hidden ? 'true' : 'false');
+        } catch (e) { /* ignore */ }
+    });
+}
+
+/**
+ * Initialize instant filtering (no Apply button needed)
+ * Depends on products.js globals: loadProducts, collectFilters, currentPage
+ */
+function initInstantFiltering() {
+    // Guard: products.js globals must be present
+    if (typeof window.loadProducts !== 'function' || typeof collectFilters !== 'function') {
+        return;
+    }
+
+    function applyNow() {
+        collectFilters();
+        currentPage = 1;
+        initialCategory = '';
+        window.loadProducts();
+
+        // On mobile, close filter overlay
+        if (window.matchMedia('(max-width: 768px)').matches) {
+            $('#filterSidebar').removeClass('active');
+        }
+    }
+
+    // Checkboxes + radios: react immediately
+    $(document).on('change',
+        'input[name="category[]"], input[name="price_range"]',
+        applyNow
+    );
+
+    // Location text: debounce
+    var locTimer = null;
+    $(document).on('input', '#search-location', function() {
+        clearTimeout(locTimer);
+        locTimer = setTimeout(applyNow, LOCATION_DEBOUNCE_MS);
+    });
+
+    // Clear all inline (inside sidebar)
+    $('#clearFiltersInline').on('click', function() {
+        $('#clearFiltersBtn').trigger('click');
+    });
+}
+
+/**
+ * Initialize live product count
+ */
+function initLiveCount() {
+    var grid = document.getElementById('products-grid');
+    var countEl = document.getElementById('listingsCount');
+    if (!grid || !countEl) return;
+
+    function update() {
+        var cards = grid.querySelectorAll('.prod-card:not(.skeleton-card)');
+        var hasSkeleton = grid.querySelector('.skeleton-card');
+        var hasEmptyState = grid.querySelector('.empty-state');
+
+        if (hasSkeleton && cards.length === 0) {
+            countEl.textContent = 'Loading products…';
+            return;
+        }
+        if (hasEmptyState || cards.length === 0) {
+            countEl.textContent = 'No products match your filters';
+            return;
+        }
+
+        var n = cards.length;
+        countEl.textContent = 'Showing ' + n + ' product' + (n === 1 ? '' : 's');
+    }
+
+    var observer = new MutationObserver(update);
+    observer.observe(grid, { childList: true });
+    update();
 }

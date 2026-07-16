@@ -34,7 +34,7 @@ $page_js = 'index.js';
 
         <?php if (isset($_GET['verified']) && $_GET['verified'] === 'pending'): ?>
             <div class="verification-notice">
-                <img src="images/icons/email-svgrepo-com.svg" width="20" height="20" alt="Email">
+                <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" width="20" height="20" alt="Email">
                 <span><?php t('account_created_verify'); ?></span>
             </div>
         <?php endif; ?>
@@ -73,7 +73,7 @@ $page_js = 'index.js';
                     </div>
                     <div class="hero-payment">
                         <span><?php t('secure_payments'); ?></span>
-                        <img src="images/icons/Payfast logo.svg" alt="PayFast" width="60" height="18" loading="lazy">
+                        <img src="<?php echo $baseUrl; ?>images/icons/Payfast logo.svg" alt="PayFast" width="60" height="18" loading="lazy">
                     </div>
                 </div>
                 <div class="hero-visual">
@@ -131,8 +131,8 @@ $page_js = 'index.js';
                             <?php else: ?>
                                 <div class="cat-image">
                                     <picture>
-                                        <source srcset="images/categories/<?php echo $cat['img']; ?>.webp" type="image/webp">
-                                        <img src="images/categories/<?php echo $cat['img']; ?>.jpg" alt="<?php t($cat['name']); ?>" width="64" height="64" loading="lazy">
+                                        <source srcset="<?php echo $baseUrl; ?>images/categories/<?php echo $cat['img']; ?>.webp" type="image/webp">
+                                        <img src="<?php echo $baseUrl; ?>images/categories/<?php echo $cat['img']; ?>.jpg" alt="<?php t($cat['name']); ?>" width="64" height="64" loading="lazy">
                                     </picture>
                                 </div>
                             <?php endif; ?>
@@ -272,7 +272,11 @@ $page_js = 'index.js';
                 <h2><?php t('ready_to_start_text'); ?></h2>
                 <p><?php t('join_thousands_text'); ?></p>
                 <div class="cta-buttons">
-                    <a href="register.php" class="cta-btn cta-btn-primary"><?php t('create_account_text'); ?></a>
+                    <?php if ($isLoggedIn): ?>
+                        <a href="product-listings.php" class="cta-btn cta-btn-primary"><?php t('browse_local_goods'); ?></a>
+                    <?php else: ?>
+                        <a href="#" class="cta-btn cta-btn-primary" id="cta-register-btn"><?php t('create_account_text'); ?></a>
+                    <?php endif; ?>
                     <a href="about.php" class="cta-btn cta-btn-secondary"><?php t('learn_more_text'); ?></a>
                 </div>
             </div>

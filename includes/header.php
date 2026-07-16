@@ -18,7 +18,7 @@ if ($is_logged_in && isset($currentUser)) {
     $hasAdminRole = in_array('admin', $user_roles);
     $primaryRole = $currentUser->getPrimaryRole();
 } else {
-    $user_name = 'Account';
+    $user_name = translate('account');
     $user_profile_image = $baseUrl . 'images/icons/profile-svgrepo-com.svg';
     $user_roles = [];
     $hasBuyerRole = false;
@@ -50,7 +50,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
             <!-- South African Flag Badge -->
             <div class="sa-badge">
                 <span class="sa-flag">🇿🇦</span>
-                <span class="sa-text">Proudly South African</span>
+                <span class="sa-text"><?php t('proudly_south_african'); ?></span>
             </div>
             <nav class="main-nav">
                 <ul>
@@ -110,7 +110,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                     </button>
                     <div class="notif-menu" id="notifMenu">
                         <div class="notif-list">
-                            <div class="notif-empty">No notifications yet</div>
+                            <div class="notif-empty"><?php t('no_notifications'); ?></div>
                         </div>
                     </div>
                 </div>
@@ -273,7 +273,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                     <img src="<?php echo $baseUrl; ?>images/icons/sell-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
                     <span class="nav-label"><?php t('sell'); ?></span>
                     <?php if ($show_upgrade_badge): ?>
-                        <span class="nav-badge new">New</span>
+                        <span class="nav-badge new"><?php t('new'); ?></span>
                     <?php endif; ?>
                 </a>
             </li>
@@ -354,7 +354,7 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
                     <button class="mobile-signup-btn" id="mobileRegisterBtn">
                         <img src="<?php echo $baseUrl; ?>images/icons/register-svgrepo-com.svg" width="18" height="18" alt="" class="nav-icon">
                         <span class="nav-label"><?php t('sign_up'); ?></span>
-                        <span class="nav-badge free">Free</span>
+                        <span class="nav-badge free"><?php t('free'); ?></span>
                     </button>
                 </li>
             <?php endif; ?>
@@ -402,6 +402,10 @@ if ($is_logged_in && isset($currentUser) && $currentUser->hasRole('buyer')) {
     var currentUserId = <?php echo $currentUser ? $currentUser->getUserId() : 0; ?>;
     var currentUserRole = '<?php echo $currentUserRole ?? ''; ?>';
     var isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+
+    var currentUserName = '<?php echo $currentUser ? htmlspecialchars($currentUser->getDisplayName()) : ''; ?>';
+    var currentUserEmail = '<?php echo $currentUser ? htmlspecialchars($currentUser->getEmail()) : ''; ?>';
+    var currentUserPhone = '<?php echo $currentUser ? htmlspecialchars($currentUser->getPhone()) : ''; ?>';
 
     // Translations for JavaScript
     var translations = <?php

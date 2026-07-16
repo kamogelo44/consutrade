@@ -37,19 +37,18 @@ $page_js = 'sell.js';
         <section class="sell-hero">
             <div class="sell-hero-content">
                 <div class="sell-hero-badge">
-                    <span>For South African sellers</span>
+                    <span><?php t('proudly_south_african'); ?></span>
                 </div>
-                <h1>Stop selling in WhatsApp groups</h1>
+                <h1><?php t('stop_selling_whatsapp'); ?></h1>
                 <p class="sell-hero-subtitle">
-                    Get your own storefront, earn a verified badge, and get paid securely through PayFast.
-                    No more "payment proof" screenshots. No more ghosting.
+                    <?php t('sell_hero_subtitle'); ?>
                 </p>
                 <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
-                    <button class="sell-hero-btn" id="upgradeToSellerBtn">Add Seller Access — It's Free</button>
+                    <button class="sell-hero-btn" id="upgradeToSellerBtn"><?php t('add_seller_access'); ?></button>
                 <?php else: ?>
                     <div class="sell-hero-actions">
-                        <button class="sell-hero-btn" id="sellerRegisterBtn">Create Seller Account — It's Free</button>
-                        <button class="sell-hero-btn-secondary" id="loginInsteadBtn">Already have an account? Login</button>
+                        <button class="sell-hero-btn" id="sellerRegisterBtn"><?php t('create_seller_account'); ?></button>
+                        <button class="sell-hero-btn-secondary" id="loginInsteadBtn"><?php t('already_have_account_login'); ?></button>
                     </div>
                 <?php endif; ?>
             </div>
@@ -58,29 +57,29 @@ $page_js = 'sell.js';
         <!-- Problem vs Solution Section -->
         <section class="sell-comparison">
             <div class="section-header">
-                <div class="section-tag">Why switch</div>
-                <h2 class="section-heading">There's a better way to sell</h2>
-                <p class="section-subtitle">WhatsApp and Facebook Marketplace weren't built for traders. ConsuTrade was.</p>
+                <div class="section-tag"><?php t('why_switch'); ?></div>
+                <h2 class="section-heading"><?php t('better_way_to_sell'); ?></h2>
+                <p class="section-subtitle"><?php t('sell_comparison_subtitle'); ?></p>
             </div>
             <div class="sell-comparison-grid">
                 <div class="sell-comparison-card sell-comparison-old">
-                    <h3>The Old Way</h3>
+                    <h3><?php t('the_old_way'); ?></h3>
                     <ul>
-                        <li>Customers ghost after asking "how much"</li>
-                        <li>Fake "payment proof" screenshots</li>
-                        <li>No way to prove you're legitimate</li>
-                        <li>Scrolling through endless chats to find orders</li>
-                        <li>Cash deposits and e-wallet risks</li>
+                        <li><?php t('old_way_ghost'); ?></li>
+                        <li><?php t('old_way_fake_proof'); ?></li>
+                        <li><?php t('old_way_no_proof'); ?></li>
+                        <li><?php t('old_way_scroll'); ?></li>
+                        <li><?php t('old_way_cash_risks'); ?></li>
                     </ul>
                 </div>
                 <div class="sell-comparison-card sell-comparison-new">
-                    <h3>The ConsuTrade Way</h3>
+                    <h3><?php t('the_consutrade_way'); ?></h3>
                     <ul>
-                        <li>Your own storefront with all your products</li>
-                        <li>PayFast confirms every payment — no screenshots needed</li>
-                        <li>Verified seller badge shows buyers you're real</li>
-                        <li>Dashboard tracks every order from pending to completed</li>
-                        <li>Secure payments directly to your account</li>
+                        <li><?php t('consutrade_way_storefront'); ?></li>
+                        <li><?php t('consutrade_way_payfast'); ?></li>
+                        <li><?php t('consutrade_way_verified'); ?></li>
+                        <li><?php t('consutrade_way_dashboard'); ?></li>
+                        <li><?php t('consutrade_way_secure'); ?></li>
                     </ul>
                 </div>
             </div>
@@ -89,31 +88,31 @@ $page_js = 'sell.js';
         <!-- How It Works -->
         <section class="sell-steps">
             <div class="section-header">
-                <div class="section-tag">Get started</div>
-                <h2 class="section-heading">Start selling in minutes</h2>
-                <p class="section-subtitle">No paperwork. No registration fees. Just your SA ID and your products.</p>
+                <div class="section-tag"><?php t('get_started'); ?></div>
+                <h2 class="section-heading"><?php t('start_selling_minutes'); ?></h2>
+                <p class="section-subtitle"><?php t('no_paperwork'); ?></p>
             </div>
             <div class="sell-steps-grid">
                 <div class="sell-step" data-step="01">
                     <div class="sell-step-icon">
                         <img src="<?php echo $baseUrl; ?>images/icons/register-svgrepo-com.svg" width="40" height="40" alt="Register" loading="lazy">
                     </div>
-                    <h3>Create your account</h3>
-                    <p>Sign up as a seller. Verify with your SA ID to earn your trusted badge.</p>
+                    <h3><?php t('step_create_account'); ?></h3>
+                    <p><?php t('step_create_account_desc'); ?></p>
                 </div>
                 <div class="sell-step" data-step="02">
                     <div class="sell-step-icon">
                         <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="40" height="40" alt="List" loading="lazy">
                     </div>
-                    <h3>List your products</h3>
-                    <p>Upload photos, set prices, and share your story. Your listings go live instantly.</p>
+                    <h3><?php t('step_list_products'); ?></h3>
+                    <p><?php t('step_list_products_desc'); ?></p>
                 </div>
                 <div class="sell-step" data-step="03">
                     <div class="sell-step-icon">
                         <img src="<?php echo $baseUrl; ?>images/icons/cash-atm-svgrepo-com.svg" width="40" height="40" alt="Get paid" loading="lazy">
                     </div>
-                    <h3>Get paid securely</h3>
-                    <p>Buyers pay through PayFast. You receive payment confirmation. No scams.</p>
+                    <h3><?php t('step_get_paid'); ?></h3>
+                    <p><?php t('step_get_paid_desc'); ?></p>
                 </div>
             </div>
         </section>
@@ -121,39 +120,39 @@ $page_js = 'sell.js';
         <!-- What You Need -->
         <section class="sell-requirements">
             <div class="sell-requirements-container">
-                <div class="section-tag">Requirements</div>
-                <h2>What you need to get started</h2>
+                <div class="section-tag"><?php t('requirements'); ?></div>
+                <h2><?php t('what_you_need'); ?></h2>
                 <div class="sell-requirements-grid">
                     <div class="sell-requirement">
                         <img src="<?php echo $baseUrl; ?>images/icons/verified-svgrepo-com.svg" width="24" height="24" alt="ID" loading="lazy">
-                        <span>South African ID</span>
+                        <span><?php t('requirement_id'); ?></span>
                     </div>
                     <div class="sell-requirement">
                         <img src="<?php echo $baseUrl; ?>images/icons/email-svgrepo-com.svg" width="24" height="24" alt="Email" loading="lazy">
-                        <span>Email address</span>
+                        <span><?php t('requirement_email'); ?></span>
                     </div>
                     <div class="sell-requirement">
                         <img src="<?php echo $baseUrl; ?>images/icons/phone-call-svgrepo-com.svg" width="24" height="24" alt="Phone" loading="lazy">
-                        <span>Phone number</span>
+                        <span><?php t('requirement_phone'); ?></span>
                     </div>
                     <div class="sell-requirement">
                         <img src="<?php echo $baseUrl; ?>images/icons/product-catalog-svgrepo-com.svg" width="24" height="24" alt="Products" loading="lazy">
-                        <span>Products to sell</span>
+                        <span><?php t('requirement_products'); ?></span>
                     </div>
                 </div>
-                <p class="sell-requirements-note">You can start listing products while verification is pending. Verification helps build trust with buyers.</p>
+                <p class="sell-requirements-note"><?php t('requirements_note'); ?></p>
             </div>
         </section>
 
         <!-- CTA -->
         <section class="sell-cta">
             <div class="sell-cta-container">
-                <h2>Your customers are waiting</h2>
-                <p>Join South African traders who've already made the switch from WhatsApp to ConsuTrade.</p>
+                <h2><?php t('customers_are_waiting'); ?></h2>
+                <p><?php t('join_traders_switched'); ?></p>
                 <?php if ($isLoggedIn && isset($currentUser) && $currentUser->hasRole('buyer') && !$currentUser->hasRole('seller')): ?>
-                    <button class="sell-cta-btn" id="upgradeToSellerBtn2">Add Seller Access — It's Free</button>
+                    <button class="sell-cta-btn" id="upgradeToSellerBtn2"><?php t('add_seller_access'); ?></button>
                 <?php else: ?>
-                    <button class="sell-cta-btn" id="createSellerBtn">Create Seller Account — It's Free</button>
+                    <button class="sell-cta-btn" id="createSellerBtn"><?php t('create_seller_account'); ?></button>
                 <?php endif; ?>
             </div>
         </section>

@@ -1704,3 +1704,71 @@
     margin: 2px 12px;
   }
 }
+
+/* ============================================================
+   FILTER SIDEBAR MORPH STATE
+   ============================================================ */
+
+/* When collapsed, the sidebar morphs to a thin bar */
+.filter-sidebar.collapsed ~ .listings-products {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
+/* When filters are hidden on wide screens, grid adjusts */
+@media (min-width: 1024px) {
+  .filter-sidebar.collapsed ~ .listings-products .listings-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  }
+}
+
+/* ============================================================
+   LISTINGS BANNER RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .listings-banner {
+    padding: 20px var(--spacing-md);
+  }
+
+  .listings-banner h1 {
+    font-size: var(--font-2xl);
+  }
+
+  .listings-banner-content {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .banner-close-btn {
+    align-self: flex-start;
+  }
+
+  .filter-toggle-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .listings-banner {
+    padding: 16px var(--spacing-sm);
+  }
+
+  .listings-banner h1 {
+    font-size: var(--font-xl);
+  }
+
+  .listings-banner p {
+    font-size: var(--font-sm);
+  }
+
+  .banner-close-btn {
+    font-size: var(--font-xs);
+    padding: 4px 10px;
+  }
+
+  .banner-restore-btn {
+    font-size: var(--font-xs);
+    padding: 4px 10px;
+  }
+}

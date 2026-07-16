@@ -15,11 +15,11 @@ function togglePassword(fieldId, button) {
     if ($input.attr('type') == 'password') {
         $input.attr('type', 'text');
         $img.attr('src', baseUrl + 'images/icons/eye-close-svgrepo-com.svg');
-        $img.attr('alt', 'Hide password');
+        $img.attr('alt', t('hide_password')); // FIXED
     } else {
         $input.attr('type', 'password');
         $img.attr('src', baseUrl + 'images/icons/eye-open-svgrepo-com.svg');
-        $img.attr('alt', 'Show password');
+        $img.attr('alt', t('show_password')); // FIXED
     }
 }
 
@@ -54,7 +54,7 @@ function initAjaxLogin() {
         var $submitBtn = $(this).find('button[type="submit"]');
         var originalText = $submitBtn.text();
 
-        $submitBtn.prop('disabled', true).text('Logging in...');
+        $submitBtn.prop('disabled', true).text(t('logging_in')); // FIXED
 
         $.ajax({
             url: baseUrl + 'php/endpoints/auth/login.php',
@@ -71,7 +71,7 @@ function initAjaxLogin() {
                     // Show resend verification link if needed
                     if (response.needs_verification) {
                         $('#login-error-container').append(
-                            '<p style="margin-top:8px;"><a href="#" id="resendVerificationLink">Resend verification email</a></p>'
+                            '<p style="margin-top:8px;"><a href="#" id="resendVerificationLink">' + t('resend_verification') + '</a></p>' // FIXED
                         );
                         
                         $('#resendVerificationLink').on('click', function(e) {
@@ -113,7 +113,7 @@ function initAjaxRegister() {
         var $submitBtn = $(this).find('button[type="submit"]');
         var originalText = $submitBtn.text();
 
-        $submitBtn.prop('disabled', true).text('Creating account...');
+        $submitBtn.prop('disabled', true).text(t('creating_account')); // FIXED
 
         $.ajax({
             url: baseUrl + 'php/endpoints/auth/register.php',
@@ -133,7 +133,7 @@ function initAjaxRegister() {
                 }
             },
             error: function() {
-                $('#register-error-container').show().text('Something went wrong. Please try again.');
+                $('#register-error-container').show().text(t('error_occurred_general')); // FIXED
                 $submitBtn.prop('disabled', false).text(originalText);
             }
         });

@@ -6,14 +6,6 @@ AuthName "ConsuTrade Dashboard"
 AuthUserFile /home/site/wwwroot/.htpasswd-admin
 Require valid-user
 
-# Allow access to login and role-select pages without basic auth
-<Files "login.php">
-    Require all granted
-</Files>
-<Files "role-select.php">
-    Require all granted
-</Files>
-
 # Block access to .htpasswd files
 <Files ".ht*">
     Require all denied

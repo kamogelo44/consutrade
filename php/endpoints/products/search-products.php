@@ -11,12 +11,23 @@ require_once dirname(__DIR__, 3) . '/init.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, must-revalidate');
 
+// Category detection keywords
+$categoryKeywords = [
+    'clothing' => ['clothing', 'clothes', 'shirt', 'pants', 'dress', 'jacket', 'jeans', 't-shirt', 'tshirt', 'hoodie', 'sweater', 'shoes', 'sneakers', 'boots', 'accessories', 'hat', 'belt', 'bag', 'wallet', 'fashion', 'wear', 'apparel', 'garment', 'outfit'],
+    'electronics' => ['electronics', 'phone', 'smartphone', 'laptop', 'computer', 'tablet', 'tv', 'television', 'headphones', 'earphones', 'speaker', 'charger', 'cable', 'battery', 'screen', 'keyboard', 'mouse', 'monitor', 'printer', 'scanner', 'camera', 'drone', 'gadget', 'tech', 'device', 'accessory'],
+    'food' => ['food', 'drink', 'beverage', 'snack', 'meal', 'dinner', 'lunch', 'breakfast', 'fruit', 'vegetable', 'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'bread', 'pastry', 'cake', 'cookie', 'chocolate', 'candy', 'soda', 'juice', 'water', 'coffee', 'tea', 'wine', 'beer', 'spirit', 'alcohol', 'grocery', 'produce', 'bakery', 'dairy', 'cheese', 'milk', 'egg', 'rice', 'pasta', 'sauce', 'spice', 'herb', 'organic', 'fresh', 'frozen', 'canned', 'packaged', 'snack', 'treat', 'dessert', 'ice cream', 'yogurt', 'butter', 'oil', 'vinegar', 'condiment', 'jam', 'honey', 'cereal', 'granola', 'nut', 'seed', 'dried fruit', 'pet food'],
+    'furniture' => ['furniture', 'sofa', 'couch', 'chair', 'table', 'desk', 'bed', 'mattress', 'dresser', 'wardrobe', 'closet', 'shelf', 'bookcase', 'cabinet', 'drawer', 'chest', 'ottoman', 'bench', 'stool', 'lamp', 'mirror', 'rug', 'carpet', 'curtain', 'blind', 'cushion', 'pillow', 'blanket', 'throw', 'decor', 'decoration', 'home', 'interior', 'furnishing', 'wood', 'metal', 'glass'],
+    'beauty' => ['beauty', 'skincare', 'makeup', 'cosmetic', 'lotion', 'cream', 'serum', 'oil', 'mask', 'scrub', 'exfoliant', 'cleanser', 'toner', 'moisturizer', 'sunscreen', 'foundation', 'powder', 'blush', 'bronzer', 'highlight', 'concealer', 'lipstick', 'gloss', 'liner', 'mascara', 'eyeshadow', 'brow', 'brush', 'tool', 'nail', 'polish', 'remover', 'hair', 'shampoo', 'conditioner', 'mask', 'treatment', 'styling', 'gel', 'mousse', 'spray', 'perfume', 'fragrance', 'deodorant', 'soap', 'body wash', 'bath', 'bubble', 'salts', 'sponge', 'towel', 'robe', 'slipper'],
+];
+
 $response = [
     'success' => false,
     'products' => [],
     'total_pages' => 0,
     'current_page' => 1,
-    'total_results' => 0
+    'total_results' => 0,
+    'detected_categories' => [],
+    'detected_category_hint' => null
 ];
 
 try {
@@ -32,10 +43,49 @@ try {
         exit;
     }
 
+    // ============================================================
+    // DETECT CATEGORY FROM SEARCH QUERY
+    // ============================================================
+    $detectedCategories = [];
+    $searchLower = strtolower($search);
+
+    foreach ($categoryKeywords as $category => $keywords) {
+        foreach ($keywords as $keyword) {
+            if (strpos($searchLower, $keyword) !== false) {
+                $detectedCategories[] = $category;
+                break;
+            }
+        }
+    }
+    $detectedCategories = array_unique($detectedCategories);
+
+    $categoryLabels = [
+        'clothing' => 'Clothing & Accessories',
+        'electronics' => 'Electronics',
+        'food' => 'Food & Drinks',
+        'furniture' => 'Furniture',
+        'beauty' => 'Beauty & Health',
+        'other' => 'Other'
+    ];
+
+    $response['detected_categories'] = $detectedCategories;
+
+    if (!empty($detectedCategories)) {
+        $categoryHints = array_map(function ($cat) use ($categoryLabels) {
+            return $categoryLabels[$cat] ?? ucfirst($cat);
+        }, $detectedCategories);
+        $response['detected_category_hint'] = implode(' or ', $categoryHints);
+    }
+
     // Filter parameters
     $categories = isset($_GET['categories']) ? array_filter(explode(',', $_GET['categories'])) : [];
     $price_range = $_GET['price_range'] ?? '';
     $location = isset($_GET['location']) ? trim($_GET['location']) : '';
+
+    // If no categories are selected but we detected one, auto-add it
+    if (empty($categories) && !empty($detectedCategories)) {
+        $categories = $detectedCategories;
+    }
 
     // Build filters array for ProductService
     $filters = [

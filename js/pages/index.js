@@ -125,13 +125,16 @@ function loadTopSellers() {
                     var rating = seller.rating || 0;
                     var trades = seller.trades || 0;
 
+                    // FIXED: Use translation for location fallback
+                    var location = seller.location ? escapeHtml(seller.location) : t('south_africa');
+
                     var card = $(
                         '<div class="seller-card">' +
                             '<div class="seller-card-top">' +
                                 '<div class="seller-avatar">' + initials + '</div>' +
                                 '<div>' +
                                     '<h4>' + escapeHtml(seller.full_name) + '</h4>' +
-                                    '<span>' + escapeHtml(seller.location || 'South Africa') + '</span>' +
+                                    '<span>' + location + '</span>' +
                                 '</div>' +
                                 verifiedBadge +
                             '</div>' +
@@ -209,7 +212,7 @@ function initLocationSearch() {
                 if (data.success) {
                     $nearbyCount.text(data.total_products || '0');
                     $sellerCount.text(data.total_sellers || '0');
-                    $distanceCount.text(data.avg_distance || '2-5 km');
+                    $distanceCount.text(data.avg_distance || t('distance_estimate')); // FIXED
                 }
             },
             error: function() {
@@ -217,7 +220,7 @@ function initLocationSearch() {
                 var sellerCount = Math.floor(Math.random() * 15) + 3;
                 $nearbyCount.text(productCount);
                 $sellerCount.text(sellerCount);
-                $distanceCount.text('2-5 km');
+                $distanceCount.text(t('distance_estimate')); // FIXED
             }
         });
     }
@@ -248,13 +251,23 @@ $(function() {
 
     $('#primary-btn').on('click', function() {
         if (isLoggedIn && currentUserRole === 'seller') {
-            window.location.href = baseUrl + 'admin/seller-dashboard.php';
+            window.location.href = baseUrl + 'profile.php';
         } else if (isLoggedIn) {
             window.location.href = baseUrl + 'sell.php';
         } else {
             openModal($('#register-modal'));
             $('#seller').prop('checked', true);
             $('#register-modal .modal-header p').text(t('create_account'));
+        }
+    });
+
+    // CTA button at bottom - opens register modal or redirects
+    $('#cta-register-btn').on('click', function(e) {
+        e.preventDefault();
+        if (isLoggedIn) {
+            window.location.href = baseUrl + 'product-listings.php';
+        } else {
+            openModal($('#register-modal'));
         }
     });
 });

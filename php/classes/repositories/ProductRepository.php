@@ -532,17 +532,18 @@ class ProductRepository
         $offset      = $filters['offset'] ?? 0;
 
         $sql = "SELECT p.product_id, p.title as product_name, p.price, p.image_url,
-                       p.location, p.condition, p.stock_quantity, p.created_at,
-                       u.full_name as seller_name, u.user_id as seller_id,
-                       u.profile_image, u.id_verified as is_verified,
-                       u.last_active
-                FROM products p
-                JOIN users u ON p.seller_id = u.user_id
-                WHERE p.status = 'active'
-                AND (p.title LIKE ? OR p.description LIKE ?)";
+                   p.location, p.condition, p.stock_quantity, p.created_at,
+                   u.full_name as seller_name, u.user_id as seller_id,
+                   u.profile_image, u.id_verified as is_verified,
+                   u.last_active
+            FROM products p
+            JOIN users u ON p.seller_id = u.user_id
+            LEFT JOIN categories c ON p.category_id = c.category_id
+            WHERE p.status = 'active'
+            AND (p.title LIKE ? OR p.description LIKE ? OR c.name LIKE ?)";
 
-        $params = ["%$search%", "%$search%"];
-        $types  = "ss";
+        $params = ["%$search%", "%$search%", "%$search%"];
+        $types  = "sss";
 
         if (!empty($categories) && $categories[0] !== '') {
             $placeholders = implode(',', array_fill(0, count($categories), '?'));
@@ -583,6 +584,18 @@ class ProductRepository
             case 'price_high':
                 $sql .= " ORDER BY p.price DESC";
                 break;
+            case 'relevance':
+                // Order by relevance: exact matches first, then category matches
+                $sql .= " ORDER BY 
+                      CASE 
+                          WHEN p.title LIKE ? THEN 1
+                          WHEN c.name LIKE ? THEN 2
+                          ELSE 3
+                      END, p.created_at DESC";
+                $params[] = $search . '%';
+                $params[] = $search . '%';
+                $types  .= "ss";
+                break;
             default:
                 $sql .= " ORDER BY p.created_at DESC";
         }
@@ -621,14 +634,16 @@ class ProductRepository
         }
         $stmt->close();
 
+        // Count query - same changes
         $countSql = "SELECT COUNT(*) as total
-                     FROM products p
-                     JOIN users u ON p.seller_id = u.user_id
-                     WHERE p.status = 'active'
-                     AND (p.title LIKE ? OR p.description LIKE ?)";
+                 FROM products p
+                 JOIN users u ON p.seller_id = u.user_id
+                 LEFT JOIN categories c ON p.category_id = c.category_id
+                 WHERE p.status = 'active'
+                 AND (p.title LIKE ? OR p.description LIKE ? OR c.name LIKE ?)";
 
-        $countParams = ["%$search%", "%$search%"];
-        $countTypes  = "ss";
+        $countParams = ["%$search%", "%$search%", "%$search%"];
+        $countTypes  = "sss";
 
         if (!empty($categories) && $categories[0] !== '') {
             $placeholders = implode(',', array_fill(0, count($categories), '?'));
