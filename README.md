@@ -1,6 +1,6 @@
 # ConsuTrade
 
-A C-2-C e-commerce platform I built for South Africa's informal traders.
+A C2C e-commerce platform for South Africa's informal traders.
 
 ## Why I Built This
 
@@ -105,25 +105,27 @@ I used the Repository Pattern to separate business logic from database code:
 
 ## What I Learned (The Hard Way)
 
-- Plan the database schema before coding. I kept adding tables mid-build and it cost me time.
-- Use the repository pattern from day one. Refactoring into it halfway through was painful.
-- Test with real users early. Reviews and product reporting came from feedback — they weren't in my original plan.
+- **Plan the database schema before coding.** I kept adding tables mid-build and it cost me time rewriting queries.
+- **Use the repository pattern from day one.** Refactoring into it halfway through was painful and took 2 days.
+- **Test with real users early.** Reviews and product reporting came from feedback — they weren't in my original plan.
+- **Features take longer than you think.** I had to cut email verification and password reset to meet the deadline.
 
 ## What's Missing (For Now)
 
-- Email verification on registration
-- Forgot password / password reset
-- Admin document viewer (can't see uploaded verification files)
-- Auto-cleanup for expired pending orders
-- Multi-language support (Zulu, Afrikaans, Xhosa)
+| Feature                     | Priority | Why                                            |
+| --------------------------- | -------- | ---------------------------------------------- |
+| Email verification          | High     | Cannot validate email addresses without it     |
+| Password reset              | High     | Users get locked out with no recovery option   |
+| Admin document viewer       | Medium   | Admins can't view uploaded verification files  |
+| Auto-cleanup expired orders | Medium   | Prevents inventory issues from abandoned carts |
+| Multi-language support      | Low      | Zulu, Afrikaans, and Xhosa support planned     |
 
 These are all planned for future updates. I know how to build each one — I just ran out of time.
 
 ## Installation
 
 1. Place the folder in your web server's document root (htdocs for XAMPP)
-2. Import the provided SQL file into MySQL
-3. Create a `.env` file in the root directory:
+2. Create a `.env` file in the root directory:
 
 DB_HOST=localhost
 DB_NAME=consutrade
